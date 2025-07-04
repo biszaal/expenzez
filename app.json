@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "expenzo",
-    "slug": "expenzo",
+    "name": "expenzez",
+    "slug": "expenzez",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "expenzo",
+    "scheme": "expenzez",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -37,6 +37,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "849d0f63-bfaa-4d69-aa89-818904092d8b"
+      }
+    },
+    "owner": "biszaal"
   }
 }

@@ -1,0 +1,30 @@
+[
+    {
+      "id": "1",
+      "name": "Barclays",
+      "type": "Credit Card",
+      "icon": "card",
+      "balance": -121.93
+    },
+    {
+      "id": "2",
+      "name": "HSBC",
+      "type": "Credit Card",
+      "icon": "logo-usd",
+      "balance": -28.58
+    },
+    {
+      "id": "3",
+      "name": "NatWest",
+      "type": "Credit Card",
+      "icon": "wallet",
+      "balance": -35.82
+    },
+    {
+      "id": "4",
+      "name": "Net Worth",
+      "type": "Total Net Worth",
+      "icon": "trending-up",
+      "balance": -75.34
+    }
+  ]

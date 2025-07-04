@@ -1,0 +1,42 @@
+[
+    {
+      "id": "t1",
+      "date": "2025-07-01",
+      "merchant": "Starbucks",
+      "category": "Coffee",
+      "amount": -4.75,
+      "icon": "cafe"
+    },
+    {
+      "id": "t2",
+      "date": "2025-07-01",
+      "merchant": "Uber",
+      "category": "Transport",
+      "amount": -12.30,
+      "icon": "car"
+    },
+    {
+      "id": "t3",
+      "date": "2025-06-30",
+      "merchant": "Tesco",
+      "category": "Groceries",
+      "amount": -45.00,
+      "icon": "cart"
+    },
+    {
+      "id": "t4",
+      "date": "2025-06-29",
+      "merchant": "Amazon",
+      "category": "Shopping",
+      "amount": -23.99,
+      "icon": "basket"
+    },
+    {
+      "id": "t5",
+      "date": "2025-06-28",
+      "merchant": "Salary",
+      "category": "Income",
+      "amount": 1500.00,
+      "icon": "cash"
+    }
+  ]
