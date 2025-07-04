@@ -5,7 +5,7 @@ import {
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -17,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "../auth/AuthContext";
 
 // Brand palette
 const PURPLE = "#7C3AED";
@@ -28,13 +29,21 @@ const WHITE = "#FFF";
 
 export default function Login() {
   const router = useRouter();
+  const { isLoggedIn, login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.replace("/(tabs)");
+    }
+  }, [isLoggedIn]);
+
   // Dummy handler
   const handleLogin = () => {
-    Alert.alert("Login", "Email: " + email + "\nPassword: " + password);
-    // Implement login logic here
+    // Normally: validate, call backend, etc.
+    login(); // Just log in for now (static)
   };
 
   const handleSocialLogin = (provider: string) => {

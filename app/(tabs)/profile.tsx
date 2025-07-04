@@ -1,11 +1,19 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "../auth/AuthContext";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { logout, isLoggedIn } = useAuth();
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.replace("/auth/Login");
+    }
+  }, [isLoggedIn]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -46,7 +54,7 @@ export default function ProfilePage() {
             <Text style={styles.actionText}>Security</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.logoutBtn}>
+        <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
           <Ionicons name="log-out-outline" size={18} color="#E53E3E" />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>

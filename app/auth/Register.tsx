@@ -17,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "../auth/AuthContext";
 
 const PURPLE = "#7C3AED";
 const PURPLE_LIGHT = "#E9D5FF";
@@ -27,17 +28,16 @@ const WHITE = "#FFF";
 
 export default function Register() {
   const router = useRouter();
+  const { login } = useAuth(); // Use context
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   // Dummy handler
   const handleRegister = () => {
-    Alert.alert(
-      "Register",
-      "Name: " + name + "\nEmail: " + email + "\nPassword: " + password
-    );
-    // Implement registration logic here
+    // Normally: validate, call backend, etc.
+    login(); // Just log in for now (static)
   };
 
   const handleSocialRegister = (provider: string) => {
