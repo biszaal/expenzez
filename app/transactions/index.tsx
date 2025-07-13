@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import transactionsData from "../data/transactions.json";
+import transactionsData from "../../test/data/transactions.json";
 
 function formatAmount(amount: number) {
   const color = amount < 0 ? "#E53E3E" : "#16A34A";

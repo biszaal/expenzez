@@ -1,3 +1,4 @@
+// Updated Register screen using reusable components and global theme
 import {
   AntDesign,
   FontAwesome,
@@ -6,162 +7,218 @@ import {
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
+import { useAuth } from "./AuthContext";
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  StyleSheet,
-  Text,
-  TextInput,
   TouchableOpacity,
   View,
+  ScrollView,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../auth/AuthContext";
-
-const PURPLE = "#7C3AED";
-const PURPLE_LIGHT = "#E9D5FF";
-const GREY = "#A1A1AA";
-const GREY_DARK = "#52525B";
-const GREY_LIGHT = "#F6F8FA";
-const WHITE = "#FFF";
+import { Button, TextField, Card, Typography } from "../../components/ui";
+import { colors, spacing, borderRadius, shadows } from "../../constants/theme";
 
 export default function Register() {
   const router = useRouter();
-  const { login } = useAuth(); // Use context
-
+  const { register } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [dob, setDob] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Dummy handler
-  const handleRegister = () => {
-    // Normally: validate, call backend, etc.
-    login(); // Just log in for now (static)
-  };
+  const handleRegister = async () => {
+    if (!name || !email || !password || !phone || !dob || !address) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
 
-  const handleSocialRegister = (provider: string) => {
-    Alert.alert("Social Register", `Register with ${provider}`);
-    // Implement provider register here
+    setIsLoading(true);
+    try {
+      const result = await register(name, email, password);
+      if (result.success) {
+        Alert.alert("Success", "Account created successfully!");
+        router.replace("/CompleteProfile");
+      } else {
+        Alert.alert("Registration Failed", result.error || "Try again.");
+      }
+    } catch (err) {
+      Alert.alert("Error", "Something went wrong. Try again later.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: GREY_LIGHT }}>
+    <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={styles.container}>
-          {/* Logo/Brand */}
-          <View style={styles.brandRow}>
-            <View style={styles.logoCircle}>
-              <FontAwesome5 name="user-plus" size={28} color={PURPLE} />
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            {/* Header Section */}
+            <View style={styles.header}>
+              <View style={styles.logoContainer}>
+                <FontAwesome5 name="user-plus" size={28} color="white" />
+              </View>
+              <Typography variant="h1" color="primary" align="center">
+                Join Expenzez
+              </Typography>
+              <Typography variant="body" color="secondary" align="center">
+                Create your account and start managing finances
+              </Typography>
             </View>
-            <Text style={styles.brandTitle}>Join expenzez</Text>
-          </View>
 
-          {/* Form Card */}
-          <View style={styles.formCard}>
-            <Text style={styles.title}>Register</Text>
+            {/* Register Form Card */}
+            <Card variant="elevated" padding="large">
+              <Typography
+                variant="h2"
+                color="primary"
+                align="center"
+                style={styles.formTitle}
+              >
+                Create Account
+              </Typography>
 
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                autoCapitalize="words"
+              {/* Form Fields */}
+              <TextField
+                label="Full Name"
                 placeholder="Your name"
-                placeholderTextColor={GREY}
                 value={name}
                 onChangeText={setName}
+                autoCapitalize="words"
+                required
               />
-            </View>
 
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>Email</Text>
-              <TextInput
-                style={styles.input}
-                autoCapitalize="none"
-                keyboardType="email-address"
+              <TextField
+                label="Email"
                 placeholder="you@email.com"
-                placeholderTextColor={GREY}
                 value={email}
                 onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                required
               />
-            </View>
 
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>Password</Text>
-              <TextInput
-                style={styles.input}
-                secureTextEntry
-                placeholder="Password"
-                placeholderTextColor={GREY}
+              <TextField
+                label="Password"
+                placeholder="••••••••"
                 value={password}
                 onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                required
               />
-            </View>
 
+              <TextField
+                label="Phone Number"
+                placeholder="+44 1234 567890"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                required
+              />
+
+              <TextField
+                label="Date of Birth"
+                placeholder="YYYY-MM-DD"
+                value={dob}
+                onChangeText={setDob}
+                required
+              />
+
+              <TextField
+                label="Address"
+                placeholder="123 Baker Street, London"
+                value={address}
+                onChangeText={setAddress}
+                autoCapitalize="words"
+                required
+              />
+
+              {/* Login Link */}
             <TouchableOpacity
-              style={{ alignSelf: "flex-end", marginBottom: 7 }}
+                style={styles.loginLink}
               onPress={() => router.push("/auth/Login")}
             >
-              <Text style={styles.registerLink}>
+                <Typography variant="body" color="secondary" align="center">
                 Already have an account?{" "}
-                <Text style={{ color: PURPLE }}>Sign in</Text>
-              </Text>
+                  <Typography variant="body" color="primary" weight="bold">
+                    Sign in
+                  </Typography>
+                </Typography>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.loginBtn}
-              activeOpacity={0.85}
+              {/* Register Button */}
+              <Button
+                title="Create Account"
               onPress={handleRegister}
-            >
-              <Text style={styles.loginBtnText}>Register</Text>
-            </TouchableOpacity>
+                variant="primary"
+                size="large"
+                loading={isLoading}
+                fullWidth
+                style={styles.registerButton}
+              />
 
-            <View style={styles.dividerRow}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.divider} />
+              {/* Divider */}
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Typography
+                  variant="caption"
+                  color="tertiary"
+                  weight="semibold"
+                  style={styles.dividerText}
+                >
+                  or
+                </Typography>
+                <View style={styles.dividerLine} />
             </View>
 
-            {/* Social Logins */}
-            <View style={styles.socialRow}>
-              <TouchableOpacity
-                style={[styles.socialBtn, { marginRight: 7 }]}
-                activeOpacity={0.85}
-                onPress={() => handleSocialRegister("Google")}
-              >
-                <AntDesign name="google" size={22} color="#EA4335" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.socialBtn, { marginRight: 7 }]}
-                activeOpacity={0.85}
-                onPress={() => handleSocialRegister("Facebook")}
-              >
-                <FontAwesome name="facebook" size={22} color="#4267B2" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.socialBtn, { marginRight: 7 }]}
-                activeOpacity={0.85}
-                onPress={() => handleSocialRegister("Apple")}
-              >
-                <FontAwesome5 name="apple" size={22} color="#111" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.socialBtn}
-                activeOpacity={0.85}
-                onPress={() => handleSocialRegister("X")}
-              >
-                <MaterialCommunityIcons
-                  name="alpha-x-circle"
-                  size={22}
-                  color="#111"
-                />
-              </TouchableOpacity>
+              {/* Social Register Buttons */}
+              <View style={styles.socialButtons}>
+                <TouchableOpacity
+                  style={styles.socialButton}
+                  onPress={() => Alert.alert("Google Register")}
+                >
+                  <AntDesign name="google" size={20} color="#EA4335" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.socialButton}
+                  onPress={() => Alert.alert("Facebook Register")}
+                >
+                  <FontAwesome name="facebook" size={20} color="#4267B2" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.socialButton}
+                  onPress={() => Alert.alert("Apple Register")}
+                >
+                  <FontAwesome5 name="apple" size={20} color="#111" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.socialButton}
+                  onPress={() => Alert.alert("X Register")}
+                >
+                  <MaterialCommunityIcons
+                    name="alpha-x-circle"
+                    size={20}
+                    color="#111"
+                  />
+                </TouchableOpacity>
             </View>
+            </Card>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -170,129 +227,74 @@ export default function Register() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background.secondary,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  content: {
+    flex: 1,
     justifyContent: "center",
-    paddingHorizontal: 20,
-    backgroundColor: GREY_LIGHT,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
   },
-  brandRow: {
+  header: {
     alignItems: "center",
-    marginBottom: 25,
+    marginBottom: spacing.xl,
   },
-  logoCircle: {
-    backgroundColor: PURPLE_LIGHT,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primary[500],
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.09,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    marginBottom: spacing.md,
+    ...shadows.md,
   },
-  brandTitle: {
-    fontSize: 23,
-    fontWeight: "900",
-    color: PURPLE,
-    letterSpacing: 0.2,
+  formTitle: {
+    marginBottom: spacing.lg,
   },
-  formCard: {
-    backgroundColor: WHITE,
-    padding: 22,
-    borderRadius: 22,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 7,
-    elevation: 1,
+  loginLink: {
+    alignSelf: "center",
+    marginBottom: spacing.lg,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: "900",
-    color: GREY_DARK,
-    marginBottom: 20,
-    textAlign: "center",
-    letterSpacing: 0.1,
-  },
-  inputWrap: {
-    marginBottom: 13,
-  },
-  inputLabel: {
-    color: GREY_DARK,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  input: {
-    backgroundColor: GREY_LIGHT,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    borderRadius: 12,
-    borderWidth: 1.3,
-    borderColor: PURPLE_LIGHT,
-    color: GREY_DARK,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  registerLink: {
-    color: GREY_DARK,
-    fontWeight: "600",
-    fontSize: 15,
-    letterSpacing: 0.1,
-  },
-  loginBtn: {
-    backgroundColor: PURPLE,
-    paddingVertical: 14,
-    borderRadius: 11,
-    marginTop: 7,
-    marginBottom: 10,
-    elevation: 1,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    alignItems: "center",
-  },
-  loginBtnText: {
-    color: WHITE,
-    fontWeight: "900",
-    fontSize: 16,
-    letterSpacing: 0.1,
-  },
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 17,
+  registerButton: {
+    marginBottom: spacing.lg,
   },
   divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.lg,
+  },
+  dividerLine: {
     flex: 1,
-    height: 1.1,
-    backgroundColor: PURPLE_LIGHT,
-    borderRadius: 2,
+    height: 1,
+    backgroundColor: colors.border.light,
+    borderRadius: 1,
   },
   dividerText: {
-    marginHorizontal: 12,
-    color: GREY,
-    fontWeight: "700",
-    fontSize: 14,
+    marginHorizontal: spacing.md,
   },
-  socialRow: {
+  socialButtons: {
     flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 2,
+    justifyContent: "space-between",
   },
-  socialBtn: {
+  socialButton: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: WHITE,
-    paddingVertical: 13,
-    borderRadius: 11,
-    borderWidth: 1,
-    borderColor: PURPLE_LIGHT,
-    marginHorizontal: 0,
-    elevation: 1,
-    shadowColor: GREY,
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
+    backgroundColor: colors.background.primary,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
+    borderColor: colors.border.light,
+    marginHorizontal: 4,
+    ...shadows.sm,
   },
 });

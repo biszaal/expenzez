@@ -1,403 +1,650 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import React from "react";
+import { useRouter } from "expo-router";
+import React, { useEffect } from "react";
 import {
   Dimensions,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { useAuth } from "../auth/AuthContext";
+import {
+  colors,
+  spacing,
+  borderRadius,
+  shadows,
+  typography,
+} from "../../constants/theme";
 
-const PURPLE = "#7C3AED";
-const PURPLE_LIGHT = "#E9D5FF";
-const GREY = "#A1A1AA";
-const GREY_DARK = "#52525B";
-const GREY_LIGHT = "#F4F4F5";
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const { isLoggedIn } = useAuth();
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.replace("/auth/Login");
+    }
+  }, [isLoggedIn]);
+
+  if (!isLoggedIn) {
+    return null;
+  }
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: PURPLE_LIGHT }}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
-        contentContainerStyle={{
-          paddingBottom: 32,
-        }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.logoBrand}>
-            <Text style={{ color: PURPLE }}>expenzez</Text>
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerTitle}>Good morning, Bishal</Text>
+              <Text style={styles.headerSubtitle}>
+                Let&apos;s check your finances
           </Text>
-          <TouchableOpacity style={styles.headerIcon}>
-            <Ionicons name="notifications-outline" size={25} color={PURPLE} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Welcome Card */}
-        <View style={styles.welcomeCard}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <MaterialCommunityIcons
-              name="hand-wave"
-              size={28}
-              color={PURPLE}
-              style={{ marginRight: 8 }}
-            />
-            <Text style={styles.welcomeText}>Welcome back,</Text>
-          </View>
-          <Text style={styles.userName}>Bishal 👋</Text>
-          <Text style={styles.welcomeDesc}>
-            Here’s your personal finance snapshot. Explore, track and grow!
-          </Text>
-        </View>
-
-        {/* Quick Stats */}
-        <View style={styles.quickStatsRow}>
-          <View style={styles.statCard}>
-            <Feather name="activity" size={24} color={PURPLE} />
-            <Text style={styles.statLabel}>Monthly Spend</Text>
-            <Text style={styles.statValue}>£366</Text>
-          </View>
-          <View style={styles.statCard}>
-            <MaterialCommunityIcons name="target" size={24} color={GREY_DARK} />
-            <Text style={[styles.statLabel, { color: GREY_DARK }]}>
-              Budget Used
-            </Text>
-            <Text style={[styles.statValue, { color: GREY_DARK }]}>61%</Text>
-          </View>
-        </View>
-
-        {/* Actions */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.actionBtn}>
-            <Ionicons name="wallet-outline" size={22} color={PURPLE} />
-            <Text style={styles.actionBtnText}>View Spending</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn}>
-            <Ionicons name="trending-up-outline" size={22} color={PURPLE} />
-            <Text style={styles.actionBtnText}>Trends</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn}>
-            <Ionicons name="settings-outline" size={22} color={PURPLE} />
-            <Text style={styles.actionBtnText}>Settings</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Recent Activity */}
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Recent Activity</Text>
-            <TouchableOpacity>
-              <Text style={styles.sectionAction}>See all</Text>
+            </View>
+            <TouchableOpacity style={styles.headerButton}>
+              <Ionicons
+                name="notifications-outline"
+                size={20}
+                color={colors.gray[700]}
+              />
             </TouchableOpacity>
           </View>
-          <View style={styles.activityList}>
-            <View style={styles.activityItem}>
-              <View style={styles.activityIconBg}>
-                <MaterialCommunityIcons name="bus" size={20} color={PURPLE} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.activityLabel}>Transport</Text>
-                <Text style={styles.activitySub}>Uber ride</Text>
-              </View>
-              <Text style={styles.activityAmount}>-£12.50</Text>
+        </View>
+
+        {/* Balance Card */}
+        <View style={styles.balanceCardWrapper}>
+          <LinearGradient
+            colors={[colors.primary[500], "#8B5CF6"]}
+            style={styles.balanceCard}
+          >
+            <View style={styles.balanceCardHeader}>
+              <Text style={styles.balanceLabel}>Total Balance</Text>
+              <TouchableOpacity>
+                <Ionicons name="eye-outline" size={20} color="white" />
+          </TouchableOpacity>
             </View>
-            <View style={styles.activityItem}>
-              <View
-                style={[styles.activityIconBg, { backgroundColor: GREY_LIGHT }]}
+            <Text style={styles.balanceValue}>£2,847.50</Text>
+            <View style={styles.balanceChangeRow}>
+              <View style={styles.balanceChangeBadge}>
+                <Text style={styles.balanceChangeText}>+12.5%</Text>
+              </View>
+              <Text style={styles.balanceChangeLabel}>from last month</Text>
+            </View>
+          </LinearGradient>
+        </View>
+
+        {/* Add Bank Card */}
+        <View style={styles.addBankCardWrapper}>
+          <LinearGradient
+            colors={["#FEF3C7", "#FDE68A"]}
+            style={styles.addBankCard}
+          >
+            <View style={styles.addBankCardContent}>
+              <View style={styles.addBankCardLeft}>
+                <View style={styles.addBankIconContainer}>
+            <MaterialCommunityIcons
+                    name="bank-plus"
+                    size={24}
+                    color="#D97706"
+            />
+          </View>
+                <View style={styles.addBankTextContainer}>
+                  <Text style={styles.addBankTitle}>Connect Your Bank</Text>
+                  <Text style={styles.addBankSubtitle}>
+                    Link accounts for real-time data
+          </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.addBankButton}
+                onPress={() => router.push("/banks/connect" as any)}
               >
-                <MaterialCommunityIcons
-                  name="food-apple-outline"
-                  size={20}
-                  color={GREY_DARK}
+                <Text style={styles.addBankButtonText}>Connect</Text>
+                <Ionicons name="chevron-forward" size={16} color="#D97706" />
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.sectionWrapper}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.quickActionsRow}>
+            <TouchableOpacity
+              style={[styles.quickActionCard, { marginRight: spacing.md }]}
+            >
+              <View
+                style={[
+                  styles.quickActionIcon,
+                  { backgroundColor: colors.primary[100] },
+                ]}
+              >
+                <Ionicons
+                  name="add-circle-outline"
+                  size={24}
+                  color={colors.primary[500]}
                 />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.activityLabel, { color: GREY_DARK }]}>
-                  Groceries
-                </Text>
-                <Text style={styles.activitySub}>Tesco</Text>
+              <Text style={styles.quickActionLabel}>Add Expense</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.quickActionCard, { marginLeft: spacing.md }]}
+              onPress={() => router.push("/banks/connect" as any)}
+            >
+              <View
+                style={[
+                  styles.quickActionIcon,
+                  { backgroundColor: colors.secondary[100] },
+                ]}
+              >
+                <Ionicons
+                  name="card-outline"
+                  size={24}
+                  color={colors.secondary[600]}
+                />
+          </View>
+              <Text style={styles.quickActionLabel}>Connect Bank</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Spending Overview */}
+        <View style={styles.sectionWrapper}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>This Month</Text>
+            <TouchableOpacity>
+              <Text style={styles.sectionLink}>View All</Text>
+          </TouchableOpacity>
+          </View>
+          <View style={styles.overviewCard}>
+            <View style={styles.overviewRow}>
+              <View>
+                <Text style={styles.overviewLabel}>Spent</Text>
+                <Text style={styles.overviewValue}>£1,247.80</Text>
               </View>
-              <Text style={[styles.activityAmount, { color: GREY_DARK }]}>
-                -£34.20
-              </Text>
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={styles.overviewLabel}>Budget</Text>
+                <Text style={styles.overviewValue}>£2,000</Text>
+              </View>
             </View>
-            <View style={styles.activityItem}>
-              <View style={styles.activityIconBg}>
-                <Ionicons name="home-outline" size={20} color={PURPLE} />
+            {/* Progress Bar */}
+            <View style={styles.progressBarWrapper}>
+              <View style={styles.progressBarRow}>
+                <Text style={styles.progressBarLabel}>62% used</Text>
+                <Text style={styles.progressBarLabel}>£752.20 left</Text>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.activityLabel}>Home</Text>
-                <Text style={styles.activitySub}>Rent paid</Text>
+              <View style={styles.progressBarBg}>
+                <LinearGradient
+                  colors={[colors.primary[500], "#8B5CF6"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.progressBarFill, { width: "62%" }]}
+                />
               </View>
-              <Text style={styles.activityAmount}>-£200.00</Text>
             </View>
           </View>
         </View>
 
-        {/* Call to Action */}
-        <View style={styles.ctaCard}>
-          <Text style={styles.ctaText}>
-            Ready to take control of your finances?
-          </Text>
-          <TouchableOpacity style={styles.ctaBtn}>
-            <Text style={styles.ctaBtnText}>Set a Savings Goal</Text>
-            <Ionicons
-              name="arrow-forward"
-              size={18}
-              color="#fff"
-              style={{ marginLeft: 6 }}
-            />
-          </TouchableOpacity>
+        {/* Recent Transactions */}
+        <View style={styles.sectionWrapper}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Recent Transactions</Text>
+            <TouchableOpacity>
+              <Text style={styles.sectionLink}>See All</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.transactionsList}>
+            <View style={styles.transactionItem}>
+              <View
+                style={[
+                  styles.transactionIcon,
+                  { backgroundColor: colors.error[100] },
+                ]}
+              >
+                <Ionicons
+                  name="restaurant-outline"
+                  size={20}
+                  color={colors.error[500]}
+                />
+              </View>
+              <View style={styles.transactionInfo}>
+                <Text style={styles.transactionTitle}>Restaurant</Text>
+                <Text style={styles.transactionSubtitle}>Today, 2:30 PM</Text>
+              </View>
+              <Text style={styles.transactionAmountNegative}>-£45.20</Text>
+            </View>
+            <View style={styles.transactionItem}>
+              <View
+                style={[
+                  styles.transactionIcon,
+                  { backgroundColor: colors.primary[100] },
+                ]}
+              >
+                <Ionicons
+                  name="car-outline"
+                  size={20}
+                  color={colors.primary[500]}
+                />
+              </View>
+              <View style={styles.transactionInfo}>
+                <Text style={styles.transactionTitle}>Uber</Text>
+                <Text style={styles.transactionSubtitle}>
+                  Yesterday, 8:15 AM
+                </Text>
+              </View>
+              <Text style={styles.transactionAmountNegative}>-£12.50</Text>
+            </View>
+            <View style={styles.transactionItem}>
+              <View
+                style={[
+                  styles.transactionIcon,
+                  { backgroundColor: colors.secondary[100] },
+                ]}
+              >
+                <Ionicons
+                  name="card-outline"
+                  size={20}
+                  color={colors.secondary[600]}
+                />
+              </View>
+              <View style={styles.transactionInfo}>
+                <Text style={styles.transactionTitle}>Salary</Text>
+                <Text style={styles.transactionSubtitle}>Mar 1, 9:00 AM</Text>
+              </View>
+              <Text style={styles.transactionAmountPositive}>+£3,200.00</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            <Feather name="github" size={16} color={PURPLE} /> Powered by{" "}
-            <Text style={{ color: PURPLE }}>expenzez</Text>
-          </Text>
+        {/* Categories */}
+        <View style={styles.sectionWrapper}>
+          <Text style={styles.sectionTitle}>Top Categories</Text>
+          <View style={styles.categoriesRow}>
+            <View style={[styles.categoryCard, { marginRight: spacing.md }]}>
+              <View
+                style={[
+                  styles.categoryIcon,
+                  { backgroundColor: colors.error[100] },
+                ]}
+              >
+                <Ionicons
+                  name="restaurant-outline"
+                  size={24}
+                  color={colors.error[500]}
+                />
+              </View>
+              <Text style={styles.categoryLabel}>Food</Text>
+              <Text style={styles.categoryAmount}>£320</Text>
+            </View>
+            <View
+              style={[styles.categoryCard, { marginHorizontal: spacing.sm }]}
+            >
+              <View
+                style={[
+                  styles.categoryIcon,
+                  { backgroundColor: colors.primary[100] },
+                ]}
+              >
+                <Ionicons
+                  name="car-outline"
+                  size={24}
+                  color={colors.primary[500]}
+                />
+              </View>
+              <Text style={styles.categoryLabel}>Transport</Text>
+              <Text style={styles.categoryAmount}>£180</Text>
+            </View>
+            <View style={[styles.categoryCard, { marginLeft: spacing.md }]}>
+              <View
+                style={[
+                  styles.categoryIcon,
+                  { backgroundColor: colors.primary[100] },
+                ]}
+              >
+            <Ionicons
+                  name="shirt-outline"
+                  size={24}
+                  color={colors.primary[400]}
+                />
+              </View>
+              <Text style={styles.categoryLabel}>Shopping</Text>
+              <Text style={styles.categoryAmount}>£150</Text>
+            </View>
+        </View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const CARD_RADIUS = 24;
-
 const styles = StyleSheet.create({
-  header: {
-    paddingTop: 26,
-    paddingHorizontal: 22,
-    backgroundColor: PURPLE_LIGHT,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: 2,
-  },
-  logoBrand: {
-    fontSize: 31,
-    fontWeight: "900",
-    letterSpacing: -0.7,
-    color: GREY_DARK,
-  },
-  headerIcon: {
-    backgroundColor: "#fff",
-    borderRadius: 17,
-    padding: 7,
-    borderWidth: 1,
-    borderColor: PURPLE_LIGHT,
-  },
-  welcomeCard: {
-    backgroundColor: "#fff",
-    marginHorizontal: 16,
-    marginTop: 20,
-    borderRadius: CARD_RADIUS,
-    padding: 20,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
-  },
-  welcomeText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: GREY_DARK,
-    letterSpacing: 0.2,
-  },
-  userName: {
-    fontSize: 26,
-    fontWeight: "900",
-    color: PURPLE,
-    marginTop: 8,
-    marginBottom: 3,
-    letterSpacing: 0.1,
-  },
-  welcomeDesc: {
-    color: GREY,
-    fontSize: 15,
-    marginTop: 5,
-  },
-  quickStatsRow: {
-    flexDirection: "row",
-    justifyContent: "space-evenly",
-    marginTop: 26,
-    marginBottom: 6,
-    marginHorizontal: 4,
-  },
-  statCard: {
-    backgroundColor: "#fff",
-    borderRadius: CARD_RADIUS - 8,
-    paddingVertical: 17,
-    paddingHorizontal: 23,
-    alignItems: "center",
-    shadowColor: PURPLE,
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-    marginHorizontal: 4,
-    width: SCREEN_WIDTH * 0.41,
-    borderWidth: 1,
-    borderColor: PURPLE_LIGHT,
-  },
-  statLabel: {
-    color: PURPLE,
-    fontWeight: "700",
-    fontSize: 15,
-    marginTop: 7,
-    letterSpacing: 0.2,
-  },
-  statValue: {
-    color: PURPLE,
-    fontWeight: "900",
-    fontSize: 23,
-    marginTop: 3,
-  },
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 24,
-    marginHorizontal: 18,
-  },
-  actionBtn: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
+  container: {
     flex: 1,
-    padding: 13,
+    backgroundColor: colors.background.secondary,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: spacing["2xl"],
+  },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
+    backgroundColor: colors.background.primary,
+  },
+  headerContent: {
     flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerTitle: {
+    fontSize: typography.fontSizes["2xl"],
+    fontWeight: "700" as const,
+    color: colors.text.primary,
+  },
+  headerSubtitle: {
+    fontSize: typography.fontSizes.base,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 5,
-    borderWidth: 1,
-    borderColor: PURPLE_LIGHT,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 1,
+    ...shadows.md,
   },
-  actionBtnText: {
-    color: PURPLE,
-    fontWeight: "700",
-    fontSize: 15,
-    marginLeft: 7,
-    letterSpacing: 0.2,
+  balanceCardWrapper: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
-  sectionCard: {
-    backgroundColor: "#fff",
-    marginHorizontal: 16,
-    marginTop: 28,
-    borderRadius: CARD_RADIUS,
-    padding: 20,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
+  balanceCard: {
+    borderRadius: borderRadius["3xl"],
+    padding: spacing.lg,
+    ...shadows.lg,
+  },
+  balanceCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+  },
+  balanceLabel: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: typography.fontSizes.sm,
+    fontWeight: "500" as const,
+  },
+  balanceValue: {
+    color: "white",
+    fontSize: typography.fontSizes["3xl"],
+    fontWeight: "700" as const,
+    marginBottom: spacing.sm,
+  },
+  balanceChangeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  balanceChangeBadge: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    marginRight: spacing.sm,
+  },
+  balanceChangeText: {
+    color: "white",
+    fontSize: typography.fontSizes.xs,
+    fontWeight: "600" as const,
+  },
+  balanceChangeLabel: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: typography.fontSizes.sm,
+  },
+  addBankCardWrapper: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  addBankCard: {
+    borderRadius: borderRadius["3xl"],
+    padding: spacing.lg,
+    ...shadows.lg,
     borderWidth: 1,
-    borderColor: PURPLE_LIGHT,
+    borderColor: "#FCD34D",
+  },
+  addBankCardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  addBankCardLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  addBankIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.full,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+    ...shadows.sm,
+  },
+  addBankTextContainer: {
+    flex: 1,
+  },
+  addBankTitle: {
+    fontSize: typography.fontSizes.lg,
+    fontWeight: "700" as const,
+    color: "#92400E",
+    marginBottom: spacing.xs,
+  },
+  addBankSubtitle: {
+    fontSize: typography.fontSizes.sm,
+    color: "#A16207",
+    lineHeight: typography.fontSizes.sm * 1.4,
+  },
+  addBankButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    borderRadius: borderRadius.full,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    ...shadows.md,
+    borderWidth: 1,
+    borderColor: "#FCD34D",
+  },
+  addBankButtonText: {
+    color: "#D97706",
+    fontWeight: "600" as const,
+    fontSize: typography.fontSizes.sm,
+    marginRight: spacing.xs,
+  },
+  sectionWrapper: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: typography.fontSizes.lg,
+    fontWeight: "700" as const,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
   },
   sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
-  sectionTitle: {
-    color: GREY_DARK,
-    fontWeight: "900",
-    fontSize: 19,
-    letterSpacing: 0.2,
+  sectionLink: {
+    color: colors.primary[500],
+    fontWeight: "600" as const,
+    fontSize: typography.fontSizes.sm,
   },
-  sectionAction: {
-    color: PURPLE,
-    fontWeight: "600",
-    fontSize: 14,
-    letterSpacing: 0.1,
-  },
-  activityList: {
-    marginTop: 2,
-  },
-  activityItem: {
+  quickActionsRow: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: PURPLE_LIGHT,
-    marginBottom: 2,
+    justifyContent: "space-between",
   },
-  activityIconBg: {
-    backgroundColor: PURPLE_LIGHT,
-    borderRadius: 13,
-    width: 36,
-    height: 36,
+  quickActionCard: {
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius["2xl"],
+    padding: spacing.lg,
+    alignItems: "center",
+    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    flex: 1,
+  },
+  quickActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 13,
+    marginBottom: spacing.md,
   },
-  activityLabel: {
-    fontSize: 15,
-    color: PURPLE,
-    fontWeight: "900",
+  quickActionLabel: {
+    color: colors.text.primary,
+    fontWeight: "500" as const,
+    fontSize: typography.fontSizes.sm,
   },
-  activitySub: {
-    fontSize: 12,
-    color: GREY,
-    fontWeight: "600",
+  overviewCard: {
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius["2xl"],
+    padding: spacing.lg,
+    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: colors.border.light,
   },
-  activityAmount: {
-    fontWeight: "900",
-    color: PURPLE,
-    fontSize: 16,
-    letterSpacing: 0.2,
-    marginLeft: 9,
-  },
-  ctaCard: {
-    backgroundColor: PURPLE,
-    marginHorizontal: 16,
-    borderRadius: CARD_RADIUS,
-    padding: 23,
-    marginTop: 30,
-    alignItems: "center",
-    shadowColor: PURPLE,
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-  },
-  ctaText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 17,
-    marginBottom: 13,
-    textAlign: "center",
-    letterSpacing: 0.15,
-  },
-  ctaBtn: {
-    backgroundColor: GREY_DARK,
+  overviewRow: {
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "center",
-    borderRadius: 13,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    marginTop: 4,
+    justifyContent: "space-between",
+    marginBottom: spacing.lg,
   },
-  ctaBtnText: {
-    color: "#fff",
-    fontWeight: "900",
-    fontSize: 15,
+  overviewLabel: {
+    color: colors.text.secondary,
+    fontSize: typography.fontSizes.sm,
   },
-  footer: {
-    marginTop: 28,
+  overviewValue: {
+    color: colors.text.primary,
+    fontSize: typography.fontSizes["2xl"],
+    fontWeight: "700" as const,
+  },
+  progressBarWrapper: {
+    marginBottom: spacing.md,
+  },
+  progressBarRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: spacing.xs,
+  },
+  progressBarLabel: {
+    color: colors.text.secondary,
+    fontSize: typography.fontSizes.sm,
+  },
+  progressBarBg: {
+    backgroundColor: colors.gray[200],
+    borderRadius: borderRadius.full,
+    height: 12,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: 12,
+    borderRadius: borderRadius.full,
+  },
+  transactionsList: {
+    gap: spacing.md,
+  },
+  transactionItem: {
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius["2xl"],
+    padding: spacing.lg,
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 13,
+    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    marginBottom: spacing.sm,
   },
-  footerText: {
-    color: GREY_DARK,
-    fontSize: 14,
-    letterSpacing: 0.2,
+  transactionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+  },
+  transactionInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  transactionTitle: {
+    color: colors.text.primary,
+    fontWeight: "500" as const,
+    fontSize: typography.fontSizes.base,
+  },
+  transactionSubtitle: {
+    color: colors.text.secondary,
+    fontSize: typography.fontSizes.sm,
+  },
+  transactionAmountNegative: {
+    color: colors.error[600],
+    fontWeight: "600" as const,
+    fontSize: typography.fontSizes.base,
+  },
+  transactionAmountPositive: {
+    color: colors.secondary[600],
+    fontWeight: "600" as const,
+    fontSize: typography.fontSizes.base,
+  },
+  categoriesRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  categoryCard: {
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius["2xl"],
+    padding: spacing.lg,
+    alignItems: "center",
+    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    flex: 1,
+  },
+  categoryIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.md,
+  },
+  categoryLabel: {
+    color: colors.text.primary,
+    fontWeight: "500" as const,
+    fontSize: typography.fontSizes.sm,
+  },
+  categoryAmount: {
+    color: colors.text.secondary,
+    fontSize: typography.fontSizes.xs,
+    marginTop: spacing.xs,
   },
 });

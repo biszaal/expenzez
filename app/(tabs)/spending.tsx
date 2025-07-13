@@ -1,44 +1,47 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   Dimensions,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Pie, PolarChart } from "victory-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useAuth } from "../auth/AuthContext";
+import {
+  colors,
+  spacing,
+  borderRadius,
+  shadows,
+  typography,
+} from "../../constants/theme";
 
 const { width } = Dimensions.get("window");
-
-const PURPLE = "#7C3AED";
-const PURPLE_LIGHT = "#E9D5FF";
-const GREY = "#A1A1AA";
-const GREY_DARK = "#52525B";
-const GREY_LIGHT = "#F4F4F5";
 
 const months = ["May", "Jun", "Jul"];
 const totalBudget = 600;
 const totalSpent = 366.28;
 const leftToSpend = totalBudget - totalSpent;
-const upcomingBills = 45.07;
-
-const chartData = [
-  { label: "Spent", value: totalSpent, color: PURPLE },
-  { label: "Left", value: leftToSpend, color: PURPLE_LIGHT },
-];
 
 const categoryData = [
   {
     id: 1,
-    icon: <MaterialCommunityIcons name="bus-clock" size={22} color={PURPLE} />,
+    icon: (
+      <MaterialCommunityIcons
+        name="bus-clock"
+        size={22}
+        color={colors.primary[500]}
+      />
+    ),
     name: "Transport",
     spent: 346.2,
     budget: 350,
     upcoming: 0,
-    color: PURPLE,
+    color: colors.primary[500],
   },
   {
     id: 2,
@@ -46,14 +49,14 @@ const categoryData = [
       <MaterialCommunityIcons
         name="home-thermometer-outline"
         size={22}
-        color={GREY_DARK}
+        color={colors.secondary[600]}
       />
     ),
     name: "Home & Comfort",
     spent: 0,
     budget: 50,
     upcoming: 42.08,
-    color: GREY_DARK,
+    color: colors.secondary[600],
   },
   {
     id: 3,
@@ -61,64 +64,99 @@ const categoryData = [
       <MaterialCommunityIcons
         name="food-apple-outline"
         size={22}
-        color={PURPLE}
+        color={colors.primary[500]}
       />
     ),
     name: "Groceries",
     spent: 120,
     budget: 200,
     upcoming: 0,
-    color: PURPLE,
+    color: colors.primary[500],
   },
   {
     id: 4,
-    icon: <MaterialCommunityIcons name="run" size={22} color={GREY} />,
+    icon: (
+      <MaterialCommunityIcons
+        name="run"
+        size={22}
+        color={colors.secondary[500]}
+      />
+    ),
     name: "Fitness",
     spent: 40,
     budget: 100,
     upcoming: 0,
-    color: GREY,
+    color: colors.secondary[500],
   },
 ];
 
 export default function SpendingPage() {
+  const router = useRouter();
+  const { isLoggedIn } = useAuth();
   const [selectedTab, setSelectedTab] = useState<"summary" | "categories">(
     "summary"
   );
   const [selectedMonth, setSelectedMonth] = useState("Jul");
 
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.replace("/auth/Login");
+    }
+  }, [isLoggedIn]);
+
+  if (!isLoggedIn) {
+    return null;
+  }
+
+  const spentPercentage = (totalSpent / totalBudget) * 100;
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: GREY_LIGHT }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>
-            <Text style={{ color: PURPLE }}>expenzez</Text> Dashboard
+        <LinearGradient
+          colors={["rgba(59, 130, 246, 0.1)", "rgba(59, 130, 246, 0.05)"]}
+          style={styles.header}
+        >
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerTitle}>
+                <Text style={{ color: colors.primary[500] }}>expenzez</Text>{" "}
+                Dashboard
+              </Text>
+              <Text style={styles.headerSubtitle}>
+                Track your spending patterns
           </Text>
-          <TouchableOpacity style={styles.infoBtn}>
-            <Feather name="info" size={24} color={PURPLE} />
+            </View>
+            <TouchableOpacity style={styles.headerButton}>
+              <Feather name="info" size={24} color={colors.primary[500]} />
           </TouchableOpacity>
         </View>
+        </LinearGradient>
 
         {/* Tab Switch */}
-        <View style={styles.tabSwitchWrap}>
+        <View style={styles.tabSwitchWrapper}>
+          <View style={styles.tabSwitchRow}>
           <TouchableOpacity
             style={[
-              styles.tabBtn,
-              selectedTab === "summary" && styles.tabBtnActive,
+                styles.tabButton,
+                selectedTab === "summary" && styles.tabButtonActive,
             ]}
             onPress={() => setSelectedTab("summary")}
           >
             <Ionicons
               name="pie-chart-sharp"
               size={17}
-              color={selectedTab === "summary" ? "#FFF" : PURPLE}
-              style={{ marginRight: 6 }}
+                color={selectedTab === "summary" ? "#FFF" : colors.primary[500]}
             />
             <Text
               style={[
-                styles.tabBtnText,
-                selectedTab === "summary" && styles.tabBtnTextActive,
+                  styles.tabButtonText,
+                  selectedTab === "summary" && styles.tabButtonTextActive,
               ]}
             >
               Overview
@@ -126,47 +164,49 @@ export default function SpendingPage() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[
-              styles.tabBtn,
-              selectedTab === "categories" && styles.tabBtnActive,
+                styles.tabButton,
+                selectedTab === "categories" && styles.tabButtonActive,
             ]}
             onPress={() => setSelectedTab("categories")}
           >
             <Ionicons
               name="list"
               size={17}
-              color={selectedTab === "categories" ? "#FFF" : PURPLE}
-              style={{ marginRight: 6 }}
+                color={
+                  selectedTab === "categories" ? "#FFF" : colors.primary[500]
+                }
             />
             <Text
               style={[
-                styles.tabBtnText,
-                selectedTab === "categories" && styles.tabBtnTextActive,
+                  styles.tabButtonText,
+                  selectedTab === "categories" && styles.tabButtonTextActive,
               ]}
             >
               Categories
             </Text>
           </TouchableOpacity>
+          </View>
         </View>
 
         {/* Month Picker */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.monthsRow}
+          style={styles.monthPicker}
         >
           {months.map((m) => (
             <TouchableOpacity
               key={m}
               style={[
-                styles.monthBtn,
-                selectedMonth === m && styles.monthBtnActive,
+                styles.monthButton,
+                selectedMonth === m && styles.monthButtonActive,
               ]}
               onPress={() => setSelectedMonth(m)}
             >
               <Text
                 style={[
-                  styles.monthBtnText,
-                  selectedMonth === m && styles.monthBtnTextActive,
+                  styles.monthButtonText,
+                  selectedMonth === m && styles.monthButtonTextActive,
                 ]}
               >
                 {m}
@@ -177,489 +217,427 @@ export default function SpendingPage() {
 
         {/* Main Card */}
         {selectedTab === "summary" && (
-          <View style={styles.chartCard}>
-            <Text style={styles.sectionLabel}>This Month</Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 10,
-                justifyContent: "space-between",
-              }}
+          <View style={styles.mainCardWrapper}>
+            <LinearGradient
+              colors={["#FFFFFF", "#F8FAFC"]}
+              style={styles.mainCard}
             >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text style={styles.mainCardLabel}>This Month</Text>
+              <View style={styles.mainCardHeader}>
+                <View style={styles.mainCardHeaderLeft}>
+                  <LinearGradient
+                    colors={[colors.primary[500], "#8B5CF6"]}
+                    style={styles.walletIconBg}
+                  >
                 <MaterialCommunityIcons
                   name="wallet-outline"
-                  color={PURPLE}
-                  size={18}
+                      color="white"
+                      size={20}
                 />
-                <Text style={styles.spendAmount}>
-                  {" "}
+                  </LinearGradient>
+                  <Text style={styles.mainCardAmount}>
                   £{totalSpent.toFixed(2)}
-                </Text>
-                <Text style={[styles.sectionLabel, { marginLeft: 8 }]}>
-                  spent
-                </Text>
-              </View>
-              <TouchableOpacity>
-                <Ionicons name="settings-outline" color={GREY_DARK} size={18} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.pieRow}>
-              {/* Pie Chart */}
-              <View
-                style={{
-                  position: "relative",
-                  width: 190,
-                  height: 190,
-                  backgroundColor: "#fff",
-                  borderRadius: 100,
-                  shadowColor: PURPLE,
-                  shadowOpacity: 0.07,
-                  shadowRadius: 10,
-                  shadowOffset: { width: 0, height: 5 },
-                }}
-              >
-                <PolarChart
-                  data={chartData}
-                  labelKey="label"
-                  valueKey="value"
-                  colorKey="color"
-                >
-                  <Pie.Chart innerRadius={80} />
-                </PolarChart>
-                {/* Center Label */}
-                <View style={styles.pieCenterLabel}>
-                  <Text style={styles.leftToSpend}>
-                    £{leftToSpend.toFixed(2)}
                   </Text>
-                  <Text style={styles.leftToSpendText}>left to spend</Text>
+                  <Text style={styles.mainCardAmountLabel}>spent</Text>
                 </View>
+                <TouchableOpacity>
+                  <Ionicons
+                    name="settings-outline"
+                    color={colors.secondary[600]}
+                    size={20}
+                  />
+                </TouchableOpacity>
               </View>
-              {/* Legends */}
-              <View style={styles.legendCol}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 5,
-                  }}
-                >
-                  <View
-                    style={[
-                      styles.legend,
-                      { backgroundColor: PURPLE, marginRight: 8 },
-                    ]}
-                  />
-                  <Text style={styles.legendLabel}>Spent</Text>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <View
-                    style={[
-                      styles.legend,
-                      { backgroundColor: PURPLE_LIGHT, marginRight: 8 },
-                    ]}
-                  />
-                  <Text style={styles.legendLabel}>Left</Text>
-                </View>
-                <View
-                  style={{
-                    marginTop: 12,
-                    flexDirection: "row",
-                    alignItems: "center",
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name="calendar-clock"
-                    color={PURPLE}
-                    size={16}
-                  />
-                  <Text style={styles.upcomingLabel}>
-                    Upcoming bills: £{upcomingBills.toFixed(2)}
-                  </Text>
-                </View>
-              </View>
-            </View>
-            <View style={styles.actionsRow}>
-              <TouchableOpacity style={styles.outlinedBtn2}>
-                <Feather
-                  name="edit-2"
-                  size={15}
-                  color={PURPLE}
-                  style={{ marginRight: 8 }}
-                />
-                <Text style={styles.outlinedBtnText2}>Edit budgets</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.outlinedBtn2}>
-                <Text style={styles.outlinedBtnText2}>Details</Text>
-                <Ionicons name="chevron-forward" size={14} color={PURPLE} />
-              </TouchableOpacity>
-            </View>
+              <View style={styles.donutChartRow}>
+                {/* Custom Donut Chart */}
+                <View style={styles.donutChartWrapper}>
+                  <View style={styles.donutChartOuter}>
+                    <View style={styles.donutChartInner}>
+                      <Text style={styles.donutChartCenterAmount}>
+                        £{leftToSpend.toFixed(2)}
+                      </Text>
+                      <Text style={styles.donutChartCenterLabelText}>
+                        left to spend
+                      </Text>
           </View>
-        )}
-
-        {/* Category Budgets */}
-        {selectedTab === "categories" && (
-          <View style={{ marginTop: 15 }}>
-            {categoryData.map((cat) => {
-              const left = Math.max(0, cat.budget - cat.spent);
-              const percent = Math.min(1, cat.spent / cat.budget);
-              return (
-                <View
-                  key={cat.id}
-                  style={[
-                    styles.catCard,
-                    { borderLeftWidth: 6, borderLeftColor: cat.color },
-                  ]}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 6,
-                    }}
-                  >
-                    {cat.icon}
-                    <Text style={styles.catTitle}>{cat.name}</Text>
-                    <Text style={styles.catLeft}>£{left.toFixed(2)} left</Text>
-                    <Text style={styles.catBudget}>/ £{cat.budget}</Text>
                   </View>
-                  {/* Progress Bar */}
-                  <View style={styles.progressBarBg}>
+                  {/* Progress Ring */}
+                  <View style={styles.progressRing}>
                     <View
                       style={[
-                        styles.progressBarFill,
+                        styles.progressFill,
                         {
-                          width: `${percent * 100}%`,
-                          backgroundColor: cat.color,
-                          borderTopRightRadius: percent === 1 ? 7 : 0,
-                          borderBottomRightRadius: percent === 1 ? 7 : 0,
+                          transform: [
+                            { rotate: `${(spentPercentage / 100) * 360}deg` },
+                          ],
                         },
                       ]}
                     />
                   </View>
-                  {/* Spent/Upcoming */}
-                  <View style={styles.catSubRow}>
+                </View>
+                {/* Legends */}
+                <View style={styles.donutChartLegends}>
+                  <View style={styles.donutChartLegendRow}>
                     <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
-                    >
-                      <MaterialCommunityIcons
-                        name="flash-outline"
-                        color={cat.color}
-                        size={14}
-                        style={{ marginRight: 6 }}
-                      />
-                      <Text style={styles.catSpent}>Spent: £{cat.spent}</Text>
-                    </View>
-                    {cat.upcoming > 0 && (
-                      <View
-                        style={{ flexDirection: "row", alignItems: "center" }}
-                      >
-                        <MaterialCommunityIcons
-                          name="alarm-light-outline"
-                          color={PURPLE}
-                          size={14}
-                          style={{ marginRight: 6 }}
-                        />
-                        <Text style={styles.catUpcoming}>
-                          Upcoming: £{cat.upcoming}
-                        </Text>
-                      </View>
-                    )}
+                      style={[
+                        styles.donutChartLegendDot,
+                        { backgroundColor: colors.primary[500] },
+                      ]}
+                    />
+                    <Text style={styles.donutChartLegendLabel}>Spent</Text>
+                  </View>
+                  <View style={styles.donutChartLegendRow}>
+                    <View
+                      style={[
+                        styles.donutChartLegendDot,
+                        { backgroundColor: colors.gray[200] },
+                      ]}
+                    />
+                    <Text style={styles.donutChartLegendLabel}>Left</Text>
                   </View>
                 </View>
-              );
-            })}
+              </View>
+            </LinearGradient>
           </View>
         )}
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            <Feather name="github" size={16} color={PURPLE} /> Powered by{" "}
-            <Text style={{ color: PURPLE }}>expenzez</Text>
-          </Text>
-        </View>
+
+        {/* Categories Tab */}
+        {selectedTab === "categories" && (
+          <View style={styles.categoriesTabWrapper}>
+            {categoryData.map((category) => (
+              <LinearGradient
+                key={category.id}
+                colors={["#FFFFFF", "#F8FAFC"]}
+                style={styles.categoryCard}
+              >
+                <View style={styles.categoryCardHeader}>
+                  <View style={styles.categoryCardHeaderLeft}>
+                    <LinearGradient
+                      colors={[category.color, category.color + "80"]}
+                      style={styles.categoryIconBg}
+                    >
+                      {category.icon}
+                    </LinearGradient>
+                    <View>
+                      <Text style={styles.categoryName}>{category.name}</Text>
+                      <Text style={styles.categoryBudget}>
+                        £{category.spent} / £{category.budget}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.categoryCardHeaderRight}>
+                    <Text style={styles.categorySpent}>£{category.spent}</Text>
+                    <Text style={styles.categoryPercent}>
+                      {Math.round((category.spent / category.budget) * 100)}%
+                        </Text>
+                  </View>
+                </View>
+                {/* Progress Bar */}
+                <View style={styles.categoryProgressBarBg}>
+                  <LinearGradient
+                    colors={[category.color, category.color + "80"]}
+                    style={[
+                      styles.categoryProgressBarFill,
+                      { width: `${(category.spent / category.budget) * 100}%` },
+                    ]}
+                  />
+                </View>
+              </LinearGradient>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background.secondary,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: spacing["2xl"],
+  },
   header: {
-    paddingTop: 32,
-    paddingHorizontal: 26,
-    backgroundColor: GREY_LIGHT,
-    paddingBottom: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    borderBottomLeftRadius: borderRadius["3xl"],
+    borderBottomRightRadius: borderRadius["3xl"],
+  },
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "900",
-    color: GREY_DARK,
-    letterSpacing: -0.6,
+  headerTitle: {
+    fontSize: typography.fontSizes["2xl"],
+    fontWeight: "700" as const,
+    color: colors.text.primary,
   },
-  infoBtn: {
-    backgroundColor: "#FFF",
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  headerSubtitle: {
+    fontSize: typography.fontSizes.base,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
+    ...shadows.md,
+  },
+  tabSwitchWrapper: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius["3xl"],
+    padding: spacing.xs,
+    ...shadows.lg,
     borderWidth: 1,
-    borderColor: PURPLE_LIGHT,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 1,
+    borderColor: colors.border.light,
   },
-  tabSwitchWrap: {
+  tabSwitchRow: {
     flexDirection: "row",
-    backgroundColor: PURPLE_LIGHT,
-    borderRadius: 30,
-    marginHorizontal: 26,
-    marginTop: 18,
-    marginBottom: 18,
-    padding: 4,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: "#E3D5CA",
   },
-  tabBtn: {
+  tabButton: {
     flex: 1,
-    borderRadius: 26,
-    height: 42,
-    alignItems: "center",
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 6,
+    paddingVertical: spacing.lg,
+    borderRadius: borderRadius.xl,
   },
-  tabBtnActive: {
-    backgroundColor: PURPLE,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.09,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 1,
+  tabButtonActive: {
+    backgroundColor: colors.primary[500],
   },
-  tabBtnText: {
-    color: PURPLE,
-    fontWeight: "700",
-    fontSize: 15,
-    letterSpacing: 0.3,
+  tabButtonText: {
+    fontWeight: "600" as const,
+    fontSize: typography.fontSizes.sm,
+    marginLeft: spacing.sm,
+    color: colors.primary[500],
   },
-  tabBtnTextActive: {
+  tabButtonTextActive: {
     color: "#FFF",
-    fontWeight: "900",
-    letterSpacing: 0.5,
   },
-  monthsRow: {
-    marginLeft: 18,
-    marginBottom: 4,
-    marginTop: 2,
-    flexDirection: "row",
+  monthPicker: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
   },
-  monthBtn: {
-    paddingHorizontal: 22,
-    paddingVertical: 9,
-    borderRadius: 18,
-    marginRight: 11,
-    borderWidth: 1.3,
-    borderColor: PURPLE_LIGHT,
-    backgroundColor: "#FFF",
+  monthButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.background.secondary,
+    marginRight: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border.light,
   },
-  monthBtnActive: {
-    backgroundColor: PURPLE,
-    borderColor: PURPLE,
+  monthButtonActive: {
+    backgroundColor: colors.primary[500],
+    borderColor: colors.primary[500],
   },
-  monthBtnText: {
-    color: PURPLE,
-    fontWeight: "bold",
-    fontSize: 16,
+  monthButtonText: {
+    fontSize: typography.fontSizes.sm,
+    fontWeight: "600" as const,
+    color: colors.text.secondary,
   },
-  monthBtnTextActive: {
+  monthButtonTextActive: {
     color: "#FFF",
-    fontWeight: "900",
   },
-  chartCard: {
-    backgroundColor: "#FFF",
-    marginHorizontal: 18,
-    marginTop: 8,
-    borderRadius: 26,
-    padding: 20,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1.5,
-    borderColor: PURPLE_LIGHT,
+  mainCardWrapper: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
   },
-  sectionLabel: {
-    color: GREY,
-    fontWeight: "700",
-    fontSize: 16,
-    marginBottom: 6,
-    letterSpacing: 0.4,
+  mainCard: {
+    padding: spacing.xl,
+    borderRadius: borderRadius["3xl"],
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    ...shadows.lg,
   },
-  spendAmount: {
-    fontWeight: "bold",
-    color: PURPLE,
-    fontSize: 23,
-    marginLeft: 5,
+  mainCardLabel: {
+    fontSize: typography.fontSizes.lg,
+    fontWeight: "600" as const,
+    color: colors.text.secondary,
+    marginBottom: spacing.md,
   },
-  pieRow: {
+  mainCardHeader: {
     flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-    marginBottom: 10,
-    width: "100%",
     justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.md,
   },
-  legendCol: {
-    marginLeft: 14,
-    flex: 1,
+  mainCardHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  walletIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.xl,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.sm,
+  },
+  mainCardAmount: {
+    fontSize: typography.fontSizes["2xl"],
+    fontWeight: "700" as const,
+    color: colors.text.primary,
+  },
+  mainCardAmountLabel: {
+    fontSize: typography.fontSizes.sm,
+    color: colors.text.secondary,
+    marginLeft: spacing.xs,
+  },
+  donutChartRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: spacing.md,
+  },
+  donutChartWrapper: {
+    width: 140,
+    height: 140,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background.primary,
+    borderRadius: 70,
+    ...shadows.md,
+  },
+  donutChartOuter: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    borderWidth: 10,
+    borderColor: colors.background.secondary,
+    alignItems: "center",
     justifyContent: "center",
   },
-  legend: {
-    width: 18,
-    height: 8,
-    borderRadius: 5,
-    marginRight: 3,
-    backgroundColor: PURPLE,
+  donutChartInner: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.background.primary,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  legendLabel: {
-    color: GREY_DARK,
-    fontWeight: "bold",
-    fontSize: 16,
-    letterSpacing: 0.3,
+  donutChartCenterAmount: {
+    fontSize: typography.fontSizes["2xl"],
+    fontWeight: "700" as const,
+    color: colors.text.primary,
   },
-  upcomingLabel: {
-    color: PURPLE,
-    fontWeight: "600",
-    fontSize: 14,
-    marginLeft: 8,
+  donutChartCenterLabelText: {
+    fontSize: typography.fontSizes.sm,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
   },
-  pieCenterLabel: {
+  progressRing: {
     position: "absolute",
-    top: "38%",
-    left: 0,
-    right: 0,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    borderWidth: 10,
+    borderColor: colors.background.secondary,
     alignItems: "center",
-    pointerEvents: "none",
+    justifyContent: "center",
   },
-  leftToSpend: {
-    fontSize: 26,
-    fontWeight: "900",
-    color: PURPLE,
-    marginBottom: -3,
-    letterSpacing: 0.8,
-  },
-  leftToSpendText: {
-    color: GREY_DARK,
-    fontWeight: "700",
-    fontSize: 15,
-    letterSpacing: 0.3,
-  },
-  actionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 8,
-    marginBottom: 2,
-  },
-  outlinedBtn2: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderColor: PURPLE,
-    borderWidth: 1.2,
-    borderRadius: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    backgroundColor: "#FFF",
-  },
-  outlinedBtnText2: {
-    color: PURPLE,
-    fontWeight: "700",
-    fontSize: 15,
-    letterSpacing: 0.2,
-  },
-  catCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 18,
-    marginHorizontal: 18,
-    marginBottom: 18,
-    padding: 16,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 1,
-    borderLeftWidth: 6,
-    borderLeftColor: PURPLE,
-    borderTopWidth: 0.7,
-    borderColor: PURPLE_LIGHT,
-  },
-  catTitle: {
-    fontWeight: "900",
-    fontSize: 17,
-    color: GREY_DARK,
-    marginLeft: 11,
-    marginRight: 7,
-    letterSpacing: 0.2,
-  },
-  catLeft: {
-    color: PURPLE,
-    fontWeight: "700",
-    fontSize: 15,
-    marginLeft: "auto",
-    marginRight: 4,
-    letterSpacing: 0.2,
-  },
-  catBudget: {
-    color: GREY_DARK,
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  progressBarBg: {
-    height: 9,
-    borderRadius: 7,
-    backgroundColor: PURPLE_LIGHT,
-    marginVertical: 7,
+  progressFill: {
     width: "100%",
-    overflow: "hidden",
+    height: "100%",
+    borderRadius: 70,
+    borderWidth: 10,
+    borderColor: colors.primary[500],
+    transformOrigin: "center",
   },
-  progressBarFill: {
-    height: 9,
-    borderRadius: 7,
-    backgroundColor: PURPLE,
+  donutChartLegends: {
+    marginLeft: spacing.lg,
+    justifyContent: "center",
   },
-  catSubRow: {
+  donutChartLegendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  donutChartLegendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: spacing.sm,
+  },
+  donutChartLegendLabel: {
+    fontSize: typography.fontSizes.sm,
+    color: colors.text.secondary,
+    fontWeight: "600" as const,
+  },
+  categoriesTabWrapper: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  categoryCard: {
+    padding: spacing.lg,
+    borderRadius: borderRadius["3xl"],
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    marginBottom: spacing.md,
+    ...shadows.lg,
+  },
+  categoryCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 4,
+    marginBottom: spacing.sm,
   },
-  catSpent: {
-    color: PURPLE,
-    fontSize: 15,
-    fontWeight: "bold",
-  },
-  catUpcoming: {
-    color: PURPLE,
-    fontSize: 15,
-    fontWeight: "bold",
-  },
-  footer: {
-    marginTop: 30,
+  categoryCardHeaderLeft: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
   },
-  footerText: {
-    color: GREY,
-    fontSize: 14,
-    letterSpacing: 0.2,
+  categoryIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+  },
+  categoryName: {
+    fontSize: typography.fontSizes.lg,
+    fontWeight: "600" as const,
+    color: colors.text.primary,
+  },
+  categoryBudget: {
+    fontSize: typography.fontSizes.sm,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+  },
+  categoryCardHeaderRight: {
+    alignItems: "flex-end",
+  },
+  categorySpent: {
+    fontSize: typography.fontSizes.lg,
+    fontWeight: "700" as const,
+    color: colors.text.primary,
+  },
+  categoryPercent: {
+    fontSize: typography.fontSizes.sm,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+  },
+  categoryProgressBarBg: {
+    height: 8,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.background.secondary,
+    marginTop: spacing.sm,
+  },
+  categoryProgressBarFill: {
+    height: "100%",
+    borderRadius: borderRadius.full,
   },
 });

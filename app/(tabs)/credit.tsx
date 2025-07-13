@@ -1,48 +1,71 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import React from "react";
+import { useRouter } from "expo-router";
+import React, { useEffect } from "react";
 import {
   Dimensions,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { useAuth } from "../auth/AuthContext";
+import {
+  colors,
+  spacing,
+  borderRadius,
+  shadows,
+  typography,
+} from "../../constants/theme";
 
-// Color palette: all purple and grey but with a unique, modern twist
-const PURPLE = "#7C3AED";
-const PURPLE_LIGHT = "#E9D5FF";
-const GREY = "#A1A1AA";
-const GREY_DARK = "#52525B";
-const GREY_LIGHT = "#F4F4F5";
-const WHITE = "#FFF";
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const creditOptions = [
   {
     icon: (
-      <MaterialCommunityIcons name="bank-outline" size={28} color={PURPLE} />
+      <MaterialCommunityIcons
+        name="bank-outline"
+        size={28}
+        color={colors.primary[500]}
+      />
     ),
     name: "Loans",
     desc: "Flexible options for big dreams",
     bg: "#EBDFFC",
   },
   {
-    icon: <MaterialCommunityIcons name="car" size={28} color={PURPLE} />,
+    icon: (
+      <MaterialCommunityIcons
+        name="car"
+        size={28}
+        color={colors.primary[500]}
+      />
+    ),
     name: "Auto finance",
     desc: "Drive now, pay later",
     bg: "#F3EDFC",
   },
   {
-    icon: <MaterialCommunityIcons name="home-roof" size={28} color={PURPLE} />,
+    icon: (
+      <MaterialCommunityIcons
+        name="home-roof"
+        size={28}
+        color={colors.primary[500]}
+      />
+    ),
     name: "Renovation credit",
     desc: "Upgrade your place",
     bg: "#EFF1F8",
   },
   {
     icon: (
-      <MaterialCommunityIcons name="swap-horizontal" size={28} color={PURPLE} />
+      <MaterialCommunityIcons
+        name="swap-horizontal"
+        size={28}
+        color={colors.primary[500]}
+      />
     ),
     name: "Debt optimizer",
     desc: "Merge & manage debts",
@@ -53,7 +76,7 @@ const creditOptions = [
       <MaterialCommunityIcons
         name="credit-card-outline"
         size={28}
-        color={PURPLE}
+        color={colors.primary[500]}
       />
     ),
     name: "Cards explorer",
@@ -65,7 +88,7 @@ const creditOptions = [
       <MaterialCommunityIcons
         name="home-city-outline"
         size={28}
-        color={PURPLE}
+        color={colors.primary[500]}
       />
     ),
     name: "Mortgages",
@@ -75,224 +98,283 @@ const creditOptions = [
 ];
 
 export default function CreditScreen() {
+  const router = useRouter();
+  const { isLoggedIn } = useAuth();
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.replace("/auth/Login");
+    }
+  }, [isLoggedIn]);
+
+  if (!isLoggedIn) {
+    return null;
+  }
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: GREY_LIGHT }}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 32 }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarTxt}>BA</Text>
+        <LinearGradient
+          colors={["rgba(34, 197, 94, 0.1)", "rgba(34, 197, 94, 0.05)"]}
+          style={styles.header}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <LinearGradient
+                colors={[colors.primary[500], "#8B5CF6"]}
+                style={styles.headerAvatar}
+              >
+                <Text style={styles.headerAvatarText}>BA</Text>
+              </LinearGradient>
+              <View>
+                <Text style={styles.headerTitle}>Credit & Offers</Text>
+                <Text style={styles.headerSubtitle}>
+                  Build your financial future
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity style={styles.headerButton}>
+              <Feather
+                name="help-circle"
+                size={24}
+                color={colors.primary[500]}
+              />
+            </TouchableOpacity>
           </View>
-          <Text style={styles.screenTitle}>Credit & Offers</Text>
-          <TouchableOpacity>
-            <Feather name="help-circle" size={22} color={PURPLE} />
-          </TouchableOpacity>
-        </View>
+        </LinearGradient>
 
-        {/* Credit options - unique grid layout */}
-        <View style={styles.creditGridWrap}>
-          {creditOptions.map((opt, idx) => (
+        {/* Credit options - vertical stack layout */}
+        <View style={styles.verticalWrapper}>
+          {creditOptions.map((opt) => (
             <TouchableOpacity
               key={opt.name}
-              style={[styles.creditTile, { backgroundColor: opt.bg }]}
+              style={[styles.verticalCard, { backgroundColor: opt.bg }]}
             >
-              <View style={styles.creditTileIcon}>{opt.icon}</View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.creditTileTitle}>{opt.name}</Text>
-                <Text style={styles.creditTileDesc}>{opt.desc}</Text>
+              <LinearGradient
+                colors={["#FFFFFF", "#F8FAFC"]}
+                style={styles.verticalCardIconBg}
+              >
+                {opt.icon}
+              </LinearGradient>
+              <View style={styles.verticalCardContent}>
+                <Text style={styles.verticalCardTitle}>{opt.name}</Text>
+                <Text style={styles.verticalCardDesc}>{opt.desc}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={22} color={PURPLE} />
+              <Ionicons
+                name="chevron-forward"
+                size={22}
+                color={colors.primary[500]}
+              />
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Offers section */}
-        <Text style={styles.sectionHeadline}>
-          Exclusive Offers & Credit Boost
-        </Text>
-        <View style={styles.offerCard}>
-          <View style={styles.offerIcons}>
-            <MaterialCommunityIcons
-              name="star-four-points"
-              size={30}
-              color={PURPLE}
-              style={{ opacity: 0.8 }}
-            />
-            <MaterialCommunityIcons
-              name="star-outline"
-              size={30}
-              color={GREY_DARK}
-              style={{ marginHorizontal: 9, opacity: 0.63 }}
-            />
-            <MaterialCommunityIcons
-              name="star-four-points"
-              size={30}
-              color={PURPLE_LIGHT}
-              style={{ opacity: 0.8 }}
-            />
-          </View>
-          <Text style={styles.offerHeadline}>
-            Boost your credit with Rent Shield
+        <View style={styles.offersWrapper}>
+          <Text style={styles.offersTitle}>
+            Exclusive Offers & Credit Boost
           </Text>
-          <Text style={styles.offerDesc}>
-            Each new rent payment helps build your credit. We’ll update
-            Experian, Equifax, and TransUnion for you.
-          </Text>
-          <TouchableOpacity style={styles.offerBtn}>
-            <Text style={styles.offerBtnText}>Get Started</Text>
-            <Feather
-              name="arrow-right"
-              size={17}
-              color={PURPLE}
-              style={{ marginLeft: 7 }}
-            />
-          </TouchableOpacity>
+          <LinearGradient
+            colors={["#FFFFFF", "#F8FAFC"]}
+            style={styles.offersCard}
+          >
+            <View style={styles.offersStarsRow}>
+              <MaterialCommunityIcons
+                name="star-four-points"
+                size={30}
+                color={colors.primary[500]}
+                style={{ opacity: 0.8 }}
+              />
+              <MaterialCommunityIcons
+                name="star-outline"
+                size={30}
+                color={colors.secondary[600]}
+                style={{ marginHorizontal: 9, opacity: 0.63 }}
+              />
+              <MaterialCommunityIcons
+                name="star-four-points"
+                size={30}
+                color={colors.primary[100]}
+                style={{ opacity: 0.8 }}
+              />
+            </View>
+            <Text style={styles.offersCardTitle}>
+              Boost your credit with Rent Shield
+            </Text>
+            <Text style={styles.offersCardDesc}>
+              Each new rent payment helps build your credit. We&apos;ll update
+              Experian, Equifax, and TransUnion for you.
+            </Text>
+            <LinearGradient
+              colors={[colors.primary[500], "#8B5CF6"]}
+              style={styles.offersButton}
+            >
+              <Text style={styles.offersButtonText}>Get Started</Text>
+              <Feather
+                name="arrow-right"
+                size={18}
+                color="white"
+                style={{ marginLeft: 8 }}
+              />
+            </LinearGradient>
+          </LinearGradient>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const CARD_RADIUS = 22;
-
 const styles = StyleSheet.create({
-  header: {
-    paddingTop: 34,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 28,
-    backgroundColor: GREY_LIGHT,
-    marginBottom: 8,
-  },
-  avatar: {
-    backgroundColor: PURPLE_LIGHT,
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 3,
-  },
-  avatarTxt: {
-    color: PURPLE,
-    fontWeight: "900",
-    fontSize: 20,
-    letterSpacing: 0.3,
-  },
-  screenTitle: {
+  container: {
     flex: 1,
-    textAlign: "center",
-    fontSize: 24,
-    fontWeight: "900",
-    color: GREY_DARK,
-    letterSpacing: 0.3,
-    marginRight: 30,
+    backgroundColor: colors.background.secondary,
   },
-  creditGridWrap: {
-    marginHorizontal: 12,
-    marginTop: 2,
-    marginBottom: 18,
-    flexWrap: "wrap",
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: spacing["2xl"],
+  },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    borderBottomLeftRadius: borderRadius["3xl"],
+    borderBottomRightRadius: borderRadius["3xl"],
+  },
+  headerContent: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
   },
-  creditTile: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: CARD_RADIUS,
-    paddingVertical: 13,
-    paddingHorizontal: 13,
-    marginBottom: 12,
-    width: (SCREEN_WIDTH - 36) / 2,
-    minHeight: 84,
-    marginHorizontal: 3,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
   },
-  creditTileIcon: {
-    backgroundColor: WHITE,
-    borderRadius: 13,
-    width: 41,
-    height: 41,
+  headerAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 11,
+    marginRight: spacing.md,
   },
-  creditTileTitle: {
-    fontWeight: "900",
-    fontSize: 16,
-    color: GREY_DARK,
-    marginBottom: 1,
+  headerAvatarText: {
+    color: "white",
+    fontWeight: "700" as const,
+    fontSize: typography.fontSizes.xl,
   },
-  creditTileDesc: {
-    color: GREY,
-    fontSize: 13,
-    fontWeight: "600",
-    flexShrink: 1,
+  headerTitle: {
+    fontSize: typography.fontSizes["2xl"],
+    fontWeight: "700" as const,
+    color: colors.text.primary,
   },
-  sectionHeadline: {
-    color: GREY_DARK,
-    fontWeight: "900",
-    fontSize: 17,
-    marginLeft: 24,
-    marginTop: 2,
-    marginBottom: 4,
-    letterSpacing: 0.1,
+  headerSubtitle: {
+    fontSize: typography.fontSizes.base,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
   },
-  offerCard: {
-    backgroundColor: "#fff",
-    borderRadius: CARD_RADIUS,
-    marginHorizontal: 16,
-    marginTop: 8,
-    padding: 24,
-    shadowColor: PURPLE,
-    shadowOpacity: 0.05,
-    shadowRadius: 7,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-    marginBottom: 18,
-    alignItems: "flex-start",
+  headerButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius.xl,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.md,
   },
-  offerIcons: {
+
+  verticalWrapper: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+  },
+  verticalCard: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 13,
-    marginLeft: -2,
+    borderRadius: borderRadius["3xl"],
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    width: "100%",
+    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors.border.light,
   },
-  offerHeadline: {
-    fontWeight: "900",
-    color: PURPLE,
-    fontSize: 17,
-    marginBottom: 7,
-    letterSpacing: 0.1,
+  verticalCardIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+    ...shadows.sm,
   },
-  offerDesc: {
-    color: GREY_DARK,
-    fontWeight: "600",
-    fontSize: 14.5,
-    marginBottom: 13,
-    letterSpacing: 0.04,
+  verticalCardContent: {
+    flex: 1,
   },
-  offerBtn: {
+  verticalCardTitle: {
+    fontWeight: "700" as const,
+    fontSize: typography.fontSizes.lg,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  verticalCardDesc: {
+    color: colors.text.secondary,
+    fontSize: typography.fontSizes.sm,
+    fontWeight: "500" as const,
+  },
+  offersWrapper: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+  },
+  offersTitle: {
+    color: colors.text.primary,
+    fontWeight: "700" as const,
+    fontSize: typography.fontSizes.lg,
+    marginBottom: spacing.md,
+  },
+  offersCard: {
+    borderRadius: borderRadius["3xl"],
+    padding: spacing.xl,
+    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  offersStarsRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: spacing.md,
+  },
+  offersCardTitle: {
+    color: colors.text.primary,
+    fontWeight: "700" as const,
+    fontSize: typography.fontSizes.lg,
+    textAlign: "center" as const,
+    marginBottom: spacing.sm,
+  },
+  offersCardDesc: {
+    color: colors.text.secondary,
+    fontSize: typography.fontSizes.base,
+    textAlign: "center" as const,
+    marginBottom: spacing.lg,
+    lineHeight: typography.fontSizes.base * 1.5,
+  },
+  offersButton: {
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: PURPLE_LIGHT,
-    paddingHorizontal: 22,
-    paddingVertical: 11,
-    borderRadius: 13,
-    marginTop: 2,
+    justifyContent: "center",
+    borderRadius: borderRadius.xl,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    marginTop: spacing.md,
   },
-  offerBtnText: {
-    color: PURPLE,
-    fontWeight: "900",
-    fontSize: 15,
+  offersButtonText: {
+    color: "white",
+    fontWeight: "700" as const,
+    fontSize: typography.fontSizes.base,
   },
 });
