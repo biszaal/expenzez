@@ -12,8 +12,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import {
-  colors,
   spacing,
   borderRadius,
   shadows,
@@ -25,36 +25,20 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 const creditOptions = [
   {
     icon: (
-      <MaterialCommunityIcons
-        name="bank-outline"
-        size={28}
-        color={colors.primary[500]}
-      />
+      <MaterialCommunityIcons name="bank-outline" size={28} color="#3B82F6" />
     ),
     name: "Loans",
     desc: "Flexible options for big dreams",
     bg: "#EBDFFC",
   },
   {
-    icon: (
-      <MaterialCommunityIcons
-        name="car"
-        size={28}
-        color={colors.primary[500]}
-      />
-    ),
+    icon: <MaterialCommunityIcons name="car" size={28} color="#3B82F6" />,
     name: "Auto finance",
     desc: "Drive now, pay later",
     bg: "#F3EDFC",
   },
   {
-    icon: (
-      <MaterialCommunityIcons
-        name="home-roof"
-        size={28}
-        color={colors.primary[500]}
-      />
-    ),
+    icon: <MaterialCommunityIcons name="home-roof" size={28} color="#3B82F6" />,
     name: "Renovation credit",
     desc: "Upgrade your place",
     bg: "#EFF1F8",
@@ -64,7 +48,7 @@ const creditOptions = [
       <MaterialCommunityIcons
         name="swap-horizontal"
         size={28}
-        color={colors.primary[500]}
+        color="#3B82F6"
       />
     ),
     name: "Debt optimizer",
@@ -76,7 +60,7 @@ const creditOptions = [
       <MaterialCommunityIcons
         name="credit-card-outline"
         size={28}
-        color={colors.primary[500]}
+        color="#3B82F6"
       />
     ),
     name: "Cards explorer",
@@ -88,7 +72,7 @@ const creditOptions = [
       <MaterialCommunityIcons
         name="home-city-outline"
         size={28}
-        color={colors.primary[500]}
+        color="#3B82F6"
       />
     ),
     name: "Mortgages",
@@ -100,6 +84,7 @@ const creditOptions = [
 export default function CreditScreen() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
+  const { colors } = useTheme();
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -112,7 +97,12 @@ export default function CreditScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: colors.background.secondary },
+      ]}
+    >
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -132,13 +122,27 @@ export default function CreditScreen() {
                 <Text style={styles.headerAvatarText}>BA</Text>
               </LinearGradient>
               <View>
-                <Text style={styles.headerTitle}>Credit & Offers</Text>
-                <Text style={styles.headerSubtitle}>
+                <Text
+                  style={[styles.headerTitle, { color: colors.text.primary }]}
+                >
+                  Credit & Offers
+                </Text>
+                <Text
+                  style={[
+                    styles.headerSubtitle,
+                    { color: colors.text.secondary },
+                  ]}
+                >
                   Build your financial future
                 </Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.headerButton}>
+            <TouchableOpacity
+              style={[
+                styles.headerButton,
+                { backgroundColor: colors.background.primary },
+              ]}
+            >
               <Feather
                 name="help-circle"
                 size={24}
@@ -162,8 +166,22 @@ export default function CreditScreen() {
                 {opt.icon}
               </LinearGradient>
               <View style={styles.verticalCardContent}>
-                <Text style={styles.verticalCardTitle}>{opt.name}</Text>
-                <Text style={styles.verticalCardDesc}>{opt.desc}</Text>
+                <Text
+                  style={[
+                    styles.verticalCardTitle,
+                    { color: colors.text.primary },
+                  ]}
+                >
+                  {opt.name}
+                </Text>
+                <Text
+                  style={[
+                    styles.verticalCardDesc,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  {opt.desc}
+                </Text>
               </View>
               <Ionicons
                 name="chevron-forward"
@@ -176,12 +194,12 @@ export default function CreditScreen() {
 
         {/* Offers section */}
         <View style={styles.offersWrapper}>
-          <Text style={styles.offersTitle}>
+          <Text style={[styles.offersTitle, { color: colors.text.primary }]}>
             Exclusive Offers & Credit Boost
           </Text>
           <LinearGradient
             colors={["#FFFFFF", "#F8FAFC"]}
-            style={styles.offersCard}
+            style={[styles.offersCard, { borderColor: colors.border.light }]}
           >
             <View style={styles.offersStarsRow}>
               <MaterialCommunityIcons
@@ -203,10 +221,14 @@ export default function CreditScreen() {
                 style={{ opacity: 0.8 }}
               />
             </View>
-            <Text style={styles.offersCardTitle}>
+            <Text
+              style={[styles.offersCardTitle, { color: colors.text.primary }]}
+            >
               Boost your credit with Rent Shield
             </Text>
-            <Text style={styles.offersCardDesc}>
+            <Text
+              style={[styles.offersCardDesc, { color: colors.text.secondary }]}
+            >
               Each new rent payment helps build your credit. We&apos;ll update
               Experian, Equifax, and TransUnion for you.
             </Text>
@@ -232,7 +254,6 @@ export default function CreditScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.secondary,
   },
   scrollView: {
     flex: 1,
@@ -271,17 +292,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: typography.fontSizes["2xl"],
     fontWeight: "700" as const,
-    color: colors.text.primary,
   },
   headerSubtitle: {
     fontSize: typography.fontSizes.base,
-    color: colors.text.secondary,
     marginTop: spacing.xs,
   },
   headerButton: {
     width: 40,
     height: 40,
-    backgroundColor: colors.background.primary,
     borderRadius: borderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
@@ -302,7 +320,7 @@ const styles = StyleSheet.create({
     width: "100%",
     ...shadows.lg,
     borderWidth: 1,
-    borderColor: colors.border.light,
+    borderColor: "#E5E7EB",
   },
   verticalCardIconBg: {
     width: 48,
@@ -319,11 +337,9 @@ const styles = StyleSheet.create({
   verticalCardTitle: {
     fontWeight: "700" as const,
     fontSize: typography.fontSizes.lg,
-    color: colors.text.primary,
     marginBottom: spacing.xs,
   },
   verticalCardDesc: {
-    color: colors.text.secondary,
     fontSize: typography.fontSizes.sm,
     fontWeight: "500" as const,
   },
@@ -332,7 +348,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   offersTitle: {
-    color: colors.text.primary,
     fontWeight: "700" as const,
     fontSize: typography.fontSizes.lg,
     marginBottom: spacing.md,
@@ -342,7 +357,6 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     ...shadows.lg,
     borderWidth: 1,
-    borderColor: colors.border.light,
   },
   offersStarsRow: {
     flexDirection: "row",
@@ -350,14 +364,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   offersCardTitle: {
-    color: colors.text.primary,
     fontWeight: "700" as const,
     fontSize: typography.fontSizes.lg,
     textAlign: "center" as const,
     marginBottom: spacing.sm,
   },
   offersCardDesc: {
-    color: colors.text.secondary,
     fontSize: typography.fontSizes.base,
     textAlign: "center" as const,
     marginBottom: spacing.lg,

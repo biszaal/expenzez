@@ -12,80 +12,18 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import {
-  colors,
   spacing,
   borderRadius,
   shadows,
   typography,
 } from "../../constants/theme";
 
-const profileOptions = [
-  {
-    icon: (
-      <Ionicons name="person-outline" size={24} color={colors.primary[500]} />
-    ),
-    title: "Personal Information",
-    subtitle: "Update your details",
-    route: "/profile",
-  },
-  {
-    icon: (
-      <Ionicons name="shield-outline" size={24} color={colors.primary[500]} />
-    ),
-    title: "Security",
-    subtitle: "Password, 2FA, and more",
-    route: "/security",
-  },
-  {
-    icon: (
-      <Ionicons
-        name="notifications-outline"
-        size={24}
-        color={colors.primary[500]}
-      />
-    ),
-    title: "Notifications",
-    subtitle: "Manage your alerts",
-    route: "/notifications",
-  },
-  {
-    icon: (
-      <Ionicons name="card-outline" size={24} color={colors.primary[500]} />
-    ),
-    title: "Payment Methods",
-    subtitle: "Cards and bank accounts",
-    route: "/payment",
-  },
-  {
-    icon: (
-      <Ionicons
-        name="help-circle-outline"
-        size={24}
-        color={colors.primary[500]}
-      />
-    ),
-    title: "Help & Support",
-    subtitle: "Get help when you need it",
-    route: "/help",
-  },
-  {
-    icon: (
-      <Ionicons
-        name="document-text-outline"
-        size={24}
-        color={colors.primary[500]}
-      />
-    ),
-    title: "Terms & Privacy",
-    subtitle: "Legal information",
-    route: "/terms",
-  },
-];
-
-export default function ProfileScreen() {
+export default function AccountScreen() {
   const router = useRouter();
   const { isLoggedIn, logout } = useAuth();
+  const { colors, isDark } = useTheme();
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -110,25 +48,149 @@ export default function ProfileScreen() {
     ]);
   };
 
+  // Dynamic colors for dark mode
+  const getStatColors = () => {
+    if (isDark) {
+      return {
+        creditScore: {
+          gradient: ["#1F2937", "#374151"] as const,
+          text: "#D1D5DB",
+          icon: "#9CA3AF",
+        },
+        goals: {
+          gradient: ["#1E3A8A", "#2563EB"] as const,
+          text: "#E5E7EB",
+          icon: "#93C5FD",
+        },
+      };
+    }
+    return {
+      creditScore: {
+        gradient: ["#FEF3C7", "#FDE68A"] as const,
+        text: "#92400E",
+        icon: "#D97706",
+      },
+      goals: {
+        gradient: ["#DBEAFE", "#BFDBFE"] as const,
+        text: "#1D4ED8",
+        icon: "#1D4ED8",
+      },
+    };
+  };
+
+  const statColors = getStatColors();
+
+  const profileOptions = [
+    {
+      icon: (
+        <Ionicons name="person-outline" size={24} color={colors.primary[500]} />
+      ),
+      title: "Personal Information",
+      subtitle: "Update your details",
+      route: "/profile",
+    },
+    {
+      icon: (
+        <Ionicons name="shield-outline" size={24} color={colors.primary[500]} />
+      ),
+      title: "Security",
+      subtitle: "Password, 2FA, and more",
+      route: "/security",
+    },
+    {
+      icon: (
+        <Ionicons
+          name="notifications-outline"
+          size={24}
+          color={colors.primary[500]}
+        />
+      ),
+      title: "Notifications",
+      subtitle: "Manage your alerts",
+      route: "/notifications",
+    },
+    {
+      icon: (
+        <Ionicons name="card-outline" size={24} color={colors.primary[500]} />
+      ),
+      title: "Payment Methods",
+      subtitle: "Cards and bank accounts",
+      route: "/payment",
+    },
+    {
+      icon: (
+        <Ionicons
+          name="help-circle-outline"
+          size={24}
+          color={colors.primary[500]}
+        />
+      ),
+      title: "Help & Support",
+      subtitle: "Get help when you need it",
+      route: "/help",
+    },
+    {
+      icon: (
+        <Ionicons
+          name="document-text-outline"
+          size={24}
+          color={colors.primary[500]}
+        />
+      ),
+      title: "Terms & Privacy",
+      subtitle: "Legal information",
+      route: "/terms",
+    },
+  ];
+
   if (!isLoggedIn) {
     return null;
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: colors.background.secondary },
+      ]}
+    >
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: colors.background.primary },
+          ]}
+        >
           <View style={styles.headerContent}>
-            <View>
-              <Text style={styles.headerTitle}>Profile</Text>
-              <Text style={styles.headerSubtitle}>Manage your account</Text>
+            <View style={styles.headerLeft}>
+              <View>
+                <Text
+                  style={[styles.headerTitle, { color: colors.text.primary }]}
+                >
+                  Account
+                </Text>
+                <Text
+                  style={[
+                    styles.headerSubtitle,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  Manage your account
+                </Text>
+              </View>
             </View>
-            <TouchableOpacity style={styles.headerButton}>
+            <TouchableOpacity
+              style={[
+                styles.headerButton,
+                { backgroundColor: colors.background.secondary },
+                shadows.md,
+              ]}
+            >
               <Ionicons
                 name="settings-outline"
                 size={24}
@@ -142,7 +204,7 @@ export default function ProfileScreen() {
         <View style={styles.profileCard}>
           <LinearGradient
             colors={[colors.primary[500], "#8B5CF6"]}
-            style={styles.profileGradient}
+            style={[styles.profileGradient, shadows.lg]}
           >
             <View style={styles.profileInfo}>
               <View style={styles.avatarContainer}>
@@ -183,52 +245,110 @@ export default function ProfileScreen() {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <LinearGradient
-              colors={["#FEF3C7", "#FDE68A"]}
-              style={styles.statGradient}
+              colors={statColors.creditScore.gradient}
+              style={[styles.statGradient, shadows.md]}
             >
               <View style={styles.statIconContainer}>
-                <Feather name="trending-up" size={20} color="#D97706" />
+                <Feather
+                  name="trending-up"
+                  size={20}
+                  color={statColors.creditScore.icon}
+                />
               </View>
-              <Text style={styles.statLabel}>Credit Score</Text>
-              <Text style={styles.statValue}>720</Text>
+              <Text
+                style={[
+                  styles.statLabel,
+                  { color: statColors.creditScore.text },
+                ]}
+              >
+                Credit Score
+              </Text>
+              <Text
+                style={[
+                  styles.statValue,
+                  { color: statColors.creditScore.text },
+                ]}
+              >
+                720
+              </Text>
             </LinearGradient>
           </View>
 
           <View style={styles.statCard}>
             <LinearGradient
-              colors={["#DBEAFE", "#BFDBFE"]}
-              style={styles.statGradient}
+              colors={statColors.goals.gradient}
+              style={[styles.statGradient, shadows.md]}
             >
               <View style={styles.statIconContainer}>
                 <MaterialCommunityIcons
                   name="target"
                   size={20}
-                  color="#1D4ED8"
+                  color={statColors.goals.icon}
                 />
               </View>
-              <Text style={styles.statLabel}>Goals Met</Text>
-              <Text style={styles.statValue}>3/5</Text>
+              <Text
+                style={[styles.statLabel, { color: statColors.goals.text }]}
+              >
+                Goals Met
+              </Text>
+              <Text
+                style={[styles.statValue, { color: statColors.goals.text }]}
+              >
+                3/5
+              </Text>
             </LinearGradient>
           </View>
         </View>
 
         {/* Menu Options */}
         <View style={styles.menuSection}>
-          <Text style={styles.sectionTitle}>Account Settings</Text>
-          <View style={styles.menuCard}>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+            Account Settings
+          </Text>
+          <View
+            style={[
+              styles.menuCard,
+              {
+                backgroundColor: colors.background.primary,
+                borderColor: colors.border.light,
+              },
+              shadows.lg,
+            ]}
+          >
             {profileOptions.map((option, index) => (
               <TouchableOpacity
                 key={option.title}
                 style={[
                   styles.menuItem,
-                  index !== profileOptions.length - 1 && styles.menuItemBorder,
+                  index !== profileOptions.length - 1 && {
+                    borderBottomColor: colors.border.light,
+                    borderBottomWidth: 1,
+                  },
                 ]}
                 onPress={() => router.push(option.route as any)}
               >
-                <View style={styles.menuIconContainer}>{option.icon}</View>
+                <View
+                  style={[
+                    styles.menuIconContainer,
+                    { backgroundColor: colors.primary[100] },
+                  ]}
+                >
+                  {option.icon}
+                </View>
                 <View style={styles.menuContent}>
-                  <Text style={styles.menuTitle}>{option.title}</Text>
-                  <Text style={styles.menuSubtitle}>{option.subtitle}</Text>
+                  <Text
+                    style={[styles.menuTitle, { color: colors.text.primary }]}
+                  >
+                    {option.title}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.menuSubtitle,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
+                    {option.subtitle}
+                  </Text>
                 </View>
                 <Ionicons
                   name="chevron-forward"
@@ -242,9 +362,29 @@ export default function ProfileScreen() {
 
         {/* Logout Button */}
         <View style={styles.logoutSection}>
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-            <Ionicons name="log-out-outline" size={20} color="#DC2626" />
-            <Text style={styles.logoutText}>Logout</Text>
+          <TouchableOpacity
+            onPress={handleLogout}
+            style={[
+              styles.logoutButton,
+              {
+                backgroundColor: isDark ? "#7F1D1D" : "#FEF2F2",
+                borderColor: isDark ? "#991B1B" : "#FECACA",
+              },
+            ]}
+          >
+            <Ionicons
+              name="log-out-outline"
+              size={20}
+              color={isDark ? "#FCA5A5" : "#DC2626"}
+            />
+            <Text
+              style={[
+                styles.logoutText,
+                { color: isDark ? "#FCA5A5" : "#DC2626" },
+              ]}
+            >
+              Logout
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -256,8 +396,10 @@ export default function ProfileScreen() {
           >
             <Text style={styles.appLogoText}>expenzez</Text>
           </LinearGradient>
-          <Text style={styles.appVersion}>Version 1.0.0</Text>
-          <Text style={styles.appCopyright}>
+          <Text style={[styles.appVersion, { color: colors.text.secondary }]}>
+            Version 1.0.0
+          </Text>
+          <Text style={[styles.appCopyright, { color: colors.text.tertiary }]}>
             © 2024 expenzez. All rights reserved.
           </Text>
         </View>
@@ -269,7 +411,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.secondary,
   },
   scrollView: {
     flex: 1,
@@ -280,31 +421,39 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.background.primary,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.xl,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+  },
   headerTitle: {
     fontSize: typography.fontSizes["2xl"],
     fontWeight: "700" as const,
-    color: colors.text.primary,
   },
   headerSubtitle: {
     fontSize: typography.fontSizes.base,
-    color: colors.text.secondary,
     marginTop: spacing.xs,
   },
   headerButton: {
     width: 40,
     height: 40,
-    backgroundColor: colors.background.primary,
     borderRadius: borderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
-    ...shadows.md,
   },
   profileCard: {
     marginHorizontal: spacing.lg,
@@ -313,7 +462,6 @@ const styles = StyleSheet.create({
   profileGradient: {
     borderRadius: borderRadius["3xl"],
     padding: spacing.lg,
-    ...shadows.lg,
   },
   profileInfo: {
     marginBottom: spacing.md,
@@ -401,7 +549,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     alignItems: "center",
-    ...shadows.md,
   },
   statIconContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.5)",
@@ -413,13 +560,11 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSizes.sm,
     fontWeight: "600" as const,
     textAlign: "center" as const,
-    color: "#92400E",
-  } as import("react-native").TextStyle,
+  },
   statValue: {
     fontSize: typography.fontSizes.xl,
     fontWeight: "700" as const,
-    color: "#92400E",
-  } as import("react-native").TextStyle,
+  },
   menuSection: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.lg,
@@ -427,15 +572,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: typography.fontSizes.lg,
     fontWeight: "700" as const,
-    color: colors.text.primary,
     marginBottom: spacing.md,
   },
   menuCard: {
-    backgroundColor: colors.background.primary,
     borderRadius: borderRadius["3xl"],
-    ...shadows.lg,
     borderWidth: 1,
-    borderColor: colors.border.light,
   },
   menuItem: {
     flexDirection: "row",
@@ -443,12 +584,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
-  menuItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
   menuIconContainer: {
-    backgroundColor: colors.primary[500] + "20",
     borderRadius: borderRadius.xl,
     padding: spacing.md,
     marginRight: spacing.md,
@@ -461,18 +597,15 @@ const styles = StyleSheet.create({
   menuTitle: {
     fontSize: typography.fontSizes.base,
     fontWeight: "600" as const,
-    color: colors.text.primary,
-  } as import("react-native").TextStyle,
+  },
   menuSubtitle: {
     fontSize: typography.fontSizes.sm,
-    color: colors.text.secondary,
-  } as import("react-native").TextStyle,
+  },
   logoutSection: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.lg,
   },
   logoutButton: {
-    backgroundColor: "#FEF2F2",
     borderRadius: borderRadius["3xl"],
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -480,14 +613,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#FECACA",
   },
   logoutText: {
-    color: "#DC2626",
     fontWeight: "600" as const,
     fontSize: typography.fontSizes.base,
     marginLeft: spacing.md,
-  } as import("react-native").TextStyle,
+  },
   appInfo: {
     alignItems: "center",
     marginHorizontal: spacing.lg,
@@ -502,15 +633,13 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "700" as const,
     fontSize: typography.fontSizes.lg,
-  } as import("react-native").TextStyle,
+  },
   appVersion: {
     fontSize: typography.fontSizes.sm,
-    color: colors.text.secondary,
     marginTop: spacing.sm,
-  } as import("react-native").TextStyle,
+  },
   appCopyright: {
     fontSize: typography.fontSizes.xs,
-    color: colors.text.tertiary,
     marginTop: spacing.xs,
-  } as import("react-native").TextStyle,
+  },
 });

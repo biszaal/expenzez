@@ -3,29 +3,74 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "../../contexts/ThemeContext";
+import { spacing, borderRadius, shadows } from "../../constants/theme";
 
 export default function CreditScorePage() {
   const router = useRouter();
+  const { colors } = useTheme();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.topBar}>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        { backgroundColor: colors.background.secondary },
+      ]}
+    >
+      <View
+        style={[
+          styles.topBar,
+          { backgroundColor: colors.background.secondary },
+        ]}
+      >
         <TouchableOpacity
-          style={styles.backButton}
+          style={[
+            styles.backButton,
+            { backgroundColor: colors.background.primary },
+            shadows.sm,
+          ]}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={26} color="#2E2353" />
+          <Ionicons name="chevron-back" size={26} color={colors.primary[500]} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Credit Score</Text>
+        <Text style={[styles.topBarTitle, { color: colors.text.primary }]}>
+          Credit Score
+        </Text>
         <View style={{ width: 32 }} />
       </View>
-      <View style={styles.center}>
-        <Ionicons name="pie-chart" size={60} color="#7C4DFF" />
-        <Text style={styles.title}>Your Credit Score</Text>
-        <Text style={styles.score}>528</Text>
-        <Text style={styles.desc}>Next update: 27 July</Text>
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>See full report</Text>
+      <View style={styles.content}>
+        <View
+          style={[
+            styles.scoreCard,
+            { backgroundColor: colors.background.primary },
+            shadows.md,
+          ]}
+        >
+          <Text style={[styles.scoreTitle, { color: colors.text.primary }]}>
+            Your Credit Score
+          </Text>
+          <Text style={[styles.scoreValue, { color: colors.primary[500] }]}>
+            720
+          </Text>
+          <Text
+            style={[styles.scoreDescription, { color: colors.text.secondary }]}
+          >
+            Good credit score
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={[
+            styles.refreshButton,
+            { backgroundColor: colors.primary[500] },
+            shadows.sm,
+          ]}
+          onPress={() => {
+            // TODO: Implement refresh functionality
+          }}
+        >
+          <Ionicons name="refresh" size={20} color="white" />
+          <Text style={styles.refreshButtonText}>Refresh Score</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -33,7 +78,9 @@ export default function CreditScorePage() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F5F7FB" },
+  safeArea: {
+    flex: 1,
+  },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -41,7 +88,6 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     paddingBottom: 16,
     paddingHorizontal: 14,
-    backgroundColor: "#F5F7FB",
   },
   backButton: {
     width: 32,
@@ -49,52 +95,48 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 2,
   },
   topBarTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#2E2353",
   },
-  center: {
+  content: {
     flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+  },
+  scoreCard: {
+    borderRadius: 16,
+    padding: 24,
     alignItems: "center",
-    justifyContent: "center",
+    marginBottom: 24,
   },
-  title: {
-    fontSize: 20,
-    color: "#2E2353",
-    fontWeight: "700",
-    marginTop: 18,
-    marginBottom: 2,
+  scoreTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 8,
   },
-  score: {
+  scoreValue: {
     fontSize: 48,
     fontWeight: "bold",
-    color: "#7C4DFF",
-    marginVertical: 10,
+    marginBottom: 8,
   },
-  desc: {
-    color: "#7B7B93",
-    fontSize: 15,
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#7C4DFF",
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    marginTop: 6,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "600",
+  scoreDescription: {
     fontSize: 16,
+    fontWeight: "500",
+  },
+  refreshButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+  },
+  refreshButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
   },
 });

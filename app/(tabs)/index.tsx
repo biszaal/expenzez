@@ -1,6 +1,6 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dimensions,
   ScrollView,
@@ -8,23 +8,108 @@ import {
   TouchableOpacity,
   View,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import {
-  colors,
   spacing,
   borderRadius,
-  shadows,
   typography,
+  shadows,
 } from "../../constants/theme";
+import { bankingAPI } from "../../services/api";
+import { formatCurrency } from "../../utils/formatters";
+import BankLogo from "../../components/ui/BankLogo";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
+
+interface BankAccount {
+  id: string;
+  name: string;
+  bank: string;
+  balance: number;
+  currency: string;
+  accountNumber: string;
+}
+
+interface Transaction {
+  id: string;
+  amount: number;
+  currency: string;
+  description: string;
+  date: string;
+  [key: string]: any;
+}
 
 export default function HomeScreen() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
+  const { colors, shadows } = useTheme();
+
+  const [accounts, setAccounts] = useState<BankAccount[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [warning, setWarning] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const fetchData = async () => {
+      setLoading(true);
+      setWarning(null);
+      setError(null);
+      try {
+        const accountsRes = await bankingAPI.getAccounts();
+        console.log("Fetched accounts:", accountsRes);
+        if (accountsRes.warning) setWarning(accountsRes.warning);
+        const accountsData: BankAccount[] = accountsRes.accounts || [];
+        setAccounts(accountsData);
+        // Fetch transactions for all accounts
+        let allTxns: Transaction[] = [];
+        for (const acc of accountsData) {
+          const txnsRes = await bankingAPI.getTransactions(acc.id);
+          console.log(`Transactions for account ${acc.id}:`, txnsRes);
+          if (txnsRes.transactions) {
+            const normalized = txnsRes.transactions.map(
+              (tx: any, idx: number) => ({
+                id: tx.id || tx.transactionId || `${acc.id}-${idx}`,
+                amount: Number(tx.amount || tx.transactionAmount?.amount || 0),
+                currency:
+                  tx.currency || tx.transactionAmount?.currency || "GBP",
+                description:
+                  tx.description || tx.remittanceInformationUnstructured || "",
+                date: tx.date || tx.bookingDate || "",
+                ...tx,
+              })
+            );
+            allTxns = allTxns.concat(normalized);
+          }
+        }
+        allTxns.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        setTransactions(allTxns);
+      } catch (e: any) {
+        console.error("Error fetching accounts or transactions:", e);
+        if (e?.response?.data?.message) setError(e.response.data.message);
+        else setError("Failed to load bank data. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [isLoggedIn]);
+
+  // Calculate total balance
+  const totalBalance = accounts.reduce(
+    (sum, acc) => sum + (acc.balance || 0),
+    0
+  );
+  // Get up to 5 most recent transactions
+  const recentTransactions = transactions.slice(0, 5);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -37,22 +122,47 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: colors.background.secondary },
+      ]}
+    >
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: colors.background.primary },
+          ]}
+        >
           <View style={styles.headerContent}>
             <View>
-              <Text style={styles.headerTitle}>Good morning, Bishal</Text>
-              <Text style={styles.headerSubtitle}>
+              <Text
+                style={[styles.headerTitle, { color: colors.text.primary }]}
+              >
+                Good morning, Bishal
+              </Text>
+              <Text
+                style={[
+                  styles.headerSubtitle,
+                  { color: colors.text.secondary },
+                ]}
+              >
                 Let&apos;s check your finances
-          </Text>
+              </Text>
             </View>
-            <TouchableOpacity style={styles.headerButton}>
+            <TouchableOpacity
+              style={[
+                styles.headerButton,
+                { backgroundColor: colors.background.secondary },
+                shadows.md,
+              ]}
+            >
               <Ionicons
                 name="notifications-outline"
                 size={20}
@@ -66,15 +176,17 @@ export default function HomeScreen() {
         <View style={styles.balanceCardWrapper}>
           <LinearGradient
             colors={[colors.primary[500], "#8B5CF6"]}
-            style={styles.balanceCard}
+            style={[styles.balanceCard, shadows.lg]}
           >
             <View style={styles.balanceCardHeader}>
               <Text style={styles.balanceLabel}>Total Balance</Text>
               <TouchableOpacity>
                 <Ionicons name="eye-outline" size={20} color="white" />
-          </TouchableOpacity>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.balanceValue}>£2,847.50</Text>
+            <Text style={styles.balanceValue}>
+              {formatCurrency(totalBalance)}
+            </Text>
             <View style={styles.balanceChangeRow}>
               <View style={styles.balanceChangeBadge}>
                 <Text style={styles.balanceChangeText}>+12.5%</Text>
@@ -88,22 +200,22 @@ export default function HomeScreen() {
         <View style={styles.addBankCardWrapper}>
           <LinearGradient
             colors={["#FEF3C7", "#FDE68A"]}
-            style={styles.addBankCard}
+            style={[styles.addBankCard, shadows.lg]}
           >
             <View style={styles.addBankCardContent}>
               <View style={styles.addBankCardLeft}>
                 <View style={styles.addBankIconContainer}>
-            <MaterialCommunityIcons
+                  <MaterialCommunityIcons
                     name="bank-plus"
                     size={24}
                     color="#D97706"
-            />
-          </View>
+                  />
+                </View>
                 <View style={styles.addBankTextContainer}>
                   <Text style={styles.addBankTitle}>Connect Your Bank</Text>
                   <Text style={styles.addBankSubtitle}>
                     Link accounts for real-time data
-          </Text>
+                  </Text>
                 </View>
               </View>
               <TouchableOpacity
@@ -119,10 +231,20 @@ export default function HomeScreen() {
 
         {/* Quick Actions */}
         <View style={styles.sectionWrapper}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+            Quick Actions
+          </Text>
           <View style={styles.quickActionsRow}>
             <TouchableOpacity
-              style={[styles.quickActionCard, { marginRight: spacing.md }]}
+              style={[
+                styles.quickActionCard,
+                {
+                  marginRight: spacing.md,
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
             >
               <View
                 style={[
@@ -136,10 +258,25 @@ export default function HomeScreen() {
                   color={colors.primary[500]}
                 />
               </View>
-              <Text style={styles.quickActionLabel}>Add Expense</Text>
+              <Text
+                style={[
+                  styles.quickActionLabel,
+                  { color: colors.text.primary },
+                ]}
+              >
+                Add Expense
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.quickActionCard, { marginLeft: spacing.md }]}
+              style={[
+                styles.quickActionCard,
+                {
+                  marginLeft: spacing.md,
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
               onPress={() => router.push("/banks/connect" as any)}
             >
               <View
@@ -153,8 +290,15 @@ export default function HomeScreen() {
                   size={24}
                   color={colors.secondary[600]}
                 />
-          </View>
-              <Text style={styles.quickActionLabel}>Connect Bank</Text>
+              </View>
+              <Text
+                style={[
+                  styles.quickActionLabel,
+                  { color: colors.text.primary },
+                ]}
+              >
+                Connect Bank
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -162,29 +306,85 @@ export default function HomeScreen() {
         {/* Spending Overview */}
         <View style={styles.sectionWrapper}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>This Month</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              This Month
+            </Text>
             <TouchableOpacity>
-              <Text style={styles.sectionLink}>View All</Text>
-          </TouchableOpacity>
+              <Text
+                style={[styles.sectionLink, { color: colors.primary[500] }]}
+              >
+                View All
+              </Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.overviewCard}>
+          <View
+            style={[
+              styles.overviewCard,
+              {
+                backgroundColor: colors.background.primary,
+                borderColor: colors.border.light,
+              },
+              shadows.sm,
+            ]}
+          >
             <View style={styles.overviewRow}>
               <View>
-                <Text style={styles.overviewLabel}>Spent</Text>
-                <Text style={styles.overviewValue}>£1,247.80</Text>
+                <Text
+                  style={[
+                    styles.overviewLabel,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  Spent
+                </Text>
+                <Text
+                  style={[styles.overviewValue, { color: colors.text.primary }]}
+                >
+                  £1,247.80
+                </Text>
               </View>
               <View style={{ alignItems: "flex-end" }}>
-                <Text style={styles.overviewLabel}>Budget</Text>
-                <Text style={styles.overviewValue}>£2,000</Text>
+                <Text
+                  style={[
+                    styles.overviewLabel,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  Budget
+                </Text>
+                <Text
+                  style={[styles.overviewValue, { color: colors.text.primary }]}
+                >
+                  £2,000
+                </Text>
               </View>
             </View>
             {/* Progress Bar */}
             <View style={styles.progressBarWrapper}>
               <View style={styles.progressBarRow}>
-                <Text style={styles.progressBarLabel}>62% used</Text>
-                <Text style={styles.progressBarLabel}>£752.20 left</Text>
+                <Text
+                  style={[
+                    styles.progressBarLabel,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  62% used
+                </Text>
+                <Text
+                  style={[
+                    styles.progressBarLabel,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  £752.20 left
+                </Text>
               </View>
-              <View style={styles.progressBarBg}>
+              <View
+                style={[
+                  styles.progressBarBg,
+                  { backgroundColor: colors.gray[200] },
+                ]}
+              >
                 <LinearGradient
                   colors={[colors.primary[500], "#8B5CF6"]}
                   start={{ x: 0, y: 0 }}
@@ -199,79 +399,116 @@ export default function HomeScreen() {
         {/* Recent Transactions */}
         <View style={styles.sectionWrapper}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              Recent Transactions
+            </Text>
             <TouchableOpacity>
-              <Text style={styles.sectionLink}>See All</Text>
+              <Text
+                style={[styles.sectionLink, { color: colors.primary[500] }]}
+              >
+                See All
+              </Text>
             </TouchableOpacity>
           </View>
           <View style={styles.transactionsList}>
-            <View style={styles.transactionItem}>
-              <View
-                style={[
-                  styles.transactionIcon,
-                  { backgroundColor: colors.error[100] },
-                ]}
-              >
-                <Ionicons
-                  name="restaurant-outline"
-                  size={20}
-                  color={colors.error[500]}
-                />
-              </View>
-              <View style={styles.transactionInfo}>
-                <Text style={styles.transactionTitle}>Restaurant</Text>
-                <Text style={styles.transactionSubtitle}>Today, 2:30 PM</Text>
-              </View>
-              <Text style={styles.transactionAmountNegative}>-£45.20</Text>
-            </View>
-            <View style={styles.transactionItem}>
-              <View
-                style={[
-                  styles.transactionIcon,
-                  { backgroundColor: colors.primary[100] },
-                ]}
-              >
-                <Ionicons
-                  name="car-outline"
-                  size={20}
-                  color={colors.primary[500]}
-                />
-              </View>
-              <View style={styles.transactionInfo}>
-                <Text style={styles.transactionTitle}>Uber</Text>
-                <Text style={styles.transactionSubtitle}>
-                  Yesterday, 8:15 AM
-                </Text>
-              </View>
-              <Text style={styles.transactionAmountNegative}>-£12.50</Text>
-            </View>
-            <View style={styles.transactionItem}>
-              <View
-                style={[
-                  styles.transactionIcon,
-                  { backgroundColor: colors.secondary[100] },
-                ]}
-              >
-                <Ionicons
-                  name="card-outline"
-                  size={20}
-                  color={colors.secondary[600]}
-                />
-              </View>
-              <View style={styles.transactionInfo}>
-                <Text style={styles.transactionTitle}>Salary</Text>
-                <Text style={styles.transactionSubtitle}>Mar 1, 9:00 AM</Text>
-              </View>
-              <Text style={styles.transactionAmountPositive}>+£3,200.00</Text>
-            </View>
+            {loading ? (
+              <ActivityIndicator size="small" color={colors.primary[500]} />
+            ) : recentTransactions.length === 0 ? (
+              <Text style={{ color: colors.text.secondary }}>
+                No transactions found.
+              </Text>
+            ) : (
+              recentTransactions.map((txn, idx) => (
+                <View
+                  key={txn.id || idx}
+                  style={[
+                    styles.transactionItem,
+                    {
+                      backgroundColor: colors.background.primary,
+                      borderColor: colors.border.light,
+                    },
+                    shadows.sm,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.transactionIcon,
+                      {
+                        backgroundColor:
+                          txn.amount < 0
+                            ? colors.error[100]
+                            : colors.success[100],
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={
+                        txn.amount < 0
+                          ? "arrow-down-outline"
+                          : "arrow-up-outline"
+                      }
+                      size={20}
+                      color={
+                        txn.amount < 0 ? colors.error[500] : colors.success[500]
+                      }
+                    />
+                  </View>
+                  <View style={styles.transactionInfo}>
+                    <Text
+                      style={[
+                        styles.transactionTitle,
+                        { color: colors.text.primary },
+                      ]}
+                    >
+                      {txn.description || txn.name || "Transaction"}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.transactionSubtitle,
+                        { color: colors.text.secondary },
+                      ]}
+                    >
+                      {txn.date ? new Date(txn.date).toLocaleString() : ""}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      txn.amount < 0
+                        ? styles.transactionAmountNegative
+                        : styles.transactionAmountPositive,
+                      {
+                        color:
+                          txn.amount < 0
+                            ? colors.error[600]
+                            : colors.success[600],
+                      },
+                    ]}
+                  >
+                    {formatCurrency(txn.amount)}
+                  </Text>
+                </View>
+              ))
+            )}
           </View>
         </View>
 
         {/* Categories */}
         <View style={styles.sectionWrapper}>
-          <Text style={styles.sectionTitle}>Top Categories</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+            Top Categories
+          </Text>
           <View style={styles.categoriesRow}>
-            <View style={[styles.categoryCard, { marginRight: spacing.md }]}>
+            <View
+              style={[
+                styles.categoryCard,
+                {
+                  marginRight: spacing.md,
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+            >
               <View
                 style={[
                   styles.categoryIcon,
@@ -284,11 +521,30 @@ export default function HomeScreen() {
                   color={colors.error[500]}
                 />
               </View>
-              <Text style={styles.categoryLabel}>Food</Text>
-              <Text style={styles.categoryAmount}>£320</Text>
+              <Text
+                style={[styles.categoryLabel, { color: colors.text.primary }]}
+              >
+                Food
+              </Text>
+              <Text
+                style={[
+                  styles.categoryAmount,
+                  { color: colors.text.secondary },
+                ]}
+              >
+                £320
+              </Text>
             </View>
             <View
-              style={[styles.categoryCard, { marginHorizontal: spacing.sm }]}
+              style={[
+                styles.categoryCard,
+                {
+                  marginHorizontal: spacing.sm,
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
             >
               <View
                 style={[
@@ -302,27 +558,171 @@ export default function HomeScreen() {
                   color={colors.primary[500]}
                 />
               </View>
-              <Text style={styles.categoryLabel}>Transport</Text>
-              <Text style={styles.categoryAmount}>£180</Text>
+              <Text
+                style={[styles.categoryLabel, { color: colors.text.primary }]}
+              >
+                Transport
+              </Text>
+              <Text
+                style={[
+                  styles.categoryAmount,
+                  { color: colors.text.secondary },
+                ]}
+              >
+                £180
+              </Text>
             </View>
-            <View style={[styles.categoryCard, { marginLeft: spacing.md }]}>
+            <View
+              style={[
+                styles.categoryCard,
+                {
+                  marginLeft: spacing.md,
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+            >
               <View
                 style={[
                   styles.categoryIcon,
                   { backgroundColor: colors.primary[100] },
                 ]}
               >
-            <Ionicons
+                <Ionicons
                   name="shirt-outline"
                   size={24}
                   color={colors.primary[400]}
                 />
               </View>
-              <Text style={styles.categoryLabel}>Shopping</Text>
-              <Text style={styles.categoryAmount}>£150</Text>
+              <Text
+                style={[styles.categoryLabel, { color: colors.text.primary }]}
+              >
+                Shopping
+              </Text>
+              <Text
+                style={[
+                  styles.categoryAmount,
+                  { color: colors.text.secondary },
+                ]}
+              >
+                £150
+              </Text>
             </View>
+          </View>
         </View>
-        </View>
+
+        {/* Net Worth (Total Balance) already shown */}
+        {/* Show warning or error if present */}
+        {warning && (
+          <View
+            style={{
+              backgroundColor: colors.warning[100] || "#FEF3C7",
+              padding: 12,
+              borderRadius: 8,
+              marginVertical: 8,
+            }}
+          >
+            <Text
+              style={{
+                color: colors.warning[700] || "#B45309",
+                fontWeight: "600",
+              }}
+            >
+              {warning}
+            </Text>
+          </View>
+        )}
+        {error && (
+          <View
+            style={{
+              backgroundColor: colors.error[100] || "#FEE2E2",
+              padding: 12,
+              borderRadius: 8,
+              marginVertical: 8,
+            }}
+          >
+            <Text
+              style={{
+                color: colors.error[700] || "#B91C1C",
+                fontWeight: "600",
+              }}
+            >
+              {error}
+            </Text>
+          </View>
+        )}
+        {/* Connected Banks List */}
+        {accounts.length > 0 && (
+          <View style={{ marginVertical: 16 }}>
+            <Text
+              style={[
+                styles.sectionTitle,
+                { color: colors.text.primary, marginBottom: 8 },
+              ]}
+            >
+              Connected Banks
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ paddingBottom: 8 }}
+            >
+              {accounts.map((account, idx) => (
+                <View
+                  key={account.id || idx}
+                  style={{
+                    marginRight: 16,
+                    backgroundColor: colors.background.primary,
+                    borderRadius: 16,
+                    padding: 16,
+                    alignItems: "center",
+                    minWidth: 140,
+                    borderWidth: 1,
+                    borderColor: colors.border.light,
+                    shadowColor: colors.gray[900],
+                    shadowOpacity: 0.08,
+                    shadowRadius: 4,
+                    shadowOffset: { width: 0, height: 2 },
+                  }}
+                >
+                  <BankLogo
+                    bankName={account.bank}
+                    size="large"
+                    showName={true}
+                  />
+                  <Text
+                    style={{
+                      fontWeight: "700",
+                      fontSize: 16,
+                      color: colors.text.primary,
+                      marginTop: 8,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {account.name || account.bank}
+                  </Text>
+                  <Text
+                    style={{ color: colors.text.secondary, fontSize: 13 }}
+                    numberOfLines={1}
+                  >
+                    {account.accountNumber}
+                  </Text>
+                  <Text
+                    style={{
+                      fontWeight: "700",
+                      fontSize: 18,
+                      color: colors.primary[500],
+                      marginTop: 4,
+                    }}
+                  >
+                    {formatCurrency(account.balance)}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -331,7 +731,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.secondary,
   },
   scrollView: {
     flex: 1,
@@ -343,7 +742,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.lg,
-    backgroundColor: colors.background.primary,
   },
   headerContent: {
     flexDirection: "row",
@@ -353,21 +751,17 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: typography.fontSizes["2xl"],
     fontWeight: "700" as const,
-    color: colors.text.primary,
   },
   headerSubtitle: {
     fontSize: typography.fontSizes.base,
-    color: colors.text.secondary,
     marginTop: spacing.xs,
   },
   headerButton: {
     width: 40,
     height: 40,
-    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
-    ...shadows.md,
   },
   balanceCardWrapper: {
     marginHorizontal: spacing.lg,
@@ -376,7 +770,6 @@ const styles = StyleSheet.create({
   balanceCard: {
     borderRadius: borderRadius["3xl"],
     padding: spacing.lg,
-    ...shadows.lg,
   },
   balanceCardHeader: {
     flexDirection: "row",
@@ -422,7 +815,6 @@ const styles = StyleSheet.create({
   addBankCard: {
     borderRadius: borderRadius["3xl"],
     padding: spacing.lg,
-    ...shadows.lg,
     borderWidth: 1,
     borderColor: "#FCD34D",
   },
@@ -484,7 +876,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: typography.fontSizes.lg,
     fontWeight: "700" as const,
-    color: colors.text.primary,
     marginBottom: spacing.md,
   },
   sectionHeaderRow: {
@@ -494,7 +885,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sectionLink: {
-    color: colors.primary[500],
     fontWeight: "600" as const,
     fontSize: typography.fontSizes.sm,
   },
@@ -503,13 +893,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   quickActionCard: {
-    backgroundColor: colors.background.primary,
     borderRadius: borderRadius["2xl"],
     padding: spacing.lg,
     alignItems: "center",
-    ...shadows.sm,
     borderWidth: 1,
-    borderColor: colors.border.light,
     flex: 1,
   },
   quickActionIcon: {
@@ -521,17 +908,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   quickActionLabel: {
-    color: colors.text.primary,
     fontWeight: "500" as const,
     fontSize: typography.fontSizes.sm,
   },
   overviewCard: {
-    backgroundColor: colors.background.primary,
     borderRadius: borderRadius["2xl"],
     padding: spacing.lg,
-    ...shadows.sm,
     borderWidth: 1,
-    borderColor: colors.border.light,
   },
   overviewRow: {
     flexDirection: "row",
@@ -540,11 +923,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   overviewLabel: {
-    color: colors.text.secondary,
     fontSize: typography.fontSizes.sm,
   },
   overviewValue: {
-    color: colors.text.primary,
     fontSize: typography.fontSizes["2xl"],
     fontWeight: "700" as const,
   },
@@ -557,11 +938,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   progressBarLabel: {
-    color: colors.text.secondary,
     fontSize: typography.fontSizes.sm,
   },
   progressBarBg: {
-    backgroundColor: colors.gray[200],
     borderRadius: borderRadius.full,
     height: 12,
     overflow: "hidden",
@@ -574,14 +953,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   transactionItem: {
-    backgroundColor: colors.background.primary,
     borderRadius: borderRadius["2xl"],
     padding: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
-    ...shadows.sm,
     borderWidth: 1,
-    borderColor: colors.border.light,
     marginBottom: spacing.sm,
   },
   transactionIcon: {
@@ -597,21 +973,17 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   transactionTitle: {
-    color: colors.text.primary,
     fontWeight: "500" as const,
     fontSize: typography.fontSizes.base,
   },
   transactionSubtitle: {
-    color: colors.text.secondary,
     fontSize: typography.fontSizes.sm,
   },
   transactionAmountNegative: {
-    color: colors.error[600],
     fontWeight: "600" as const,
     fontSize: typography.fontSizes.base,
   },
   transactionAmountPositive: {
-    color: colors.secondary[600],
     fontWeight: "600" as const,
     fontSize: typography.fontSizes.base,
   },
@@ -620,13 +992,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   categoryCard: {
-    backgroundColor: colors.background.primary,
     borderRadius: borderRadius["2xl"],
     padding: spacing.lg,
     alignItems: "center",
-    ...shadows.sm,
     borderWidth: 1,
-    borderColor: colors.border.light,
     flex: 1,
   },
   categoryIcon: {
@@ -638,12 +1007,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   categoryLabel: {
-    color: colors.text.primary,
     fontWeight: "500" as const,
     fontSize: typography.fontSizes.sm,
   },
   categoryAmount: {
-    color: colors.text.secondary,
     fontSize: typography.fontSizes.xs,
     marginTop: spacing.xs,
   },

@@ -2,9 +2,13 @@ import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
+import { ThemeProvider } from "../contexts/ThemeContext";
+import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
+import SecurityLock from "../components/SecurityLock";
 
 function RootLayoutNav() {
   const { isLoggedIn, loading } = useAuth();
+  const { isLocked, unlockApp } = useSecurity();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -22,6 +26,11 @@ function RootLayoutNav() {
     );
   }
 
+  // Show security lock if app is locked
+  if (isLoggedIn && isLocked) {
+    return <SecurityLock isVisible={true} onUnlock={unlockApp} />;
+  }
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       {!isLoggedIn ? (
@@ -30,7 +39,25 @@ function RootLayoutNav() {
           <Stack.Screen name="auth/Register" />
         </>
       ) : (
-        <Stack.Screen name="(tabs)" />
+        <>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="profile" />
+          <Stack.Screen name="profile/personal" />
+          <Stack.Screen name="security" />
+          <Stack.Screen name="notifications" />
+          <Stack.Screen name="payment" />
+          <Stack.Screen name="help" />
+          <Stack.Screen name="terms" />
+          <Stack.Screen name="banks" />
+          <Stack.Screen name="banks/connect" />
+          <Stack.Screen name="banks/select" />
+          <Stack.Screen name="credit-score" />
+          <Stack.Screen name="target" />
+          <Stack.Screen name="transactions" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="CompleteProfile" />
+          <Stack.Screen name="test-api" />
+        </>
       )}
     </Stack>
   );
@@ -38,8 +65,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <SecurityProvider>
+          <RootLayoutNav />
+        </SecurityProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

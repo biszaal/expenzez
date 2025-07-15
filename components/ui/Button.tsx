@@ -6,13 +6,8 @@ import {
   ViewStyle,
   TextStyle,
 } from "react-native";
-import {
-  colors,
-  typography,
-  spacing,
-  borderRadius,
-  shadows,
-} from "../../constants/theme";
+import { typography, spacing, borderRadius } from "../../constants/theme";
+import { useTheme } from "../../contexts/ThemeContext";
 
 interface ButtonProps {
   title: string;
@@ -37,22 +32,111 @@ export default function Button({
   style,
   textStyle,
 }: ButtonProps) {
+  const { colors, shadows } = useTheme();
+
+  const getVariantStyle = () => {
+    switch (variant) {
+      case "primary":
+        return {
+          backgroundColor: colors.primary[500],
+          ...shadows.sm,
+        };
+      case "secondary":
+        return {
+          backgroundColor: colors.secondary[500],
+          ...shadows.sm,
+        };
+      case "outline":
+        return {
+          backgroundColor: "transparent",
+          borderWidth: 2,
+          borderColor: colors.primary[500],
+        };
+      case "ghost":
+        return {
+          backgroundColor: "transparent",
+        };
+      default:
+        return {
+          backgroundColor: colors.primary[500],
+          ...shadows.sm,
+        };
+    }
+  };
+
+  const getSizeStyle = () => {
+    switch (size) {
+      case "small":
+        return {
+          paddingHorizontal: spacing.md,
+          paddingVertical: spacing.sm,
+          minHeight: 36,
+        };
+      case "large":
+        return {
+          paddingHorizontal: spacing.xl,
+          paddingVertical: spacing.lg,
+          minHeight: 56,
+        };
+      default:
+        return {
+          paddingHorizontal: spacing.lg,
+          paddingVertical: spacing.md,
+          minHeight: 48,
+        };
+    }
+  };
+
+  const getTextStyle = () => {
+    const baseTextStyle = {
+      fontWeight: typography.fontWeights.semibold,
+      textAlign: "center" as const,
+    };
+
+    const variantTextStyle = (() => {
+      switch (variant) {
+        case "primary":
+        case "secondary":
+          return { color: colors.text.inverse };
+        case "outline":
+        case "ghost":
+          return { color: colors.primary[500] };
+        default:
+          return { color: colors.text.inverse };
+      }
+    })();
+
+    const sizeTextStyle = (() => {
+      switch (size) {
+        case "small":
+          return { fontSize: typography.fontSizes.sm };
+        case "large":
+          return { fontSize: typography.fontSizes.lg };
+        default:
+          return { fontSize: typography.fontSizes.base };
+      }
+    })();
+
+    const disabledTextStyle = disabled ? { color: colors.text.tertiary } : {};
+
+    return {
+      ...baseTextStyle,
+      ...variantTextStyle,
+      ...sizeTextStyle,
+      ...disabledTextStyle,
+    };
+  };
+
   const buttonStyle = [
     styles.base,
-    styles[variant],
-    styles[size],
+    getVariantStyle(),
+    getSizeStyle(),
     fullWidth && styles.fullWidth,
     disabled && styles.disabled,
     style,
   ];
 
-  const buttonTextStyle = [
-    styles.text,
-    styles[`${variant}Text`],
-    styles[`${size}Text`],
-    disabled && styles.disabledText,
-    textStyle,
-  ];
+  const buttonTextStyle = [getTextStyle(), textStyle];
 
   return (
     <TouchableOpacity
@@ -71,40 +155,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: borderRadius.lg,
-    ...shadows.sm,
-  },
-
-  // Variants
-  primary: {
-    backgroundColor: colors.primary[500],
-  },
-  secondary: {
-    backgroundColor: colors.secondary[500],
-  },
-  outline: {
-    backgroundColor: "transparent",
-    borderWidth: 2,
-    borderColor: colors.primary[500],
-  },
-  ghost: {
-    backgroundColor: "transparent",
-  },
-
-  // Sizes
-  small: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    minHeight: 36,
-  },
-  medium: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    minHeight: 48,
-  },
-  large: {
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-    minHeight: 56,
   },
 
   // Width
@@ -115,38 +165,5 @@ const styles = StyleSheet.create({
   // Disabled state
   disabled: {
     opacity: 0.5,
-  },
-
-  // Text styles
-  text: {
-    fontWeight: typography.fontWeights.semibold,
-    textAlign: "center",
-  },
-
-  primaryText: {
-    color: colors.text.inverse,
-  },
-  secondaryText: {
-    color: colors.text.inverse,
-  },
-  outlineText: {
-    color: colors.primary[500],
-  },
-  ghostText: {
-    color: colors.primary[500],
-  },
-
-  smallText: {
-    fontSize: typography.fontSizes.sm,
-  },
-  mediumText: {
-    fontSize: typography.fontSizes.base,
-  },
-  largeText: {
-    fontSize: typography.fontSizes.lg,
-  },
-
-  disabledText: {
-    color: colors.text.tertiary,
   },
 });

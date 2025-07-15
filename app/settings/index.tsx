@@ -3,58 +3,122 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "../../contexts/ThemeContext";
+import { spacing, borderRadius, shadows } from "../../constants/theme";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { colors } = useTheme();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.topBar}>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        { backgroundColor: colors.background.secondary },
+      ]}
+    >
+      <View
+        style={[
+          styles.topBar,
+          { backgroundColor: colors.background.secondary },
+        ]}
+      >
         <TouchableOpacity
-          style={styles.backButton}
+          style={[
+            styles.backButton,
+            { backgroundColor: colors.background.primary },
+            shadows.sm,
+          ]}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={26} color="#2E2353" />
+          <Ionicons name="chevron-back" size={26} color={colors.primary[500]} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Settings</Text>
+        <Text style={[styles.topBarTitle, { color: colors.text.primary }]}>
+          Settings
+        </Text>
         <View style={{ width: 32 }} />
       </View>
       <View style={styles.content}>
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity
+          style={[
+            styles.settingItem,
+            {
+              backgroundColor: colors.background.primary,
+              borderColor: colors.border.light,
+            },
+            shadows.sm,
+          ]}
+        >
           <Ionicons
             name="mail-outline"
             size={22}
-            color="#7C4DFF"
+            color={colors.primary[500]}
             style={{ marginRight: 14 }}
           />
-          <Text style={styles.settingText}>Change Email</Text>
+          <Text style={[styles.settingText, { color: colors.text.primary }]}>
+            Change Email
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity
+          style={[
+            styles.settingItem,
+            {
+              backgroundColor: colors.background.primary,
+              borderColor: colors.border.light,
+            },
+            shadows.sm,
+          ]}
+        >
           <Ionicons
             name="key-outline"
             size={22}
-            color="#7C4DFF"
+            color={colors.primary[500]}
             style={{ marginRight: 14 }}
           />
-          <Text style={styles.settingText}>Change Password</Text>
+          <Text style={[styles.settingText, { color: colors.text.primary }]}>
+            Change Password
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity
+          style={[
+            styles.settingItem,
+            {
+              backgroundColor: colors.background.primary,
+              borderColor: colors.border.light,
+            },
+            shadows.sm,
+          ]}
+        >
           <Ionicons
             name="notifications-outline"
             size={22}
-            color="#7C4DFF"
+            color={colors.primary[500]}
             style={{ marginRight: 14 }}
           />
-          <Text style={styles.settingText}>Notifications</Text>
+          <Text style={[styles.settingText, { color: colors.text.primary }]}>
+            Notifications
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity
+          style={[
+            styles.settingItem,
+            {
+              backgroundColor: colors.background.primary,
+              borderColor: colors.border.light,
+            },
+            shadows.sm,
+          ]}
+        >
           <Ionicons
             name="lock-closed-outline"
             size={22}
-            color="#7C4DFF"
+            color={colors.primary[500]}
             style={{ marginRight: 14 }}
           />
-          <Text style={styles.settingText}>Security</Text>
+          <Text style={[styles.settingText, { color: colors.text.primary }]}>
+            Security
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -62,7 +126,9 @@ export default function SettingsPage() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F5F7FB" },
+  safeArea: {
+    flex: 1,
+  },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -70,7 +136,6 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     paddingBottom: 16,
     paddingHorizontal: 14,
-    backgroundColor: "#F5F7FB",
   },
   backButton: {
     width: 32,
@@ -78,17 +143,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 2,
   },
   topBarTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#2E2353",
   },
   content: {
     marginTop: 28,
@@ -97,20 +155,14 @@ const styles = StyleSheet.create({
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
     borderRadius: 14,
     paddingVertical: 16,
     paddingHorizontal: 20,
     marginBottom: 16,
-    shadowColor: "#7C4DFF",
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 1,
+    borderWidth: 1,
   },
   settingText: {
     fontWeight: "500",
-    color: "#2E2353",
     fontSize: 16,
   },
 });

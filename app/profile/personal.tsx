@@ -1,36 +1,51 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Alert,
   ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
   View,
   StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  Text,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import { useAuth } from "./auth/AuthContext";
-import { useTheme } from "../contexts/ThemeContext";
-import { spacing, borderRadius, shadows, typography } from "../constants/theme";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuthGuard } from "../../hooks/useAuthGuard";
+import { useAlert } from "../../hooks/useAlert";
+import { Header, Section, ListItem, Button } from "../../components/ui";
+import { useTheme } from "../../contexts/ThemeContext";
+import { spacing, borderRadius, shadows } from "../../constants/theme";
 
-export default function CompleteProfileScreen() {
+/**
+ * Personal Information Screen
+ *
+ * Features:
+ * - View and edit personal information
+ * - Update profile details
+ * - Change avatar
+ * - Save changes
+ */
+export default function PersonalInformationScreen() {
   const router = useRouter();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn } = useAuthGuard();
+  const { showSuccess, showError } = useAlert();
   const { colors } = useTheme();
+
+  // Form state
+  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    dateOfBirth: "",
-    address: "",
-    occupation: "",
-    company: "",
+    firstName: "Bishal",
+    lastName: "Aryal",
+    email: "bishal@expenzez.com",
+    phone: "+44 1234 567890",
+    dateOfBirth: "1990-01-01",
+    address: "123 Baker Street, London, UK",
+    occupation: "Software Developer",
+    company: "Tech Corp",
   });
 
+  // Handle form field changes
   const handleFieldChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -38,27 +53,35 @@ export default function CompleteProfileScreen() {
     }));
   };
 
-  const handleSubmit = async () => {
+  // Handle save changes
+  const handleSave = async () => {
     try {
-      // TODO: Implement API call to complete profile
-      Alert.alert("Success", "Profile completed successfully!");
-      router.replace("/(tabs)");
+      // TODO: Implement API call to update profile
+      setIsEditing(false);
+      showSuccess("Profile updated successfully");
     } catch (error) {
-      Alert.alert("Error", "Failed to complete profile");
+      showError("Failed to update profile");
     }
   };
 
-  const isFormValid = () => {
-    return (
-      formData.firstName &&
-      formData.lastName &&
-      formData.email &&
-      formData.phone
-    );
+  // Handle cancel editing
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Reset form data to original values
+    setFormData({
+      firstName: "Bishal",
+      lastName: "Aryal",
+      email: "bishal@expenzez.com",
+      phone: "+44 1234 567890",
+      dateOfBirth: "1990-01-01",
+      address: "123 Baker Street, London, UK",
+      occupation: "Software Developer",
+      company: "Tech Corp",
+    });
   };
 
+  // If not logged in, don't render anything (auth guard will handle redirect)
   if (!isLoggedIn) {
-    router.replace("/auth/Login");
     return null;
   }
 
@@ -69,57 +92,61 @@ export default function CompleteProfileScreen() {
         { backgroundColor: colors.background.secondary },
       ]}
     >
+      {/* Header */}
+      <Header
+        title="Personal Information"
+        subtitle="Update your profile details"
+        showBackButton={true}
+        rightButton={
+          isEditing
+            ? {
+                icon: "close-outline",
+                onPress: handleCancel,
+              }
+            : {
+                icon: "create-outline",
+                onPress: () => setIsEditing(true),
+              }
+        }
+      />
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View
-          style={[
-            styles.header,
-            { backgroundColor: colors.background.primary },
-          ]}
-        >
-          <TouchableOpacity
-            style={[
-              styles.backButton,
-              { backgroundColor: colors.background.secondary },
-              shadows.sm,
-            ]}
-            onPress={() => router.back()}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color={colors.primary[500]}
-            />
-          </TouchableOpacity>
-          <View>
-            <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-              Complete Profile
-            </Text>
-            <Text
-              style={[styles.headerSubtitle, { color: colors.text.secondary }]}
+        {/* Profile Picture Section */}
+        <Section title="Profile Picture">
+          <View style={styles.profilePictureContainer}>
+            <View
+              style={[
+                styles.profilePicture,
+                { backgroundColor: colors.gray[100] },
+              ]}
             >
-              Tell us more about yourself
-            </Text>
+              <Ionicons name="person" size={40} color={colors.gray[400]} />
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.changePictureButton,
+                { backgroundColor: colors.primary[500] },
+              ]}
+              onPress={() => {
+                // TODO: Implement image picker
+                Alert.alert(
+                  "Change Picture",
+                  "Image picker not implemented yet"
+                );
+              }}
+            >
+              <Text style={styles.changePictureText}>Change Picture</Text>
+            </TouchableOpacity>
           </View>
-        </View>
+        </Section>
 
-        {/* Form */}
-        <View style={styles.formContainer}>
-          <View
-            style={[
-              styles.formSection,
-              { backgroundColor: colors.background.primary },
-              shadows.md,
-            ]}
-          >
-            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Personal Information
-            </Text>
-
+        {/* Personal Details Section */}
+        <Section title="Personal Details">
+          <View style={styles.formContainer}>
             <View style={styles.formRow}>
               <View
                 style={[styles.formField, { flex: 1, marginRight: spacing.sm }]}
@@ -134,14 +161,19 @@ export default function CompleteProfileScreen() {
                     styles.textInput,
                     {
                       borderColor: colors.border.light,
-                      backgroundColor: colors.background.secondary,
+                      backgroundColor: colors.background.primary,
                       color: colors.text.primary,
+                    },
+                    !isEditing && {
+                      backgroundColor: colors.gray[50],
+                      color: colors.text.secondary,
                     },
                   ]}
                   value={formData.firstName}
                   onChangeText={(value) =>
                     handleFieldChange("firstName", value)
                   }
+                  editable={isEditing}
                   placeholder="Enter first name"
                   placeholderTextColor={colors.text.tertiary}
                 />
@@ -159,12 +191,17 @@ export default function CompleteProfileScreen() {
                     styles.textInput,
                     {
                       borderColor: colors.border.light,
-                      backgroundColor: colors.background.secondary,
+                      backgroundColor: colors.background.primary,
                       color: colors.text.primary,
+                    },
+                    !isEditing && {
+                      backgroundColor: colors.gray[50],
+                      color: colors.text.secondary,
                     },
                   ]}
                   value={formData.lastName}
                   onChangeText={(value) => handleFieldChange("lastName", value)}
+                  editable={isEditing}
                   placeholder="Enter last name"
                   placeholderTextColor={colors.text.tertiary}
                 />
@@ -180,12 +217,17 @@ export default function CompleteProfileScreen() {
                   styles.textInput,
                   {
                     borderColor: colors.border.light,
-                    backgroundColor: colors.background.secondary,
+                    backgroundColor: colors.background.primary,
                     color: colors.text.primary,
+                  },
+                  !isEditing && {
+                    backgroundColor: colors.gray[50],
+                    color: colors.text.secondary,
                   },
                 ]}
                 value={formData.email}
                 onChangeText={(value) => handleFieldChange("email", value)}
+                editable={isEditing}
                 placeholder="Enter email address"
                 placeholderTextColor={colors.text.tertiary}
                 keyboardType="email-address"
@@ -202,29 +244,22 @@ export default function CompleteProfileScreen() {
                   styles.textInput,
                   {
                     borderColor: colors.border.light,
-                    backgroundColor: colors.background.secondary,
+                    backgroundColor: colors.background.primary,
                     color: colors.text.primary,
+                  },
+                  !isEditing && {
+                    backgroundColor: colors.gray[50],
+                    color: colors.text.secondary,
                   },
                 ]}
                 value={formData.phone}
                 onChangeText={(value) => handleFieldChange("phone", value)}
+                editable={isEditing}
                 placeholder="Enter phone number"
                 placeholderTextColor={colors.text.tertiary}
                 keyboardType="phone-pad"
               />
             </View>
-          </View>
-
-          <View
-            style={[
-              styles.formSection,
-              { backgroundColor: colors.background.primary },
-              shadows.md,
-            ]}
-          >
-            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Additional Information
-            </Text>
 
             <View style={styles.formField}>
               <Text style={[styles.fieldLabel, { color: colors.text.primary }]}>
@@ -235,19 +270,29 @@ export default function CompleteProfileScreen() {
                   styles.textInput,
                   {
                     borderColor: colors.border.light,
-                    backgroundColor: colors.background.secondary,
+                    backgroundColor: colors.background.primary,
                     color: colors.text.primary,
+                  },
+                  !isEditing && {
+                    backgroundColor: colors.gray[50],
+                    color: colors.text.secondary,
                   },
                 ]}
                 value={formData.dateOfBirth}
                 onChangeText={(value) =>
                   handleFieldChange("dateOfBirth", value)
                 }
+                editable={isEditing}
                 placeholder="YYYY-MM-DD"
                 placeholderTextColor={colors.text.tertiary}
               />
             </View>
+          </View>
+        </Section>
 
+        {/* Address Section */}
+        <Section title="Address">
+          <View style={styles.formContainer}>
             <View style={styles.formField}>
               <Text style={[styles.fieldLabel, { color: colors.text.primary }]}>
                 Address
@@ -258,19 +303,29 @@ export default function CompleteProfileScreen() {
                   styles.textArea,
                   {
                     borderColor: colors.border.light,
-                    backgroundColor: colors.background.secondary,
+                    backgroundColor: colors.background.primary,
                     color: colors.text.primary,
+                  },
+                  !isEditing && {
+                    backgroundColor: colors.gray[50],
+                    color: colors.text.secondary,
                   },
                 ]}
                 value={formData.address}
                 onChangeText={(value) => handleFieldChange("address", value)}
+                editable={isEditing}
                 placeholder="Enter your address"
                 placeholderTextColor={colors.text.tertiary}
                 multiline
                 numberOfLines={3}
               />
             </View>
+          </View>
+        </Section>
 
+        {/* Professional Information Section */}
+        <Section title="Professional Information">
+          <View style={styles.formContainer}>
             <View style={styles.formField}>
               <Text style={[styles.fieldLabel, { color: colors.text.primary }]}>
                 Occupation
@@ -280,12 +335,17 @@ export default function CompleteProfileScreen() {
                   styles.textInput,
                   {
                     borderColor: colors.border.light,
-                    backgroundColor: colors.background.secondary,
+                    backgroundColor: colors.background.primary,
                     color: colors.text.primary,
+                  },
+                  !isEditing && {
+                    backgroundColor: colors.gray[50],
+                    color: colors.text.secondary,
                   },
                 ]}
                 value={formData.occupation}
                 onChangeText={(value) => handleFieldChange("occupation", value)}
+                editable={isEditing}
                 placeholder="Enter your occupation"
                 placeholderTextColor={colors.text.tertiary}
               />
@@ -300,44 +360,63 @@ export default function CompleteProfileScreen() {
                   styles.textInput,
                   {
                     borderColor: colors.border.light,
-                    backgroundColor: colors.background.secondary,
+                    backgroundColor: colors.background.primary,
                     color: colors.text.primary,
+                  },
+                  !isEditing && {
+                    backgroundColor: colors.gray[50],
+                    color: colors.text.secondary,
                   },
                 ]}
                 value={formData.company}
                 onChangeText={(value) => handleFieldChange("company", value)}
+                editable={isEditing}
                 placeholder="Enter your company name"
                 placeholderTextColor={colors.text.tertiary}
               />
             </View>
           </View>
-        </View>
+        </Section>
 
-        {/* Submit Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.submitButton,
-              {
-                backgroundColor: isFormValid()
-                  ? colors.primary[500]
-                  : colors.gray[300],
-              },
-              shadows.md,
-            ]}
-            onPress={handleSubmit}
-            disabled={!isFormValid()}
-          >
-            <Text
-              style={[
-                styles.submitButtonText,
-                { color: isFormValid() ? "white" : colors.text.secondary },
-              ]}
-            >
-              Complete Profile
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Save Button */}
+        {isEditing && (
+          <Section marginTop={spacing.lg}>
+            <Button
+              title="Save Changes"
+              onPress={handleSave}
+              variant="primary"
+              size="large"
+              fullWidth
+            />
+          </Section>
+        )}
+
+        {/* Additional Options */}
+        <Section title="Additional Options">
+          <ListItem
+            icon={{ name: "download-outline", backgroundColor: "#DBEAFE" }}
+            title="Export Data"
+            subtitle="Download your personal data"
+            onPress={() => {
+              // TODO: Implement data export
+              Alert.alert("Export Data", "Data export not implemented yet");
+            }}
+          />
+
+          <ListItem
+            icon={{ name: "trash-outline", backgroundColor: "#FEE2E2" }}
+            title="Delete Personal Data"
+            subtitle="Request data deletion"
+            onPress={() => {
+              // TODO: Implement data deletion request
+              Alert.alert(
+                "Delete Data",
+                "Data deletion request not implemented yet"
+              );
+            }}
+            variant="danger"
+          />
+        </Section>
       </ScrollView>
     </SafeAreaView>
   );
@@ -351,41 +430,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing["2xl"],
   },
-  header: {
-    paddingHorizontal: spacing.lg,
+  profilePictureContainer: {
+    alignItems: "center",
     paddingVertical: spacing.lg,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.xl,
+  profilePicture: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.md,
+    ...shadows.md,
   },
-  headerTitle: {
-    fontSize: typography.fontSizes["2xl"],
-    fontWeight: "700" as const,
+  changePictureButton: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
   },
-  headerSubtitle: {
-    fontSize: typography.fontSizes.base,
-    marginTop: spacing.xs,
+  changePictureText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "600",
   },
   formContainer: {
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-  },
-  formSection: {
-    borderRadius: borderRadius["3xl"],
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: "700" as const,
-    marginBottom: spacing.md,
+    gap: spacing.md,
   },
   formRow: {
     flexDirection: "row",
@@ -394,8 +465,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   fieldLabel: {
-    fontSize: typography.fontSizes.sm,
-    fontWeight: "600" as const,
+    fontSize: 14,
+    fontWeight: "600",
     marginBottom: spacing.xs,
   },
   textInput: {
@@ -403,24 +474,10 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    fontSize: typography.fontSizes.base,
+    fontSize: 16,
   },
   textArea: {
     height: 80,
     textAlignVertical: "top",
-  },
-  buttonContainer: {
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-  },
-  submitButton: {
-    borderRadius: borderRadius["3xl"],
-    paddingVertical: spacing.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  submitButtonText: {
-    fontSize: typography.fontSizes.base,
-    fontWeight: "600" as const,
   },
 });

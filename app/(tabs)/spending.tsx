@@ -12,8 +12,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import {
-  colors,
   spacing,
   borderRadius,
   shadows,
@@ -30,18 +30,12 @@ const leftToSpend = totalBudget - totalSpent;
 const categoryData = [
   {
     id: 1,
-    icon: (
-      <MaterialCommunityIcons
-        name="bus-clock"
-        size={22}
-        color={colors.primary[500]}
-      />
-    ),
+    icon: <MaterialCommunityIcons name="bus-clock" size={22} color="#3B82F6" />,
     name: "Transport",
     spent: 346.2,
     budget: 350,
     upcoming: 0,
-    color: colors.primary[500],
+    color: "#3B82F6",
   },
   {
     id: 2,
@@ -49,14 +43,14 @@ const categoryData = [
       <MaterialCommunityIcons
         name="home-thermometer-outline"
         size={22}
-        color={colors.secondary[600]}
+        color="#7C3AED"
       />
     ),
     name: "Home & Comfort",
     spent: 0,
     budget: 50,
     upcoming: 42.08,
-    color: colors.secondary[600],
+    color: "#7C3AED",
   },
   {
     id: 3,
@@ -64,35 +58,30 @@ const categoryData = [
       <MaterialCommunityIcons
         name="food-apple-outline"
         size={22}
-        color={colors.primary[500]}
+        color="#3B82F6"
       />
     ),
     name: "Groceries",
     spent: 120,
     budget: 200,
     upcoming: 0,
-    color: colors.primary[500],
+    color: "#3B82F6",
   },
   {
     id: 4,
-    icon: (
-      <MaterialCommunityIcons
-        name="run"
-        size={22}
-        color={colors.secondary[500]}
-      />
-    ),
+    icon: <MaterialCommunityIcons name="run" size={22} color="#8B5CF6" />,
     name: "Fitness",
     spent: 40,
     budget: 100,
     upcoming: 0,
-    color: colors.secondary[500],
+    color: "#8B5CF6",
   },
 ];
 
 export default function SpendingPage() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
+  const { colors } = useTheme();
   const [selectedTab, setSelectedTab] = useState<"summary" | "categories">(
     "summary"
   );
@@ -111,7 +100,12 @@ export default function SpendingPage() {
   const spentPercentage = (totalSpent / totalBudget) * 100;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: colors.background.secondary },
+      ]}
+    >
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -124,67 +118,99 @@ export default function SpendingPage() {
         >
           <View style={styles.headerContent}>
             <View>
-              <Text style={styles.headerTitle}>
+              <Text
+                style={[styles.headerTitle, { color: colors.text.primary }]}
+              >
                 <Text style={{ color: colors.primary[500] }}>expenzez</Text>{" "}
                 Dashboard
               </Text>
-              <Text style={styles.headerSubtitle}>
+              <Text
+                style={[
+                  styles.headerSubtitle,
+                  { color: colors.text.secondary },
+                ]}
+              >
                 Track your spending patterns
-          </Text>
+              </Text>
             </View>
-            <TouchableOpacity style={styles.headerButton}>
+            <TouchableOpacity
+              style={[
+                styles.headerButton,
+                { backgroundColor: colors.background.primary },
+              ]}
+            >
               <Feather name="info" size={24} color={colors.primary[500]} />
-          </TouchableOpacity>
-        </View>
+            </TouchableOpacity>
+          </View>
         </LinearGradient>
 
         {/* Tab Switch */}
-        <View style={styles.tabSwitchWrapper}>
+        <View
+          style={[
+            styles.tabSwitchWrapper,
+            {
+              backgroundColor: colors.background.primary,
+              borderColor: colors.border.light,
+            },
+          ]}
+        >
           <View style={styles.tabSwitchRow}>
-          <TouchableOpacity
-            style={[
-                styles.tabButton,
-                selectedTab === "summary" && styles.tabButtonActive,
-            ]}
-            onPress={() => setSelectedTab("summary")}
-          >
-            <Ionicons
-              name="pie-chart-sharp"
-              size={17}
-                color={selectedTab === "summary" ? "#FFF" : colors.primary[500]}
-            />
-            <Text
+            <TouchableOpacity
               style={[
-                  styles.tabButtonText,
-                  selectedTab === "summary" && styles.tabButtonTextActive,
-              ]}
-            >
-              Overview
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
                 styles.tabButton,
-                selectedTab === "categories" && styles.tabButtonActive,
-            ]}
-            onPress={() => setSelectedTab("categories")}
-          >
-            <Ionicons
-              name="list"
-              size={17}
+                selectedTab === "summary" && {
+                  backgroundColor: colors.primary[500],
+                },
+              ]}
+              onPress={() => setSelectedTab("summary")}
+            >
+              <Ionicons
+                name="pie-chart-sharp"
+                size={17}
+                color={selectedTab === "summary" ? "#FFF" : colors.primary[500]}
+              />
+              <Text
+                style={[
+                  styles.tabButtonText,
+                  {
+                    color:
+                      selectedTab === "summary" ? "#FFF" : colors.primary[500],
+                  },
+                ]}
+              >
+                Overview
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                selectedTab === "categories" && {
+                  backgroundColor: colors.primary[500],
+                },
+              ]}
+              onPress={() => setSelectedTab("categories")}
+            >
+              <Ionicons
+                name="list"
+                size={17}
                 color={
                   selectedTab === "categories" ? "#FFF" : colors.primary[500]
                 }
-            />
-            <Text
-              style={[
+              />
+              <Text
+                style={[
                   styles.tabButtonText,
-                  selectedTab === "categories" && styles.tabButtonTextActive,
-              ]}
-            >
-              Categories
-            </Text>
-          </TouchableOpacity>
+                  {
+                    color:
+                      selectedTab === "categories"
+                        ? "#FFF"
+                        : colors.primary[500],
+                  },
+                ]}
+              >
+                Categories
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -199,14 +225,22 @@ export default function SpendingPage() {
               key={m}
               style={[
                 styles.monthButton,
-                selectedMonth === m && styles.monthButtonActive,
+                {
+                  backgroundColor: colors.background.secondary,
+                  borderColor: colors.border.light,
+                },
+                selectedMonth === m && {
+                  backgroundColor: colors.primary[500],
+                  borderColor: colors.primary[500],
+                },
               ]}
               onPress={() => setSelectedMonth(m)}
             >
               <Text
                 style={[
                   styles.monthButtonText,
-                  selectedMonth === m && styles.monthButtonTextActive,
+                  { color: colors.text.secondary },
+                  selectedMonth === m && { color: "#FFF" },
                 ]}
               >
                 {m}
@@ -220,25 +254,41 @@ export default function SpendingPage() {
           <View style={styles.mainCardWrapper}>
             <LinearGradient
               colors={["#FFFFFF", "#F8FAFC"]}
-              style={styles.mainCard}
+              style={[styles.mainCard, { borderColor: colors.border.light }]}
             >
-              <Text style={styles.mainCardLabel}>This Month</Text>
+              <Text
+                style={[styles.mainCardLabel, { color: colors.text.secondary }]}
+              >
+                This Month
+              </Text>
               <View style={styles.mainCardHeader}>
                 <View style={styles.mainCardHeaderLeft}>
                   <LinearGradient
                     colors={[colors.primary[500], "#8B5CF6"]}
                     style={styles.walletIconBg}
                   >
-                <MaterialCommunityIcons
-                  name="wallet-outline"
+                    <MaterialCommunityIcons
+                      name="wallet-outline"
                       color="white"
                       size={20}
-                />
+                    />
                   </LinearGradient>
-                  <Text style={styles.mainCardAmount}>
-                  £{totalSpent.toFixed(2)}
+                  <Text
+                    style={[
+                      styles.mainCardAmount,
+                      { color: colors.text.primary },
+                    ]}
+                  >
+                    £{totalSpent.toFixed(2)}
                   </Text>
-                  <Text style={styles.mainCardAmountLabel}>spent</Text>
+                  <Text
+                    style={[
+                      styles.mainCardAmountLabel,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
+                    spent
+                  </Text>
                 </View>
                 <TouchableOpacity>
                   <Ionicons
@@ -250,22 +300,53 @@ export default function SpendingPage() {
               </View>
               <View style={styles.donutChartRow}>
                 {/* Custom Donut Chart */}
-                <View style={styles.donutChartWrapper}>
-                  <View style={styles.donutChartOuter}>
-                    <View style={styles.donutChartInner}>
-                      <Text style={styles.donutChartCenterAmount}>
+                <View
+                  style={[
+                    styles.donutChartWrapper,
+                    { backgroundColor: colors.background.primary },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.donutChartOuter,
+                      { borderColor: colors.background.secondary },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.donutChartInner,
+                        { backgroundColor: colors.background.primary },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.donutChartCenterAmount,
+                          { color: colors.text.primary },
+                        ]}
+                      >
                         £{leftToSpend.toFixed(2)}
                       </Text>
-                      <Text style={styles.donutChartCenterLabelText}>
+                      <Text
+                        style={[
+                          styles.donutChartCenterLabelText,
+                          { color: colors.text.secondary },
+                        ]}
+                      >
                         left to spend
                       </Text>
-          </View>
+                    </View>
                   </View>
                   {/* Progress Ring */}
-                  <View style={styles.progressRing}>
+                  <View
+                    style={[
+                      styles.progressRing,
+                      { borderColor: colors.background.secondary },
+                    ]}
+                  >
                     <View
                       style={[
                         styles.progressFill,
+                        { borderColor: colors.primary[500] },
                         {
                           transform: [
                             { rotate: `${(spentPercentage / 100) * 360}deg` },
@@ -284,7 +365,14 @@ export default function SpendingPage() {
                         { backgroundColor: colors.primary[500] },
                       ]}
                     />
-                    <Text style={styles.donutChartLegendLabel}>Spent</Text>
+                    <Text
+                      style={[
+                        styles.donutChartLegendLabel,
+                        { color: colors.text.secondary },
+                      ]}
+                    >
+                      Spent
+                    </Text>
                   </View>
                   <View style={styles.donutChartLegendRow}>
                     <View
@@ -293,7 +381,14 @@ export default function SpendingPage() {
                         { backgroundColor: colors.gray[200] },
                       ]}
                     />
-                    <Text style={styles.donutChartLegendLabel}>Left</Text>
+                    <Text
+                      style={[
+                        styles.donutChartLegendLabel,
+                        { color: colors.text.secondary },
+                      ]}
+                    >
+                      Left
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -308,7 +403,10 @@ export default function SpendingPage() {
               <LinearGradient
                 key={category.id}
                 colors={["#FFFFFF", "#F8FAFC"]}
-                style={styles.categoryCard}
+                style={[
+                  styles.categoryCard,
+                  { borderColor: colors.border.light },
+                ]}
               >
                 <View style={styles.categoryCardHeader}>
                   <View style={styles.categoryCardHeaderLeft}>
@@ -319,21 +417,50 @@ export default function SpendingPage() {
                       {category.icon}
                     </LinearGradient>
                     <View>
-                      <Text style={styles.categoryName}>{category.name}</Text>
-                      <Text style={styles.categoryBudget}>
+                      <Text
+                        style={[
+                          styles.categoryName,
+                          { color: colors.text.primary },
+                        ]}
+                      >
+                        {category.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.categoryBudget,
+                          { color: colors.text.secondary },
+                        ]}
+                      >
                         £{category.spent} / £{category.budget}
                       </Text>
                     </View>
                   </View>
                   <View style={styles.categoryCardHeaderRight}>
-                    <Text style={styles.categorySpent}>£{category.spent}</Text>
-                    <Text style={styles.categoryPercent}>
+                    <Text
+                      style={[
+                        styles.categorySpent,
+                        { color: colors.text.primary },
+                      ]}
+                    >
+                      £{category.spent}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.categoryPercent,
+                        { color: colors.text.secondary },
+                      ]}
+                    >
                       {Math.round((category.spent / category.budget) * 100)}%
-                        </Text>
+                    </Text>
                   </View>
                 </View>
                 {/* Progress Bar */}
-                <View style={styles.categoryProgressBarBg}>
+                <View
+                  style={[
+                    styles.categoryProgressBarBg,
+                    { backgroundColor: colors.background.secondary },
+                  ]}
+                >
                   <LinearGradient
                     colors={[category.color, category.color + "80"]}
                     style={[
@@ -354,7 +481,6 @@ export default function SpendingPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.secondary,
   },
   scrollView: {
     flex: 1,
@@ -376,17 +502,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: typography.fontSizes["2xl"],
     fontWeight: "700" as const,
-    color: colors.text.primary,
   },
   headerSubtitle: {
     fontSize: typography.fontSizes.base,
-    color: colors.text.secondary,
     marginTop: spacing.xs,
   },
   headerButton: {
     width: 40,
     height: 40,
-    backgroundColor: colors.background.primary,
     borderRadius: borderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
@@ -395,12 +518,10 @@ const styles = StyleSheet.create({
   tabSwitchWrapper: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.lg,
-    backgroundColor: colors.background.primary,
     borderRadius: borderRadius["3xl"],
     padding: spacing.xs,
     ...shadows.lg,
     borderWidth: 1,
-    borderColor: colors.border.light,
   },
   tabSwitchRow: {
     flexDirection: "row",
@@ -413,17 +534,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     borderRadius: borderRadius.xl,
   },
-  tabButtonActive: {
-    backgroundColor: colors.primary[500],
-  },
   tabButtonText: {
     fontWeight: "600" as const,
     fontSize: typography.fontSizes.sm,
     marginLeft: spacing.sm,
-    color: colors.primary[500],
-  },
-  tabButtonTextActive: {
-    color: "#FFF",
   },
   monthPicker: {
     marginHorizontal: spacing.lg,
@@ -434,22 +548,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.background.secondary,
     marginRight: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.border.light,
-  },
-  monthButtonActive: {
-    backgroundColor: colors.primary[500],
-    borderColor: colors.primary[500],
   },
   monthButtonText: {
     fontSize: typography.fontSizes.sm,
     fontWeight: "600" as const,
-    color: colors.text.secondary,
-  },
-  monthButtonTextActive: {
-    color: "#FFF",
   },
   mainCardWrapper: {
     marginHorizontal: spacing.lg,
@@ -460,13 +564,11 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     borderRadius: borderRadius["3xl"],
     borderWidth: 1,
-    borderColor: colors.border.light,
     ...shadows.lg,
   },
   mainCardLabel: {
     fontSize: typography.fontSizes.lg,
     fontWeight: "600" as const,
-    color: colors.text.secondary,
     marginBottom: spacing.md,
   },
   mainCardHeader: {
@@ -490,11 +592,9 @@ const styles = StyleSheet.create({
   mainCardAmount: {
     fontSize: typography.fontSizes["2xl"],
     fontWeight: "700" as const,
-    color: colors.text.primary,
   },
   mainCardAmountLabel: {
     fontSize: typography.fontSizes.sm,
-    color: colors.text.secondary,
     marginLeft: spacing.xs,
   },
   donutChartRow: {
@@ -508,7 +608,6 @@ const styles = StyleSheet.create({
     height: 140,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.background.primary,
     borderRadius: 70,
     ...shadows.md,
   },
@@ -517,7 +616,6 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: 70,
     borderWidth: 10,
-    borderColor: colors.background.secondary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -525,18 +623,15 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.background.primary,
     alignItems: "center",
     justifyContent: "center",
   },
   donutChartCenterAmount: {
     fontSize: typography.fontSizes["2xl"],
     fontWeight: "700" as const,
-    color: colors.text.primary,
   },
   donutChartCenterLabelText: {
     fontSize: typography.fontSizes.sm,
-    color: colors.text.secondary,
     marginTop: spacing.xs,
   },
   progressRing: {
@@ -545,7 +640,6 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: 70,
     borderWidth: 10,
-    borderColor: colors.background.secondary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -554,7 +648,6 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 70,
     borderWidth: 10,
-    borderColor: colors.primary[500],
     transformOrigin: "center",
   },
   donutChartLegends: {
@@ -574,7 +667,6 @@ const styles = StyleSheet.create({
   },
   donutChartLegendLabel: {
     fontSize: typography.fontSizes.sm,
-    color: colors.text.secondary,
     fontWeight: "600" as const,
   },
   categoriesTabWrapper: {
@@ -585,7 +677,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     borderRadius: borderRadius["3xl"],
     borderWidth: 1,
-    borderColor: colors.border.light,
     marginBottom: spacing.md,
     ...shadows.lg,
   },
@@ -610,11 +701,9 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: typography.fontSizes.lg,
     fontWeight: "600" as const,
-    color: colors.text.primary,
   },
   categoryBudget: {
     fontSize: typography.fontSizes.sm,
-    color: colors.text.secondary,
     marginTop: spacing.xs,
   },
   categoryCardHeaderRight: {
@@ -623,17 +712,14 @@ const styles = StyleSheet.create({
   categorySpent: {
     fontSize: typography.fontSizes.lg,
     fontWeight: "700" as const,
-    color: colors.text.primary,
   },
   categoryPercent: {
     fontSize: typography.fontSizes.sm,
-    color: colors.text.secondary,
     marginTop: spacing.xs,
   },
   categoryProgressBarBg: {
     height: 8,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.background.secondary,
     marginTop: spacing.sm,
   },
   categoryProgressBarFill: {

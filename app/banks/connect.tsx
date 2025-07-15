@@ -1,268 +1,465 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Alert,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
   StyleSheet,
   ActivityIndicator,
+  Platform,
+  Linking,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAuth } from "../auth/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuthGuard } from "../../hooks/useAuthGuard";
+import { useAlert } from "../../hooks/useAlert";
+import { useAuth } from "../../app/auth/AuthContext";
+import { Header, Section, BankLogo } from "../../components/ui";
 import { bankingAPI } from "../../services/api";
+import { BANK_LOGOS, BANK_CATEGORIES } from "../../constants/data";
+import { useTheme } from "../../contexts/ThemeContext";
 import {
-  colors,
   spacing,
   borderRadius,
   shadows,
   typography,
 } from "../../constants/theme";
+import * as Constants from "expo-constants";
 
-const popularBanks = [
-  {
-    id: "REVOLUT_REVOLUT",
-    name: "Revolut",
-    logo: "🟣",
-    description: "Digital banking",
-    color: "#5F3DC4",
-  },
-  {
-    id: "MONZO_BANK_LTD",
-    name: "Monzo",
-    logo: "🟠",
-    description: "Digital banking",
-    color: "#FF6B35",
-  },
-  {
-    id: "BARCLAYS_BANK",
-    name: "Barclays",
-    logo: "🔵",
-    description: "Traditional banking",
-    color: "#1E40AF",
-  },
-  {
-    id: "HSBC_BANK_PLC",
-    name: "HSBC",
-    logo: "🔴",
-    description: "Traditional banking",
-    color: "#DC2626",
-  },
-  {
-    id: "LLOYDS_BANK_PLC",
-    name: "Lloyds Bank",
-    logo: "🟢",
-    description: "Traditional banking",
-    color: "#059669",
-  },
-  {
-    id: "NATWEST",
-    name: "NatWest",
-    logo: "🟡",
-    description: "Traditional banking",
-    color: "#D97706",
-  },
-  {
-    id: "SANTANDER_UK",
-    name: "Santander",
-    logo: "🔴",
-    description: "Traditional banking",
-    color: "#DC2626",
-  },
-  {
-    id: "TSB_BANK",
-    name: "TSB",
-    logo: "🟢",
-    description: "Traditional banking",
-    color: "#059669",
-  },
-  {
-    id: "NATIONWIDE",
-    name: "Nationwide",
-    logo: "🏠",
-    description: "Building society",
-    color: "#7C3AED",
-  },
-  {
-    id: "CO_OPERATIVE_BANK",
-    name: "Co-op Bank",
-    logo: "🤝",
-    description: "Ethical banking",
-    color: "#059669",
-  },
-  {
-    id: "FIRST_DIRECT",
-    name: "First Direct",
-    logo: "📱",
-    description: "Digital banking",
-    color: "#1E40AF",
-  },
-  {
-    id: "METRO_BANK",
-    name: "Metro Bank",
-    logo: "🏛️",
-    description: "Traditional banking",
-    color: "#DC2626",
-  },
-];
-
+/**
+ * Bank Connect Screen - Connect bank accounts
+ *
+ * Features:
+ * - Browse available banks by category
+ * - Connect to selected banks
+ * - Secure authentication flow
+ * - Bank information display
+ */
 export default function ConnectBankScreen() {
   const router = useRouter();
+  const { isLoggedIn } = useAuthGuard();
   const { user } = useAuth();
+  const { showAlert, showError } = useAlert();
+  const { colors } = useTheme();
   const [isConnecting, setIsConnecting] = useState(false);
+  const [connectingBankId, setConnectingBankId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [banksList, setBanksList] = useState<any[]>([]);
+  const [loadingBanks, setLoadingBanks] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const handleBankConnection = async (bankId: string, bankName: string) => {
-    if (!user) {
-      Alert.alert("Error", "Please log in to connect your bank account");
+  // Fetch supported banks from API on mount
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        setLoadingBanks(true);
+        const response = await bankingAPI.getInstitutions();
+        setBanksList(response.institutions || []);
+      } catch (error) {
+        console.error("Error loading institutions:", error);
+        showError("Failed to load supported banks");
+      } finally {
+        setLoadingBanks(false);
+      }
+    };
+    fetchBanks();
+  }, []);
+
+  // Filter banks by search query and selected category
+  const filteredBanks = banksList.filter((bank) => {
+    const matchesCategory = selectedCategory
+      ? bank.category === selectedCategory
+      : true;
+    const matchesSearch = bank.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  /**
+   * Handle bank connection
+   */
+  const handleBankConnection = async (bankId: string) => {
+    if (!isLoggedIn) {
+      showError("Please log in to connect your bank account");
+      return;
+    }
+
+    const bank = banksList.find((b) => b.id === bankId);
+    if (!bank) {
+      showError("Bank not found");
       return;
     }
 
     setIsConnecting(true);
+    setConnectingBankId(bankId);
     try {
+      // Call backend to start connection flow
       const response = await bankingAPI.connectBank({
-        institutionId: bankId,
-        redirectUrl: "expenzez://banks/callback",
+        institutionId: bank.id,
+        redirectUrl:
+          Platform.OS === "web"
+            ? window.location.origin + "/banks/callback"
+            : "exp://" +
+              (Constants?.manifest?.hostUri || "localhost:8081") +
+              "/banks/callback",
       });
-
+      console.log("Bank connect response:", response);
       if (response.link) {
-        Alert.alert(
-          "Bank Connection",
-          `You'll be redirected to ${bankName} to authorize the connection. Continue?`,
-          [
-            {
-              text: "Cancel",
-              style: "cancel",
-            },
-            {
-              text: "Continue",
-              onPress: () => {
-                // In a real app, you'd open the URL in a WebView or browser
-                Alert.alert(
-                  "Connection Started",
-                  `Redirecting to ${bankName}...\n\nIn a real app, this would open the bank's authorization page.`
-                );
-              },
-            },
-          ]
-        );
+        if (Platform.OS === "web") {
+          window.location.href = response.link;
+        } else {
+          Linking.openURL(response.link);
+        }
+      } else {
+        showError("Failed to get bank authentication link");
       }
     } catch (error: any) {
-      console.error("Bank connection error:", error);
-      Alert.alert(
-        "Connection Failed",
+      console.error("Connect bank error:", error);
+      showError(
         error.response?.data?.message ||
-          "Failed to connect bank account. Please try again."
+          "Failed to start bank connection. Please try again."
       );
     } finally {
       setIsConnecting(false);
+      setConnectingBankId(null);
     }
   };
 
+  /**
+   * Get category display info
+   */
+  const getCategoryInfo = (categoryKey: string) => {
+    return (
+      BANK_CATEGORIES[categoryKey as keyof typeof BANK_CATEGORIES] || {
+        name: "Other",
+        description: "Other banks",
+        icon: "🏦",
+        color: colors.primary[500],
+      }
+    );
+  };
+
+  // If not logged in, don't render anything (auth guard will handle redirect)
+  if (!isLoggedIn) {
+    return null;
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: colors.background.secondary },
+      ]}
+    >
+      {/* Header */}
+      <Header
+        title="Connect Bank"
+        subtitle="Choose your bank to connect"
+        rightButton={{
+          icon: "bug-outline",
+          onPress: async () => {
+            try {
+              // Debug: Show current auth state
+              console.log("Auth Debug:", { isLoggedIn, user });
+
+              const result = await bankingAPI.testNordigen();
+              showAlert(
+                "Nordigen Test",
+                `Connection successful!\n\nFound ${result.result.institutionsCount} UK banks available.\n\nSample banks:\n${result.result.sampleInstitutions.map((bank: any) => `• ${bank.name}`).join("\n")}`
+              );
+            } catch (error: any) {
+              console.error("Nordigen test error:", error);
+              showError(
+                error.response?.data?.message ||
+                  "Failed to connect to Nordigen. Check your credentials."
+              );
+            }
+          },
+        }}
+      />
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Connect Bank</Text>
-          <TouchableOpacity
-            style={styles.testButton}
-            onPress={async () => {
-              try {
-                const result = await bankingAPI.testNordigen();
-                Alert.alert(
-                  "Nordigen Test",
-                  `Connection successful!\n\nFound ${result.result.institutionsCount} UK banks available.\n\nSample banks:\n${result.result.sampleInstitutions.map((bank: any) => `• ${bank.name}`).join("\n")}`
-                );
-              } catch (error: any) {
-                Alert.alert(
-                  "Nordigen Test Failed",
-                  error.response?.data?.error ||
-                    "Failed to connect to Nordigen. Check your credentials."
-                );
-              }
-            }}
-          >
-            <Ionicons
-              name="bug-outline"
-              size={20}
-              color={colors.primary[500]}
-            />
-          </TouchableOpacity>
-        </View>
+        {/* Debug Info Card */}
+        <Section marginTop={0}>
+          <View style={styles.infoCard}>
+            <LinearGradient
+              colors={[colors.secondary[500], "#8B5CF6"]}
+              style={styles.infoGradient}
+            >
+              <MaterialCommunityIcons
+                name="information"
+                size={32}
+                color="white"
+              />
+              <Text style={styles.infoTitle}>Debug Info</Text>
+              <Text style={styles.infoDescription}>
+                Logged in: {isLoggedIn ? "Yes" : "No"}
+                {"\n"}
+                User: {user?.email || "None"}
+              </Text>
+              <TouchableOpacity
+                style={styles.debugButton}
+                onPress={() => {
+                  if (!isLoggedIn) {
+                    router.push("/auth/Login");
+                  } else {
+                    showAlert("Auth Status", `Logged in as: ${user?.email}`);
+                  }
+                }}
+              >
+                <Text style={styles.debugButtonText}>
+                  {isLoggedIn ? "Check Auth" : "Go to Login"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.debugButton, { marginTop: spacing.sm }]}
+                onPress={async () => {
+                  // Clear stored token and force re-login
+                  await AsyncStorage.removeItem("authToken");
+                  await AsyncStorage.removeItem("isLoggedIn");
+                  await AsyncStorage.removeItem("user");
+                  showAlert(
+                    "Token Cleared",
+                    "Please log in again to get a fresh token"
+                  );
+                  router.push("/auth/Login");
+                }}
+              >
+                <Text style={styles.debugButtonText}>
+                  Clear Token & Re-login
+                </Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+        </Section>
 
         {/* Info Card */}
-        <View style={styles.infoCard}>
-          <LinearGradient
-            colors={[colors.primary[500], "#8B5CF6"]}
-            style={styles.infoGradient}
+        <Section marginTop={0}>
+          <View style={styles.infoCard}>
+            <LinearGradient
+              colors={[colors.primary[500], "#8B5CF6"]}
+              style={styles.infoGradient}
+            >
+              <MaterialCommunityIcons name="bank" size={32} color="white" />
+              <Text style={styles.infoTitle}>Connect Your Bank</Text>
+              <Text style={styles.infoDescription}>
+                Securely connect your bank account to automatically import
+                transactions and track your spending patterns.
+              </Text>
+              <TouchableOpacity
+                style={styles.connectButton}
+                onPress={() => router.push("/banks/select")}
+              >
+                <Text style={styles.connectButtonText}>Browse Real Banks</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+        </Section>
+
+        {/* Bank Categories */}
+        <Section title="Bank Categories">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoryScroll}
+            contentContainerStyle={styles.categoryContainer}
           >
-            <MaterialCommunityIcons
-              name="shield-check"
-              size={32}
-              color="white"
-            />
-            <Text style={styles.infoTitle}>Secure Connection</Text>
-            <Text style={styles.infoDescription}>
-              Your bank credentials are never stored. We use secure APIs to
-              access your financial data.
-            </Text>
-          </LinearGradient>
-        </View>
+            <TouchableOpacity
+              style={[
+                styles.categoryButton,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                !selectedCategory && {
+                  backgroundColor: colors.primary[500],
+                  borderColor: colors.primary[500],
+                },
+              ]}
+              onPress={() => setSelectedCategory(null)}
+            >
+              <Text
+                style={[
+                  styles.categoryButtonText,
+                  { color: colors.text.primary },
+                  !selectedCategory && { color: "white" },
+                ]}
+              >
+                All Banks
+              </Text>
+            </TouchableOpacity>
+
+            {Object.keys(BANK_CATEGORIES).map((category) => {
+              const categoryInfo = getCategoryInfo(category);
+              return (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.categoryButton,
+                    {
+                      backgroundColor: colors.background.primary,
+                      borderColor: colors.border.light,
+                    },
+                    selectedCategory === category && {
+                      backgroundColor: colors.primary[500],
+                      borderColor: colors.primary[500],
+                    },
+                  ]}
+                  onPress={() => setSelectedCategory(category)}
+                >
+                  <Text
+                    style={[
+                      styles.categoryButtonText,
+                      { color: colors.text.primary },
+                      selectedCategory === category && { color: "white" },
+                    ]}
+                  >
+                    {categoryInfo.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </Section>
 
         {/* Bank Selection */}
-        <View style={styles.banksSection}>
-          <Text style={styles.sectionTitle}>Popular Banks</Text>
-          <Text style={styles.sectionSubtitle}>
+        <Section title="Available Banks">
+          <Text
+            style={[styles.sectionSubtitle, { color: colors.text.secondary }]}
+          >
             Select your bank to connect your account
           </Text>
 
-          <View style={styles.banksGrid}>
-            {popularBanks.map((bank) => (
-              <TouchableOpacity
-                key={bank.id}
-                style={styles.bankCard}
-                onPress={() => handleBankConnection(bank.id, bank.name)}
-                disabled={isConnecting}
-              >
-                <View style={styles.bankLogoContainer}>
-                  <Text style={styles.bankLogo}>{bank.logo}</Text>
-                </View>
-                <Text style={styles.bankName}>{bank.name}</Text>
-                <Text style={styles.bankDescription}>{bank.description}</Text>
-                {isConnecting && (
-                  <View style={styles.loadingOverlay}>
-                    <ActivityIndicator color={colors.primary[500]} />
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
+          {/* Search Bar */}
+          <View style={{ marginBottom: spacing.md }}>
+            <TextInput
+              style={{
+                backgroundColor: colors.background.primary,
+                color: colors.text.primary,
+                borderRadius: borderRadius.xl,
+                paddingHorizontal: spacing.lg,
+                paddingVertical: spacing.md,
+                borderWidth: 1,
+                borderColor: colors.border.light,
+                fontSize: 16,
+              }}
+              placeholder="Search banks..."
+              placeholderTextColor={colors.text.tertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCorrect={false}
+              autoCapitalize="none"
+              clearButtonMode="while-editing"
+            />
           </View>
-        </View>
+
+          {loadingBanks ? (
+            <View style={{ alignItems: "center", padding: spacing.lg }}>
+              <ActivityIndicator color={colors.primary[500]} />
+              <Text
+                style={{ color: colors.text.secondary, marginTop: spacing.md }}
+              >
+                Loading banks...
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.banksList}>
+              {filteredBanks.map((bank) => (
+                <TouchableOpacity
+                  key={bank.id}
+                  style={[
+                    styles.bankCard,
+                    {
+                      backgroundColor: colors.background.primary,
+                      borderColor: colors.border.light,
+                    },
+                  ]}
+                  onPress={() => handleBankConnection(bank.id)}
+                  disabled={isConnecting}
+                  activeOpacity={0.7}
+                >
+                  <BankLogo
+                    bankName={bank.name}
+                    logoUrl={bank.logo}
+                    size="medium"
+                    showName={false}
+                    variant="default"
+                  />
+
+                  <View style={styles.bankCardContent}>
+                    <Text
+                      style={[styles.bankName, { color: colors.text.primary }]}
+                    >
+                      {bank.name}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.bankType,
+                        { color: colors.text.secondary },
+                      ]}
+                    >
+                      {bank.bic || bank.id}
+                    </Text>
+                  </View>
+
+                  <View style={styles.bankCardRight}>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color={colors.text.tertiary}
+                    />
+                  </View>
+
+                  {isConnecting && connectingBankId === bank.id && (
+                    <View style={styles.loadingOverlay}>
+                      <ActivityIndicator color={colors.primary[500]} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </Section>
 
         {/* Security Notice */}
-        <View style={styles.securityNotice}>
-          <Ionicons
-            name="lock-closed"
-            size={20}
-            color={colors.text.secondary}
-          />
-          <Text style={styles.securityText}>
-            Your data is protected with bank-level security
-          </Text>
-        </View>
+        <Section title="Security & Privacy">
+          <View style={styles.securityCard}>
+            <View style={styles.securityItem}>
+              <Ionicons name="shield-checkmark" size={20} color="#10B981" />
+              <Text
+                style={[styles.securityText, { color: colors.text.primary }]}
+              >
+                Bank-level encryption protects your data
+              </Text>
+            </View>
+            <View style={styles.securityItem}>
+              <Ionicons name="lock-closed" size={20} color="#10B981" />
+              <Text
+                style={[styles.securityText, { color: colors.text.primary }]}
+              >
+                Your credentials are never stored
+              </Text>
+            </View>
+            <View style={styles.securityItem}>
+              <Ionicons name="eye-off" size={20} color="#10B981" />
+              <Text
+                style={[styles.securityText, { color: colors.text.primary }]}
+              >
+                Read-only access to your accounts
+              </Text>
+            </View>
+          </View>
+        </Section>
       </ScrollView>
     </SafeAreaView>
   );
@@ -271,49 +468,14 @@ export default function ConnectBankScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.secondary,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing.xl,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.background.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.sm,
-  },
-  headerTitle: {
-    fontSize: typography.fontSizes.xl,
-    fontWeight: "700" as const,
-    color: colors.text.primary,
-  },
-  headerSpacer: {
-    width: 40,
-  },
-  testButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.background.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.sm,
+    paddingBottom: spacing["2xl"],
   },
   infoCard: {
-    marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
   },
   infoGradient: {
@@ -323,72 +485,93 @@ const styles = StyleSheet.create({
     ...shadows.lg,
   },
   infoTitle: {
+    color: "white",
     fontSize: typography.fontSizes.lg,
     fontWeight: "700" as const,
-    color: "white",
     marginTop: spacing.md,
     marginBottom: spacing.sm,
   },
   infoDescription: {
+    color: "white",
     fontSize: typography.fontSizes.base,
-    color: "rgba(255, 255, 255, 0.9)",
     textAlign: "center" as const,
     lineHeight: typography.fontSizes.base * 1.5,
+    marginBottom: spacing.lg,
   },
-  banksSection: {
-    marginHorizontal: spacing.lg,
+  connectButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.xl,
+    marginTop: spacing.md,
   },
-  sectionTitle: {
-    fontSize: typography.fontSizes.xl,
-    fontWeight: "700" as const,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
+  connectButtonText: {
+    color: "white",
+    fontSize: typography.fontSizes.base,
+    fontWeight: "600" as const,
+    textAlign: "center" as const,
+  },
+  debugButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  debugButtonText: {
+    color: "white",
+    fontSize: typography.fontSizes.sm,
+    fontWeight: "600" as const,
+  },
+  categoryScroll: {
+    marginBottom: spacing.md,
+  },
+  categoryContainer: {
+    paddingHorizontal: spacing.sm,
+  },
+  categoryButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.xl,
+    marginRight: spacing.sm,
+    borderWidth: 1,
+  },
+  categoryButtonText: {
+    fontSize: typography.fontSizes.sm,
+    fontWeight: "600" as const,
   },
   sectionSubtitle: {
     fontSize: typography.fontSizes.base,
-    color: colors.text.secondary,
     marginBottom: spacing.lg,
   },
-  banksGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+  banksList: {
+    gap: spacing.sm,
   },
   bankCard: {
-    width: "48%",
-    backgroundColor: colors.background.primary,
-    borderRadius: borderRadius["3xl"],
-    padding: spacing.lg,
-    marginBottom: spacing.md,
+    flexDirection: "row",
     alignItems: "center",
-    ...shadows.lg,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.border.light,
+    ...shadows.sm,
     position: "relative",
   },
-  bankLogoContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.background.secondary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.md,
-  },
-  bankLogo: {
-    fontSize: 32,
+  bankCardContent: {
+    flex: 1,
+    marginLeft: spacing.md,
   },
   bankName: {
     fontSize: typography.fontSizes.base,
     fontWeight: "600" as const,
-    color: colors.text.primary,
-    textAlign: "center" as const,
     marginBottom: spacing.xs,
   },
-  bankDescription: {
+  bankType: {
     fontSize: typography.fontSizes.sm,
-    color: colors.text.secondary,
-    textAlign: "center" as const,
+  },
+  bankCardRight: {
+    marginLeft: spacing.sm,
   },
   loadingOverlay: {
     position: "absolute",
@@ -397,22 +580,20 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: "rgba(255, 255, 255, 0.8)",
-    borderRadius: borderRadius["3xl"],
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: borderRadius.xl,
   },
-  securityNotice: {
+  securityCard: {
+    gap: spacing.md,
+  },
+  securityItem: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    paddingVertical: spacing.md,
+    gap: spacing.sm,
   },
   securityText: {
     fontSize: typography.fontSizes.sm,
-    color: colors.text.secondary,
-    marginLeft: spacing.sm,
+    flex: 1,
   },
 });
- 

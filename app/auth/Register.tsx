@@ -19,11 +19,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, TextField, Card, Typography } from "../../components/ui";
-import { colors, spacing, borderRadius, shadows } from "../../constants/theme";
+import { useTheme } from "../../contexts/ThemeContext";
+import { spacing, borderRadius, shadows } from "../../constants/theme";
 
 export default function Register() {
   const router = useRouter();
   const { register } = useAuth();
+  const { colors } = useTheme();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -56,7 +58,12 @@ export default function Register() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: colors.background.secondary },
+      ]}
+    >
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -69,7 +76,12 @@ export default function Register() {
           <View style={styles.content}>
             {/* Header Section */}
             <View style={styles.header}>
-              <View style={styles.logoContainer}>
+              <View
+                style={[
+                  styles.logoContainer,
+                  { backgroundColor: colors.primary[500] },
+                ]}
+              >
                 <FontAwesome5 name="user-plus" size={28} color="white" />
               </View>
               <Typography variant="h1" color="primary" align="center">
@@ -148,22 +160,22 @@ export default function Register() {
               />
 
               {/* Login Link */}
-            <TouchableOpacity
+              <TouchableOpacity
                 style={styles.loginLink}
-              onPress={() => router.push("/auth/Login")}
-            >
+                onPress={() => router.push("/auth/Login")}
+              >
                 <Typography variant="body" color="secondary" align="center">
-                Already have an account?{" "}
+                  Already have an account?{" "}
                   <Typography variant="body" color="primary" weight="bold">
                     Sign in
                   </Typography>
                 </Typography>
-            </TouchableOpacity>
+              </TouchableOpacity>
 
               {/* Register Button */}
               <Button
                 title="Create Account"
-              onPress={handleRegister}
+                onPress={handleRegister}
                 variant="primary"
                 size="large"
                 loading={isLoading}
@@ -172,8 +184,15 @@ export default function Register() {
               />
 
               {/* Divider */}
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
+              <View
+                style={[styles.divider, { borderColor: colors.border.light }]}
+              >
+                <View
+                  style={[
+                    styles.dividerLine,
+                    { backgroundColor: colors.border.light },
+                  ]}
+                />
                 <Typography
                   variant="caption"
                   color="tertiary"
@@ -182,31 +201,60 @@ export default function Register() {
                 >
                   or
                 </Typography>
-                <View style={styles.dividerLine} />
-            </View>
+                <View
+                  style={[
+                    styles.dividerLine,
+                    { backgroundColor: colors.border.light },
+                  ]}
+                />
+              </View>
 
               {/* Social Register Buttons */}
               <View style={styles.socialButtons}>
                 <TouchableOpacity
-                  style={styles.socialButton}
+                  style={[
+                    styles.socialButton,
+                    {
+                      backgroundColor: colors.background.primary,
+                      borderColor: colors.border.light,
+                    },
+                  ]}
                   onPress={() => Alert.alert("Google Register")}
                 >
                   <AntDesign name="google" size={20} color="#EA4335" />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.socialButton}
+                  style={[
+                    styles.socialButton,
+                    {
+                      backgroundColor: colors.background.primary,
+                      borderColor: colors.border.light,
+                    },
+                  ]}
                   onPress={() => Alert.alert("Facebook Register")}
                 >
                   <FontAwesome name="facebook" size={20} color="#4267B2" />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.socialButton}
+                  style={[
+                    styles.socialButton,
+                    {
+                      backgroundColor: colors.background.primary,
+                      borderColor: colors.border.light,
+                    },
+                  ]}
                   onPress={() => Alert.alert("Apple Register")}
                 >
                   <FontAwesome5 name="apple" size={20} color="#111" />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.socialButton}
+                  style={[
+                    styles.socialButton,
+                    {
+                      backgroundColor: colors.background.primary,
+                      borderColor: colors.border.light,
+                    },
+                  ]}
                   onPress={() => Alert.alert("X Register")}
                 >
                   <MaterialCommunityIcons
@@ -215,7 +263,7 @@ export default function Register() {
                     color="#111"
                   />
                 </TouchableOpacity>
-            </View>
+              </View>
             </Card>
           </View>
         </ScrollView>
@@ -227,7 +275,6 @@ export default function Register() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.secondary,
   },
   keyboardView: {
     flex: 1,
@@ -252,7 +299,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.primary[500],
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.md,
@@ -276,7 +322,6 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.border.light,
     borderRadius: 1,
   },
   dividerText: {
@@ -289,11 +334,9 @@ const styles = StyleSheet.create({
   socialButton: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: colors.background.primary,
     paddingVertical: spacing.md,
     borderRadius: borderRadius.lg,
     borderWidth: 2,
-    borderColor: colors.border.light,
     marginHorizontal: 4,
     ...shadows.sm,
   },

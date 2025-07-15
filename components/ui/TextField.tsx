@@ -8,12 +8,8 @@ import {
   TextStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  colors,
-  typography,
-  spacing,
-  borderRadius,
-} from "../../constants/theme";
+import { typography, spacing, borderRadius } from "../../constants/theme";
+import { useTheme } from "../../contexts/ThemeContext";
 
 interface TextFieldProps {
   label?: string;
@@ -53,32 +49,86 @@ export default function TextField({
   inputStyle,
   labelStyle,
 }: TextFieldProps) {
+  const { colors } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const containerStyle = [styles.container, style];
 
-  const inputContainerStyle = [
-    styles.inputContainer,
-    isFocused && styles.inputContainerFocused,
-    error && styles.inputContainerError,
-    disabled && styles.inputContainerDisabled,
-  ];
+  const getInputContainerStyle = () => {
+    const baseStyle = {
+      backgroundColor: colors.background.secondary,
+      borderRadius: borderRadius.lg,
+      borderWidth: 2,
+      borderColor: colors.border.light,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+    };
 
-  const inputStyleArray = [styles.input, inputStyle];
+    if (isFocused) {
+      return {
+        ...baseStyle,
+        borderColor: colors.primary[500],
+        backgroundColor: colors.background.primary,
+      };
+    }
 
-  const labelStyleArray = [
-    styles.label,
-    required && styles.labelRequired,
-    labelStyle,
-  ];
+    if (error) {
+      return {
+        ...baseStyle,
+        borderColor: colors.error[500],
+      };
+    }
+
+    if (disabled) {
+      return {
+        ...baseStyle,
+        backgroundColor: colors.gray[100],
+        opacity: 0.6,
+      };
+    }
+
+    return baseStyle;
+  };
+
+  const getLabelStyle = () => {
+    return {
+      fontSize: typography.fontSizes.sm,
+      fontWeight: typography.fontWeights.semibold,
+      color: colors.text.primary,
+      marginBottom: spacing.sm,
+    };
+  };
+
+  const getInputStyle = () => {
+    return {
+      flex: 1,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      fontSize: typography.fontSizes.base,
+      fontWeight: typography.fontWeights.medium,
+      color: colors.text.primary,
+    };
+  };
+
+  const getErrorStyle = () => {
+    return {
+      fontSize: typography.fontSizes.sm,
+      color: colors.error[500],
+      marginTop: spacing.xs,
+    };
+  };
+
+  const inputContainerStyle = [getInputContainerStyle()];
+  const inputStyleArray = [getInputStyle(), inputStyle];
+  const labelStyleArray = [getLabelStyle(), labelStyle];
 
   return (
     <View style={containerStyle}>
       {label && (
         <Text style={labelStyleArray}>
           {label}
-          {required && <Text style={styles.required}> *</Text>}
+          {required && <Text style={{ color: colors.error[500] }}> *</Text>}
         </Text>
       )}
 
@@ -109,7 +159,7 @@ export default function TextField({
         )}
       </View>
 
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && <Text style={getErrorStyle()}>{error}</Text>}
     </View>
   );
 }
@@ -119,60 +169,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
 
-  label: {
-    fontSize: typography.fontSizes.sm,
-    fontWeight: typography.fontWeights.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-
-  labelRequired: {
-    color: colors.error[500],
-  },
-
-  required: {
-    color: colors.error[500],
-  },
-
-  inputContainer: {
-    backgroundColor: colors.background.secondary,
-    borderRadius: borderRadius.lg,
-    borderWidth: 2,
-    borderColor: colors.border.light,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  inputContainerFocused: {
-    borderColor: colors.primary[500],
-    backgroundColor: colors.background.primary,
-  },
-
-  inputContainerError: {
-    borderColor: colors.error[500],
-  },
-
-  inputContainerDisabled: {
-    backgroundColor: colors.gray[100],
-    opacity: 0.6,
-  },
-
-  input: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: typography.fontSizes.base,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text.primary,
-  },
-
   eyeIcon: {
     paddingHorizontal: spacing.md,
-  },
-
-  errorText: {
-    fontSize: typography.fontSizes.sm,
-    color: colors.error[500],
-    marginTop: spacing.xs,
   },
 });

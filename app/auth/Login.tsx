@@ -18,11 +18,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../auth/AuthContext";
 import { Button, TextField, Card, Typography } from "../../components/ui";
-import { colors, spacing, borderRadius, shadows } from "../../constants/theme";
+import { useTheme } from "../../contexts/ThemeContext";
+import { spacing, borderRadius, shadows } from "../../constants/theme";
 
 export default function Login() {
   const router = useRouter();
   const { login } = useAuth();
+  const { colors } = useTheme();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,7 +42,10 @@ export default function Login() {
       if (result.success) {
         router.replace("/(tabs)");
       } else {
-        Alert.alert("Login Failed", result.error || "Please check your credentials.");
+        Alert.alert(
+          "Login Failed",
+          result.error || "Please check your credentials."
+        );
       }
     } catch (err) {
       Alert.alert("Login Failed", "Please check your credentials.");
@@ -50,7 +55,12 @@ export default function Login() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: colors.background.secondary },
+      ]}
+    >
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -58,7 +68,12 @@ export default function Login() {
         <View style={styles.content}>
           {/* Header Section */}
           <View style={styles.header}>
-            <View style={styles.logoContainer}>
+            <View
+              style={[
+                styles.logoContainer,
+                { backgroundColor: colors.primary[500] },
+              ]}
+            >
               <FontAwesome5 name="sign-in-alt" size={28} color="white" />
             </View>
             <Typography variant="h1" color="primary" align="center">
@@ -134,8 +149,15 @@ export default function Login() {
             </TouchableOpacity>
 
             {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
+            <View
+              style={[styles.divider, { borderColor: colors.border.light }]}
+            >
+              <View
+                style={[
+                  styles.dividerLine,
+                  { backgroundColor: colors.border.light },
+                ]}
+              />
               <Typography
                 variant="caption"
                 color="tertiary"
@@ -144,31 +166,83 @@ export default function Login() {
               >
                 or
               </Typography>
-              <View style={styles.dividerLine} />
+              <View
+                style={[
+                  styles.dividerLine,
+                  { backgroundColor: colors.border.light },
+                ]}
+              />
             </View>
+
+            {/* Test Login Button */}
+            <TouchableOpacity
+              style={[
+                styles.testLoginButton,
+                {
+                  backgroundColor: colors.secondary[100],
+                  borderColor: colors.secondary[300],
+                },
+              ]}
+              onPress={async () => {
+                setEmail("test@example.com");
+                setPassword("password123");
+                // Auto-login after setting values
+                setTimeout(() => {
+                  handleLogin();
+                }, 100);
+              }}
+            >
+              <Typography variant="body" color="secondary" align="center">
+                Quick Test Login
+              </Typography>
+            </TouchableOpacity>
 
             {/* Social Login Buttons */}
             <View style={styles.socialButtons}>
               <TouchableOpacity
-                style={styles.socialButton}
+                style={[
+                  styles.socialButton,
+                  {
+                    backgroundColor: colors.background.primary,
+                    borderColor: colors.border.light,
+                  },
+                ]}
                 onPress={() => Alert.alert("Google Login")}
               >
                 <AntDesign name="google" size={20} color="#EA4335" />
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.socialButton}
+                style={[
+                  styles.socialButton,
+                  {
+                    backgroundColor: colors.background.primary,
+                    borderColor: colors.border.light,
+                  },
+                ]}
                 onPress={() => Alert.alert("Facebook Login")}
               >
                 <FontAwesome name="facebook" size={20} color="#4267B2" />
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.socialButton}
+                style={[
+                  styles.socialButton,
+                  {
+                    backgroundColor: colors.background.primary,
+                    borderColor: colors.border.light,
+                  },
+                ]}
                 onPress={() => Alert.alert("Apple Login")}
               >
                 <FontAwesome5 name="apple" size={20} color="#111" />
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.socialButton}
+                style={[
+                  styles.socialButton,
+                  {
+                    backgroundColor: colors.background.primary,
+                    borderColor: colors.border.light,
+                  },
+                ]}
                 onPress={() => Alert.alert("X Login")}
               >
                 <MaterialCommunityIcons
@@ -188,7 +262,6 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.secondary,
   },
   keyboardView: {
     flex: 1,
@@ -206,7 +279,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.primary[500],
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.md,
@@ -234,7 +306,6 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.border.light,
     borderRadius: 1,
   },
   dividerText: {
@@ -244,14 +315,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
+  testLoginButton: {
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    marginBottom: spacing.lg,
+    ...shadows.sm,
+  },
   socialButton: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: colors.background.primary,
     paddingVertical: spacing.md,
     borderRadius: borderRadius.lg,
     borderWidth: 2,
-    borderColor: colors.border.light,
     marginHorizontal: 4,
     ...shadows.sm,
   },

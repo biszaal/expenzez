@@ -1,72 +1,157 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
-  FlatList,
-  ScrollView,
+  ActivityIndicator,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import transactionsData from "../../test/data/transactions.json";
-
-function formatAmount(amount: number) {
-  const color = amount < 0 ? "#E53E3E" : "#16A34A";
-  return (
-    <Text style={[styles.amount, { color }]}>
-      {amount < 0 ? "-" : "+"}£{Math.abs(amount).toFixed(2)}
-    </Text>
-  );
-}
-
-function formatDate(date: string) {
-  const d = new Date(date);
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
+import { useTheme } from "../../contexts/ThemeContext";
+import { spacing, borderRadius, shadows } from "../../constants/theme";
+import { bankingAPI } from "../../services/api";
+import { formatCurrency } from "../../utils/formatters";
 
 export default function TransactionsPage() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoading(true);
+      try {
+        const accountsRes = await bankingAPI.getAccounts();
+        const accounts = accountsRes.accounts || [];
+        let allTxns = [];
+        for (const acc of accounts) {
+          const txnsRes = await bankingAPI.getTransactions(acc.id);
+          if (txnsRes.transactions) {
+            allTxns = allTxns.concat(txnsRes.transactions);
+          }
+        }
+        // Sort by date descending
+        allTxns.sort((a, b) => new Date(b.date) - new Date(a.date));
+        setTransactions(allTxns);
+      } catch (e) {
+        // Optionally handle error
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTransactions();
+  }, []);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.topBar}>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        { backgroundColor: colors.background.secondary },
+      ]}
+    >
+      <View
+        style={[
+          styles.topBar,
+          { backgroundColor: colors.background.secondary },
+        ]}
+      >
         <TouchableOpacity
-          style={styles.backButton}
+          style={[
+            styles.backButton,
+            { backgroundColor: colors.background.primary },
+            shadows.sm,
+          ]}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={26} color="#2E2353" />
+          <Ionicons name="chevron-back" size={26} color={colors.primary[500]} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Transactions</Text>
-        <View style={{ width: 32 }} /> {/* Placeholder for symmetry */}
+        <Text style={[styles.topBarTitle, { color: colors.text.primary }]}>
+          Transactions
+        </Text>
+        <View style={{ width: 32 }} />
       </View>
-      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionHeader}>Recent Transactions</Text>
+      <View
+        style={[
+          styles.content,
+          { backgroundColor: colors.background.secondary },
+        ]}
+      >
+        <View
+          style={[
+            styles.transactionCard,
+            { backgroundColor: colors.background.primary },
+            shadows.md,
+          ]}
+        >
+          <View style={styles.transactionHeader}>
+            <Ionicons
+              name="card-outline"
+              size={24}
+              color={colors.primary[500]}
+            />
+            <Text
+              style={[styles.transactionTitle, { color: colors.text.primary }]}
+            >
+              Recent Transactions
+            </Text>
+          </View>
+          <View style={styles.transactionList}>
+            {loading ? (
+              <ActivityIndicator size="small" color={colors.primary[500]} />
+            ) : transactions.length === 0 ? (
+              <Text style={{ color: colors.text.secondary }}>
+                No transactions found.
+              </Text>
+            ) : (
+              transactions.map((txn, idx) => (
+                <View
+                  key={txn.id || idx}
+                  style={[
+                    styles.transactionItem,
+                    { borderBottomColor: colors.border.light },
+                  ]}
+                >
+                  <View style={styles.transactionInfo}>
+                    <Text
+                      style={[
+                        styles.transactionName,
+                        { color: colors.text.primary },
+                      ]}
+                    >
+                      {txn.description || txn.name || "Transaction"}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.transactionDate,
+                        { color: colors.text.secondary },
+                      ]}
+                    >
+                      {txn.date ? new Date(txn.date).toLocaleString() : ""}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.transactionAmount,
+                      {
+                        color:
+                          txn.amount < 0
+                            ? colors.error[500]
+                            : colors.success[500],
+                      },
+                    ]}
+                  >
+                    {formatCurrency(txn.amount)}
+                  </Text>
+                </View>
+              ))
+            )}
+          </View>
         </View>
-        <FlatList
-          data={transactionsData}
-          keyExtractor={(item) => item.id}
-          style={styles.list}
-          contentContainerStyle={{ paddingBottom: 24 }}
-          renderItem={({ item }) => (
-            <View style={styles.transactionCard}>
-              <View style={styles.iconWrap}>
-                <Ionicons name={item.icon as any} size={26} color="#7C4DFF" />
-              </View>
-              <View style={styles.details}>
-                <Text style={styles.merchant}>{item.merchant}</Text>
-                <Text style={styles.categoryDate}>
-                  {item.category} • {formatDate(item.date)}
-                </Text>
-              </View>
-              <View style={styles.amountWrap}>{formatAmount(item.amount)}</View>
-            </View>
-          )}
-        />
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -74,7 +159,6 @@ export default function TransactionsPage() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F5F7FB",
   },
   topBar: {
     flexDirection: "row",
@@ -83,7 +167,6 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     paddingBottom: 16,
     paddingHorizontal: 14,
-    backgroundColor: "#F5F7FB",
   },
   backButton: {
     width: 32,
@@ -91,73 +174,53 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 2,
   },
   topBarTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#2E2353",
   },
-  sectionHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-    marginBottom: 8,
-    paddingHorizontal: 20,
-  },
-  sectionHeader: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#2E2353",
-  },
-  list: {
-    paddingHorizontal: 12,
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 20,
   },
   transactionCard: {
-    backgroundColor: "#fff",
-    borderRadius: 18,
+    borderRadius: 16,
+    padding: 20,
+  },
+  transactionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 14,
-    padding: 14,
-    shadowColor: "#7C4DFF",
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 1,
+    marginBottom: 20,
   },
-  iconWrap: {
-    backgroundColor: "#F5F7FB",
-    borderRadius: 18,
-    padding: 10,
-    marginRight: 14,
+  transactionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginLeft: 12,
   },
-  details: {
+  transactionList: {
+    gap: 16,
+  },
+  transactionItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  transactionInfo: {
     flex: 1,
-    justifyContent: "center",
   },
-  merchant: {
+  transactionName: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#2E2353",
-  },
-  categoryDate: {
-    color: "#7B7B93",
-    fontSize: 13,
     fontWeight: "500",
-    marginTop: 1,
+    marginBottom: 4,
   },
-  amountWrap: {
-    justifyContent: "center",
-    alignItems: "flex-end",
+  transactionDate: {
+    fontSize: 14,
   },
-  amount: {
-    fontWeight: "bold",
+  transactionAmount: {
     fontSize: 16,
+    fontWeight: "600",
   },
 });

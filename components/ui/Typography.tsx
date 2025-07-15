@@ -1,6 +1,7 @@
 import React from "react";
 import { Text, StyleSheet, TextStyle } from "react-native";
-import { colors, typography } from "../../constants/theme";
+import { typography } from "../../constants/theme";
+import { useTheme } from "../../contexts/ThemeContext";
 
 interface TypographyProps {
   children: React.ReactNode;
@@ -26,10 +27,33 @@ export default function Typography({
   align = "left",
   style,
 }: TypographyProps) {
+  const { colors } = useTheme();
+
+  const getColorStyle = () => {
+    switch (color) {
+      case "primary":
+        return { color: colors.text.primary };
+      case "secondary":
+        return { color: colors.text.secondary };
+      case "tertiary":
+        return { color: colors.text.tertiary };
+      case "inverse":
+        return { color: colors.text.inverse };
+      case "success":
+        return { color: colors.success[500] };
+      case "error":
+        return { color: colors.error[500] };
+      case "warning":
+        return { color: colors.warning[500] };
+      default:
+        return { color: colors.text.primary };
+    }
+  };
+
   const textStyle = [
     styles.base,
     styles[variant],
-    styles[`color${color.charAt(0).toUpperCase() + color.slice(1)}`],
+    getColorStyle(),
     styles[`weight${weight.charAt(0).toUpperCase() + weight.slice(1)}`],
     styles[`align${align.charAt(0).toUpperCase() + align.slice(1)}`],
     style,
@@ -40,7 +64,7 @@ export default function Typography({
 
 const styles = StyleSheet.create({
   base: {
-    color: colors.text.primary,
+    // Color will be applied dynamically
   },
 
   // Variants
@@ -84,35 +108,6 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSizes.sm,
     fontWeight: typography.fontWeights.semibold,
     lineHeight: typography.lineHeights.normal * typography.fontSizes.sm,
-  },
-
-  // Colors
-  colorPrimary: {
-    color: colors.text.primary,
-  },
-
-  colorSecondary: {
-    color: colors.text.secondary,
-  },
-
-  colorTertiary: {
-    color: colors.text.tertiary,
-  },
-
-  colorInverse: {
-    color: colors.text.inverse,
-  },
-
-  colorSuccess: {
-    color: colors.success[500],
-  },
-
-  colorError: {
-    color: colors.error[500],
-  },
-
-  colorWarning: {
-    color: colors.warning[500],
   },
 
   // Weights

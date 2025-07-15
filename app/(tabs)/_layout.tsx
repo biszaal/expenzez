@@ -2,16 +2,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
 import { LinearGradient } from "expo-linear-gradient";
-import { colors } from "../../constants/theme";
+import { useTheme } from "../../contexts/ThemeContext";
 
 export default function TabLayout() {
+  const { colors } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.primary[500],
-        tabBarInactiveTintColor: "#9CA3AF",
+        tabBarInactiveTintColor: colors.text.tertiary,
         tabBarStyle: {
-          backgroundColor: "#FFFFFF",
+          backgroundColor: colors.background.primary,
           borderTopWidth: 0,
           elevation: 0,
           shadowOpacity: 0,
@@ -54,9 +56,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="account"
         options={{
-          title: "Profile",
+          title: "Account",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),

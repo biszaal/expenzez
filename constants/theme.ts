@@ -1,5 +1,5 @@
 // Global theme constants for consistent design
-export const colors = {
+export const lightColors = {
   // Primary colors
   primary: {
     50: "#EFF6FF",
@@ -106,6 +106,116 @@ export const colors = {
   },
 };
 
+export const darkColors = {
+  // Primary colors (darker for dark mode)
+  primary: {
+    50: "#0F172A",
+    100: "#1E293B",
+    200: "#334155",
+    300: "#475569",
+    400: "#64748B",
+    500: "#8B5CF6",
+    600: "#A78BFA",
+    700: "#C4B5FD",
+    800: "#DDD6FE",
+    900: "#EDE9FE",
+  },
+
+  // Secondary colors (darker for dark mode)
+  secondary: {
+    50: "#052e16",
+    100: "#064e3b",
+    200: "#065f46",
+    300: "#047857",
+    400: "#059669",
+    500: "#10b981",
+    600: "#34d399",
+    700: "#6ee7b7",
+    800: "#a7f3d0",
+    900: "#d1fae5",
+  },
+
+  // Gray scale (darker for dark mode)
+  gray: {
+    50: "#0F0F0F",
+    100: "#1A1A1A",
+    200: "#262626",
+    300: "#404040",
+    400: "#525252",
+    500: "#737373",
+    600: "#A3A3A3",
+    700: "#D4D4D4",
+    800: "#E5E5E5",
+    900: "#F5F5F5",
+  },
+
+  // Status colors (darker for dark mode)
+  success: {
+    50: "#052e16",
+    100: "#064e3b",
+    200: "#065f46",
+    300: "#047857",
+    400: "#059669",
+    500: "#10b981",
+    600: "#34d399",
+    700: "#6ee7b7",
+  },
+
+  error: {
+    50: "#450a0a",
+    100: "#7f1d1d",
+    200: "#991b1b",
+    300: "#b91c1c",
+    400: "#dc2626",
+    500: "#ef4444",
+    600: "#f87171",
+    700: "#fca5a5",
+  },
+
+  warning: {
+    50: "#451a03",
+    100: "#78350f",
+    200: "#92400e",
+    300: "#a16207",
+    400: "#ca8a04",
+    500: "#eab308",
+    600: "#fbbf24",
+    700: "#fcd34d",
+  },
+
+  // Background colors (darker for dark mode)
+  background: {
+    primary: "#0F0F0F",
+    secondary: "#1A1A1A",
+    tertiary: "#262626",
+  },
+
+  // Text colors (darker for dark mode)
+  text: {
+    primary: "#F5F5F5",
+    secondary: "#D4D4D4",
+    tertiary: "#A3A3A3",
+    inverse: "#0F0F0F",
+  },
+
+  // Border colors (darker for dark mode)
+  border: {
+    light: "#262626",
+    medium: "#404040",
+    dark: "#525252",
+  },
+
+  // Shadow colors (darker for dark mode)
+  shadow: {
+    light: "rgba(0, 0, 0, 0.5)",
+    medium: "rgba(0, 0, 0, 0.7)",
+    dark: "rgba(0, 0, 0, 0.9)",
+  },
+};
+
+// Legacy colors export for backward compatibility
+export const colors = lightColors;
+
 export const typography = {
   fontSizes: {
     xs: 12,
@@ -160,29 +270,38 @@ export const borderRadius = {
   full: 9999,
 };
 
-export const shadows = {
-  sm: {
-    shadowColor: colors.shadow.light,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  md: {
-    shadowColor: colors.shadow.medium,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  lg: {
-    shadowColor: colors.shadow.dark,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    elevation: 8,
-  },
+// Create shadow styles for both light and dark modes
+export const createShadows = (colorScheme: "light" | "dark") => {
+  const shadowColors =
+    colorScheme === "dark" ? darkColors.shadow : lightColors.shadow;
+
+  return {
+    sm: {
+      shadowColor: shadowColors.light,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 1,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    md: {
+      shadowColor: shadowColors.medium,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 1,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    lg: {
+      shadowColor: shadowColors.dark,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 1,
+      shadowRadius: 16,
+      elevation: 8,
+    },
+  };
 };
+
+// Legacy shadows export for backward compatibility
+export const shadows = createShadows("light");
 
 export const layout = {
   screenPadding: 24,

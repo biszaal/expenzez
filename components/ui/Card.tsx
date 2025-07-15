@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet, ViewStyle } from "react-native";
-import { colors, borderRadius, shadows, spacing } from "../../constants/theme";
+import { borderRadius, spacing } from "../../constants/theme";
+import { useTheme } from "../../contexts/ThemeContext";
 
 interface CardProps {
   children: React.ReactNode;
@@ -17,11 +18,65 @@ export default function Card({
   margin = "none",
   style,
 }: CardProps) {
+  const { colors, shadows } = useTheme();
+
+  const getVariantStyle = () => {
+    switch (variant) {
+      case "default":
+        return {
+          backgroundColor: colors.background.primary,
+          borderWidth: 1,
+          borderColor: colors.border.light,
+        };
+      case "elevated":
+        return {
+          backgroundColor: colors.background.primary,
+          ...shadows.md,
+        };
+      case "outlined":
+        return {
+          backgroundColor: colors.background.primary,
+          borderWidth: 2,
+          borderColor: colors.border.medium,
+        };
+      default:
+        return {
+          backgroundColor: colors.background.primary,
+        };
+    }
+  };
+
+  const getPaddingStyle = () => {
+    switch (padding) {
+      case "none":
+        return { padding: 0 };
+      case "small":
+        return { padding: spacing.md };
+      case "large":
+        return { padding: spacing.xl };
+      default:
+        return { padding: spacing.lg };
+    }
+  };
+
+  const getMarginStyle = () => {
+    switch (margin) {
+      case "none":
+        return { margin: 0 };
+      case "small":
+        return { margin: spacing.md };
+      case "large":
+        return { margin: spacing.xl };
+      default:
+        return { margin: spacing.lg };
+    }
+  };
+
   const cardStyle = [
     styles.base,
-    styles[variant],
-    styles[`padding${padding.charAt(0).toUpperCase() + padding.slice(1)}`],
-    styles[`margin${margin.charAt(0).toUpperCase() + margin.slice(1)}`],
+    getVariantStyle(),
+    getPaddingStyle(),
+    getMarginStyle(),
     style,
   ];
 
@@ -30,56 +85,6 @@ export default function Card({
 
 const styles = StyleSheet.create({
   base: {
-    backgroundColor: colors.background.primary,
     borderRadius: borderRadius.xl,
-  },
-
-  // Variants
-  default: {
-    borderWidth: 1,
-    borderColor: colors.border.light,
-  },
-
-  elevated: {
-    ...shadows.md,
-  },
-
-  outlined: {
-    borderWidth: 2,
-    borderColor: colors.border.medium,
-  },
-
-  // Padding variants
-  paddingNone: {
-    padding: 0,
-  },
-
-  paddingSmall: {
-    padding: spacing.md,
-  },
-
-  paddingMedium: {
-    padding: spacing.lg,
-  },
-
-  paddingLarge: {
-    padding: spacing.xl,
-  },
-
-  // Margin variants
-  marginNone: {
-    margin: 0,
-  },
-
-  marginSmall: {
-    margin: spacing.md,
-  },
-
-  marginMedium: {
-    margin: spacing.lg,
-  },
-
-  marginLarge: {
-    margin: spacing.xl,
   },
 });

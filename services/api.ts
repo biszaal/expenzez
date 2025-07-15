@@ -1,10 +1,9 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform, Linking } from "react-native";
 
 // API Configuration
-const API_BASE_URL = __DEV__
-  ? "http://192.168.1.76:3001/api" // Local development - your computer's IP
-  : "https://gvm5qgzppt.eu-west-2.awsapprunner.com/api"; // AWS App Runner URL
+const API_BASE_URL = "http://192.168.0.93:3001/api"; // Updated for mobile access on local network
 
 // Create axios instance
 const api = axios.create({
@@ -74,6 +73,14 @@ export const bankingAPI = {
   // Test Nordigen connection
   testNordigen: async () => {
     const response = await api.get("/banking/test-nordigen");
+    return response.data;
+  },
+
+  // Get available institutions
+  getInstitutions: async (country?: string) => {
+    const response = await api.get("/banking/institutions", {
+      params: { country: country || "gb" },
+    });
     return response.data;
   },
 
