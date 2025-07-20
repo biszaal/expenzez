@@ -1,8 +1,8 @@
 // API Configuration for different environments
 export const API_CONFIG = {
-  // Production - EC2 instance
+  // Production - AWS Lambda
   production: {
-    baseURL: "http://52.56.71.152:3001/api",
+    baseURL: "https://td9m2wqin1.execute-api.eu-west-2.amazonaws.com",
     timeout: 30000,
   },
 

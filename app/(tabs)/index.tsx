@@ -18,6 +18,7 @@ import { useAuth } from "../auth/AuthContext";
 import { bankingAPI } from "../../services/api";
 import { COLORS, SPACING, SHADOWS } from "../../constants/Colors";
 import BankLogo from "../../components/ui/BankLogo";
+import { Card } from "../../components/ui"; // Assuming you have a Card component
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -278,383 +279,363 @@ export default function HomePage() {
     );
   }
 
+  // Helper to get bank name and logo
+  const getBankName = (institution: any) =>
+    typeof institution === "object" && institution !== null
+      ? institution.name
+      : institution;
+  const getBankLogo = (institution: any) =>
+    typeof institution === "object" && institution !== null
+      ? institution.logo
+      : undefined;
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#F8F9FB" }}>
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View>
-              <Text style={styles.headerTitle}>
-                Good morning, {user?.name || "User"}
-              </Text>
-              <Text style={styles.headerSubtitle}>
-                Let&apos;s check your finances
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.headerButton, SHADOWS.md]}
-              onPress={() => router.push("/notifications")}
+        {/* Greeting and Balance Card */}
+        <Card
+          style={{
+            marginBottom: 20,
+            borderRadius: 20,
+            padding: 24,
+            backgroundColor: "#7C3AED",
+          }}
+        >
+          <Text
+            style={{
+              color: "#fff",
+              fontSize: 22,
+              fontWeight: "700",
+              marginBottom: 6,
+            }}
+          >
+            Good morning{user?.name ? `, ${user.name.split(" ")[0]}` : ""}
+          </Text>
+          <Text style={{ color: "#E0E7FF", fontSize: 15, marginBottom: 18 }}>
+            Let&apos;s check your finances
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 8,
+            }}
+          >
+            <Text
+              style={{
+                color: "#fff",
+                fontSize: 36,
+                fontWeight: "bold",
+                marginRight: 10,
+              }}
             >
-              <Ionicons
-                name="notifications-outline"
-                size={20}
-                color={COLORS.text.secondary}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Balance Card */}
-        <View style={styles.balanceCardWrapper}>
-          <LinearGradient
-            colors={[COLORS.primary.main, "#8B5CF6"]}
-            style={[styles.balanceCard, SHADOWS.lg]}
-          >
-            <View style={styles.balanceCardHeader}>
-              <Text style={styles.balanceLabel}>Total Balance</Text>
-              <TouchableOpacity>
-                <Ionicons name="eye-outline" size={20} color="white" />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.balanceValue}>
-              £{totalBalance > 0 ? totalBalance.toLocaleString() : "0"}
+              £{totalBalance.toFixed(2)}
             </Text>
-            <View style={styles.balanceChangeRow}>
-              <View style={styles.balanceChangeBadge}>
-                <Text style={styles.balanceChangeText}>
-                  {totalBalance > 0 ? "+12.5%" : "0%"}
-                </Text>
-              </View>
-              <Text style={styles.balanceChangeLabel}>
-                {totalBalance > 0 ? "from last month" : "no change"}
-              </Text>
-            </View>
-          </LinearGradient>
-        </View>
-
-        {/* Add Bank Card */}
-        <View style={styles.addBankCardWrapper}>
-          <LinearGradient
-            colors={["#FEF3C7", "#FDE68A"]}
-            style={[styles.addBankCard, SHADOWS.lg]}
-          >
-            <View style={styles.addBankCardContent}>
-              <View style={styles.addBankCardLeft}>
-                <View style={styles.addBankIconContainer}>
-                  <MaterialCommunityIcons
-                    name="bank-plus"
-                    size={24}
-                    color="#D97706"
-                  />
-                </View>
-                <View style={styles.addBankTextContainer}>
-                  <Text style={styles.addBankTitle}>Connect Your Bank</Text>
-                  <Text style={styles.addBankSubtitle}>
-                    Link accounts for real-time data
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={styles.addBankButton}
-                onPress={() => router.push("/banks/connect")}
-              >
-                <Text style={styles.addBankButtonText}>Connect</Text>
-                <Ionicons name="chevron-forward" size={16} color="#D97706" />
-              </TouchableOpacity>
-            </View>
-          </LinearGradient>
-        </View>
+            <Ionicons name="eye-outline" size={22} color="#fff" />
+          </View>
+          <Text style={{ color: "#C7D2FE", fontSize: 14 }}>Total Balance</Text>
+        </Card>
 
         {/* Quick Actions */}
-        <View style={styles.sectionWrapper}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsRow}>
-            <TouchableOpacity
-              style={[styles.quickActionCard, SHADOWS.sm]}
-              onPress={() => router.push("/expenses/add")}
-            >
-              <View style={styles.quickActionIcon}>
-                <Ionicons
-                  name="add-circle-outline"
-                  size={24}
-                  color={COLORS.primary.main}
-                />
-              </View>
-              <Text style={styles.quickActionLabel}>Add Expense</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.quickActionCard, SHADOWS.sm]}
-              onPress={() => router.push("/banks/connect")}
-            >
-              <View style={styles.quickActionIcon}>
-                <Ionicons
-                  name="card-outline"
-                  size={24}
-                  color={COLORS.secondary.main}
-                />
-              </View>
-              <Text style={styles.quickActionLabel}>Connect Bank</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Spending Overview */}
-        <View style={styles.sectionWrapper}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>This Month</Text>
-            <TouchableOpacity>
-              <Text style={styles.sectionLink}>View All</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={[styles.overviewCard, SHADOWS.sm]}>
-            <View style={styles.overviewRow}>
-              <View>
-                <Text style={styles.overviewLabel}>Spent</Text>
-                <Text style={styles.overviewValue}>
-                  £{thisMonthSpent > 0 ? thisMonthSpent.toLocaleString() : "0"}
-                </Text>
-              </View>
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={styles.overviewLabel}>Budget</Text>
-                <Text style={styles.overviewValue}>
-                  £
-                  {userBudget && userBudget > 0
-                    ? userBudget.toLocaleString()
-                    : "0"}
-                </Text>
-              </View>
-            </View>
-            {/* Progress Bar */}
-            <View style={styles.progressBarWrapper}>
-              <View style={styles.progressBarRow}>
-                <Text style={styles.progressBarLabel}>
-                  {percentUsed.toFixed(0)}% used
-                </Text>
-                <Text style={styles.progressBarLabel}>
-                  £{userBudget ? (userBudget - thisMonthSpent).toFixed(0) : "0"}{" "}
-                  left
-                </Text>
-              </View>
-              <View style={styles.progressBarBg}>
-                <LinearGradient
-                  colors={[COLORS.primary.main, "#8B5CF6"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[
-                    styles.progressBarFill,
-                    { width: `${Math.min(percentUsed, 100)}%` },
-                  ]}
-                />
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Recent Transactions */}
-        <View style={styles.sectionWrapper}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
-            <TouchableOpacity onPress={() => router.push("/transactions")}>
-              <Text style={styles.sectionLink}>See All</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.transactionsList}>
-            {loading ? (
-              <View style={styles.loadingTransactionsContainer}>
-                <ActivityIndicator size="small" color={COLORS.primary.main} />
-                <Text style={styles.loadingTransactionsText}>
-                  Loading transactions...
-                </Text>
-              </View>
-            ) : transactions.length === 0 ? (
-              <View style={styles.emptyTransactionsContainer}>
-                <Ionicons
-                  name="receipt-outline"
-                  size={48}
-                  color={COLORS.text.secondary}
-                />
-                <Text style={styles.emptyText}>No transactions found</Text>
-                <Text style={styles.emptySubtext}>
-                  {accounts.length > 0
-                    ? "Your accounts are connected but no recent transactions are available. Sample data is shown for demonstration."
-                    : "Connect your bank to see your real transactions"}
-                </Text>
-                {accounts.length === 0 && (
-                  <TouchableOpacity
-                    style={styles.connectBankButton}
-                    onPress={() => router.push("/banks/connect")}
-                  >
-                    <Ionicons
-                      name="add-circle-outline"
-                      size={16}
-                      color={COLORS.primary.main}
-                    />
-                    <Text style={styles.connectBankText}>Connect Bank</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            ) : (
-              transactions.slice(0, 5).map((txn, idx) => (
-                <View
-                  key={txn.id || idx}
-                  style={[styles.transactionItem, SHADOWS.sm]}
-                >
-                  <View
-                    style={[
-                      styles.transactionIcon,
-                      {
-                        backgroundColor:
-                          txn.amount < 0
-                            ? COLORS.error.light
-                            : COLORS.success.light,
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name={
-                        txn.amount < 0
-                          ? "arrow-down-outline"
-                          : "arrow-up-outline"
-                      }
-                      size={20}
-                      color={
-                        txn.amount < 0 ? COLORS.error.main : COLORS.success.main
-                      }
-                    />
-                  </View>
-                  <View style={styles.transactionInfo}>
-                    <Text style={styles.transactionTitle} numberOfLines={1}>
-                      {txn.description || "Transaction"}
-                    </Text>
-                    <Text style={styles.transactionSubtitle}>
-                      {txn.date
-                        ? new Date(txn.date).toLocaleDateString()
-                        : "Recent"}
-                    </Text>
-                  </View>
-                  <Text
-                    style={[
-                      txn.amount < 0
-                        ? styles.transactionAmountNegative
-                        : styles.transactionAmountPositive,
-                      {
-                        color:
-                          txn.amount < 0
-                            ? COLORS.error.main
-                            : COLORS.success.main,
-                      },
-                    ]}
-                  >
-                    {txn.amount < 0 ? "-" : "+"}£
-                    {Math.abs(txn.amount).toFixed(2)}
-                  </Text>
-                </View>
-              ))
-            )}
-          </View>
-        </View>
-
-        {/* AI Assistant */}
-        <View style={styles.sectionWrapper}>
-          <Text style={styles.sectionTitle}>AI Assistant</Text>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginBottom: 20,
+          }}
+        >
           <TouchableOpacity
-            style={[styles.aiAssistantCard, SHADOWS.lg]}
-            onPress={() => router.push("/ai-assistant")}
+            style={{
+              flex: 1,
+              marginRight: 8,
+              backgroundColor: "#fff",
+              borderRadius: 16,
+              padding: 18,
+              alignItems: "center",
+              ...SHADOWS.sm,
+            }}
           >
-            <LinearGradient
-              colors={[COLORS.primary.main, "#8B5CF6"]}
-              style={styles.aiAssistantGradient}
-            >
-              <View style={styles.aiAssistantContent}>
-                <View style={styles.aiAssistantLeft}>
-                  <View style={styles.aiAssistantIcon}>
-                    <Ionicons
-                      name="chatbubble-ellipses"
-                      size={24}
-                      color="white"
-                    />
-                  </View>
-                  <View style={styles.aiAssistantText}>
-                    <Text style={styles.aiAssistantTitle}>Ask Your AI</Text>
-                    <Text style={styles.aiAssistantSubtitle}>
-                      Get insights about your spending
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.aiAssistantButton}>
-                  <Ionicons name="chevron-forward" size={20} color="white" />
-                </View>
-              </View>
-            </LinearGradient>
+            <Ionicons name="add-circle-outline" size={28} color="#7C3AED" />
+            <Text style={{ fontWeight: "600", color: "#222", marginTop: 6 }}>
+              Add Expense
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              marginLeft: 8,
+              backgroundColor: "#fff",
+              borderRadius: 16,
+              padding: 18,
+              alignItems: "center",
+              ...SHADOWS.sm,
+            }}
+          >
+            <Ionicons name="link-outline" size={28} color="#7C3AED" />
+            <Text style={{ fontWeight: "600", color: "#222", marginTop: 6 }}>
+              Connect Bank
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Show warning if present */}
-        {warning && (
-          <View style={styles.warningContainer}>
-            <View style={styles.warningContent}>
-              <Ionicons
-                name="information-circle-outline"
-                size={20}
-                color="#F59E0B"
-              />
-              <Text style={styles.warningText}>{warning}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.warningDismiss}
-              onPress={() => setWarning(null)}
-            >
-              <Ionicons name="close" size={16} color="#F59E0B" />
+        {/* This Month Card */}
+        <Card
+          style={{
+            marginBottom: 20,
+            borderRadius: 20,
+            padding: 20,
+            backgroundColor: "#fff",
+            ...SHADOWS.sm,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
+            <Text style={{ fontSize: 18, fontWeight: "700", color: "#222" }}>
+              This Month
+            </Text>
+            <TouchableOpacity onPress={() => router.push("/spending")}>
+              <Text style={{ color: "#7C3AED", fontWeight: "600" }}>
+                View All
+              </Text>
             </TouchableOpacity>
           </View>
-        )}
-
-        {/* Connected Banks List */}
-        {accounts.length > 0 && (
-          <View style={styles.sectionWrapper}>
-            <Text style={styles.sectionTitle}>Connected Banks</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.banksScrollView}
-            >
-              {accounts.map((account, idx) => (
-                <View key={account.id || idx} style={styles.bankCard}>
-                  <BankLogo
-                    bankName={
-                      typeof account.institution === "string"
-                        ? account.institution
-                        : account.institution?.name || "Bank"
-                    }
-                    size="large"
-                    showName={true}
-                  />
-                  <Text style={styles.bankCardTitle} numberOfLines={1}>
-                    {account.name ||
-                      (typeof account.institution === "string"
-                        ? account.institution
-                        : account.institution?.name) ||
-                      "Account"}
-                  </Text>
-                  <Text style={styles.bankCardSubtitle} numberOfLines={1}>
-                    {account.type}
-                  </Text>
-                  <Text style={styles.bankCardBalance}>
-                    £{(account.balance || 0).toFixed(2)}
-                  </Text>
-                </View>
-              ))}
-            </ScrollView>
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <View>
+              <Text style={{ color: "#64748B", fontSize: 14 }}>Spent</Text>
+              <Text style={{ fontSize: 20, fontWeight: "bold", color: "#222" }}>
+                £{thisMonthSpent.toFixed(2)}
+              </Text>
+            </View>
+            <View>
+              <Text style={{ color: "#64748B", fontSize: 14 }}>Budget</Text>
+              <Text style={{ fontSize: 20, fontWeight: "bold", color: "#222" }}>
+                £{userBudget?.toFixed(2) || "0"}
+              </Text>
+            </View>
           </View>
-        )}
+        </Card>
+
+        {/* Recent Transactions Card */}
+        <Card
+          style={{
+            marginBottom: 20,
+            borderRadius: 20,
+            padding: 20,
+            backgroundColor: "#fff",
+            ...SHADOWS.sm,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
+            <Text style={{ fontSize: 18, fontWeight: "700", color: "#222" }}>
+              Recent Transactions
+            </Text>
+            <TouchableOpacity onPress={() => router.push("/transactions")}>
+              <Text style={{ color: "#7C3AED", fontWeight: "600" }}>
+                See All
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {transactions.slice(0, 4).map((tx, idx) => (
+            <View
+              key={tx.id}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 14,
+              }}
+            >
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: tx.amount >= 0 ? "#DCFCE7" : "#FEE2E2",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons
+                  name={
+                    tx.amount >= 0 ? "arrow-up-circle" : "arrow-down-circle"
+                  }
+                  size={22}
+                  color={tx.amount >= 0 ? "#22C55E" : "#EF4444"}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{ fontWeight: "600", color: "#222", fontSize: 15 }}
+                  numberOfLines={1}
+                >
+                  {tx.description}
+                </Text>
+                <Text style={{ color: "#64748B", fontSize: 13, marginTop: 2 }}>
+                  {new Date(tx.date).toLocaleDateString()}
+                </Text>
+              </View>
+              <Text
+                style={{
+                  fontWeight: "700",
+                  fontSize: 15,
+                  color: tx.amount >= 0 ? "#22C55E" : "#EF4444",
+                  marginLeft: 8,
+                }}
+              >
+                {tx.amount >= 0 ? "+" : "-"}£{Math.abs(tx.amount).toFixed(2)}
+              </Text>
+            </View>
+          ))}
+          {transactions.length === 0 && (
+            <Text
+              style={{
+                color: "#64748B",
+                fontSize: 15,
+                textAlign: "center",
+                marginTop: 10,
+              }}
+            >
+              No recent transactions.
+            </Text>
+          )}
+        </Card>
+
+        {/* AI Assistant Card */}
+        <Card
+          style={{
+            marginBottom: 20,
+            borderRadius: 20,
+            padding: 20,
+            backgroundColor: "#F3F0FF",
+            ...SHADOWS.sm,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: "#7C3AED",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 14,
+              }}
+            >
+              <Ionicons name="chatbubbles-outline" size={24} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{ fontWeight: "700", fontSize: 16, color: "#7C3AED" }}
+              >
+                Ask Your AI
+              </Text>
+              <Text style={{ color: "#7C3AED", fontSize: 13, marginTop: 2 }}>
+                Get insights about your spending
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push("/ai-assistant")}
+              style={{ marginLeft: 10 }}
+            >
+              <Ionicons name="arrow-forward-circle" size={28} color="#7C3AED" />
+            </TouchableOpacity>
+          </View>
+        </Card>
+
+        {/* Connected Banks Card */}
+        <Card
+          style={{
+            borderRadius: 20,
+            padding: 20,
+            backgroundColor: "#fff",
+            ...SHADOWS.sm,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "700",
+              color: "#222",
+              marginBottom: 12,
+            }}
+          >
+            Connected Banks
+          </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+            {accounts.length === 0 && (
+              <Text style={{ color: "#64748B", fontSize: 15 }}>
+                No connected banks.
+              </Text>
+            )}
+            {accounts.map((account) => (
+              <View
+                key={account.id}
+                style={{
+                  width: 140,
+                  marginRight: 16,
+                  marginBottom: 16,
+                  backgroundColor: "#F3F4F6",
+                  borderRadius: 16,
+                  padding: 14,
+                  alignItems: "center",
+                  ...SHADOWS.sm,
+                }}
+              >
+                <BankLogo
+                  bankName={getBankName(account.institution)}
+                  logoUrl={getBankLogo(account.institution)}
+                  size="large"
+                />
+                <Text
+                  style={{
+                    fontWeight: "600",
+                    color: "#222",
+                    fontSize: 15,
+                    marginTop: 6,
+                  }}
+                  numberOfLines={1}
+                >
+                  {getBankName(account.institution)}
+                </Text>
+                <Text style={{ color: "#64748B", fontSize: 13, marginTop: 2 }}>
+                  {account.type}
+                </Text>
+                <Text
+                  style={{
+                    fontWeight: "700",
+                    fontSize: 15,
+                    color: "#7C3AED",
+                    marginTop: 4,
+                  }}
+                >
+                  £{account.balance.toFixed(2)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );
