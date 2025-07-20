@@ -7,7 +7,9 @@ import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
 import SecurityLock from "../components/SecurityLock";
 
 function RootLayoutNav() {
-  const { isLoggedIn, loading } = useAuth();
+  const auth = useAuth();
+  const isLoggedIn = auth?.isLoggedIn ?? false;
+  const loading = auth?.loading ?? true;
   const { isLocked, unlockApp } = useSecurity();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -33,32 +35,26 @@ function RootLayoutNav() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      {!isLoggedIn ? (
-        <>
-          <Stack.Screen name="auth/Login" />
-          <Stack.Screen name="auth/Register" />
-        </>
-      ) : (
-        <>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="profile" />
-          <Stack.Screen name="profile/personal" />
-          <Stack.Screen name="security" />
-          <Stack.Screen name="notifications" />
-          <Stack.Screen name="payment" />
-          <Stack.Screen name="help" />
-          <Stack.Screen name="terms" />
-          <Stack.Screen name="banks" />
-          <Stack.Screen name="banks/connect" />
-          <Stack.Screen name="banks/select" />
-          <Stack.Screen name="credit-score" />
-          <Stack.Screen name="target" />
-          <Stack.Screen name="transactions" />
-          <Stack.Screen name="settings" />
-          <Stack.Screen name="CompleteProfile" />
-          <Stack.Screen name="test-api" />
-        </>
-      )}
+      <Stack.Screen name="auth/Login" />
+      <Stack.Screen name="auth/Register" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="profile/index" />
+      <Stack.Screen name="profile/personal" />
+      <Stack.Screen name="security/index" />
+      <Stack.Screen name="notifications/index" />
+      <Stack.Screen name="payment/index" />
+      <Stack.Screen name="help/index" />
+      <Stack.Screen name="terms/index" />
+      <Stack.Screen name="banks/index" />
+      <Stack.Screen name="banks/connect" />
+      <Stack.Screen name="banks/callback" />
+      <Stack.Screen name="banks/select" />
+      <Stack.Screen name="credit-score/index" />
+      <Stack.Screen name="target/index" />
+      <Stack.Screen name="transactions/index" />
+      <Stack.Screen name="settings/index" />
+      <Stack.Screen name="CompleteProfile" />
+      <Stack.Screen name="test-logout" />
     </Stack>
   );
 }

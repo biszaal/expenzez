@@ -8,7 +8,6 @@ import {
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
@@ -20,35 +19,59 @@ import { useAuth } from "../auth/AuthContext";
 import { Button, TextField, Card, Typography } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
+import { jwtDecode } from "jwt-decode";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAlert } from "../../hooks/useAlert";
 
 export default function Login() {
   const router = useRouter();
   const { login } = useAuth();
   const { colors } = useTheme();
+  const { showError, showSuccess } = useAlert();
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [userInfo, setUserInfo] = useState<any>(null);
+  // loginError state removed, use alert instead
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+    if (!identifier || !password) {
+      showError("Please fill in all fields");
       return;
     }
-
     setIsLoading(true);
     try {
-      const result = await login(email, password);
+      const result = await login(identifier, password);
+      console.log("[LoginScreen] login() result:", result);
       if (result.success) {
+        // Optionally, auto-redirect to main app
+        const idToken = await AsyncStorage.getItem("idToken");
+        if (idToken) {
+          const decoded: any = jwtDecode(idToken);
+          setUserInfo(decoded);
+        }
+        showSuccess("Login successful!");
         router.replace("/(tabs)");
       } else {
-        Alert.alert(
-          "Login Failed",
-          result.error || "Please check your credentials."
-        );
+        // Only show error if not success
+        showError(result.error || "Login failed. Please try again.");
       }
-    } catch (err) {
-      Alert.alert("Login Failed", "Please check your credentials.");
+    } catch (error: any) {
+      console.log("[LoginScreen] login() threw error:", error);
+      // Detect network/server error
+      if (
+        error?.message?.includes("Network Error") ||
+        error?.message?.includes("timeout") ||
+        error?.toString().includes("Network Error") ||
+        error?.toString().includes("timeout")
+      ) {
+        showError(
+          "Unable to connect to server. Please check your internet connection or try again later."
+        );
+      } else {
+        showError("Login failed. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -84,6 +107,8 @@ export default function Login() {
             </Typography>
           </View>
 
+          {/* Optionally, show user info after login, but now auto-redirects */}
+
           {/* Login Form Card */}
           <Card variant="elevated" padding="large">
             <Typography
@@ -95,13 +120,12 @@ export default function Login() {
               Sign In
             </Typography>
 
-            {/* Email Input */}
+            {/* Identifier Input */}
             <TextField
-              label="Email"
-              placeholder="you@email.com"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
+              label="Email or Username"
+              placeholder="you@email.com or yourusername"
+              value={identifier}
+              onChangeText={setIdentifier}
               autoCapitalize="none"
               required
             />
@@ -133,6 +157,7 @@ export default function Login() {
               loading={isLoading}
               fullWidth
               style={styles.loginButton}
+              disabled={isLoading}
             />
 
             {/* Register Link */}
@@ -174,76 +199,30 @@ export default function Login() {
               />
             </View>
 
-            {/* Test Login Button */}
-            <TouchableOpacity
-              style={[
-                styles.testLoginButton,
-                {
-                  backgroundColor: colors.secondary[100],
-                  borderColor: colors.secondary[300],
-                },
-              ]}
-              onPress={async () => {
-                setEmail("test@example.com");
-                setPassword("password123");
-                // Auto-login after setting values
-                setTimeout(() => {
-                  handleLogin();
-                }, 100);
-              }}
-            >
-              <Typography variant="body" color="secondary" align="center">
-                Quick Test Login
-              </Typography>
-            </TouchableOpacity>
-
             {/* Social Login Buttons */}
             <View style={styles.socialButtons}>
+              {/* Social login buttons (not implemented) */}
               <TouchableOpacity
-                style={[
-                  styles.socialButton,
-                  {
-                    backgroundColor: colors.background.primary,
-                    borderColor: colors.border.light,
-                  },
-                ]}
-                onPress={() => Alert.alert("Google Login")}
+                style={styles.socialButton}
+                onPress={() => showError("Google Login not implemented yet")}
               >
                 <AntDesign name="google" size={20} color="#EA4335" />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  styles.socialButton,
-                  {
-                    backgroundColor: colors.background.primary,
-                    borderColor: colors.border.light,
-                  },
-                ]}
-                onPress={() => Alert.alert("Facebook Login")}
+                style={styles.socialButton}
+                onPress={() => showError("Facebook Login not implemented yet")}
               >
                 <FontAwesome name="facebook" size={20} color="#4267B2" />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  styles.socialButton,
-                  {
-                    backgroundColor: colors.background.primary,
-                    borderColor: colors.border.light,
-                  },
-                ]}
-                onPress={() => Alert.alert("Apple Login")}
+                style={styles.socialButton}
+                onPress={() => showError("Apple Login not implemented yet")}
               >
                 <FontAwesome5 name="apple" size={20} color="#111" />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  styles.socialButton,
-                  {
-                    backgroundColor: colors.background.primary,
-                    borderColor: colors.border.light,
-                  },
-                ]}
-                onPress={() => Alert.alert("X Login")}
+                style={styles.socialButton}
+                onPress={() => showError("X Login not implemented yet")}
               >
                 <MaterialCommunityIcons
                   name="alpha-x-circle"

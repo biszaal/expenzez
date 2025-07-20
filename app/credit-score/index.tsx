@@ -1,14 +1,54 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAlert } from "../../hooks/useAlert";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 
 export default function CreditScorePage() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { showSuccess, showError } = useAlert();
+
+  const [creditScore, setCreditScore] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCreditScore();
+  }, []);
+
+  const fetchCreditScore = async () => {
+    try {
+      setLoading(true);
+      // TODO: Fetch real credit score from API
+      // For now, we'll use a placeholder
+      setCreditScore(null);
+    } catch (error) {
+      console.error("Error fetching credit score:", error);
+      showError("Failed to load credit score");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    try {
+      await fetchCreditScore();
+      showSuccess("Credit score refreshed");
+    } catch (error) {
+      showError("Failed to refresh credit score");
+    }
+  };
+
+  const getScoreDescription = (score: number | null) => {
+    if (score === null) return "No data available";
+    if (score >= 800) return "Excellent credit score";
+    if (score >= 700) return "Good credit score";
+    if (score >= 600) return "Fair credit score";
+    return "Poor credit score";
+  };
 
   return (
     <SafeAreaView
@@ -24,12 +64,18 @@ export default function CreditScorePage() {
         ]}
       >
         <TouchableOpacity
+          onPress={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.replace("/(tabs)");
+            }
+          }}
           style={[
             styles.backButton,
             { backgroundColor: colors.background.primary },
             shadows.sm,
           ]}
-          onPress={() => router.back()}
           activeOpacity={0.7}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary[500]} />
@@ -51,12 +97,12 @@ export default function CreditScorePage() {
             Your Credit Score
           </Text>
           <Text style={[styles.scoreValue, { color: colors.primary[500] }]}>
-            720
+            {creditScore !== null ? creditScore : "N/A"}
           </Text>
           <Text
             style={[styles.scoreDescription, { color: colors.text.secondary }]}
           >
-            Good credit score
+            {getScoreDescription(creditScore)}
           </Text>
         </View>
         <TouchableOpacity
@@ -65,12 +111,13 @@ export default function CreditScorePage() {
             { backgroundColor: colors.primary[500] },
             shadows.sm,
           ]}
-          onPress={() => {
-            // TODO: Implement refresh functionality
-          }}
+          onPress={handleRefresh}
+          disabled={loading}
         >
           <Ionicons name="refresh" size={20} color="white" />
-          <Text style={styles.refreshButtonText}>Refresh Score</Text>
+          <Text style={styles.refreshButtonText}>
+            {loading ? "Refreshing..." : "Refresh Score"}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

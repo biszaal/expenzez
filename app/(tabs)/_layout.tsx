@@ -1,11 +1,23 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
-import React from "react";
+import { Tabs, Redirect } from "expo-router";
+import React, { useEffect } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAuth } from "../auth/AuthContext";
 
 export default function TabLayout() {
   const { colors } = useTheme();
+  const { isLoggedIn, loading } = useAuth();
+
+  // Show loading screen while checking authentication
+  if (loading) {
+    return null; // or a loading component
+  }
+
+  // Redirect to login if not authenticated
+  if (!isLoggedIn) {
+    return <Redirect href="/auth/Login" />;
+  }
 
   return (
     <Tabs

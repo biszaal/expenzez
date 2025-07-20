@@ -20,7 +20,11 @@ import {
   Badge,
   BankLogo,
 } from "../../components/ui";
-import { bankingAPI } from "../../services/api";
+import {
+  getAccountDetails,
+  getAccountBalance,
+  getInstitutions,
+} from "../../services/dataSource";
 import { formatCurrency } from "../../utils/formatters";
 import { useTheme } from "../../contexts/ThemeContext";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
@@ -31,10 +35,15 @@ import { spacing, borderRadius, shadows } from "../../constants/theme";
 interface BankAccount {
   id: string;
   name: string;
-  bank: string;
+  iban: string;
+  institution: {
+    id: string;
+    name: string;
+    logo: string;
+  };
   balance: number;
   currency: string;
-  accountNumber: string;
+  status: string;
 }
 
 /**
@@ -56,67 +65,39 @@ export default function BanksScreen() {
   // State management
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch accounts on component mount
-  useEffect(() => {
-    if (isLoggedIn) {
-      fetchAccounts();
-    }
-  }, [isLoggedIn]);
-
-  /**
-   * Fetch bank accounts from API
-   */
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      const response = await bankingAPI.getAccounts();
-      setAccounts(response.accounts || []);
+      setError(null);
+      const accountIds = await getAllAccountIds();
+      setAccountIds(accountIds);
+
+      // Fetch account details for each account
+      const accountDetails = await Promise.all(
+        accountIds.map(async (id) => {
+          try {
+            return await getAccountDetails(id);
+          } catch (error) {
+            console.error(`Error fetching account ${id}:`, error);
+            return null;
+          }
+        })
+      );
+
+      setAccounts(accountDetails.filter(Boolean));
     } catch (error) {
       console.error("Error fetching accounts:", error);
-      showError("Failed to load bank accounts");
+      setError("Failed to load accounts");
     } finally {
       setLoading(false);
     }
   };
 
-  /**
-   * Sync all connected accounts
-   */
-  const handleSyncAccounts = async () => {
-    try {
-      setSyncing(true);
-      await bankingAPI.syncAccounts();
-      await fetchAccounts(); // Refresh accounts after sync
-      showSuccess("Accounts synced successfully");
-    } catch (error) {
-      console.error("Error syncing accounts:", error);
-      showError("Failed to sync accounts");
-    } finally {
-      setSyncing(false);
-    }
-  };
-
-  /**
-   * Disconnect a bank account with confirmation
-   */
-  const handleDisconnectAccount = async (accountId: string) => {
-    showConfirmation(
-      "Disconnect Account",
-      "Are you sure you want to disconnect this account?",
-      async () => {
-        try {
-          await bankingAPI.disconnectAccount(accountId);
-          await fetchAccounts(); // Refresh accounts
-          showSuccess("Account disconnected successfully");
-        } catch (error) {
-          console.error("Error disconnecting account:", error);
-          showError("Failed to disconnect account");
-        }
-      }
-    );
-  };
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
 
   // If not logged in, don't render anything (auth guard will handle redirect)
   if (!isLoggedIn) {
@@ -169,6 +150,16 @@ export default function BanksScreen() {
                 Loading accounts...
               </Text>
             </View>
+          ) : error ? (
+            <EmptyState
+              icon="alert-circle-outline"
+              title="Error"
+              subtitle={error}
+              actionButton={{
+                title: "Retry",
+                onPress: fetchAccounts,
+              }}
+            />
           ) : accounts.length === 0 ? (
             <EmptyState
               icon="card-outline"
@@ -194,7 +185,8 @@ export default function BanksScreen() {
                 >
                   {/* Bank Logo */}
                   <BankLogo
-                    bankName={account.bank}
+                    bankName={account.institution.name}
+                    logoUrl={account.institution.logo}
                     size="medium"
                     showName={false}
                   />
@@ -214,7 +206,7 @@ export default function BanksScreen() {
                       ]}
                       numberOfLines={1}
                     >
-                      {account.accountNumber} • {account.bank}
+                      IBAN: {account.iban}
                     </Text>
                     <Text
                       style={[
@@ -222,23 +214,20 @@ export default function BanksScreen() {
                         { color: colors.text.primary },
                       ]}
                     >
-                      {formatCurrency(account.balance)}
+                      {account.balance.toLocaleString(undefined, {
+                        style: "currency",
+                        currency: account.currency,
+                      })}
                     </Text>
-                  </View>
-
-                  {/* Bank Actions */}
-                  <View style={styles.bankActions}>
-                    <Badge text="Connected" variant="success" size="small" />
-                    <TouchableOpacity
-                      style={styles.disconnectButton}
-                      onPress={() => handleDisconnectAccount(account.id)}
+                    <Text
+                      style={{
+                        color: colors.text.tertiary,
+                        fontSize: 12,
+                        marginTop: 2,
+                      }}
                     >
-                      <Ionicons
-                        name="close-circle"
-                        size={20}
-                        color={colors.error[600]}
-                      />
-                    </TouchableOpacity>
+                      Status: {account.status}
+                    </Text>
                   </View>
                 </View>
               ))}
@@ -250,12 +239,12 @@ export default function BanksScreen() {
         <Section title="Quick Actions">
           <ListItem
             icon={{ name: "sync-outline", backgroundColor: "#DBEAFE" }}
-            title={syncing ? "Syncing..." : "Sync Accounts"}
+            title={loading ? "Syncing..." : "Sync Accounts"}
             subtitle="Update your account balances"
-            onPress={handleSyncAccounts}
-            disabled={syncing}
+            onPress={fetchAccounts}
+            disabled={loading}
             rightElement={
-              syncing ? (
+              loading ? (
                 <ActivityIndicator size="small" color={colors.primary[500]} />
               ) : (
                 <Ionicons

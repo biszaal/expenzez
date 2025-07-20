@@ -1,103 +1,177 @@
-import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Alert,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAlert } from "../../hooks/useAlert";
 import {
   spacing,
   borderRadius,
   shadows,
   typography,
 } from "../../constants/theme";
+import {
+  getProfile,
+  getCreditScore,
+  getGoals,
+} from "../../services/dataSource";
 
 export default function AccountScreen() {
   const router = useRouter();
-  const { isLoggedIn, logout } = useAuth();
+  const { isLoggedIn, user, logout } = useAuth();
   const { colors, isDark } = useTheme();
+  const { showSuccess, showError } = useAlert();
+
+  const [profile, setProfile] = useState<any>(null);
+  const [creditScore, setCreditScore] = useState<number | null>(null);
+  const [goalsMet, setGoalsMet] = useState<{
+    completed: number;
+    total: number;
+  }>({ completed: 0, total: 0 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      router.replace("/auth/Login");
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+
+        // Fetch user profile
+        const profileData = await getProfile();
+        setProfile(profileData);
+
+        // Fetch real credit score
+        const creditScoreData = await getCreditScore();
+        setCreditScore(creditScoreData.score);
+
+        // Fetch real goals data
+        const goalsData = await getGoals();
+        setGoalsMet({
+          completed: goalsData.completed,
+          total: goalsData.total,
+        });
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        showError("Failed to load user data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isLoggedIn) {
+      fetchUserData();
     }
   }, [isLoggedIn]);
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
+      { text: "Cancel", style: "cancel" },
       {
         text: "Logout",
         style: "destructive",
-        onPress: () => {
-          logout();
-          router.replace("/auth/Login");
+        onPress: async () => {
+          try {
+            await logout();
+            showSuccess("Logged out successfully");
+            router.replace("/auth/Login");
+          } catch (error) {
+            showError("Failed to logout");
+          }
         },
       },
     ]);
   };
 
-  // Dynamic colors for dark mode
-  const getStatColors = () => {
-    if (isDark) {
-      return {
-        creditScore: {
-          gradient: ["#1F2937", "#374151"] as const,
-          text: "#D1D5DB",
-          icon: "#9CA3AF",
-        },
-        goals: {
-          gradient: ["#1E3A8A", "#2563EB"] as const,
-          text: "#E5E7EB",
-          icon: "#93C5FD",
-        },
-      };
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (profile?.firstName && profile?.lastName) {
+      return `${profile.firstName} ${profile.lastName}`;
     }
+    if (user?.name) {
+      return user.name;
+    }
+    if (user?.username) {
+      return user.username;
+    }
+    if (user?.email) {
+      return user.email.split("@")[0];
+    }
+    return "User";
+  };
+
+  // Get user email
+  const getUserEmail = () => {
+    if (profile?.email) {
+      return profile.email;
+    }
+    if (user?.email) {
+      return user.email;
+    }
+    return "";
+  };
+
+  // Get user initials
+  const getUserInitials = () => {
+    const displayName = getUserDisplayName();
+    if (displayName === "User") return "U";
+
+    const names = displayName.split(" ");
+    if (names.length >= 2) {
+      return `${names[0][0]}${names[1][0]}`.toUpperCase();
+    }
+    return displayName[0]?.toUpperCase() || "U";
+  };
+
+  // Get member since date
+  const getMemberSince = () => {
+    // TODO: Get from user profile or auth context
+    return "2024";
+  };
+
+  const getStatColors = () => {
     return {
       creditScore: {
-        gradient: ["#FEF3C7", "#FDE68A"] as const,
+        gradient: ["#FEF3C7", "#FDE68A"],
         text: "#92400E",
-        icon: "#D97706",
+        icon: "#F59E0B",
       },
       goals: {
-        gradient: ["#DBEAFE", "#BFDBFE"] as const,
-        text: "#1D4ED8",
-        icon: "#1D4ED8",
+        gradient: ["#DBEAFE", "#BFDBFE"],
+        text: "#1E40AF",
+        icon: "#3B82F6",
       },
     };
   };
 
-  const statColors = getStatColors();
-
   const profileOptions = [
     {
+      title: "Personal Information",
+      subtitle: "Update your details",
       icon: (
         <Ionicons name="person-outline" size={24} color={colors.primary[500]} />
       ),
-      title: "Personal Information",
-      subtitle: "Update your details",
-      route: "/profile",
+      route: "/profile/personal",
     },
     {
+      title: "Security",
+      subtitle: "Password, 2FA, and more",
       icon: (
         <Ionicons name="shield-outline" size={24} color={colors.primary[500]} />
       ),
-      title: "Security",
-      subtitle: "Password, 2FA, and more",
       route: "/security",
     },
     {
+      title: "Notifications",
+      subtitle: "Manage your alerts",
       icon: (
         <Ionicons
           name="notifications-outline"
@@ -105,46 +179,31 @@ export default function AccountScreen() {
           color={colors.primary[500]}
         />
       ),
-      title: "Notifications",
-      subtitle: "Manage your alerts",
       route: "/notifications",
-    },
-    {
-      icon: (
-        <Ionicons name="card-outline" size={24} color={colors.primary[500]} />
-      ),
-      title: "Payment Methods",
-      subtitle: "Cards and bank accounts",
-      route: "/payment",
-    },
-    {
-      icon: (
-        <Ionicons
-          name="help-circle-outline"
-          size={24}
-          color={colors.primary[500]}
-        />
-      ),
-      title: "Help & Support",
-      subtitle: "Get help when you need it",
-      route: "/help",
-    },
-    {
-      icon: (
-        <Ionicons
-          name="document-text-outline"
-          size={24}
-          color={colors.primary[500]}
-        />
-      ),
-      title: "Terms & Privacy",
-      subtitle: "Legal information",
-      route: "/terms",
     },
   ];
 
+  const statColors = getStatColors();
+
   if (!isLoggedIn) {
     return null;
+  }
+
+  if (loading) {
+    return (
+      <SafeAreaView
+        style={[
+          styles.container,
+          { backgroundColor: colors.background.secondary },
+        ]}
+      >
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
+            Loading...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -160,84 +219,72 @@ export default function AccountScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View
-          style={[
-            styles.header,
-            { backgroundColor: colors.background.primary },
-          ]}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <View>
-                <Text
-                  style={[styles.headerTitle, { color: colors.text.primary }]}
-                >
-                  Account
-                </Text>
-                <Text
-                  style={[
-                    styles.headerSubtitle,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  Manage your account
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              style={[
-                styles.headerButton,
-                { backgroundColor: colors.background.secondary },
-                shadows.md,
-              ]}
-            >
-              <Ionicons
-                name="settings-outline"
-                size={24}
-                color={colors.primary[500]}
-              />
-            </TouchableOpacity>
-          </View>
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
+            Account
+          </Text>
+          <Text
+            style={[styles.headerSubtitle, { color: colors.text.secondary }]}
+          >
+            Manage your account.
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.settingsButton,
+              { backgroundColor: colors.background.primary },
+              shadows.sm,
+            ]}
+            onPress={() => router.push("/settings")}
+          >
+            <Ionicons
+              name="settings-outline"
+              size={24}
+              color={colors.primary[500]}
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Profile Card */}
-        <View style={styles.profileCard}>
+        <View style={styles.profileSection}>
           <LinearGradient
             colors={[colors.primary[500], "#8B5CF6"]}
-            style={[styles.profileGradient, shadows.lg]}
+            style={[styles.profileCard, shadows.lg]}
           >
-            <View style={styles.profileInfo}>
-              <View style={styles.avatarContainer}>
-                <LinearGradient
-                  colors={[
-                    "rgba(255, 255, 255, 0.2)",
-                    "rgba(255, 255, 255, 0.1)",
-                  ]}
-                  style={styles.avatar}
-                >
-                  <Text style={styles.avatarText}>B</Text>
-                </LinearGradient>
-                <View style={styles.profileDetails}>
-                  <Text style={styles.profileName}>Bishal Aryal</Text>
-                  <Text style={styles.profileEmail}>bishal@expenzez.com</Text>
-                  <View style={styles.profileBadges}>
-                    <View style={styles.premiumBadge}>
-                      <Text style={styles.premiumText}>Premium</Text>
-                    </View>
-                    <Text style={styles.memberText}>Member since 2024</Text>
+            <View style={styles.profileContent}>
+              <LinearGradient
+                colors={[
+                  "rgba(255, 255, 255, 0.2)",
+                  "rgba(255, 255, 255, 0.1)",
+                ]}
+                style={styles.avatar}
+              >
+                <Text style={styles.avatarText}>{getUserInitials()}</Text>
+              </LinearGradient>
+              <View style={styles.profileDetails}>
+                <Text style={styles.profileName}>{getUserDisplayName()}</Text>
+                <Text style={styles.profileEmail}>{getUserEmail()}</Text>
+                <View style={styles.profileBadges}>
+                  <View style={styles.premiumBadge}>
+                    <Text style={styles.premiumText}>Premium</Text>
                   </View>
+                  <Text style={styles.memberText}>
+                    Member since {getMemberSince()}
+                  </Text>
                 </View>
               </View>
-              <TouchableOpacity style={styles.editButton}>
-                <Text style={styles.editButtonText}>Edit Profile</Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color="white"
-                  style={styles.editButtonIcon}
-                />
-              </TouchableOpacity>
             </View>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => router.push("/profile/personal")}
+            >
+              <Text style={styles.editButtonText}>Edit Profile</Text>
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color="white"
+                style={styles.editButtonIcon}
+              />
+            </TouchableOpacity>
           </LinearGradient>
         </View>
 
@@ -245,7 +292,7 @@ export default function AccountScreen() {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <LinearGradient
-              colors={statColors.creditScore.gradient}
+              colors={statColors.creditScore.gradient as [string, string]}
               style={[styles.statGradient, shadows.md]}
             >
               <View style={styles.statIconContainer}>
@@ -269,14 +316,14 @@ export default function AccountScreen() {
                   { color: statColors.creditScore.text },
                 ]}
               >
-                720
+                {creditScore !== null ? creditScore : "N/A"}
               </Text>
             </LinearGradient>
           </View>
 
           <View style={styles.statCard}>
             <LinearGradient
-              colors={statColors.goals.gradient}
+              colors={statColors.goals.gradient as [string, string]}
               style={[styles.statGradient, shadows.md]}
             >
               <View style={styles.statIconContainer}>
@@ -294,7 +341,9 @@ export default function AccountScreen() {
               <Text
                 style={[styles.statValue, { color: statColors.goals.text }]}
               >
-                3/5
+                {goalsMet.total > 0
+                  ? `${goalsMet.completed}/${goalsMet.total}`
+                  : "N/A"}
               </Text>
             </LinearGradient>
           </View>
@@ -456,8 +505,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   profileCard: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
+    borderRadius: borderRadius["3xl"],
+    overflow: "hidden",
+    padding: spacing.lg,
   },
   profileGradient: {
     borderRadius: borderRadius["3xl"],
@@ -641,5 +691,31 @@ const styles = StyleSheet.create({
   appCopyright: {
     fontSize: typography.fontSizes.xs,
     marginTop: spacing.xs,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+  },
+  loadingText: {
+    fontSize: typography.fontSizes.lg,
+    fontWeight: "600" as const,
+  },
+  profileSection: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+  },
+  profileContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
+  },
+  settingsButton: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.xl,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

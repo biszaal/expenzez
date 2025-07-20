@@ -15,11 +15,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "./auth/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { spacing, borderRadius, shadows, typography } from "../constants/theme";
+import { useAlert } from "../hooks/useAlert";
 
 export default function CompleteProfileScreen() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
   const { colors } = useTheme();
+  const { showSuccess, showError } = useAlert();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -41,10 +43,10 @@ export default function CompleteProfileScreen() {
   const handleSubmit = async () => {
     try {
       // TODO: Implement API call to complete profile
-      Alert.alert("Success", "Profile completed successfully!");
+      showSuccess("Profile completed successfully!");
       router.replace("/(tabs)");
     } catch (error) {
-      Alert.alert("Error", "Failed to complete profile");
+      showError("Failed to complete profile");
     }
   };
 
@@ -87,7 +89,13 @@ export default function CompleteProfileScreen() {
               { backgroundColor: colors.background.secondary },
               shadows.sm,
             ]}
-            onPress={() => router.back()}
+            onPress={() => {
+              if (window.history.length > 1) {
+                router.back();
+              } else {
+                router.replace("/(tabs)");
+              }
+            }}
           >
             <Ionicons
               name="chevron-back"

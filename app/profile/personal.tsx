@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   View,
@@ -16,6 +16,7 @@ import { useAlert } from "../../hooks/useAlert";
 import { Header, Section, ListItem, Button } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
+import { getProfile } from "../../services/dataSource";
 
 /**
  * Personal Information Screen
@@ -34,16 +35,20 @@ export default function PersonalInformationScreen() {
 
   // Form state
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: "Bishal",
-    lastName: "Aryal",
-    email: "bishal@expenzez.com",
-    phone: "+44 1234 567890",
-    dateOfBirth: "1990-01-01",
-    address: "123 Baker Street, London, UK",
-    occupation: "Software Developer",
-    company: "Tech Corp",
-  });
+  const [formData, setFormData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true);
+      const data = await getProfile();
+      setFormData(data);
+      setLoading(false);
+    };
+    fetchProfile();
+  }, []);
+
+  if (loading || !formData) return <Text>Loading...</Text>;
 
   // Handle form field changes
   const handleFieldChange = (field: string, value: string) => {
@@ -67,17 +72,8 @@ export default function PersonalInformationScreen() {
   // Handle cancel editing
   const handleCancel = () => {
     setIsEditing(false);
-    // Reset form data to original values
-    setFormData({
-      firstName: "Bishal",
-      lastName: "Aryal",
-      email: "bishal@expenzez.com",
-      phone: "+44 1234 567890",
-      dateOfBirth: "1990-01-01",
-      address: "123 Baker Street, London, UK",
-      occupation: "Software Developer",
-      company: "Tech Corp",
-    });
+    // Reset form data to original values from API
+    fetchProfile();
   };
 
   // If not logged in, don't render anything (auth guard will handle redirect)
@@ -133,10 +129,7 @@ export default function PersonalInformationScreen() {
               ]}
               onPress={() => {
                 // TODO: Implement image picker
-                Alert.alert(
-                  "Change Picture",
-                  "Image picker not implemented yet"
-                );
+                showError("Image picker not implemented yet");
               }}
             >
               <Text style={styles.changePictureText}>Change Picture</Text>
@@ -399,7 +392,7 @@ export default function PersonalInformationScreen() {
             subtitle="Download your personal data"
             onPress={() => {
               // TODO: Implement data export
-              Alert.alert("Export Data", "Data export not implemented yet");
+              showSuccess("Data export not implemented yet");
             }}
           />
 
@@ -409,10 +402,7 @@ export default function PersonalInformationScreen() {
             subtitle="Request data deletion"
             onPress={() => {
               // TODO: Implement data deletion request
-              Alert.alert(
-                "Delete Data",
-                "Data deletion request not implemented yet"
-              );
+              showError("Data deletion request not implemented yet");
             }}
             variant="danger"
           />

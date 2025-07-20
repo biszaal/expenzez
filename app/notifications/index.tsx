@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
   StyleSheet,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,6 +21,12 @@ import {
   shadows,
   typography,
 } from "../../constants/theme";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as Notifications from "expo-notifications";
+import {
+  getNotificationSettings,
+  getRecentNotifications,
+} from "../../services/dataSource";
 
 interface NotificationSetting {
   id: string;
@@ -127,20 +134,41 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
   const { colors, isDark } = useTheme();
-  const [settings, setSettings] =
-    useState<NotificationSetting[]>(notificationSettings);
-  const [notifications, setNotifications] = useState(recentNotifications);
+  const [notificationSettings, setNotificationSettings] = useState<any[]>([]);
+  const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const toggleSetting = (id: string) => {
-    setSettings((prev) =>
-      prev.map((setting) =>
-        setting.id === id ? { ...setting, enabled: !setting.enabled } : setting
-      )
-    );
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      setLoading(true);
+      const settings = await getNotificationSettings();
+      const recents = await getRecentNotifications();
+      setNotificationSettings(settings);
+      setRecentNotifications(recents);
+      setLoading(false);
+    };
+    fetchNotifications();
+  }, []);
+
+  // Request permissions for push notifications
+  React.useEffect(() => {
+    if (Platform.OS !== "web") {
+      Notifications.requestPermissionsAsync();
+    }
+  }, []);
+
+  const sendTestNotification = async () => {
+    try {
+      // This would typically call a real notification API
+      // For now, we'll just show a success message
+      Alert.alert("Success", "Notification sent successfully!");
+    } catch (error) {
+      Alert.alert("Error", "Failed to send notification");
+    }
   };
 
   const markAsRead = (id: string) => {
-    setNotifications((prev) =>
+    setRecentNotifications((prev) =>
       prev.map((notification) =>
         notification.id === id ? { ...notification, read: true } : notification
       )
@@ -156,7 +184,7 @@ export default function NotificationsScreen() {
         {
           text: "Clear All",
           style: "destructive",
-          onPress: () => setNotifications([]),
+          onPress: () => setRecentNotifications([]),
         },
       ]
     );
@@ -203,350 +231,187 @@ export default function NotificationsScreen() {
             <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
               Notifications
             </Text>
-            <TouchableOpacity
-              style={[
-                styles.clearButton,
-                { backgroundColor: colors.primary[100] },
-                shadows.sm,
-              ]}
-              onPress={clearAllNotifications}
-            >
-              <Text
-                style={[styles.clearButtonText, { color: colors.primary[500] }]}
-              >
-                Clear All
-              </Text>
-            </TouchableOpacity>
+            <View style={{ width: 32 }} />
           </View>
         </View>
 
-        {/* Notification Settings */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-            Notification Settings
+        {/* Test Notification Button */}
+        <TouchableOpacity
+          style={[styles.testButton, { backgroundColor: colors.primary[500] }]}
+          onPress={sendTestNotification}
+        >
+          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
+            Send Test Notification
           </Text>
-          <View
-            style={[
-              styles.settingsCard,
-              {
-                backgroundColor: colors.background.primary,
-                borderColor: colors.border.light,
-              },
-              shadows.sm,
-            ]}
-          >
-            {settings.map((setting, index) => (
-              <View
-                key={setting.id}
-                style={[
-                  styles.settingItem,
-                  index !== settings.length - 1 && {
-                    borderBottomColor: colors.border.light,
-                    borderBottomWidth: 1,
-                  },
-                ]}
-              >
-                <View style={styles.settingLeft}>
-                  <View
-                    style={[
-                      styles.settingIcon,
-                      { backgroundColor: colors.primary[100] },
-                    ]}
-                  >
-                    <Ionicons
-                      name={setting.icon as any}
-                      size={20}
-                      color={colors.primary[500]}
-                    />
-                  </View>
-                  <View style={styles.settingContent}>
-                    <Text
-                      style={[
-                        styles.settingTitle,
-                        { color: colors.text.primary },
-                      ]}
-                    >
-                      {setting.title}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.settingSubtitle,
-                        { color: colors.text.secondary },
-                      ]}
-                    >
-                      {setting.subtitle}
-                    </Text>
-                  </View>
-                </View>
-                <Switch
-                  value={setting.enabled}
-                  onValueChange={() => toggleSetting(setting.id)}
-                  trackColor={{
-                    false: colors.gray[200],
-                    true: colors.primary[500],
-                  }}
-                  thumbColor={setting.enabled ? "white" : colors.gray[300]}
-                />
-              </View>
-            ))}
-          </View>
-        </View>
+        </TouchableOpacity>
 
-        {/* Recent Notifications */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-            Recent Notifications
-          </Text>
+        {/* Recent Notifications Section */}
+        <View style={{ marginVertical: 16 }}>
           <View
-            style={[
-              styles.notificationsCard,
-              {
-                backgroundColor: colors.background.primary,
-                borderColor: colors.border.light,
-              },
-              shadows.sm,
-            ]}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 8,
+              paddingHorizontal: 16,
+            }}
           >
-            {notifications.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons
-                  name="notifications-off"
-                  size={48}
-                  color={colors.gray[400]}
-                />
-                <Text
-                  style={[styles.emptyTitle, { color: colors.text.primary }]}
-                >
-                  No notifications
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              Recent Notifications
+            </Text>
+            {recentNotifications.length > 0 && (
+              <TouchableOpacity onPress={clearAllNotifications}>
+                <Text style={{ color: colors.error[600], fontWeight: "600" }}>
+                  Clear All
                 </Text>
-                <Text
-                  style={[
-                    styles.emptySubtitle,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  You're all caught up!
-                </Text>
-              </View>
-            ) : (
-              notifications.map((notification, index) => (
-                <TouchableOpacity
-                  key={notification.id}
-                  style={[
-                    styles.notificationItem,
-                    index !== notifications.length - 1 && {
-                      borderBottomColor: colors.border.light,
-                      borderBottomWidth: 1,
-                    },
-                    !notification.read && {
-                      backgroundColor: colors.primary[100],
-                    },
-                  ]}
-                  onPress={() => markAsRead(notification.id)}
-                >
-                  <View style={styles.notificationLeft}>
-                    <View
-                      style={[
-                        styles.notificationIcon,
-                        {
-                          backgroundColor:
-                            notification.type === "warning"
-                              ? colors.warning[100]
-                              : notification.type === "success"
-                                ? colors.success[100]
-                                : colors.primary[100],
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name={
-                          notification.type === "warning"
-                            ? "warning"
-                            : notification.type === "success"
-                              ? "checkmark-circle"
-                              : "information-circle"
-                        }
-                        size={20}
-                        color={
-                          notification.type === "warning"
-                            ? colors.warning[500]
-                            : notification.type === "success"
-                              ? colors.success[500]
-                              : colors.primary[500]
-                        }
-                      />
-                    </View>
-                    <View style={styles.notificationContent}>
-                      <Text
-                        style={[
-                          styles.notificationTitle,
-                          { color: colors.text.primary },
-                        ]}
-                      >
-                        {notification.title}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.notificationMessage,
-                          { color: colors.text.secondary },
-                        ]}
-                      >
-                        {notification.message}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.notificationTime,
-                          { color: colors.text.tertiary },
-                        ]}
-                      >
-                        {notification.time}
-                      </Text>
-                    </View>
-                  </View>
-                  {!notification.read && (
-                    <View
-                      style={[
-                        styles.unreadDot,
-                        { backgroundColor: colors.primary[500] },
-                      ]}
-                    />
-                  )}
-                </TouchableOpacity>
-              ))
+              </TouchableOpacity>
             )}
           </View>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-            Quick Actions
-          </Text>
-          <View
-            style={[
-              styles.actionsCard,
-              {
-                backgroundColor: colors.background.primary,
-                borderColor: colors.border.light,
-              },
-              shadows.lg,
-            ]}
-          >
-            <TouchableOpacity
-              style={[
-                styles.actionItem,
-                { borderBottomColor: colors.border.light },
-              ]}
-            >
-              <View
-                style={[
-                  styles.actionIcon,
-                  { backgroundColor: colors.primary[100] },
-                ]}
-              >
-                <Ionicons
-                  name="time-outline"
-                  size={20}
-                  color={colors.primary[500]}
-                />
-              </View>
-              <View style={styles.actionContent}>
-                <Text
-                  style={[styles.actionTitle, { color: colors.text.primary }]}
-                >
-                  Set Quiet Hours
-                </Text>
-                <Text
-                  style={[
-                    styles.actionSubtitle,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  Configure do not disturb times
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.primary[500]}
+          {recentNotifications.length === 0 ? (
+            <View style={{ alignItems: "center", marginVertical: 32 }}>
+              <MaterialCommunityIcons
+                name="bell-off-outline"
+                size={64}
+                color={colors.gray[300]}
               />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.actionItem,
-                { borderBottomColor: colors.border.light },
-              ]}
-            >
-              <View
-                style={[
-                  styles.actionIcon,
-                  { backgroundColor: colors.primary[100] },
-                ]}
+              <Text
+                style={{
+                  color: colors.text.secondary,
+                  fontSize: 18,
+                  marginTop: 12,
+                  fontWeight: "600",
+                }}
               >
-                <Ionicons
-                  name="filter-outline"
-                  size={20}
-                  color={colors.primary[500]}
-                />
-              </View>
-              <View style={styles.actionContent}>
-                <Text
-                  style={[styles.actionTitle, { color: colors.text.primary }]}
-                >
-                  Notification Filters
-                </Text>
-                <Text
-                  style={[
-                    styles.actionSubtitle,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  Customize what you receive
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.primary[500]}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionItem}>
-              <View
-                style={[
-                  styles.actionIcon,
-                  { backgroundColor: colors.primary[100] },
-                ]}
+                No notifications
+              </Text>
+              <Text
+                style={{
+                  color: colors.text.tertiary,
+                  fontSize: 14,
+                  marginTop: 4,
+                }}
               >
-                <Ionicons
-                  name="download-outline"
-                  size={20}
-                  color={colors.primary[500]}
-                />
-              </View>
-              <View style={styles.actionContent}>
-                <Text
-                  style={[styles.actionTitle, { color: colors.text.primary }]}
+                You&apos;re all caught up!
+              </Text>
+            </View>
+          ) : (
+            recentNotifications.map((notification) => (
+              <TouchableOpacity
+                key={notification.id}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: notification.read
+                    ? colors.background.primary
+                    : colors.primary[50],
+                  borderColor: colors.border.light,
+                  borderWidth: 1,
+                  borderRadius: 16,
+                  marginHorizontal: 16,
+                  marginBottom: 14,
+                  paddingVertical: 16,
+                  paddingHorizontal: 16,
+                  shadowColor: colors.gray[900],
+                  shadowOpacity: 0.06,
+                  shadowRadius: 4,
+                  shadowOffset: { width: 0, height: 2 },
+                  position: "relative",
+                }}
+                activeOpacity={0.85}
+                onPress={() => markAsRead(notification.id)}
+              >
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor:
+                      notification.type === "success"
+                        ? colors.success[100]
+                        : notification.type === "warning"
+                          ? colors.warning[100]
+                          : notification.type === "info"
+                            ? colors.primary[100]
+                            : notification.type === "error"
+                              ? colors.error[100]
+                              : colors.primary[50],
+                    marginRight: 16,
+                  }}
                 >
-                  Export Notifications
-                </Text>
-                <Text
-                  style={[
-                    styles.actionSubtitle,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  Download notification history
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.primary[500]}
-              />
-            </TouchableOpacity>
-          </View>
+                  <MaterialCommunityIcons
+                    name={
+                      notification.type === "success"
+                        ? "check-circle-outline"
+                        : notification.type === "warning"
+                          ? "alert-circle-outline"
+                          : notification.type === "info"
+                            ? "information-outline"
+                            : notification.type === "error"
+                              ? "close-circle-outline"
+                              : "bell-outline"
+                    }
+                    size={28}
+                    color={
+                      notification.type === "success"
+                        ? colors.success[500]
+                        : notification.type === "warning"
+                          ? colors.warning[500]
+                          : notification.type === "info"
+                            ? colors.primary[500]
+                            : notification.type === "error"
+                              ? colors.error[500]
+                              : colors.primary[500]
+                    }
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: colors.text.primary,
+                      fontWeight: notification.read ? "400" : "700",
+                      fontSize: 16,
+                      marginBottom: 2,
+                    }}
+                  >
+                    {notification.title}
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.text.secondary,
+                      fontSize: 14,
+                      marginBottom: 2,
+                    }}
+                  >
+                    {notification.message}
+                  </Text>
+                  <Text style={{ color: colors.text.tertiary, fontSize: 12 }}>
+                    {notification.time}
+                  </Text>
+                </View>
+                {!notification.read && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: 10,
+                      right: 14,
+                      backgroundColor: colors.primary[500],
+                      borderRadius: 8,
+                      paddingHorizontal: 7,
+                      paddingVertical: 2,
+                    }}
+                  >
+                    <Text
+                      style={{ color: "#fff", fontSize: 10, fontWeight: "700" }}
+                    >
+                      NEW
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -725,5 +590,42 @@ const styles = StyleSheet.create({
   actionSubtitle: {
     fontSize: typography.fontSizes.sm,
     marginTop: spacing.xs,
+  },
+  settingIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+  },
+  notificationIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+  },
+  unreadBadge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: "red",
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    zIndex: 1,
+  },
+  testButton: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    marginVertical: 16,
+    marginHorizontal: 24,
+    shadowColor: "transparent", // No shadow for this button
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
   },
 });

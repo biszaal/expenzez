@@ -86,7 +86,13 @@ export default function ProfileScreen() {
         <View style={styles.headerContent}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => {
+              if (window.history.length > 1) {
+                router.back();
+              } else {
+                router.replace("/(tabs)");
+              }
+            }}
           >
             <Ionicons
               name="chevron-back"

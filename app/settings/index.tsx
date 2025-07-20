@@ -29,7 +29,13 @@ export default function SettingsPage() {
             { backgroundColor: colors.background.primary },
             shadows.sm,
           ]}
-          onPress={() => router.back()}
+          onPress={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.replace("/(tabs)");
+            }
+          }}
           activeOpacity={0.7}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary[500]} />

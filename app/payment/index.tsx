@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -20,6 +20,8 @@ import {
   shadows,
   typography,
 } from "../../constants/theme";
+import { getPaymentMethods } from "../../services/dataSource";
+import { useAlert } from "../../hooks/useAlert";
 
 interface PaymentMethod {
   id: string;
@@ -33,55 +35,22 @@ interface PaymentMethod {
   color: string;
 }
 
-const paymentMethods: PaymentMethod[] = [
-  {
-    id: "1",
-    type: "card",
-    name: "Visa ending in 1234",
-    number: "**** **** **** 1234",
-    expiry: "12/25",
-    isDefault: true,
-    isActive: true,
-    icon: "card",
-    color: "#1E40AF",
-  },
-  {
-    id: "2",
-    type: "card",
-    name: "Mastercard ending in 5678",
-    number: "**** **** **** 5678",
-    expiry: "09/26",
-    isDefault: false,
-    isActive: true,
-    icon: "card",
-    color: "#DC2626",
-  },
-  {
-    id: "3",
-    type: "bank",
-    name: "Barclays Bank",
-    number: "**** 1234",
-    isDefault: false,
-    isActive: true,
-    icon: "business",
-    color: "#059669",
-  },
-  {
-    id: "4",
-    type: "bank",
-    name: "Revolut",
-    number: "**** 5678",
-    isDefault: false,
-    isActive: false,
-    icon: "business",
-    color: "#7C3AED",
-  },
-];
-
 export default function PaymentMethodsScreen() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
-  const [methods, setMethods] = useState<PaymentMethod[]>(paymentMethods);
+  const [methods, setMethods] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { showSuccess } = useAlert();
+
+  useEffect(() => {
+    const fetchMethods = async () => {
+      setLoading(true);
+      const data = await getPaymentMethods();
+      setMethods(data);
+      setLoading(false);
+    };
+    fetchMethods();
+  }, []);
 
   const setDefaultMethod = (id: string) => {
     setMethods((prev) =>
@@ -144,9 +113,7 @@ export default function PaymentMethodsScreen() {
             <Text style={styles.headerTitle}>Payment Methods</Text>
             <TouchableOpacity
               style={styles.addButton}
-              onPress={() =>
-                Alert.alert("Add Payment Method", "Add new payment method")
-              }
+              onPress={() => showSuccess("Add new payment method")}
             >
               <Ionicons name="add" size={24} color={colors.primary[500]} />
             </TouchableOpacity>
@@ -157,55 +124,61 @@ export default function PaymentMethodsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Payment Methods</Text>
           <View style={styles.methodsCard}>
-            {methods.map((method, index) => (
-              <View
-                key={method.id}
-                style={[
-                  styles.methodItem,
-                  index !== methods.length - 1 && styles.methodItemBorder,
-                ]}
-              >
-                <View style={styles.methodInfo}>
-                  <View
-                    style={[
-                      styles.methodIcon,
-                      { backgroundColor: method.color },
-                    ]}
-                  >
-                    <Ionicons
-                      name={method.icon as any}
-                      size={20}
-                      color="white"
+            {loading ? (
+              <Text>Loading payment methods...</Text>
+            ) : methods.length === 0 ? (
+              <Text>No payment methods found. Add a new one!</Text>
+            ) : (
+              methods.map((method, index) => (
+                <View
+                  key={method.id}
+                  style={[
+                    styles.methodItem,
+                    index !== methods.length - 1 && styles.methodItemBorder,
+                  ]}
+                >
+                  <View style={styles.methodInfo}>
+                    <View
+                      style={[
+                        styles.methodIcon,
+                        { backgroundColor: method.color },
+                      ]}
+                    >
+                      <Ionicons
+                        name={method.icon as any}
+                        size={20}
+                        color="white"
+                      />
+                    </View>
+                    <View style={styles.methodDetails}>
+                      <Text style={styles.methodName}>{method.name}</Text>
+                      <Text style={styles.methodNumber}>{method.number}</Text>
+                      {method.expiry && (
+                        <Text style={styles.methodExpiry}>
+                          Expires {method.expiry}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                  <View style={styles.methodActions}>
+                    {method.isDefault && (
+                      <View style={styles.defaultBadge}>
+                        <Text style={styles.defaultText}>Default</Text>
+                      </View>
+                    )}
+                    <Switch
+                      value={method.isActive}
+                      onValueChange={() => toggleMethodStatus(method.id)}
+                      trackColor={{
+                        false: colors.gray[200],
+                        true: colors.primary[500],
+                      }}
+                      thumbColor={method.isActive ? "white" : colors.gray[300]}
                     />
                   </View>
-                  <View style={styles.methodDetails}>
-                    <Text style={styles.methodName}>{method.name}</Text>
-                    <Text style={styles.methodNumber}>{method.number}</Text>
-                    {method.expiry && (
-                      <Text style={styles.methodExpiry}>
-                        Expires {method.expiry}
-                      </Text>
-                    )}
-                  </View>
                 </View>
-                <View style={styles.methodActions}>
-                  {method.isDefault && (
-                    <View style={styles.defaultBadge}>
-                      <Text style={styles.defaultText}>Default</Text>
-                    </View>
-                  )}
-                  <Switch
-                    value={method.isActive}
-                    onValueChange={() => toggleMethodStatus(method.id)}
-                    trackColor={{
-                      false: colors.gray[200],
-                      true: colors.primary[500],
-                    }}
-                    thumbColor={method.isActive ? "white" : colors.gray[300]}
-                  />
-                </View>
-              </View>
-            ))}
+              ))
+            )}
           </View>
         </View>
 

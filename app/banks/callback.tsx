@@ -6,29 +6,24 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useAuthGuard } from "../../hooks/useAuthGuard";
-import { useAlert } from "../../hooks/useAlert";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
-import {
-  spacing,
-  borderRadius,
-  shadows,
-  typography,
-} from "../../constants/theme";
+import { useAlert } from "../../hooks/useAlert";
+import { bankingAPI } from "../../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function BankCallbackScreen() {
   const router = useRouter();
-  const { isLoggedIn } = useAuthGuard();
-  const { showAlert, showError } = useAlert();
   const { colors } = useTheme();
-  const params = useLocalSearchParams();
+  const { showAlert, showError } = useAlert();
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading"
   );
   const [message, setMessage] = useState("Processing bank connection...");
+
+  const params = useLocalSearchParams();
+  const { ref, status: bankStatus, error, requisition_id } = params;
 
   useEffect(() => {
     handleCallback();
@@ -36,151 +31,224 @@ export default function BankCallbackScreen() {
 
   const handleCallback = async () => {
     try {
-      // Extract parameters from the callback URL
-      const { requisition_id, status: callbackStatus } = params;
+      console.log("[CALLBACK] Starting bank callback with params:", params);
 
-      if (callbackStatus === "success" && requisition_id) {
-        setStatus("success");
-        setMessage("Bank account connected successfully!");
-
-        // Show success message
-        showAlert(
-          "Connection Successful",
-          "Your bank account has been connected successfully. You can now view your transactions and balances."
-        );
-
-        // Navigate back to accounts after a delay
-        setTimeout(() => {
-          router.push("/(tabs)/account");
-        }, 2000);
-      } else {
+      // Check if there's an error from the bank
+      if (error) {
+        console.log("[CALLBACK] Bank returned error:", error);
         setStatus("error");
-        setMessage("Bank connection failed. Please try again.");
-
-        showError(
-          "Connection Failed",
-          "Failed to connect your bank account. Please try again."
-        );
+        setMessage("Bank connection was cancelled or failed.");
+        showError("Bank connection failed. Please try again.");
+        setTimeout(() => {
+          try {
+            router.push("/banks/connect");
+          } catch (navError) {
+            console.error("[CALLBACK] Navigation error:", navError);
+            router.back();
+          }
+        }, 2000);
+        return;
       }
-    } catch (error) {
-      console.error("Bank callback error:", error);
+
+      // Check if the connection was successful
+      if (bankStatus === "success" || ref || requisition_id) {
+        setStatus("loading");
+        setMessage("Finalizing bank connection...");
+
+        // Get requisition ID from URL params or stored value
+        let requisitionId = (requisition_id as string) || (ref as string);
+
+        // If no requisition ID in URL, try to get it from storage
+        if (!requisitionId) {
+          try {
+            requisitionId = await AsyncStorage.getItem("requisitionId");
+            console.log(
+              "[CALLBACK] Retrieved requisitionId from storage:",
+              requisitionId
+            );
+          } catch (storageError) {
+            console.error(
+              "[CALLBACK] Error reading requisitionId from storage:",
+              storageError
+            );
+          }
+        }
+
+        console.log("[CALLBACK] Processing requisitionId:", requisitionId);
+
+        if (!requisitionId) {
+          console.log("[CALLBACK] No requisitionId found");
+          setStatus("error");
+          setMessage("Bank connection failed - no session found.");
+          showError(
+            "Bank connection session not found. Please try connecting your bank again."
+          );
+          setTimeout(() => {
+            try {
+              router.push("/banks/connect");
+            } catch (navError) {
+              console.error("[CALLBACK] Navigation error:", navError);
+              router.back();
+            }
+          }, 2000);
+          return;
+        }
+
+        // Call backend to fetch accounts
+        try {
+          const response = await bankingAPI.handleCallback({
+            requisitionId: requisitionId,
+          });
+          console.log("[CALLBACK] Bank connection response:", response);
+
+          if (response.status === "connected") {
+            setStatus("success");
+            setMessage("Bank connected successfully!");
+            showAlert(
+              "Success",
+              "Your bank account has been connected successfully."
+            );
+            // Clear stored requisition ID on success
+            await AsyncStorage.removeItem("requisitionId");
+            setTimeout(() => {
+              try {
+                router.push("/(tabs)");
+              } catch (navError) {
+                console.error("[CALLBACK] Navigation error:", navError);
+                // Fallback: try to go back
+                router.back();
+              }
+            }, 2000);
+          } else if (response.status === "pending") {
+            setStatus("error");
+            setMessage(
+              "Bank connection is still processing. Please try again later."
+            );
+            showError(
+              response.suggestion ||
+                "Connection is still processing. Please wait a moment and try again."
+            );
+            setTimeout(() => {
+              try {
+                router.push("/banks/connect");
+              } catch (navError) {
+                console.error("[CALLBACK] Navigation error:", navError);
+                router.back();
+              }
+            }, 3000);
+          } else {
+            setStatus("error");
+            setMessage("Bank connection status unclear.");
+            showError("Connection status unclear. Please try again.");
+            setTimeout(() => {
+              try {
+                router.push("/banks/connect");
+              } catch (navError) {
+                console.error("[CALLBACK] Navigation error:", navError);
+                router.back();
+              }
+            }, 2000);
+          }
+        } catch (apiError: any) {
+          console.error("[CALLBACK] API callback error:", apiError);
+          setStatus("error");
+          setMessage("Failed to complete bank connection.");
+
+          // Handle specific error cases
+          let errorMessage =
+            "Failed to complete bank connection. Please try again.";
+          if (apiError.response?.data?.error === "REQUISITION_NOT_FOUND") {
+            errorMessage =
+              "Bank session expired. Please try connecting your bank again.";
+            // Clear stored requisition ID on error
+            await AsyncStorage.removeItem("requisitionId");
+          } else if (apiError.response?.data?.message) {
+            errorMessage = apiError.response.data.message;
+          } else if (apiError.message) {
+            errorMessage = apiError.message;
+          }
+
+          showError(errorMessage);
+          setTimeout(() => {
+            try {
+              router.push("/banks/connect");
+            } catch (navError) {
+              console.error("[CALLBACK] Navigation error:", navError);
+              router.back();
+            }
+          }, 2000);
+        }
+      } else {
+        console.log("[CALLBACK] No valid callback parameters found");
+        setStatus("error");
+        setMessage("Bank connection failed.");
+        showError("Failed to connect bank account. Please try again.");
+        setTimeout(() => {
+          try {
+            router.push("/banks/connect");
+          } catch (navError) {
+            console.error("[CALLBACK] Navigation error:", navError);
+            router.back();
+          }
+        }, 2000);
+      }
+    } catch (error: any) {
+      console.error("[CALLBACK] Unexpected error:", error);
       setStatus("error");
-      setMessage("An error occurred during bank connection.");
-
-      showError(
-        "Connection Error",
-        "An error occurred while connecting your bank account."
-      );
+      setMessage("An error occurred while processing the connection.");
+      showError("Connection processing failed. Please try again.");
+      setTimeout(() => {
+        try {
+          router.push("/banks/connect");
+        } catch (navError) {
+          console.error("[CALLBACK] Navigation error:", navError);
+          router.back();
+        }
+      }, 2000);
     }
   };
-
-  const getStatusIcon = () => {
-    switch (status) {
-      case "loading":
-        return "time-outline";
-      case "success":
-        return "checkmark-circle";
-      case "error":
-        return "close-circle";
-      default:
-        return "time-outline";
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (status) {
-      case "loading":
-        return colors.primary[500];
-      case "success":
-        return colors.success[500];
-      case "error":
-        return colors.error[500];
-      default:
-        return colors.primary[500];
-    }
-  };
-
-  if (!isLoggedIn) {
-    return null;
-  }
 
   return (
     <SafeAreaView
-      style={[
-        styles.container,
-        { backgroundColor: colors.background.secondary },
-      ]}
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
       <View style={styles.content}>
-        <View
-          style={[
-            styles.statusCard,
-            {
-              backgroundColor: colors.background.primary,
-            },
-            shadows.lg,
-          ]}
+        {status === "loading" && (
+          <ActivityIndicator size="large" color={colors.primary[500]} />
+        )}
+
+        <Text style={[styles.title, { color: colors.text.primary }]}>
+          {status === "success"
+            ? "✅ Success"
+            : status === "error"
+              ? "❌ Error"
+              : "⏳ Processing"}
+        </Text>
+
+        <Text style={[styles.message, { color: colors.text.secondary }]}>
+          {message}
+        </Text>
+
+        <Text style={[styles.redirect, { color: colors.text.tertiary }]}>
+          Redirecting you back to the app...
+        </Text>
+
+        {/* Manual back button in case automatic navigation fails */}
+        <TouchableOpacity
+          style={[styles.backButton, { backgroundColor: colors.primary[500] }]}
+          onPress={() => {
+            try {
+              router.push("/(tabs)");
+            } catch (navError) {
+              console.error("[CALLBACK] Manual navigation error:", navError);
+              router.back();
+            }
+          }}
         >
-          <View style={styles.iconContainer}>
-            {status === "loading" ? (
-              <ActivityIndicator size={64} color={getStatusColor()} />
-            ) : (
-              <Ionicons
-                name={getStatusIcon()}
-                size={64}
-                color={getStatusColor()}
-              />
-            )}
-          </View>
-
-          <Text style={[styles.title, { color: colors.text.primary }]}>
-            {status === "loading" && "Connecting Bank Account"}
-            {status === "success" && "Connection Successful"}
-            {status === "error" && "Connection Failed"}
+          <Text style={[styles.backButtonText, { color: "white" }]}>
+            Go to Home
           </Text>
-
-          <Text style={[styles.message, { color: colors.text.secondary }]}>
-            {message}
-          </Text>
-
-          {status !== "loading" && (
-            <TouchableOpacity
-              style={[
-                styles.button,
-                {
-                  backgroundColor: colors.primary[500],
-                },
-                shadows.sm,
-              ]}
-              onPress={() => router.push("/(tabs)/account")}
-            >
-              <Text style={styles.buttonText}>
-                {status === "success" ? "View Accounts" : "Try Again"}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Info Card */}
-        <View
-          style={[
-            styles.infoCard,
-            {
-              backgroundColor: colors.background.primary,
-            },
-            shadows.sm,
-          ]}
-        >
-          <Ionicons
-            name="information-circle"
-            size={24}
-            color={colors.primary[500]}
-          />
-          <Text style={[styles.infoText, { color: colors.text.secondary }]}>
-            Your bank data is securely encrypted and only accessible to you. We
-            never store your login credentials.
-          </Text>
-        </View>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -193,50 +261,34 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: spacing.lg,
-  },
-  statusCard: {
     alignItems: "center",
-    padding: spacing["2xl"],
-    borderRadius: borderRadius["2xl"],
-    marginBottom: spacing.xl,
-  },
-  iconContainer: {
-    marginBottom: spacing.lg,
+    padding: 20,
   },
   title: {
-    fontSize: typography.fontSizes.xl,
-    fontWeight: "700",
-    marginBottom: spacing.md,
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 16,
     textAlign: "center",
   },
   message: {
-    fontSize: typography.fontSizes.base,
+    fontSize: 16,
     textAlign: "center",
-    lineHeight: typography.fontSizes.base * 1.4,
-    marginBottom: spacing.xl,
+    marginBottom: 8,
+    lineHeight: 24,
   },
-  button: {
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.xl,
+  redirect: {
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 20,
   },
-  buttonText: {
-    color: "white",
-    fontSize: typography.fontSizes.base,
-    fontWeight: "600",
+  backButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
   },
-  infoCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.xl,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: typography.fontSizes.sm,
-    lineHeight: typography.fontSizes.sm * 1.4,
-    marginLeft: spacing.sm,
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

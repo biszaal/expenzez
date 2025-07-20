@@ -1,6 +1,6 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dimensions,
   ScrollView,
@@ -19,6 +19,8 @@ import {
   shadows,
   typography,
 } from "../../constants/theme";
+import { useAuthGuard } from "../../hooks/useAuthGuard";
+import { getProfile } from "../../services/dataSource";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -83,18 +85,68 @@ const creditOptions = [
 
 export default function CreditScreen() {
   const router = useRouter();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
+  const {
+    isLoggedIn: authLoggedIn,
+    hasBank,
+    checkingBank,
+  } = useAuthGuard(undefined, true);
   const { colors } = useTheme();
 
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (!isLoggedIn) {
-      router.replace("/auth/Login");
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        const profileData = await getProfile();
+        setProfile(profileData);
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isLoggedIn) {
+      fetchUserData();
     }
   }, [isLoggedIn]);
 
-  if (!isLoggedIn) {
+  useEffect(() => {
+    if (!authLoggedIn) {
+      router.replace("/auth/Login");
+    }
+    // Disabled: Do not redirect to /banks/connect when hasBank is false
+    // if (hasBank === false && !checkingBank) {
+    //   router.replace("/banks/connect");
+    // }
+  }, [authLoggedIn, hasBank, checkingBank]);
+
+  if (!authLoggedIn || checkingBank) {
     return null;
   }
+
+  // Get user initials
+  const getUserInitials = () => {
+    if (profile?.firstName && profile?.lastName) {
+      const firstName = profile.firstName;
+      const lastName = profile.lastName;
+      return `${firstName[0]}${lastName[0]}`.toUpperCase();
+    }
+    if (user?.name) {
+      const names = user.name.split(" ");
+      if (names.length >= 2) {
+        return `${names[0][0]}${names[1][0]}`.toUpperCase();
+      }
+      return user.name[0]?.toUpperCase() || "U";
+    }
+    if (user?.email) {
+      return user.email[0]?.toUpperCase() || "U";
+    }
+    return "U";
+  };
 
   return (
     <SafeAreaView
@@ -119,7 +171,7 @@ export default function CreditScreen() {
                 colors={[colors.primary[500], "#8B5CF6"]}
                 style={styles.headerAvatar}
               >
-                <Text style={styles.headerAvatarText}>BA</Text>
+                <Text style={styles.headerAvatarText}>{getUserInitials()}</Text>
               </LinearGradient>
               <View>
                 <Text
@@ -157,7 +209,10 @@ export default function CreditScreen() {
           {creditOptions.map((opt) => (
             <TouchableOpacity
               key={opt.name}
-              style={[styles.verticalCard, { backgroundColor: opt.bg }]}
+              style={[
+                styles.verticalCard,
+                { backgroundColor: colors.background.primary },
+              ]}
             >
               <LinearGradient
                 colors={["#FFFFFF", "#F8FAFC"]}

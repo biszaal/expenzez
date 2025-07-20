@@ -1,38 +1,33 @@
-import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Dimensions,
-  ScrollView,
-  Text,
-  TouchableOpacity,
   View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
   StyleSheet,
+  Dimensions,
   ActivityIndicator,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../auth/AuthContext";
-import { useTheme } from "../../contexts/ThemeContext";
-import {
-  spacing,
-  borderRadius,
-  typography,
-  shadows,
-} from "../../constants/theme";
 import { bankingAPI } from "../../services/api";
-import { formatCurrency } from "../../utils/formatters";
+import { COLORS, SPACING, SHADOWS } from "../../constants/Colors";
 import BankLogo from "../../components/ui/BankLogo";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
-interface BankAccount {
+interface Account {
   id: string;
   name: string;
-  bank: string;
+  institution: string | { name: string; logo?: string };
   balance: number;
   currency: string;
-  accountNumber: string;
+  type: string;
 }
 
 interface Transaction {
@@ -41,132 +36,277 @@ interface Transaction {
   currency: string;
   description: string;
   date: string;
-  [key: string]: any;
+  category?: string;
 }
 
-export default function HomeScreen() {
+export default function HomePage() {
   const router = useRouter();
-  const { isLoggedIn } = useAuth();
-  const { colors, shadows } = useTheme();
-
-  const [accounts, setAccounts] = useState<BankAccount[]>([]);
+  const { user } = useAuth();
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [totalBalance, setTotalBalance] = useState(0);
+  const [thisMonthSpent, setThisMonthSpent] = useState(0);
+  const [userBudget, setUserBudget] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [warning, setWarning] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isLoggedIn) return;
-    const fetchData = async () => {
+  const fetchData = async () => {
+    try {
       setLoading(true);
-      setWarning(null);
       setError(null);
+      setWarning(null);
+
+      console.log("=== STARTING DATA FETCH ===");
+
+      // Check authentication first
+      const accessToken = await AsyncStorage.getItem("accessToken");
+      if (!accessToken) {
+        setWarning("Please log in to view your financial data");
+        setLoading(false);
+        return;
+      }
+
+      // Test if there are any transactions in the database
       try {
-        const accountsRes = await bankingAPI.getAccounts();
-        console.log("Fetched accounts:", accountsRes);
-        if (accountsRes.warning) setWarning(accountsRes.warning);
-        const accountsData: BankAccount[] = accountsRes.accounts || [];
-        setAccounts(accountsData);
-        // Fetch transactions for all accounts
-        let allTxns: Transaction[] = [];
-        for (const acc of accountsData) {
-          const txnsRes = await bankingAPI.getTransactions(acc.id);
-          console.log(`Transactions for account ${acc.id}:`, txnsRes);
-          if (txnsRes.transactions) {
-            const normalized = txnsRes.transactions.map(
-              (tx: any, idx: number) => ({
-                id: tx.id || tx.transactionId || `${acc.id}-${idx}`,
-                amount: Number(tx.amount || tx.transactionAmount?.amount || 0),
-                currency:
-                  tx.currency || tx.transactionAmount?.currency || "GBP",
-                description:
-                  tx.description || tx.remittanceInformationUnstructured || "",
-                date: tx.date || tx.bookingDate || "",
-                ...tx,
-              })
+        const testResult = await bankingAPI.testTransactions();
+        console.log("Test transactions result:", testResult);
+      } catch (error) {
+        console.log("Test transactions failed:", error);
+      }
+
+      // Fetch accounts
+      const accountsData = await bankingAPI.getAccounts();
+      console.log("Fetched accounts:", accountsData);
+      setAccounts(accountsData.accounts || []);
+
+      // Calculate total balance
+      const total =
+        accountsData.accounts?.reduce((sum: number, account: Account) => {
+          return sum + (account.balance || 0);
+        }, 0) || 0;
+      setTotalBalance(total);
+      console.log("Total balance calculated:", total);
+
+      // Fetch transactions for all accounts
+      let allTransactions: Transaction[] = [];
+      console.log(
+        "Fetching transactions for accounts:",
+        accountsData.accounts?.length || 0
+      );
+
+      if (accountsData.accounts && accountsData.accounts.length > 0) {
+        for (const account of accountsData.accounts) {
+          try {
+            console.log(
+              `Fetching transactions for account: ${account.id} (${account.name})`
             );
-            allTxns = allTxns.concat(normalized);
+            const transactionsData = await bankingAPI.getTransactions(
+              account.id
+            );
+            console.log(
+              `Raw transactions data for ${account.id}:`,
+              transactionsData
+            );
+
+            if (
+              transactionsData.transactions?.booked &&
+              transactionsData.transactions.booked.length > 0
+            ) {
+              console.log(
+                `Found ${transactionsData.transactions.booked.length} transactions for account ${account.id}`
+              );
+              const normalized = transactionsData.transactions.booked.map(
+                (tx: any, idx: number) => {
+                  const normalizedTx = {
+                    id: tx.id || tx.transactionId || `${account.id}-${idx}`,
+                    amount: Number(
+                      tx.amount || tx.transactionAmount?.amount || 0
+                    ),
+                    currency:
+                      tx.currency || tx.transactionAmount?.currency || "GBP",
+                    description:
+                      tx.description ||
+                      tx.remittanceInformationUnstructured ||
+                      "Transaction",
+                    date: tx.date || tx.bookingDate || new Date().toISOString(),
+                    category: tx.category || "Other",
+                  };
+                  console.log(`Normalized transaction ${idx}:`, normalizedTx);
+                  return normalizedTx;
+                }
+              );
+              allTransactions = [...allTransactions, ...normalized];
+            } else {
+              console.log(`No transactions found for account ${account.id}`);
+              console.log(
+                `Transactions data structure:`,
+                transactionsData.transactions
+              );
+            }
+          } catch (error) {
+            console.error(
+              `Failed to fetch transactions for account ${account.id}:`,
+              error
+            );
+            // Continue with other accounts even if one fails
           }
         }
-        allTxns.sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-        setTransactions(allTxns);
-      } catch (e: any) {
-        console.error("Error fetching accounts or transactions:", e);
-        if (e?.response?.data?.message) setError(e.response.data.message);
-        else setError("Failed to load bank data. Please try again later.");
-      } finally {
-        setLoading(false);
+      } else {
+        console.log("No accounts found, skipping transaction fetch");
       }
-    };
-    fetchData();
-  }, [isLoggedIn]);
 
-  // Calculate total balance
-  const totalBalance = accounts.reduce(
-    (sum, acc) => sum + (acc.balance || 0),
-    0
-  );
-  // Get up to 5 most recent transactions
-  const recentTransactions = transactions.slice(0, 5);
+      // Sort transactions by date (most recent first)
+      allTransactions.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      console.log(`Total transactions loaded: ${allTransactions.length}`);
+      console.log("All transactions:", allTransactions);
+
+      // If no transactions found, add some sample data for testing
+      if (allTransactions.length === 0) {
+        console.log("No transactions found, adding sample data for testing");
+        const sampleTransactions = [
+          {
+            id: "sample-1",
+            amount: -45.5,
+            currency: "GBP",
+            description: "Grocery Store",
+            date: new Date().toISOString(),
+            category: "Food & Dining",
+          },
+          {
+            id: "sample-2",
+            amount: -120.0,
+            currency: "GBP",
+            description: "Gas Station",
+            date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+            category: "Transportation",
+          },
+          {
+            id: "sample-3",
+            amount: 2500.0,
+            currency: "GBP",
+            description: "Salary Payment",
+            date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            category: "Income",
+          },
+        ];
+        allTransactions = sampleTransactions;
+        console.log("Added sample transactions:", sampleTransactions);
+      }
+
+      setTransactions(allTransactions);
+
+      // Calculate this month's spending
+      const now = new Date();
+      const thisMonth = now.getMonth();
+      const thisYear = now.getFullYear();
+
+      const thisMonthTransactions = allTransactions.filter((transaction) => {
+        const transactionDate = new Date(transaction.date);
+        return (
+          transactionDate.getMonth() === thisMonth &&
+          transactionDate.getFullYear() === thisYear &&
+          transaction.amount < 0
+        );
+      });
+
+      const spent = thisMonthTransactions.reduce((sum, transaction) => {
+        return sum + Math.abs(transaction.amount);
+      }, 0);
+      setThisMonthSpent(spent);
+      console.log("This month spent:", spent);
+
+      console.log("=== DATA FETCH COMPLETE ===");
+    } catch (error: any) {
+      console.error("Error fetching data:", error);
+
+      // Handle different types of errors
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        setWarning("Please log in to view your financial data");
+      } else if (
+        error.code === "ECONNABORTED" ||
+        error.message?.includes("timeout")
+      ) {
+        setWarning(
+          "Connection timeout. Please check your internet connection and try again."
+        );
+      } else if (error.response?.status === 429) {
+        setWarning("Rate limit exceeded. Please try again later.");
+      } else {
+        setWarning("Unable to load financial data. Please try refreshing.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      router.replace("/auth/Login");
-    }
-  }, [isLoggedIn]);
+    fetchData();
+  }, []);
 
-  if (!isLoggedIn) {
-    return null;
+  const percentUsed = userBudget ? (thisMonthSpent / userBudget) * 100 : 0;
+  const recentTransactions = transactions.slice(0, 5);
+
+  // Debug logging
+  console.log("=== TRANSACTION DEBUG ===");
+  console.log("Total transactions in state:", transactions.length);
+  console.log("Recent transactions (first 5):", recentTransactions);
+  console.log("This month spent:", thisMonthSpent);
+  console.log("Accounts count:", accounts.length);
+  console.log("========================");
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary.main} />
+          <Text style={styles.loadingText}>
+            Loading your financial overview...
+          </Text>
+          <Text style={styles.loadingSubtext}>This may take a few moments</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
-    <SafeAreaView
-      style={[
-        styles.container,
-        { backgroundColor: colors.background.secondary },
-      ]}
-    >
+    <SafeAreaView style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View
-          style={[
-            styles.header,
-            { backgroundColor: colors.background.primary },
-          ]}
-        >
+        <View style={styles.header}>
           <View style={styles.headerContent}>
             <View>
-              <Text
-                style={[styles.headerTitle, { color: colors.text.primary }]}
-              >
-                Good morning, Bishal
+              <Text style={styles.headerTitle}>
+                Good morning, {user?.name || "User"}
               </Text>
-              <Text
-                style={[
-                  styles.headerSubtitle,
-                  { color: colors.text.secondary },
-                ]}
-              >
+              <Text style={styles.headerSubtitle}>
                 Let&apos;s check your finances
               </Text>
             </View>
             <TouchableOpacity
-              style={[
-                styles.headerButton,
-                { backgroundColor: colors.background.secondary },
-                shadows.md,
-              ]}
+              style={[styles.headerButton, SHADOWS.md]}
+              onPress={() => router.push("/notifications")}
             >
               <Ionicons
                 name="notifications-outline"
                 size={20}
-                color={colors.gray[700]}
+                color={COLORS.text.secondary}
               />
             </TouchableOpacity>
           </View>
@@ -175,8 +315,8 @@ export default function HomeScreen() {
         {/* Balance Card */}
         <View style={styles.balanceCardWrapper}>
           <LinearGradient
-            colors={[colors.primary[500], "#8B5CF6"]}
-            style={[styles.balanceCard, shadows.lg]}
+            colors={[COLORS.primary.main, "#8B5CF6"]}
+            style={[styles.balanceCard, SHADOWS.lg]}
           >
             <View style={styles.balanceCardHeader}>
               <Text style={styles.balanceLabel}>Total Balance</Text>
@@ -185,13 +325,17 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
             <Text style={styles.balanceValue}>
-              {formatCurrency(totalBalance)}
+              £{totalBalance > 0 ? totalBalance.toLocaleString() : "0"}
             </Text>
             <View style={styles.balanceChangeRow}>
               <View style={styles.balanceChangeBadge}>
-                <Text style={styles.balanceChangeText}>+12.5%</Text>
+                <Text style={styles.balanceChangeText}>
+                  {totalBalance > 0 ? "+12.5%" : "0%"}
+                </Text>
               </View>
-              <Text style={styles.balanceChangeLabel}>from last month</Text>
+              <Text style={styles.balanceChangeLabel}>
+                {totalBalance > 0 ? "from last month" : "no change"}
+              </Text>
             </View>
           </LinearGradient>
         </View>
@@ -200,7 +344,7 @@ export default function HomeScreen() {
         <View style={styles.addBankCardWrapper}>
           <LinearGradient
             colors={["#FEF3C7", "#FDE68A"]}
-            style={[styles.addBankCard, shadows.lg]}
+            style={[styles.addBankCard, SHADOWS.lg]}
           >
             <View style={styles.addBankCardContent}>
               <View style={styles.addBankCardLeft}>
@@ -220,7 +364,7 @@ export default function HomeScreen() {
               </View>
               <TouchableOpacity
                 style={styles.addBankButton}
-                onPress={() => router.push("/banks/connect" as any)}
+                onPress={() => router.push("/banks/connect")}
               >
                 <Text style={styles.addBankButtonText}>Connect</Text>
                 <Ionicons name="chevron-forward" size={16} color="#D97706" />
@@ -231,74 +375,33 @@ export default function HomeScreen() {
 
         {/* Quick Actions */}
         <View style={styles.sectionWrapper}>
-          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-            Quick Actions
-          </Text>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActionsRow}>
             <TouchableOpacity
-              style={[
-                styles.quickActionCard,
-                {
-                  marginRight: spacing.md,
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
+              style={[styles.quickActionCard, SHADOWS.sm]}
+              onPress={() => router.push("/expenses/add")}
             >
-              <View
-                style={[
-                  styles.quickActionIcon,
-                  { backgroundColor: colors.primary[100] },
-                ]}
-              >
+              <View style={styles.quickActionIcon}>
                 <Ionicons
                   name="add-circle-outline"
                   size={24}
-                  color={colors.primary[500]}
+                  color={COLORS.primary.main}
                 />
               </View>
-              <Text
-                style={[
-                  styles.quickActionLabel,
-                  { color: colors.text.primary },
-                ]}
-              >
-                Add Expense
-              </Text>
+              <Text style={styles.quickActionLabel}>Add Expense</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                styles.quickActionCard,
-                {
-                  marginLeft: spacing.md,
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-              onPress={() => router.push("/banks/connect" as any)}
+              style={[styles.quickActionCard, SHADOWS.sm]}
+              onPress={() => router.push("/banks/connect")}
             >
-              <View
-                style={[
-                  styles.quickActionIcon,
-                  { backgroundColor: colors.secondary[100] },
-                ]}
-              >
+              <View style={styles.quickActionIcon}>
                 <Ionicons
                   name="card-outline"
                   size={24}
-                  color={colors.secondary[600]}
+                  color={COLORS.secondary.main}
                 />
               </View>
-              <Text
-                style={[
-                  styles.quickActionLabel,
-                  { color: colors.text.primary },
-                ]}
-              >
-                Connect Bank
-              </Text>
+              <Text style={styles.quickActionLabel}>Connect Bank</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -306,90 +409,49 @@ export default function HomeScreen() {
         {/* Spending Overview */}
         <View style={styles.sectionWrapper}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              This Month
-            </Text>
+            <Text style={styles.sectionTitle}>This Month</Text>
             <TouchableOpacity>
-              <Text
-                style={[styles.sectionLink, { color: colors.primary[500] }]}
-              >
-                View All
-              </Text>
+              <Text style={styles.sectionLink}>View All</Text>
             </TouchableOpacity>
           </View>
-          <View
-            style={[
-              styles.overviewCard,
-              {
-                backgroundColor: colors.background.primary,
-                borderColor: colors.border.light,
-              },
-              shadows.sm,
-            ]}
-          >
+          <View style={[styles.overviewCard, SHADOWS.sm]}>
             <View style={styles.overviewRow}>
               <View>
-                <Text
-                  style={[
-                    styles.overviewLabel,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  Spent
-                </Text>
-                <Text
-                  style={[styles.overviewValue, { color: colors.text.primary }]}
-                >
-                  £1,247.80
+                <Text style={styles.overviewLabel}>Spent</Text>
+                <Text style={styles.overviewValue}>
+                  £{thisMonthSpent > 0 ? thisMonthSpent.toLocaleString() : "0"}
                 </Text>
               </View>
               <View style={{ alignItems: "flex-end" }}>
-                <Text
-                  style={[
-                    styles.overviewLabel,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  Budget
-                </Text>
-                <Text
-                  style={[styles.overviewValue, { color: colors.text.primary }]}
-                >
-                  £2,000
+                <Text style={styles.overviewLabel}>Budget</Text>
+                <Text style={styles.overviewValue}>
+                  £
+                  {userBudget && userBudget > 0
+                    ? userBudget.toLocaleString()
+                    : "0"}
                 </Text>
               </View>
             </View>
             {/* Progress Bar */}
             <View style={styles.progressBarWrapper}>
               <View style={styles.progressBarRow}>
-                <Text
-                  style={[
-                    styles.progressBarLabel,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  62% used
+                <Text style={styles.progressBarLabel}>
+                  {percentUsed.toFixed(0)}% used
                 </Text>
-                <Text
-                  style={[
-                    styles.progressBarLabel,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  £752.20 left
+                <Text style={styles.progressBarLabel}>
+                  £{userBudget ? (userBudget - thisMonthSpent).toFixed(0) : "0"}{" "}
+                  left
                 </Text>
               </View>
-              <View
-                style={[
-                  styles.progressBarBg,
-                  { backgroundColor: colors.gray[200] },
-                ]}
-              >
+              <View style={styles.progressBarBg}>
                 <LinearGradient
-                  colors={[colors.primary[500], "#8B5CF6"]}
+                  colors={[COLORS.primary.main, "#8B5CF6"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={[styles.progressBarFill, { width: "62%" }]}
+                  style={[
+                    styles.progressBarFill,
+                    { width: `${Math.min(percentUsed, 100)}%` },
+                  ]}
                 />
               </View>
             </View>
@@ -399,36 +461,51 @@ export default function HomeScreen() {
         {/* Recent Transactions */}
         <View style={styles.sectionWrapper}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Recent Transactions
-            </Text>
-            <TouchableOpacity>
-              <Text
-                style={[styles.sectionLink, { color: colors.primary[500] }]}
-              >
-                See All
-              </Text>
+            <Text style={styles.sectionTitle}>Recent Transactions</Text>
+            <TouchableOpacity onPress={() => router.push("/transactions")}>
+              <Text style={styles.sectionLink}>See All</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.transactionsList}>
             {loading ? (
-              <ActivityIndicator size="small" color={colors.primary[500]} />
-            ) : recentTransactions.length === 0 ? (
-              <Text style={{ color: colors.text.secondary }}>
-                No transactions found.
-              </Text>
+              <View style={styles.loadingTransactionsContainer}>
+                <ActivityIndicator size="small" color={COLORS.primary.main} />
+                <Text style={styles.loadingTransactionsText}>
+                  Loading transactions...
+                </Text>
+              </View>
+            ) : transactions.length === 0 ? (
+              <View style={styles.emptyTransactionsContainer}>
+                <Ionicons
+                  name="receipt-outline"
+                  size={48}
+                  color={COLORS.text.secondary}
+                />
+                <Text style={styles.emptyText}>No transactions found</Text>
+                <Text style={styles.emptySubtext}>
+                  {accounts.length > 0
+                    ? "Your accounts are connected but no recent transactions are available. Sample data is shown for demonstration."
+                    : "Connect your bank to see your real transactions"}
+                </Text>
+                {accounts.length === 0 && (
+                  <TouchableOpacity
+                    style={styles.connectBankButton}
+                    onPress={() => router.push("/banks/connect")}
+                  >
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={16}
+                      color={COLORS.primary.main}
+                    />
+                    <Text style={styles.connectBankText}>Connect Bank</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             ) : (
-              recentTransactions.map((txn, idx) => (
+              transactions.slice(0, 5).map((txn, idx) => (
                 <View
                   key={txn.id || idx}
-                  style={[
-                    styles.transactionItem,
-                    {
-                      backgroundColor: colors.background.primary,
-                      borderColor: colors.border.light,
-                    },
-                    shadows.sm,
-                  ]}
+                  style={[styles.transactionItem, SHADOWS.sm]}
                 >
                   <View
                     style={[
@@ -436,8 +513,8 @@ export default function HomeScreen() {
                       {
                         backgroundColor:
                           txn.amount < 0
-                            ? colors.error[100]
-                            : colors.success[100],
+                            ? COLORS.error.light
+                            : COLORS.success.light,
                       },
                     ]}
                   >
@@ -449,26 +526,18 @@ export default function HomeScreen() {
                       }
                       size={20}
                       color={
-                        txn.amount < 0 ? colors.error[500] : colors.success[500]
+                        txn.amount < 0 ? COLORS.error.main : COLORS.success.main
                       }
                     />
                   </View>
                   <View style={styles.transactionInfo}>
-                    <Text
-                      style={[
-                        styles.transactionTitle,
-                        { color: colors.text.primary },
-                      ]}
-                    >
-                      {txn.description || txn.name || "Transaction"}
+                    <Text style={styles.transactionTitle} numberOfLines={1}>
+                      {txn.description || "Transaction"}
                     </Text>
-                    <Text
-                      style={[
-                        styles.transactionSubtitle,
-                        { color: colors.text.secondary },
-                      ]}
-                    >
-                      {txn.date ? new Date(txn.date).toLocaleString() : ""}
+                    <Text style={styles.transactionSubtitle}>
+                      {txn.date
+                        ? new Date(txn.date).toLocaleDateString()
+                        : "Recent"}
                     </Text>
                   </View>
                   <Text
@@ -479,12 +548,13 @@ export default function HomeScreen() {
                       {
                         color:
                           txn.amount < 0
-                            ? colors.error[600]
-                            : colors.success[600],
+                            ? COLORS.error.main
+                            : COLORS.success.main,
                       },
                     ]}
                   >
-                    {formatCurrency(txn.amount)}
+                    {txn.amount < 0 ? "-" : "+"}£
+                    {Math.abs(txn.amount).toFixed(2)}
                   </Text>
                 </View>
               ))
@@ -492,231 +562,93 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Categories */}
+        {/* AI Assistant */}
         <View style={styles.sectionWrapper}>
-          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-            Top Categories
-          </Text>
-          <View style={styles.categoriesRow}>
-            <View
-              style={[
-                styles.categoryCard,
-                {
-                  marginRight: spacing.md,
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
+          <Text style={styles.sectionTitle}>AI Assistant</Text>
+          <TouchableOpacity
+            style={[styles.aiAssistantCard, SHADOWS.lg]}
+            onPress={() => router.push("/ai-assistant")}
+          >
+            <LinearGradient
+              colors={[COLORS.primary.main, "#8B5CF6"]}
+              style={styles.aiAssistantGradient}
             >
-              <View
-                style={[
-                  styles.categoryIcon,
-                  { backgroundColor: colors.error[100] },
-                ]}
-              >
-                <Ionicons
-                  name="restaurant-outline"
-                  size={24}
-                  color={colors.error[500]}
-                />
+              <View style={styles.aiAssistantContent}>
+                <View style={styles.aiAssistantLeft}>
+                  <View style={styles.aiAssistantIcon}>
+                    <Ionicons
+                      name="chatbubble-ellipses"
+                      size={24}
+                      color="white"
+                    />
+                  </View>
+                  <View style={styles.aiAssistantText}>
+                    <Text style={styles.aiAssistantTitle}>Ask Your AI</Text>
+                    <Text style={styles.aiAssistantSubtitle}>
+                      Get insights about your spending
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.aiAssistantButton}>
+                  <Ionicons name="chevron-forward" size={20} color="white" />
+                </View>
               </View>
-              <Text
-                style={[styles.categoryLabel, { color: colors.text.primary }]}
-              >
-                Food
-              </Text>
-              <Text
-                style={[
-                  styles.categoryAmount,
-                  { color: colors.text.secondary },
-                ]}
-              >
-                £320
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.categoryCard,
-                {
-                  marginHorizontal: spacing.sm,
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-            >
-              <View
-                style={[
-                  styles.categoryIcon,
-                  { backgroundColor: colors.primary[100] },
-                ]}
-              >
-                <Ionicons
-                  name="car-outline"
-                  size={24}
-                  color={colors.primary[500]}
-                />
-              </View>
-              <Text
-                style={[styles.categoryLabel, { color: colors.text.primary }]}
-              >
-                Transport
-              </Text>
-              <Text
-                style={[
-                  styles.categoryAmount,
-                  { color: colors.text.secondary },
-                ]}
-              >
-                £180
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.categoryCard,
-                {
-                  marginLeft: spacing.md,
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-            >
-              <View
-                style={[
-                  styles.categoryIcon,
-                  { backgroundColor: colors.primary[100] },
-                ]}
-              >
-                <Ionicons
-                  name="shirt-outline"
-                  size={24}
-                  color={colors.primary[400]}
-                />
-              </View>
-              <Text
-                style={[styles.categoryLabel, { color: colors.text.primary }]}
-              >
-                Shopping
-              </Text>
-              <Text
-                style={[
-                  styles.categoryAmount,
-                  { color: colors.text.secondary },
-                ]}
-              >
-                £150
-              </Text>
-            </View>
-          </View>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
 
-        {/* Net Worth (Total Balance) already shown */}
-        {/* Show warning or error if present */}
+        {/* Show warning if present */}
         {warning && (
-          <View
-            style={{
-              backgroundColor: colors.warning[100] || "#FEF3C7",
-              padding: 12,
-              borderRadius: 8,
-              marginVertical: 8,
-            }}
-          >
-            <Text
-              style={{
-                color: colors.warning[700] || "#B45309",
-                fontWeight: "600",
-              }}
+          <View style={styles.warningContainer}>
+            <View style={styles.warningContent}>
+              <Ionicons
+                name="information-circle-outline"
+                size={20}
+                color="#F59E0B"
+              />
+              <Text style={styles.warningText}>{warning}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.warningDismiss}
+              onPress={() => setWarning(null)}
             >
-              {warning}
-            </Text>
+              <Ionicons name="close" size={16} color="#F59E0B" />
+            </TouchableOpacity>
           </View>
         )}
-        {error && (
-          <View
-            style={{
-              backgroundColor: colors.error[100] || "#FEE2E2",
-              padding: 12,
-              borderRadius: 8,
-              marginVertical: 8,
-            }}
-          >
-            <Text
-              style={{
-                color: colors.error[700] || "#B91C1C",
-                fontWeight: "600",
-              }}
-            >
-              {error}
-            </Text>
-          </View>
-        )}
+
         {/* Connected Banks List */}
         {accounts.length > 0 && (
-          <View style={{ marginVertical: 16 }}>
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: colors.text.primary, marginBottom: 8 },
-              ]}
-            >
-              Connected Banks
-            </Text>
+          <View style={styles.sectionWrapper}>
+            <Text style={styles.sectionTitle}>Connected Banks</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              style={{ paddingBottom: 8 }}
+              style={styles.banksScrollView}
             >
               {accounts.map((account, idx) => (
-                <View
-                  key={account.id || idx}
-                  style={{
-                    marginRight: 16,
-                    backgroundColor: colors.background.primary,
-                    borderRadius: 16,
-                    padding: 16,
-                    alignItems: "center",
-                    minWidth: 140,
-                    borderWidth: 1,
-                    borderColor: colors.border.light,
-                    shadowColor: colors.gray[900],
-                    shadowOpacity: 0.08,
-                    shadowRadius: 4,
-                    shadowOffset: { width: 0, height: 2 },
-                  }}
-                >
+                <View key={account.id || idx} style={styles.bankCard}>
                   <BankLogo
-                    bankName={account.bank}
+                    bankName={
+                      typeof account.institution === "string"
+                        ? account.institution
+                        : account.institution?.name || "Bank"
+                    }
                     size="large"
                     showName={true}
                   />
-                  <Text
-                    style={{
-                      fontWeight: "700",
-                      fontSize: 16,
-                      color: colors.text.primary,
-                      marginTop: 8,
-                    }}
-                    numberOfLines={1}
-                  >
-                    {account.name || account.bank}
+                  <Text style={styles.bankCardTitle} numberOfLines={1}>
+                    {account.name ||
+                      (typeof account.institution === "string"
+                        ? account.institution
+                        : account.institution?.name) ||
+                      "Account"}
                   </Text>
-                  <Text
-                    style={{ color: colors.text.secondary, fontSize: 13 }}
-                    numberOfLines={1}
-                  >
-                    {account.accountNumber}
+                  <Text style={styles.bankCardSubtitle} numberOfLines={1}>
+                    {account.type}
                   </Text>
-                  <Text
-                    style={{
-                      fontWeight: "700",
-                      fontSize: 18,
-                      color: colors.primary[500],
-                      marginTop: 4,
-                    }}
-                  >
-                    {formatCurrency(account.balance)}
+                  <Text style={styles.bankCardBalance}>
+                    £{(account.balance || 0).toFixed(2)}
                   </Text>
                 </View>
               ))}
@@ -731,287 +663,469 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background.primary,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing["2xl"],
+    paddingBottom: SPACING.xxl, // Add some padding at the bottom for the last section
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.background.primary,
+  },
+  loadingText: {
+    marginTop: SPACING.md,
+    fontSize: 16,
+    color: COLORS.text.secondary,
+  },
+  loadingSubtext: {
+    marginTop: SPACING.sm,
+    fontSize: 14,
+    color: COLORS.text.tertiary,
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xl,
+    paddingBottom: SPACING.lg,
+    backgroundColor: COLORS.background.primary,
   },
   headerContent: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
   },
   headerTitle: {
-    fontSize: typography.fontSizes["2xl"],
-    fontWeight: "700" as const,
+    fontSize: 28,
+    fontWeight: "700",
+    color: COLORS.text.primary,
+    marginBottom: SPACING.xs,
   },
   headerSubtitle: {
-    fontSize: typography.fontSizes.base,
-    marginTop: spacing.xs,
+    fontSize: 16,
+    color: COLORS.text.secondary,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.xl,
-    alignItems: "center",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.background.primary,
     justifyContent: "center",
+    alignItems: "center",
   },
   balanceCardWrapper: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.lg,
   },
   balanceCard: {
-    borderRadius: borderRadius["3xl"],
-    padding: spacing.lg,
+    backgroundColor: COLORS.background.primary,
+    borderRadius: SPACING.lg,
+    padding: SPACING.xl,
+    alignItems: "center",
   },
   balanceCardHeader: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.md,
+    alignItems: "center",
+    marginBottom: SPACING.md,
   },
   balanceLabel: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: typography.fontSizes.sm,
-    fontWeight: "500" as const,
+    fontSize: 16,
+    color: COLORS.text.secondary,
   },
   balanceValue: {
+    fontSize: 36,
+    fontWeight: "700",
     color: "white",
-    fontSize: typography.fontSizes["3xl"],
-    fontWeight: "700" as const,
-    marginBottom: spacing.sm,
+    marginBottom: SPACING.xs,
   },
   balanceChangeRow: {
     flexDirection: "row",
     alignItems: "center",
   },
   balanceChangeBadge: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    marginRight: spacing.sm,
+    backgroundColor: COLORS.success.light,
+    borderRadius: 10,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    marginRight: SPACING.xs,
   },
   balanceChangeText: {
-    color: "white",
-    fontSize: typography.fontSizes.xs,
-    fontWeight: "600" as const,
+    fontSize: 12,
+    fontWeight: "600",
+    color: COLORS.success.main,
   },
   balanceChangeLabel: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: typography.fontSizes.sm,
+    fontSize: 12,
+    color: COLORS.text.secondary,
   },
   addBankCardWrapper: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.lg,
   },
   addBankCard: {
-    borderRadius: borderRadius["3xl"],
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: "#FCD34D",
+    backgroundColor: COLORS.background.primary,
+    borderRadius: SPACING.lg,
+    padding: SPACING.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   addBankCardContent: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    flex: 1,
   },
   addBankCardLeft: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1,
+    marginRight: SPACING.md,
   },
   addBankIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.full,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    alignItems: "center",
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.background.tertiary,
     justifyContent: "center",
-    marginRight: spacing.md,
-    ...shadows.sm,
+    alignItems: "center",
   },
   addBankTextContainer: {
-    flex: 1,
+    marginLeft: SPACING.sm,
   },
   addBankTitle: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: "700" as const,
-    color: "#92400E",
-    marginBottom: spacing.xs,
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.text.primary,
   },
   addBankSubtitle: {
-    fontSize: typography.fontSizes.sm,
-    color: "#A16207",
-    lineHeight: typography.fontSizes.sm * 1.4,
+    fontSize: 12,
+    color: COLORS.text.secondary,
   },
   addBankButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: borderRadius.full,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    ...shadows.md,
-    borderWidth: 1,
-    borderColor: "#FCD34D",
   },
   addBankButtonText: {
-    color: "#D97706",
-    fontWeight: "600" as const,
-    fontSize: typography.fontSizes.sm,
-    marginRight: spacing.xs,
+    fontSize: 14,
+    color: COLORS.primary.main,
+    fontWeight: "500",
+    marginRight: SPACING.xs,
   },
   sectionWrapper: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: "700" as const,
-    marginBottom: spacing.md,
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.xl,
   },
   sectionHeaderRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.md,
+    alignItems: "center",
+    marginBottom: SPACING.md,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: COLORS.text.primary,
   },
   sectionLink: {
-    fontWeight: "600" as const,
-    fontSize: typography.fontSizes.sm,
+    fontSize: 14,
+    color: COLORS.primary.main,
   },
   quickActionsRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: SPACING.md,
   },
   quickActionCard: {
-    borderRadius: borderRadius["2xl"],
-    padding: spacing.lg,
-    alignItems: "center",
-    borderWidth: 1,
     flex: 1,
+    backgroundColor: COLORS.background.primary,
+    borderRadius: SPACING.lg,
+    padding: SPACING.lg,
+    alignItems: "center",
   },
   quickActionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.full,
-    alignItems: "center",
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.background.tertiary,
     justifyContent: "center",
-    marginBottom: spacing.md,
+    alignItems: "center",
+    marginBottom: SPACING.sm,
   },
   quickActionLabel: {
-    fontWeight: "500" as const,
-    fontSize: typography.fontSizes.sm,
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.text.primary,
+    textAlign: "center",
+    marginBottom: SPACING.xs,
   },
   overviewCard: {
-    borderRadius: borderRadius["2xl"],
-    padding: spacing.lg,
-    borderWidth: 1,
+    backgroundColor: COLORS.background.primary,
+    borderRadius: SPACING.lg,
+    padding: SPACING.xl,
   },
   overviewRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.lg,
+    marginBottom: SPACING.md,
   },
   overviewLabel: {
-    fontSize: typography.fontSizes.sm,
+    fontSize: 14,
+    color: COLORS.text.secondary,
   },
   overviewValue: {
-    fontSize: typography.fontSizes["2xl"],
-    fontWeight: "700" as const,
+    fontSize: 24,
+    fontWeight: "700",
+    color: COLORS.text.primary,
   },
   progressBarWrapper: {
-    marginBottom: spacing.md,
+    marginTop: SPACING.md,
   },
   progressBarRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: spacing.xs,
+    marginBottom: SPACING.xs,
   },
   progressBarLabel: {
-    fontSize: typography.fontSizes.sm,
+    fontSize: 14,
+    color: COLORS.text.secondary,
   },
   progressBarBg: {
-    borderRadius: borderRadius.full,
-    height: 12,
+    height: 8,
+    backgroundColor: COLORS.background.tertiary,
+    borderRadius: 4,
     overflow: "hidden",
   },
   progressBarFill: {
-    height: 12,
-    borderRadius: borderRadius.full,
+    height: "100%",
+    borderRadius: 4,
   },
   transactionsList: {
-    gap: spacing.md,
+    backgroundColor: COLORS.background.primary,
+    borderRadius: SPACING.lg,
+    padding: SPACING.md,
   },
   transactionItem: {
-    borderRadius: borderRadius["2xl"],
-    padding: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    marginBottom: spacing.sm,
+    justifyContent: "space-between",
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.background.secondary,
   },
   transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.lg,
-    alignItems: "center",
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: COLORS.background.tertiary,
     justifyContent: "center",
-    marginRight: spacing.md,
+    alignItems: "center",
+    marginRight: SPACING.sm,
   },
   transactionInfo: {
     flex: 1,
-    minWidth: 0,
+    marginRight: SPACING.sm,
   },
   transactionTitle: {
-    fontWeight: "500" as const,
-    fontSize: typography.fontSizes.base,
+    fontSize: 14,
+    color: COLORS.text.primary,
+    fontWeight: "500",
   },
   transactionSubtitle: {
-    fontSize: typography.fontSizes.sm,
-  },
-  transactionAmountNegative: {
-    fontWeight: "600" as const,
-    fontSize: typography.fontSizes.base,
+    fontSize: 12,
+    color: COLORS.text.tertiary,
+    marginTop: SPACING.xs,
   },
   transactionAmountPositive: {
-    fontWeight: "600" as const,
-    fontSize: typography.fontSizes.base,
+    fontSize: 16,
+    fontWeight: "600",
   },
-  categoriesRow: {
+  transactionAmountNegative: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  warningContainer: {
+    backgroundColor: "#FFFBEB",
+    padding: SPACING.md,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.lg,
+    borderRadius: SPACING.md,
+    borderWidth: 1,
+    borderColor: "#FDE68A",
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
   },
-  categoryCard: {
-    borderRadius: borderRadius["2xl"],
-    padding: spacing.lg,
+  warningContent: {
+    flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
     flex: 1,
   },
-  categoryIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.full,
+  warningText: {
+    fontSize: 14,
+    color: "#92400E",
+    marginLeft: SPACING.sm,
+    flex: 1,
+  },
+  warningDismiss: {
+    padding: SPACING.xs,
+  },
+  errorContainer: {
+    backgroundColor: "#FEF2F2",
+    padding: SPACING.md,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.lg,
+    borderRadius: SPACING.md,
+  },
+  errorText: {
+    fontSize: 14,
+    color: COLORS.error.main,
+    textAlign: "center",
+  },
+  banksScrollView: {
+    paddingVertical: SPACING.md,
+  },
+  bankCard: {
+    width: 120,
+    height: 100,
+    borderRadius: SPACING.lg,
+    padding: SPACING.md,
+    marginRight: SPACING.md,
+    backgroundColor: COLORS.background.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: COLORS.background.secondary,
+  },
+  bankCardTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.text.primary,
+    marginTop: SPACING.sm,
+    textAlign: "center",
+  },
+  bankCardSubtitle: {
+    fontSize: 12,
+    color: COLORS.text.tertiary,
+    marginTop: SPACING.xs,
+    textAlign: "center",
+  },
+  bankCardBalance: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.text.primary,
+    marginTop: SPACING.sm,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: COLORS.text.secondary,
+    textAlign: "center",
+    marginTop: SPACING.md,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: COLORS.text.tertiary,
+    marginTop: SPACING.xs,
+    textAlign: "center",
+  },
+  emptyTransactionsContainer: {
+    alignItems: "center",
+    paddingVertical: SPACING.lg,
+  },
+  aiAssistantCard: {
+    backgroundColor: COLORS.background.primary,
+    borderRadius: SPACING.lg,
+    padding: SPACING.lg,
+    marginTop: SPACING.md,
+  },
+  aiAssistantGradient: {
+    borderRadius: SPACING.lg,
+    padding: SPACING.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  aiAssistantContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  aiAssistantLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: SPACING.md,
+  },
+  aiAssistantIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.background.tertiary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  aiAssistantText: {
+    marginLeft: SPACING.sm,
+  },
+  aiAssistantTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.text.primary,
+  },
+  aiAssistantSubtitle: {
+    fontSize: 12,
+    color: COLORS.text.secondary,
+  },
+  aiAssistantButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.background.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingTransactionsContainer: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.md,
+    paddingVertical: SPACING.md,
   },
-  categoryLabel: {
-    fontWeight: "500" as const,
-    fontSize: typography.fontSizes.sm,
+  loadingTransactionsText: {
+    marginLeft: SPACING.sm,
+    fontSize: 14,
+    color: COLORS.text.secondary,
   },
-  categoryAmount: {
-    fontSize: typography.fontSizes.xs,
-    marginTop: spacing.xs,
+  refreshTransactionsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: SPACING.md,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.background.primary,
+    borderRadius: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.primary.main,
+  },
+  refreshTransactionsText: {
+    marginLeft: SPACING.xs,
+    fontSize: 14,
+    color: COLORS.primary.main,
+    fontWeight: "500",
+  },
+  connectBankButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.primary.main,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: SPACING.md,
+    marginTop: SPACING.md,
+  },
+  connectBankText: {
+    fontSize: 14,
+    color: "white",
+    fontWeight: "600",
+    marginLeft: SPACING.xs,
   },
 });

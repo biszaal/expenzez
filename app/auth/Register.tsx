@@ -1,56 +1,118 @@
 // Updated Register screen using reusable components and global theme
-import {
-  AntDesign,
-  FontAwesome,
-  FontAwesome5,
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { useAuth } from "./AuthContext";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
-  TouchableOpacity,
   View,
   ScrollView,
-  StyleSheet,
+  TouchableOpacity,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Button, TextField, Card, Typography } from "../../components/ui";
+import { useRouter } from "expo-router";
+import { useAuth } from "./AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
-import { spacing, borderRadius, shadows } from "../../constants/theme";
+import { spacing } from "../../constants/theme";
+import RegisterStep1 from "./RegisterStep1";
+import RegisterStep2 from "./RegisterStep2";
+import RegisterStep3 from "./RegisterStep3";
+import RegisterStep4 from "./RegisterStep4";
+import { Typography } from "../../components/ui";
+import { useAlert } from "../../hooks/useAlert";
+import { Ionicons } from "@expo/vector-icons";
+
+const initialState = {
+  username: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  name: "",
+  givenName: "",
+  familyName: "",
+  gender: "",
+  dob: "",
+  phone: "",
+  address: "",
+};
 
 export default function Register() {
   const router = useRouter();
   const { register } = useAuth();
   const { colors } = useTheme();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [dob, setDob] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [step, setStep] = useState(1);
+  const [values, setValues] = useState(initialState);
   const [isLoading, setIsLoading] = useState(false);
+  const [registrationError, setRegistrationError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const { showError, showSuccess } = useAlert();
 
-  const handleRegister = async () => {
-    if (!name || !email || !password || !phone || !dob || !address) {
-      Alert.alert("Error", "Please fill in all fields");
+  const handleChange = (key: string, value: string) => {
+    setValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleNext = () => {
+    if (step === 1) {
+      if (values.password !== values.confirmPassword) {
+        setPasswordError("Passwords do not match");
+        return;
+      } else {
+        setPasswordError("");
+      }
+    }
+    setStep((s) => s + 1);
+  };
+  const handleBack = () => setStep((s) => s - 1);
+
+  const handleSubmit = async () => {
+    // Validate phone and password here as before
+    const isValidPhone = /^\+[1-9]\d{1,14}$/.test(values.phone);
+    if (!isValidPhone) {
+      showError("Phone number must be in E.164 format, e.g. +447911123456");
       return;
     }
-
+    const isValidPassword = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(
+      values.password
+    );
+    if (!isValidPassword) {
+      showError(
+        "Password must include at least one symbol character (e.g., !@#$%^&*)"
+      );
+      return;
+    }
     setIsLoading(true);
+    setRegistrationError("");
     try {
-      const result = await register(name, email, password);
+      const result = await register({
+        username: values.username,
+        name: values.name,
+        given_name: values.givenName,
+        family_name: values.familyName,
+        email: values.email,
+        password: values.password,
+        phone_number: values.phone,
+        birthdate: values.dob,
+        address: values.address,
+        gender: values.gender,
+      });
       if (result.success) {
-        Alert.alert("Success", "Account created successfully!");
-        router.replace("/CompleteProfile");
+        showSuccess("Registration successful! Please verify your email.");
+        router.replace({
+          pathname: "/auth/VerifyEmail",
+          params: { username: values.username, email: values.email },
+        });
+        return;
       } else {
-        Alert.alert("Registration Failed", result.error || "Try again.");
+        setRegistrationError(result.error || "Registration failed. Try again.");
       }
-    } catch (err) {
-      Alert.alert("Error", "Something went wrong. Try again later.");
+    } catch (err: any) {
+      let errorMsg = err.message || "Something went wrong. Try again later.";
+      if (
+        err.response?.data?.error === "UsernameExistsException" ||
+        err.response?.data?.message?.includes("User already exists")
+      ) {
+        errorMsg =
+          "An account with this username or email already exists. Please log in or verify your email if you haven't done so.";
+      }
+      setRegistrationError(errorMsg);
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -59,285 +121,91 @@ export default function Register() {
 
   return (
     <SafeAreaView
-      style={[
-        styles.container,
-        { backgroundColor: colors.background.secondary },
-      ]}
+      style={{ flex: 1, backgroundColor: colors.background.secondary }}
     >
+      {/* Top Back Button */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          padding: spacing.md,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => router.replace("/auth/Login")}
+          style={{ padding: 4, marginRight: 8 }}
+          accessibilityLabel="Back to Login"
+        >
+          <Ionicons name="chevron-back" size={28} color={colors.primary[500]} />
+        </TouchableOpacity>
+        <Typography variant="h2" color="primary">
+          Register
+        </Typography>
+      </View>
       <KeyboardAvoidingView
-        style={styles.keyboardView}
+        style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            padding: spacing.lg,
+          }}
         >
-          <View style={styles.content}>
-            {/* Header Section */}
-            <View style={styles.header}>
-              <View
-                style={[
-                  styles.logoContainer,
-                  { backgroundColor: colors.primary[500] },
-                ]}
-              >
-                <FontAwesome5 name="user-plus" size={28} color="white" />
-              </View>
-              <Typography variant="h1" color="primary" align="center">
-                Join Expenzez
-              </Typography>
-              <Typography variant="body" color="secondary" align="center">
-                Create your account and start managing finances
-              </Typography>
-            </View>
-
-            {/* Register Form Card */}
-            <Card variant="elevated" padding="large">
-              <Typography
-                variant="h2"
-                color="primary"
-                align="center"
-                style={styles.formTitle}
-              >
-                Create Account
-              </Typography>
-
-              {/* Form Fields */}
-              <TextField
-                label="Full Name"
-                placeholder="Your name"
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-                required
-              />
-
-              <TextField
-                label="Email"
-                placeholder="you@email.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                required
-              />
-
-              <TextField
-                label="Password"
-                placeholder="••••••••"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                required
-              />
-
-              <TextField
-                label="Phone Number"
-                placeholder="+44 1234 567890"
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                required
-              />
-
-              <TextField
-                label="Date of Birth"
-                placeholder="YYYY-MM-DD"
-                value={dob}
-                onChangeText={setDob}
-                required
-              />
-
-              <TextField
-                label="Address"
-                placeholder="123 Baker Street, London"
-                value={address}
-                onChangeText={setAddress}
-                autoCapitalize="words"
-                required
-              />
-
-              {/* Login Link */}
-              <TouchableOpacity
-                style={styles.loginLink}
-                onPress={() => router.push("/auth/Login")}
-              >
-                <Typography variant="body" color="secondary" align="center">
-                  Already have an account?{" "}
-                  <Typography variant="body" color="primary" weight="bold">
-                    Sign in
-                  </Typography>
+          <View style={{ flex: 1, justifyContent: "center" }}>
+            {registrationError ? (
+              <View style={{ marginBottom: spacing.lg }}>
+                <Typography variant="body" color="danger" align="center">
+                  {registrationError}
                 </Typography>
-              </TouchableOpacity>
-
-              {/* Register Button */}
-              <Button
-                title="Create Account"
-                onPress={handleRegister}
-                variant="primary"
-                size="large"
-                loading={isLoading}
-                fullWidth
-                style={styles.registerButton}
+              </View>
+            ) : null}
+            {step === 1 && (
+              <RegisterStep1
+                values={values}
+                onChange={handleChange}
+                onNext={handleNext}
+                passwordError={passwordError}
               />
-
-              {/* Divider */}
-              <View
-                style={[styles.divider, { borderColor: colors.border.light }]}
-              >
-                <View
-                  style={[
-                    styles.dividerLine,
-                    { backgroundColor: colors.border.light },
-                  ]}
-                />
-                <Typography
-                  variant="caption"
-                  color="tertiary"
-                  weight="semibold"
-                  style={styles.dividerText}
-                >
-                  or
-                </Typography>
-                <View
-                  style={[
-                    styles.dividerLine,
-                    { backgroundColor: colors.border.light },
-                  ]}
-                />
-              </View>
-
-              {/* Social Register Buttons */}
-              <View style={styles.socialButtons}>
-                <TouchableOpacity
-                  style={[
-                    styles.socialButton,
-                    {
-                      backgroundColor: colors.background.primary,
-                      borderColor: colors.border.light,
-                    },
-                  ]}
-                  onPress={() => Alert.alert("Google Register")}
-                >
-                  <AntDesign name="google" size={20} color="#EA4335" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.socialButton,
-                    {
-                      backgroundColor: colors.background.primary,
-                      borderColor: colors.border.light,
-                    },
-                  ]}
-                  onPress={() => Alert.alert("Facebook Register")}
-                >
-                  <FontAwesome name="facebook" size={20} color="#4267B2" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.socialButton,
-                    {
-                      backgroundColor: colors.background.primary,
-                      borderColor: colors.border.light,
-                    },
-                  ]}
-                  onPress={() => Alert.alert("Apple Register")}
-                >
-                  <FontAwesome5 name="apple" size={20} color="#111" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.socialButton,
-                    {
-                      backgroundColor: colors.background.primary,
-                      borderColor: colors.border.light,
-                    },
-                  ]}
-                  onPress={() => Alert.alert("X Register")}
-                >
-                  <MaterialCommunityIcons
-                    name="alpha-x-circle"
-                    size={20}
-                    color="#111"
-                  />
-                </TouchableOpacity>
-              </View>
-            </Card>
+            )}
+            {step === 2 && (
+              <RegisterStep2
+                values={values}
+                onChange={handleChange}
+                onNext={handleNext}
+                onBack={handleBack}
+              />
+            )}
+            {step === 3 && (
+              <RegisterStep3
+                values={values}
+                onChange={handleChange}
+                onNext={handleNext}
+                onBack={handleBack}
+              />
+            )}
+            {step === 4 && (
+              <RegisterStep4
+                values={values}
+                onBack={handleBack}
+                onSubmit={handleSubmit}
+                isLoading={isLoading}
+                disabled={isLoading}
+              />
+            )}
+            {/* Go to Login Button */}
+            <TouchableOpacity
+              onPress={() => router.replace("/auth/Login")}
+              style={{ marginTop: spacing.lg, alignSelf: "center" }}
+            >
+              <Typography variant="body" color="primary" weight="bold">
+                Already have an account? Go to Login
+              </Typography>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: spacing.xl,
-  },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.md,
-    ...shadows.md,
-  },
-  formTitle: {
-    marginBottom: spacing.lg,
-  },
-  loginLink: {
-    alignSelf: "center",
-    marginBottom: spacing.lg,
-  },
-  registerButton: {
-    marginBottom: spacing.lg,
-  },
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    borderRadius: 1,
-  },
-  dividerText: {
-    marginHorizontal: spacing.md,
-  },
-  socialButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  socialButton: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 2,
-    marginHorizontal: 4,
-    ...shadows.sm,
-  },
-});

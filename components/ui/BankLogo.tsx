@@ -5,7 +5,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { BANK_LOGOS } from "../../constants/data";
 
 interface BankLogoProps {
-  bankName: string;
+  bankName: string | { name: string; logo?: string };
   logoUrl?: string;
   size?: "small" | "medium" | "large";
   showName?: boolean;
@@ -16,7 +16,7 @@ interface BankLogoProps {
  * Reusable BankLogo component for consistent bank logo display
  * Now uses actual bank logo images from the internet
  *
- * @param bankName - Name of the bank (must match BANK_LOGOS keys)
+ * @param bankName - Name of the bank (must match BANK_LOGOS keys) or object with name and logo
  * @param size - Size variant for the logo
  * @param showName - Whether to show the bank name
  * @param variant - Display variant (default, compact, detailed)
@@ -31,8 +31,16 @@ export default function BankLogo({
   const { colors, shadows } = useTheme();
   const [imageError, setImageError] = useState(false);
 
+  // Extract bank name string from the prop
+  const bankNameString =
+    typeof bankName === "string" ? bankName : bankName?.name || "Bank";
+
+  // Extract logo URL from the prop if it's an object
+  const logoFromProp =
+    typeof bankName === "object" ? bankName?.logo : undefined;
+
   // Get bank info from our data
-  const bankInfo = BANK_LOGOS[bankName as keyof typeof BANK_LOGOS];
+  const bankInfo = BANK_LOGOS[bankNameString as keyof typeof BANK_LOGOS];
 
   // Fallback for unknown banks
   const fallbackInfo = {
@@ -45,8 +53,8 @@ export default function BankLogo({
 
   // Use the provided logoUrl prop if available, otherwise fallback to BANK_LOGOS or default
   const logoToUse =
-    !imageError && logoUrl
-      ? logoUrl
+    !imageError && logoFromProp
+      ? logoFromProp
       : !imageError && bankInfo?.logoUrl
         ? bankInfo.logoUrl
         : fallbackInfo.logoUrl;
@@ -180,7 +188,7 @@ export default function BankLogo({
       {showName && (
         <View style={styles.textContainer}>
           <Text style={getBankNameStyle()} numberOfLines={1}>
-            {bankName}
+            {bankNameString}
           </Text>
 
           {/* Bank Type (for detailed variant) */}

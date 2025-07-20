@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   Text,
@@ -19,6 +19,7 @@ import {
   shadows,
   typography,
 } from "../../constants/theme";
+import { getLegalSections } from "../../services/dataSource";
 
 interface LegalSection {
   id: string;
@@ -27,124 +28,22 @@ interface LegalSection {
   type: "terms" | "privacy";
 }
 
-const legalSections: LegalSection[] = [
-  {
-    id: "1",
-    title: "Terms of Service",
-    type: "terms",
-    content: `Welcome to expenzez. By using our app, you agree to these terms of service.
-
-1. Acceptance of Terms
-By accessing and using expenzez, you accept and agree to be bound by the terms and provision of this agreement.
-
-2. Use License
-Permission is granted to temporarily download one copy of the app for personal, non-commercial transitory viewing only.
-
-3. Disclaimer
-The materials on expenzez are provided on an 'as is' basis. expenzez makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.
-
-4. Limitations
-In no event shall expenzez or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on expenzez, even if expenzez or a expenzez authorized representative has been notified orally or in writing of the possibility of such damage.
-
-5. Revisions and Errata
-The materials appearing on expenzez could include technical, typographical, or photographic errors. expenzez does not warrant that any of the materials on its app are accurate, complete or current.`,
-  },
-  {
-    id: "2",
-    title: "Privacy Policy",
-    type: "privacy",
-    content: `Your privacy is important to us. This privacy policy explains how we collect, use, and protect your information.
-
-1. Information We Collect
-We collect information you provide directly to us, such as when you create an account, connect your bank accounts, or contact us for support.
-
-2. How We Use Your Information
-We use the information we collect to:
-• Provide, maintain, and improve our services
-• Process transactions and send related information
-• Send you technical notices, updates, security alerts, and support messages
-• Respond to your comments, questions, and customer service requests
-
-3. Information Sharing
-We do not sell, trade, or otherwise transfer your personal information to third parties without your consent, except as described in this policy.
-
-4. Data Security
-We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.
-
-5. Your Rights
-You have the right to:
-• Access your personal information
-• Correct inaccurate information
-• Request deletion of your information
-• Opt out of certain communications
-
-6. Data Retention
-We retain your information for as long as your account is active or as needed to provide you services.
-
-7. Changes to This Policy
-We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy on this page.`,
-  },
-  {
-    id: "3",
-    title: "Data Protection",
-    type: "privacy",
-    content: `We are committed to protecting your data and ensuring compliance with data protection regulations.
-
-1. GDPR Compliance
-If you are in the European Union, you have certain rights regarding your personal data under the General Data Protection Regulation (GDPR).
-
-2. Data Processing
-We process your data only for legitimate business purposes and with your consent where required.
-
-3. International Transfers
-Your data may be transferred to and processed in countries other than your own. We ensure appropriate safeguards are in place.
-
-4. Third-Party Services
-We may use third-party services that collect, monitor, and analyze data. These services have their own privacy policies.
-
-5. Cookies and Tracking
-We use cookies and similar technologies to improve your experience and analyze app usage.
-
-6. Children's Privacy
-Our services are not intended for children under 13. We do not knowingly collect personal information from children under 13.
-
-7. Data Breach Procedures
-In the event of a data breach, we will notify affected users and relevant authorities as required by law.`,
-  },
-  {
-    id: "4",
-    title: "Acceptable Use",
-    type: "terms",
-    content: `You agree to use expenzez only for lawful purposes and in accordance with these terms.
-
-1. Prohibited Uses
-You may not use the app to:
-• Violate any applicable laws or regulations
-• Infringe on the rights of others
-• Transmit harmful, offensive, or inappropriate content
-• Attempt to gain unauthorized access to our systems
-
-2. Account Security
-You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.
-
-3. Content Guidelines
-You agree not to upload, post, or transmit any content that is illegal, harmful, threatening, abusive, or otherwise objectionable.
-
-4. Intellectual Property
-The app and its original content, features, and functionality are owned by expenzez and are protected by international copyright, trademark, and other intellectual property laws.
-
-5. Termination
-We may terminate or suspend your account immediately, without prior notice, for any reason, including breach of these terms.
-
-6. Governing Law
-These terms shall be governed by and construed in accordance with the laws of the United Kingdom.`,
-  },
-];
-
 export default function TermsPrivacyScreen() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
   const [selectedSection, setSelectedSection] = useState<string>("1");
+  const [legalSections, setLegalSections] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLegal = async () => {
+      setLoading(true);
+      const data = await getLegalSections();
+      setLegalSections(data);
+      setLoading(false);
+    };
+    fetchLegal();
+  }, []);
 
   const openWebsite = () => {
     Linking.openURL("https://expenzez.com/legal");

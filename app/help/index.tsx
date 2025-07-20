@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -20,6 +20,7 @@ import {
   shadows,
   typography,
 } from "../../constants/theme";
+import { getFAQ } from "../../services/dataSource";
 
 interface FAQItem {
   id: string;
@@ -36,89 +37,23 @@ interface HelpOption {
   action: () => void;
 }
 
-const faqData: FAQItem[] = [
-  {
-    id: "1",
-    question: "How do I connect my bank account?",
-    answer:
-      "Go to the Banks section and tap 'Add Bank Account'. Follow the secure connection process using our partner Nordigen.",
-    category: "Banking",
-  },
-  {
-    id: "2",
-    question: "Is my financial data secure?",
-    answer:
-      "Yes, we use bank-level encryption and never store your banking credentials. All data is encrypted and secure.",
-    category: "Security",
-  },
-  {
-    id: "3",
-    question: "How do I update my budget?",
-    answer:
-      "Navigate to the Spending tab and tap on any category to modify your budget limits and goals.",
-    category: "Budgeting",
-  },
-  {
-    id: "4",
-    question: "Can I export my transaction data?",
-    answer:
-      "Yes, go to Profile > Personal Information > Export Data to download your financial data.",
-    category: "Data",
-  },
-  {
-    id: "5",
-    question: "How do I reset my password?",
-    answer:
-      "On the login screen, tap 'Forgot password?' and follow the email instructions to reset your password.",
-    category: "Account",
-  },
-  {
-    id: "6",
-    question: "What payment methods are supported?",
-    answer:
-      "We support all major credit cards, debit cards, and bank account connections through our secure platform.",
-    category: "Payments",
-  },
-];
-
-const helpOptions: HelpOption[] = [
-  {
-    id: "1",
-    title: "Contact Support",
-    subtitle: "Get help from our team",
-    icon: "chatbubble-ellipses",
-    action: () =>
-      Alert.alert("Contact Support", "Email us at support@expenzez.com"),
-  },
-  {
-    id: "2",
-    title: "Live Chat",
-    subtitle: "Chat with us in real-time",
-    icon: "chatbubbles",
-    action: () => Alert.alert("Live Chat", "Live chat feature coming soon!"),
-  },
-  {
-    id: "3",
-    title: "Video Tutorials",
-    subtitle: "Learn how to use the app",
-    icon: "play-circle",
-    action: () =>
-      Alert.alert("Video Tutorials", "Video tutorials coming soon!"),
-  },
-  {
-    id: "4",
-    title: "User Guide",
-    subtitle: "Complete app documentation",
-    icon: "document-text",
-    action: () => Alert.alert("User Guide", "User guide coming soon!"),
-  },
-];
-
 export default function HelpSupportScreen() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
   const { colors, shadows } = useTheme();
+  const [faqData, setFaqData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFAQ = async () => {
+      setLoading(true);
+      const data = await getFAQ();
+      setFaqData(data);
+      setLoading(false);
+    };
+    fetchFAQ();
+  }, []);
 
   const toggleFAQ = (id: string) => {
     setExpandedFAQ(expandedFAQ === id ? null : id);
