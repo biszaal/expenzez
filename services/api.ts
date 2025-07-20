@@ -6,6 +6,12 @@ import { CURRENT_API_CONFIG } from "../config/api";
 // API Configuration
 const API_BASE_URL = CURRENT_API_CONFIG.baseURL;
 
+console.log("🔧 API Configuration:", {
+  baseURL: API_BASE_URL,
+  timeout: CURRENT_API_CONFIG.timeout,
+  environment: CURRENT_API_CONFIG,
+});
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -93,8 +99,28 @@ export const authAPI = {
   },
 
   login: async (credentials: { identifier: string; password: string }) => {
-    const response = await api.post("/auth/login", credentials);
-    return response.data;
+    console.log("🔐 Login attempt:", {
+      url: `${API_BASE_URL}/auth/login`,
+      credentials: { identifier: credentials.identifier, password: "***" },
+    });
+
+    try {
+      const response = await api.post("/auth/login", credentials);
+      console.log("✅ Login response received:", {
+        status: response.status,
+        hasData: !!response.data,
+        message: response.data?.message,
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ Login request failed:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url,
+      });
+      throw error;
+    }
   },
 
   refreshToken: async (refreshToken: string) => {
