@@ -70,7 +70,7 @@ export default function Login() {
           "Unable to connect to server. Please check your internet connection or try again later."
         );
       } else {
-        showError("Login failed. Please try again.");
+      showError("Login failed. Please try again.");
       }
     } finally {
       setIsLoading(false);

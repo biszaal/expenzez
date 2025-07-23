@@ -201,25 +201,8 @@ export const getSpendingCategories = async () => {
     }));
   } catch (error) {
     console.error("Error loading spending categories:", error);
-    // Fallback to basic categories if API fails
-    return [
-      {
-        id: "groceries",
-        name: "Groceries",
-        icon: "food-apple-outline",
-        defaultBudget: 0,
-        spent: 0,
-        color: "#10B981",
-      },
-      {
-        id: "transport",
-        name: "Transport",
-        icon: "bus-clock",
-        defaultBudget: 0,
-        spent: 0,
-        color: "#3B82F6",
-      },
-    ];
+    // Return empty array if no transactions or API fails
+    return [];
   }
 };
 
@@ -237,23 +220,8 @@ export const getPaymentMethods = async () => {
 export const getFAQ = async () => {
   try {
     // This would typically come from a backend API
-    // For now, return basic FAQ
-    return [
-      {
-        id: "1",
-        question: "How do I connect my bank account?",
-        answer:
-          "Go to the Banks section and tap 'Add Bank Account'. Follow the secure connection process using our partner Nordigen.",
-        category: "Banking",
-      },
-      {
-        id: "2",
-        question: "Is my financial data secure?",
-        answer:
-          "Yes, we use bank-level encryption and never store your banking credentials. All data is encrypted and secure.",
-        category: "Security",
-      },
-    ];
+    // For now, return empty array
+    return [];
   } catch (error) {
     console.error("Error loading FAQ:", error);
     return [];
@@ -263,10 +231,7 @@ export const getFAQ = async () => {
 export const getLegalSections = async () => {
   try {
     // This would typically come from a backend API
-    return [
-      { id: "1", title: "Terms of Service", type: "terms" },
-      { id: "2", title: "Privacy Policy", type: "privacy" },
-    ];
+    return [];
   } catch (error) {
     console.error("Error loading legal sections:", error);
     return [];
@@ -276,22 +241,7 @@ export const getLegalSections = async () => {
 export const getNotificationSettings = async () => {
   try {
     // This would typically come from a backend API
-    return [
-      {
-        id: "push",
-        title: "Push Notifications",
-        subtitle: "Receive instant alerts on your device",
-        enabled: true,
-        icon: "notifications",
-      },
-      {
-        id: "email",
-        title: "Email Notifications",
-        subtitle: "Get updates via email",
-        enabled: true,
-        icon: "mail",
-      },
-    ];
+    return [];
   } catch (error) {
     console.error("Error loading notification settings:", error);
     return [];

@@ -53,11 +53,13 @@ export default function BankLogo({
 
   // Use the provided logoUrl prop if available, otherwise fallback to BANK_LOGOS or default
   const logoToUse =
-    !imageError && logoFromProp
-      ? logoFromProp
-      : !imageError && bankInfo?.logoUrl
-        ? bankInfo.logoUrl
-        : fallbackInfo.logoUrl;
+    !imageError && logoUrl
+      ? logoUrl
+      : !imageError && logoFromProp
+        ? logoFromProp
+        : !imageError && bankInfo?.logoUrl
+          ? bankInfo.logoUrl
+          : fallbackInfo.logoUrl;
 
   const bank = bankInfo || fallbackInfo;
 
@@ -158,7 +160,11 @@ export default function BankLogo({
       <View style={getLogoContainerStyle()}>
         {!imageError ? (
           <Image
-            source={{ uri: logoToUse }}
+            source={{
+              uri: logoToUse,
+              // Add cache policy to improve loading
+              cache: "force-cache",
+            }}
             style={[
               styles.logoImage,
               {
@@ -167,7 +173,15 @@ export default function BankLogo({
               },
             ]}
             resizeMode="contain"
-            onError={() => setImageError(true)}
+            onError={() => {
+              console.log(`Failed to load bank logo for: ${bankNameString}`);
+              setImageError(true);
+            }}
+            onLoad={() => {
+              console.log(
+                `Successfully loaded bank logo for: ${bankNameString}`
+              );
+            }}
           />
         ) : (
           // Fallback to emoji if image fails to load

@@ -165,39 +165,8 @@ export default function HomePage() {
       console.log(`Total transactions loaded: ${allTransactions.length}`);
       console.log("All transactions:", allTransactions);
 
-      // If no transactions found, add some sample data for testing
-      if (allTransactions.length === 0) {
-        console.log("No transactions found, adding sample data for testing");
-        const sampleTransactions = [
-          {
-            id: "sample-1",
-            amount: -45.5,
-            currency: "GBP",
-            description: "Grocery Store",
-            date: new Date().toISOString(),
-            category: "Food & Dining",
-          },
-          {
-            id: "sample-2",
-            amount: -120.0,
-            currency: "GBP",
-            description: "Gas Station",
-            date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-            category: "Transportation",
-          },
-          {
-            id: "sample-3",
-            amount: 2500.0,
-            currency: "GBP",
-            description: "Salary Payment",
-            date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            category: "Income",
-          },
-        ];
-        allTransactions = sampleTransactions;
-        console.log("Added sample transactions:", sampleTransactions);
-      }
-
+      // If no transactions found, do not add any sample data
+      // allTransactions remains empty
       setTransactions(allTransactions);
 
       // Calculate this month's spending
@@ -360,6 +329,7 @@ export default function HomePage() {
               alignItems: "center",
               ...SHADOWS.sm,
             }}
+            onPress={() => router.push("/expenses/add")}
           >
             <Ionicons name="add-circle-outline" size={28} color="#7C3AED" />
             <Text style={{ fontWeight: "600", color: "#222", marginTop: 6 }}>
@@ -376,6 +346,7 @@ export default function HomePage() {
               alignItems: "center",
               ...SHADOWS.sm,
             }}
+            onPress={() => router.push("/banks/connect")}
           >
             <Ionicons name="link-outline" size={28} color="#7C3AED" />
             <Text style={{ fontWeight: "600", color: "#222", marginTop: 6 }}>

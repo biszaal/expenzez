@@ -24,6 +24,7 @@ import {
   getAccountDetails,
   getAccountBalance,
   getInstitutions,
+  getAllAccountIds,
 } from "../../services/dataSource";
 import { formatCurrency } from "../../utils/formatters";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -64,6 +65,7 @@ export default function BanksScreen() {
 
   // State management
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
+  const [accountIds, setAccountIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,7 +78,7 @@ export default function BanksScreen() {
 
       // Fetch account details for each account
       const accountDetails = await Promise.all(
-        accountIds.map(async (id) => {
+        accountIds.map(async (id: string) => {
           try {
             return await getAccountDetails(id);
           } catch (error) {

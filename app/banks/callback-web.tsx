@@ -17,7 +17,7 @@ export default function BankCallbackWeb() {
     };
 
     const appUrl = `exp://192.168.0.93:8081/banks/callback?${new URLSearchParams(callbackData).toString()}`;
-    
+
     // Try to open the app
     Linking.openURL(appUrl).catch(() => {
       console.log("Could not open app, showing manual instructions");
@@ -40,15 +40,17 @@ export default function BankCallbackWeb() {
     <View style={styles.container}>
       <Text style={styles.title}>Bank Connection Complete!</Text>
       <Text style={styles.message}>
-        Your bank account has been successfully connected. You should be redirected to the app automatically.
+        Your bank account has been successfully connected. You should be
+        redirected to the app automatically.
       </Text>
-      
+
       <TouchableOpacity style={styles.button} onPress={openAppManually}>
         <Text style={styles.buttonText}>Open App</Text>
       </TouchableOpacity>
-      
+
       <Text style={styles.instructions}>
-        If you're not redirected automatically, tap the button above to open the app.
+        If you&apos;re not redirected automatically, tap the button above to
+        open the app.
       </Text>
     </View>
   );
@@ -91,4 +93,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#666",
   },
-}); 
+});

@@ -124,7 +124,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           AsyncStorage.getItem("userBudget"),
         ]);
 
-        // Only auto-login if we have valid tokens and user data
         if (
           storedLogin === "true" &&
           storedUser &&
@@ -133,7 +132,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           accessToken !== "null" &&
           idToken !== "null"
         ) {
-          // Validate that tokens are not empty strings
           if (accessToken.trim() !== "" && idToken.trim() !== "") {
             // Validate tokens with backend
             const tokensValid = await validateStoredTokens(
@@ -144,9 +142,64 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setIsLoggedIn(true);
               setUser(JSON.parse(storedUser));
               console.log("Auto-login successful with valid tokens");
+            } else if (
+              refreshToken &&
+              refreshToken !== "null" &&
+              refreshToken.trim() !== ""
+            ) {
+              // Try to refresh tokens
+              try {
+                console.log(
+                  "Access token invalid, attempting refresh with refresh token..."
+                );
+                const refreshResponse =
+                  await authAPI.refreshToken(refreshToken);
+                if (
+                  refreshResponse &&
+                  refreshResponse.accessToken &&
+                  refreshResponse.idToken
+                ) {
+                  await AsyncStorage.setItem(
+                    "accessToken",
+                    refreshResponse.accessToken
+                  );
+                  await AsyncStorage.setItem(
+                    "idToken",
+                    refreshResponse.idToken
+                  );
+                  if (refreshResponse.refreshToken) {
+                    await AsyncStorage.setItem(
+                      "refreshToken",
+                      refreshResponse.refreshToken
+                    );
+                  }
+                  setIsLoggedIn(true);
+                  setUser(JSON.parse(storedUser));
+                  console.log("Auto-login successful after token refresh");
+                } else {
+                  console.log("Token refresh failed, logging out");
+                  await Promise.all([
+                    AsyncStorage.removeItem("isLoggedIn"),
+                    AsyncStorage.removeItem("accessToken"),
+                    AsyncStorage.removeItem("idToken"),
+                    AsyncStorage.removeItem("refreshToken"),
+                    AsyncStorage.removeItem("user"),
+                  ]);
+                }
+              } catch (refreshError) {
+                console.log("Token refresh error, logging out", refreshError);
+                await Promise.all([
+                  AsyncStorage.removeItem("isLoggedIn"),
+                  AsyncStorage.removeItem("accessToken"),
+                  AsyncStorage.removeItem("idToken"),
+                  AsyncStorage.removeItem("refreshToken"),
+                  AsyncStorage.removeItem("user"),
+                ]);
+              }
             } else {
-              console.log("Auto-login failed: tokens are invalid");
-              // Clear invalid data
+              console.log(
+                "Auto-login failed: tokens are invalid and no refresh token"
+              );
               await Promise.all([
                 AsyncStorage.removeItem("isLoggedIn"),
                 AsyncStorage.removeItem("accessToken"),
@@ -157,7 +210,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
           } else {
             console.log("Auto-login failed: tokens are empty");
-            // Clear invalid data
             await Promise.all([
               AsyncStorage.removeItem("isLoggedIn"),
               AsyncStorage.removeItem("accessToken"),
@@ -194,7 +246,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("=== LOGIN STARTED ===");
       console.log("Login attempt for:", identifier);
 
-      const response = await authAPI.login({ identifier, password });
+      // Determine if identifier is email or username
+      let loginPayload: { email?: string; username?: string; password: string };
+      if (identifier.includes("@")) {
+        loginPayload = { email: identifier, password };
+      } else {
+        loginPayload = { username: identifier, password };
+      }
+
+      const response = await authAPI.login(loginPayload);
       console.log("Login response:", {
         hasResponse: !!response,
         hasIdToken: !!response?.idToken,

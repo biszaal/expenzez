@@ -339,54 +339,15 @@ export default function PaymentMethodsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Transactions</Text>
           <View style={styles.historyCard}>
-            <TouchableOpacity style={styles.historyItem}>
-              <View style={styles.historyIcon}>
-                <Ionicons
-                  name="card-outline"
-                  size={20}
-                  color={colors.primary[500]}
-                />
-              </View>
-              <View style={styles.historyContent}>
-                <Text style={styles.historyTitle}>Tesco Supermarket</Text>
-                <Text style={styles.historySubtitle}>£45.20 • Today</Text>
-              </View>
-              <Text style={styles.historyAmount}>-£45.20</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.historyItem}>
-              <View style={styles.historyIcon}>
-                <Ionicons
-                  name="business-outline"
-                  size={20}
-                  color={colors.primary[500]}
-                />
-              </View>
-              <View style={styles.historyContent}>
-                <Text style={styles.historyTitle}>Barclays Bank</Text>
-                <Text style={styles.historySubtitle}>
-                  £1,200.00 • Yesterday
-                </Text>
-              </View>
-              <Text style={[styles.historyAmount, { color: "#10B981" }]}>
-                +£1,200.00
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.historyItem}>
-              <View style={styles.historyIcon}>
-                <Ionicons
-                  name="card-outline"
-                  size={20}
-                  color={colors.primary[500]}
-                />
-              </View>
-              <View style={styles.historyContent}>
-                <Text style={styles.historyTitle}>Amazon UK</Text>
-                <Text style={styles.historySubtitle}>£89.99 • 2 days ago</Text>
-              </View>
-              <Text style={styles.historyAmount}>-£89.99</Text>
-            </TouchableOpacity>
+            <Text
+              style={{
+                color: colors.text.secondary,
+                textAlign: "center",
+                marginVertical: spacing.lg,
+              }}
+            >
+              No recent transactions.
+            </Text>
           </View>
         </View>
       </ScrollView>

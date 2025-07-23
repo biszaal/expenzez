@@ -233,30 +233,216 @@ export const BANK_CATEGORIES = {
   },
 } as const;
 
-// Bank logos mapping
+// Bank logos mapping - updated to match actual API bank names
 export const BANK_LOGOS = {
-  // Major UK banks
-  "Barclays Bank": "https://logo.clearbit.com/barclays.co.uk",
-  "HSBC UK": "https://logo.clearbit.com/hsbc.co.uk",
-  "Lloyds Bank": "https://logo.clearbit.com/lloydsbank.com",
-  NatWest: "https://logo.clearbit.com/natwest.com",
-  "Royal Bank of Scotland": "https://logo.clearbit.com/rbs.co.uk",
-  "Santander UK": "https://logo.clearbit.com/santander.co.uk",
-  "TSB Bank": "https://logo.clearbit.com/tsb.co.uk",
-  Nationwide: "https://logo.clearbit.com/nationwide.co.uk",
+  // Major UK banks (matching API names)
+  "Barclays Personal": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/barclayspersonal.png",
+    color: "#00A1DE",
+    type: "traditional",
+    description: "Personal Banking",
+  },
+  "Barclays Business": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/barclayscorporate.png",
+    color: "#00A1DE",
+    type: "business",
+    description: "Business Banking",
+  },
+  "Barclays Corporate": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/barclayscorporate.png",
+    color: "#00A1DE",
+    type: "corporate",
+    description: "Corporate Banking",
+  },
+  "HSBC Personal": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/hsbcpersonal.png",
+    color: "#DB0011",
+    type: "traditional",
+    description: "Personal Banking",
+  },
+  "HSBC Business": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/hsbcpersonal.png",
+    color: "#DB0011",
+    type: "business",
+    description: "Business Banking",
+  },
+  "HSBC Kinetic": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/hsbcpersonal.png",
+    color: "#DB0011",
+    type: "digital",
+    description: "Digital Banking",
+  },
+  "Lloyds Bank Personal": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/lloyds.png",
+    color: "#D81F2A",
+    type: "traditional",
+    description: "Personal Banking",
+  },
+  "Lloyds Bank Business": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/lloyds.png",
+    color: "#D81F2A",
+    type: "business",
+    description: "Business Banking",
+  },
+  "Lloyds Bank Commercial": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/lloyds.png",
+    color: "#D81F2A",
+    type: "commercial",
+    description: "Commercial Banking",
+  },
+  Natwest: {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/natwest.png",
+    color: "#DA1710",
+    type: "traditional",
+    description: "Personal Banking",
+  },
+  "Natwest Bankline": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/natwestbankline.png",
+    color: "#DA1710",
+    type: "business",
+    description: "Business Banking",
+  },
+  "Natwest ClearSpend": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/natwest.png",
+    color: "#DA1710",
+    type: "digital",
+    description: "Digital Banking",
+  },
+  "Royal Bank of Scotland": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/rbs.png",
+    color: "#0052CC",
+    type: "traditional",
+    description: "Personal Banking",
+  },
+  "Royal Bank of Scotland Bankline": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/rbsbankline.png",
+    color: "#0052CC",
+    type: "business",
+    description: "Business Banking",
+  },
+  "Royal Bank of Scotland ClearSpend": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/rbs.png",
+    color: "#0052CC",
+    type: "digital",
+    description: "Digital Banking",
+  },
+  Santander: {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/santander.png",
+    color: "#EC0000",
+    type: "traditional",
+    description: "Personal Banking",
+  },
+  "TSB Bank": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/tsbbank.png",
+    color: "#FF6600",
+    type: "traditional",
+    description: "Personal Banking",
+  },
+  "Nationwide Building Society": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/nationwide.png",
+    color: "#00A3E0",
+    type: "building society",
+    description: "Building Society",
+  },
 
   // Digital banks
-  Monzo: "https://logo.clearbit.com/monzo.com",
-  Revolut: "https://logo.clearbit.com/revolut.com",
-  "Starling Bank": "https://logo.clearbit.com/starlingbank.com",
-  Chime: "https://logo.clearbit.com/chime.com",
-  N26: "https://logo.clearbit.com/n26.com",
+  "Monzo Bank Limited": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/monzo.png",
+    color: "#FF5F5F",
+    type: "digital",
+    description: "Digital Banking",
+  },
+  Revolut: {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/revolut.png",
+    color: "#0075FF",
+    type: "digital",
+    description: "Digital Banking",
+  },
+  "Starling Bank": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/starling.png",
+    color: "#00D4AA",
+    type: "digital",
+    description: "Digital Banking",
+  },
+  "Chase Bank": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/chasebank.png",
+    color: "#117ACA",
+    type: "digital",
+    description: "Digital Banking",
+  },
+  "N26 Bank": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/DE/PNG/n26.png",
+    color: "#000000",
+    type: "digital",
+    description: "Digital Banking",
+  },
 
-  // Investment and wealth
-  "Hargreaves Lansdown": "https://logo.clearbit.com/hl.co.uk",
-  "AJ Bell": "https://logo.clearbit.com/ajbell.co.uk",
-  "Interactive Investor": "https://logo.clearbit.com/ii.co.uk",
+  // Other banks
+  "Metro Bank": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/metro.png",
+    color: "#D81F2A",
+    type: "traditional",
+    description: "Personal Banking",
+  },
+  Mettle: {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/mettle.png",
+    color: "#00A3E0",
+    type: "digital",
+    description: "Digital Banking",
+  },
+  Monese: {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/FR/PNG/monese.png",
+    color: "#00A3E0",
+    type: "digital",
+    description: "Digital Banking",
+  },
+  Tide: {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/tide.png",
+    color: "#00A3E0",
+    type: "digital",
+    description: "Digital Banking",
+  },
+  Wise: {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/wise.png",
+    color: "#00B9FF",
+    type: "digital",
+    description: "Digital Banking",
+  },
 
   // Default fallback
-  default: "https://logo.clearbit.com/bank.com",
+  default: {
+    logoUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Bank_logo_placeholder.svg/1200px-Bank_logo_placeholder.svg.png",
+    color: "#6B7280",
+    type: "traditional",
+    description: "Bank",
+  },
 } as const;

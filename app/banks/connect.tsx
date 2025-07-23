@@ -57,7 +57,7 @@ export default function ConnectBankScreen() {
 
   // Fetch supported banks from API on mount
   useEffect(() => {
-    // Clear any old requisition or bank connection state
+    // Clear any old requisition or bank connection state on mount
     AsyncStorage.removeItem("requisitionId");
     AsyncStorage.removeItem("bankConnectionState");
     console.log(
@@ -109,20 +109,18 @@ export default function ConnectBankScreen() {
     setConnectingBankId(bankId);
     try {
       // Call backend to start connection flow
-      const response = await bankingAPI.connectBank({
+      console.log("[ConnectBankScreen] Connecting bank with payload:", {
         institutionId: bank.id,
         redirectUrl:
           Platform.OS === "web"
             ? window.location.origin + "/banks/callback"
             : Linking.createURL("/banks/callback"),
       });
-      console.log(
-        "Redirect URL sent to bank:",
-        Platform.OS === "web"
-          ? window.location.origin + "/banks/callback"
-          : `http://192.168.0.93:8081/banks/callback-web?t=${Date.now()}`
-      );
-      console.log("Bank connect response:", response);
+      const response = await bankingAPI.connectBank({
+        institutionId: bank.id,
+        redirectUrl: `exp://192.168.0.93:8081/--/banks/callback`,
+      });
+      console.log("[ConnectBankScreen] Bank connect response:", response);
 
       if (response.link) {
         // Store the requisition ID for the callback
@@ -148,6 +146,7 @@ export default function ConnectBankScreen() {
         showError("Failed to get bank authentication link");
       }
     } catch (error: any) {
+      console.error("[ConnectBankScreen] Connect bank error (full):", error);
       console.error("Connect bank error:", error);
       showError(
         error.response?.data?.message ||
@@ -204,7 +203,7 @@ export default function ConnectBankScreen() {
                 const result = await bankingAPI.testNordigen();
                 showAlert(
                   "Nordigen Test",
-                  `Connection successful!\n\nFound ${result.result.institutionsCount} UK banks available.\n\nSample banks:\n${result.result.sampleInstitutions.map((bank: any) => `• ${bank.name}`).join("\n")}`
+                  `Connection successful!\n\nFound ${result.result.institutionsCount} UK banks available.\n\nBanks:\n${result.result.sampleInstitutions.map((bank: any) => `• ${bank.name}`).join("\n")}`
                 );
               } catch (error: any) {
                 console.error("Nordigen test error:", error);

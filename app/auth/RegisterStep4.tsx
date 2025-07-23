@@ -35,7 +35,7 @@ export default function RegisterStep4({
             <Typography variant="caption" color="secondary">
               {key}:
             </Typography>{" "}
-            {value}
+            {String(value)}
           </Typography>
         ))}
       </View>

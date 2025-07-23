@@ -1,4 +1,3 @@
-/** @type {import('nativewind').NativewindConfig} */
 module.exports = {
   content: [
     "./app/**/*.{js,jsx,ts,tsx}",

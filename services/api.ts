@@ -98,10 +98,14 @@ export const authAPI = {
     return response.data;
   },
 
-  login: async (credentials: { identifier: string; password: string }) => {
+  login: async (credentials: {
+    email?: string;
+    username?: string;
+    password: string;
+  }) => {
     console.log("🔐 Login attempt:", {
       url: `${API_BASE_URL}/auth/login`,
-      credentials: { identifier: credentials.identifier, password: "***" },
+      credentials: { ...credentials, password: "***" },
     });
 
     try {
@@ -171,7 +175,7 @@ export const bankingAPI = {
 
   // Get connected accounts
   getAccounts: async () => {
-    const response = await api.get("/banking/accounts");
+    const response = await api.get("/nordigen/accounts");
     return response.data;
   },
 
@@ -180,34 +184,39 @@ export const bankingAPI = {
     accountId: string,
     params?: { from?: string; to?: string }
   ) => {
-    const response = await api.get(
-      `/banking/accounts/${accountId}/transactions`,
-      { params }
-    );
+    const response = await api.get(`/nordigen/transactions`, {
+      params: { accountId, ...params },
+    });
     return response.data;
   },
 
   // Get account balance
   getBalance: async (accountId: string) => {
-    const response = await api.get(`/banking/accounts/${accountId}/balance`);
+    const response = await api.get(`/nordigen/accounts`, {
+      params: { accountId, type: "balance" },
+    });
     return response.data;
   },
 
   // Sync accounts (refresh data from bank)
   syncAccounts: async () => {
-    const response = await api.post("/banking/sync");
+    const response = await api.post("/nordigen/accounts");
     return response.data;
   },
 
   // Disconnect bank account
   disconnectAccount: async (accountId: string) => {
-    const response = await api.delete(`/banking/accounts/${accountId}`);
+    const response = await api.delete(`/nordigen/accounts`, {
+      params: { accountId },
+    });
     return response.data;
   },
 
   // Refresh account balances
   refreshBalances: async () => {
-    const response = await api.post("/banking/accounts/refresh-balances");
+    const response = await api.post("/nordigen/accounts", {
+      action: "refresh-balances",
+    });
     return response.data;
   },
 

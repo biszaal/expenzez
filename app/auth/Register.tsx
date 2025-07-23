@@ -63,6 +63,13 @@ export default function Register() {
   const handleBack = () => setStep((s) => s - 1);
 
   const handleSubmit = async () => {
+    // Prevent email as username
+    if (values.username.includes("@")) {
+      showError(
+        "Username cannot be an email address. Please choose a unique username."
+      );
+      return;
+    }
     // Validate phone and password here as before
     const isValidPhone = /^\+[1-9]\d{1,14}$/.test(values.phone);
     if (!isValidPhone) {
@@ -101,7 +108,16 @@ export default function Register() {
         });
         return;
       } else {
-        setRegistrationError(result.error || "Registration failed. Try again.");
+        // Check for password policy error
+        if (result.error && result.error.toLowerCase().includes("password")) {
+          setRegistrationError(
+            "Password does not meet requirements. It must have uppercase, lowercase, number, and symbol."
+          );
+        } else {
+          setRegistrationError(
+            result.error || "Registration failed. Try again."
+          );
+        }
       }
     } catch (err: any) {
       let errorMsg = err.message || "Something went wrong. Try again later.";
@@ -111,6 +127,12 @@ export default function Register() {
       ) {
         errorMsg =
           "An account with this username or email already exists. Please log in or verify your email if you haven't done so.";
+      } else if (
+        err.response?.data?.error === "InvalidPasswordException" ||
+        err.response?.data?.message?.toLowerCase().includes("password")
+      ) {
+        errorMsg =
+          "Password does not meet requirements. It must have uppercase, lowercase, number, and symbol.";
       }
       setRegistrationError(errorMsg);
       console.error(err);
@@ -156,7 +178,7 @@ export default function Register() {
           <View style={{ flex: 1, justifyContent: "center" }}>
             {registrationError ? (
               <View style={{ marginBottom: spacing.lg }}>
-                <Typography variant="body" color="danger" align="center">
+                <Typography variant="body" color="error" align="center">
                   {registrationError}
                 </Typography>
               </View>

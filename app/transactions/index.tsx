@@ -155,44 +155,8 @@ export default function TransactionsPage() {
           }
         }
       } else {
-        console.log("No accounts found, adding sample data");
-        // Add sample data for testing
-        const sampleTransactions = [
-          {
-            id: "sample-1",
-            amount: -45.5,
-            currency: "GBP",
-            description: "Grocery Store",
-            date: new Date().toISOString(),
-            category: "Food & Dining",
-            accountId: "sample-account",
-            accountName: "Sample Bank",
-            institution: "Sample Bank",
-          },
-          {
-            id: "sample-2",
-            amount: -120.0,
-            currency: "GBP",
-            description: "Gas Station",
-            date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-            category: "Transportation",
-            accountId: "sample-account",
-            accountName: "Sample Bank",
-            institution: "Sample Bank",
-          },
-          {
-            id: "sample-3",
-            amount: 2500.0,
-            currency: "GBP",
-            description: "Salary Payment",
-            date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            category: "Income",
-            accountId: "sample-account",
-            accountName: "Sample Bank",
-            institution: "Sample Bank",
-          },
-        ];
-        allTransactions = sampleTransactions;
+        console.log("No accounts found, showing empty state");
+        allTransactions = [];
       }
 
       // Sort transactions by date (most recent first)

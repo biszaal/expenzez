@@ -103,7 +103,7 @@ export default function VerifyEmail() {
               </Typography>
             ) : null}
             {error ? (
-              <Typography variant="body" color="danger" align="center" style={{ marginTop: spacing.md }}>
+              <Typography variant="body" color="error" align="center" style={{ marginTop: spacing.md }}>
                 {error}
               </Typography>
             ) : null}

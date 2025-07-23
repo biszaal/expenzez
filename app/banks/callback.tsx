@@ -61,7 +61,7 @@ export default function BankCallbackScreen() {
         // If no requisition ID in URL, try to get it from storage
         if (!requisitionId) {
           try {
-            requisitionId = await AsyncStorage.getItem("requisitionId");
+            requisitionId = (await AsyncStorage.getItem("requisitionId")) || "";
             console.log(
               "[CALLBACK] Retrieved requisitionId from storage:",
               requisitionId

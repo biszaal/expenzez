@@ -54,7 +54,6 @@ function RootLayoutNav() {
       <Stack.Screen name="transactions/index" />
       <Stack.Screen name="settings/index" />
       <Stack.Screen name="CompleteProfile" />
-      <Stack.Screen name="test-logout" />
     </Stack>
   );
 }

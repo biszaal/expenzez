@@ -59,7 +59,7 @@ export default function RegisterStep1({
       {passwordError ? (
         <Typography
           variant="body"
-          color="danger"
+          color="error"
           align="center"
           style={{ marginTop: spacing.sm }}
         >
