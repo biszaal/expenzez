@@ -10,17 +10,15 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../auth/AuthContext";
 import { bankingAPI } from "../../services/api";
 import { COLORS, SPACING, SHADOWS } from "../../constants/Colors";
 import BankLogo from "../../components/ui/BankLogo";
-import { Card } from "../../components/ui"; // Assuming you have a Card component
-
-const SCREEN_WIDTH = Dimensions.get("window").width;
+import { Card } from "../../components/ui"; 
 
 interface Account {
   id: string;
@@ -70,15 +68,10 @@ export default function HomePage() {
       }
 
       // Test if there are any transactions in the database
-      try {
-        const testResult = await bankingAPI.testTransactions();
-        console.log("Test transactions result:", testResult);
-      } catch (error) {
-        console.log("Test transactions failed:", error);
-      }
+      // Removed testTransactions call as it does not exist
 
       // Fetch accounts
-      const accountsData = await bankingAPI.getAccounts();
+      const accountsData = await bankingAPI.getAccounts(accessToken);
       console.log("Fetched accounts:", accountsData);
       setAccounts(accountsData.accounts || []);
 
@@ -104,6 +97,7 @@ export default function HomePage() {
               `Fetching transactions for account: ${account.id} (${account.name})`
             );
             const transactionsData = await bankingAPI.getTransactions(
+              accessToken,
               account.id
             );
             console.log(
@@ -346,7 +340,21 @@ export default function HomePage() {
               alignItems: "center",
               ...SHADOWS.sm,
             }}
-            onPress={() => router.push("/banks/connect")}
+            onPress={async () => {
+              try {
+                const response = await bankingAPI.connectBank();
+                if (response.link) {
+                  await WebBrowser.openAuthSessionAsync(
+                    response.link,
+                    "exp://192.168.0.93:8081/--/banks/callback"
+                  );
+                } else {
+                  alert("Failed to get bank authentication link");
+                }
+              } catch (error) {
+                alert("Failed to start bank connection. Please try again.");
+              }
+            }}
           >
             <Ionicons name="link-outline" size={28} color="#7C3AED" />
             <Text style={{ fontWeight: "600", color: "#222", marginTop: 6 }}>

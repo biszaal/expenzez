@@ -90,13 +90,15 @@ export default function TransactionsPage() {
     try {
       setLoading(true);
       setError(null);
+      const accessToken = await AsyncStorage.getItem("accessToken");
+      if (!accessToken) throw new Error("No access token found");
 
       console.log("=== FETCHING TRANSACTIONS DATA ===");
 
       console.log("User is logged in, attempting to fetch accounts");
 
       // Fetch accounts
-      const accountsData = await bankingAPI.getAccounts();
+      const accountsData = await bankingAPI.getAccounts(accessToken);
       console.log("Fetched accounts:", accountsData);
       setAccounts(accountsData.accounts || []);
 
@@ -114,6 +116,7 @@ export default function TransactionsPage() {
               `Fetching transactions for account: ${account.id} (${account.name})`
             );
             const transactionsData = await bankingAPI.getTransactions(
+              accessToken,
               account.id
             );
             console.log(
@@ -122,20 +125,20 @@ export default function TransactionsPage() {
             );
 
             if (
-              transactionsData.transactions?.booked &&
-              transactionsData.transactions.booked.length > 0
+              transactionsData.transactions &&
+              Array.isArray(transactionsData.transactions) &&
+              transactionsData.transactions.length > 0
             ) {
               console.log(
-                `Found ${transactionsData.transactions.booked.length} transactions for account ${account.id}`
+                `Found ${transactionsData.transactions.length} transactions for account ${account.id}`
               );
-              const normalized = transactionsData.transactions.booked.map(
+              const normalized = transactionsData.transactions.map(
                 (tx: any, idx: number) => ({
-                  id: tx.transactionId || `${account.id}-${idx}`,
-                  amount: Number(tx.transactionAmount?.amount || 0),
-                  currency: tx.transactionAmount?.currency || "GBP",
-                  description:
-                    tx.remittanceInformationUnstructured || "Transaction",
-                  date: tx.bookingDate || new Date().toISOString(),
+                  id: tx.id || `${account.id}-${idx}`,
+                  amount: Number(tx.amount || 0),
+                  currency: tx.currency || "GBP",
+                  description: tx.description || "Transaction",
+                  date: tx.date || new Date().toISOString(),
                   category: tx.category || "Other",
                   accountId: account.id,
                   accountName: account.name,

@@ -147,7 +147,13 @@ export default function EditBudgetPage() {
           />
           <Text
             style={{
-              color: overBudget ? colors.error : colors.text.secondary,
+              color: overBudget
+                ? typeof colors.error === "string"
+                  ? colors.error
+                  : colors.error[500]
+                : typeof colors.text.secondary === "string"
+                  ? colors.text.secondary
+                  : colors.text.secondary[500],
               fontWeight: "600",
               fontSize: 16,
             }}
@@ -156,7 +162,14 @@ export default function EditBudgetPage() {
           </Text>
           {overBudget && (
             <Text
-              style={{ color: colors.error, marginTop: 4, fontWeight: "600" }}
+              style={{
+                color:
+                  typeof colors.error === "string"
+                    ? colors.error
+                    : colors.error[500],
+                marginTop: 4,
+                fontWeight: "600",
+              }}
             >
               Assigned budgets exceed the main budget!
             </Text>

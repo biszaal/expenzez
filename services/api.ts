@@ -25,7 +25,6 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem("accessToken");
-    console.log("Access token being sent:", token);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -144,109 +143,57 @@ export const authAPI = {
 
 // Banking API functions
 export const bankingAPI = {
-  // Connect a bank account using Nordigen
-  connectBank: async (data: {
-    institutionId: string;
-    redirectUrl?: string;
-  }) => {
-    const response = await api.post("/banking/connect", data);
-    return response.data;
-  },
-
-  // Test Nordigen connection
-  testNordigen: async () => {
-    const response = await api.get("/banking/test-nordigen");
-    return response.data;
-  },
-
-  // Test transactions
-  testTransactions: async () => {
-    const response = await api.get("/banking/test-transactions");
-    return response.data;
-  },
-
-  // Get available institutions
-  getInstitutions: async (country?: string) => {
-    const response = await api.get("/banking/institutions", {
-      params: { country: country || "gb" },
-    });
+  // Connect a bank account using TrueLayer
+  connectBank: async (data?: { redirectUrl?: string }) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    console.log("[API] connectBank", { token, data });
+    const response = await api.post("/banking/connect", data || {});
     return response.data;
   },
 
   // Get connected accounts
-  getAccounts: async () => {
-    const response = await api.get("/nordigen/accounts");
+  getAccounts: async (accessToken: string) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    console.log("[API] getAccounts", { accessToken, token });
+    const response = await api.post("/banking/accounts", { accessToken });
     return response.data;
   },
 
   // Get account transactions
-  getTransactions: async (
-    accountId: string,
-    params?: { from?: string; to?: string }
-  ) => {
-    const response = await api.get(`/nordigen/transactions`, {
-      params: { accountId, ...params },
+  getTransactions: async (accessToken: string, accountId: string) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    console.log("[API] getTransactions", { accessToken, accountId, token });
+    const response = await api.post("/banking/account/transactions", {
+      accessToken,
+      accountId,
     });
     return response.data;
   },
 
   // Get account balance
-  getBalance: async (accountId: string) => {
-    const response = await api.get(`/nordigen/accounts`, {
-      params: { accountId, type: "balance" },
+  getBalance: async (accessToken: string, accountId: string) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    console.log("[API] getBalance", { accessToken, accountId, token });
+    const response = await api.post("/banking/account/balance", {
+      accessToken,
+      accountId,
     });
     return response.data;
   },
 
-  // Sync accounts (refresh data from bank)
-  syncAccounts: async () => {
-    const response = await api.post("/nordigen/accounts");
+  // Handle bank callback after user consent (exchange code for token)
+  handleCallback: async (code: string) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    console.log("[API] handleCallback", { code, token });
+    const response = await api.post("/banking/callback", { code });
     return response.data;
   },
 
-  // Disconnect bank account
-  disconnectAccount: async (accountId: string) => {
-    const response = await api.delete(`/nordigen/accounts`, {
-      params: { accountId },
-    });
-    return response.data;
-  },
-
-  // Refresh account balances
-  refreshBalances: async () => {
-    const response = await api.post("/nordigen/accounts", {
-      action: "refresh-balances",
-    });
-    return response.data;
-  },
-
-  // Handle bank callback after user consent
-  handleCallback: async (data: { requisitionId: string }) => {
-    const response = await api.post("/banking/callback", data);
-    return response.data;
-  },
-
-  // Get AI-powered finance insight
-  getAIInsight: async (question: string) => {
-    const response = await api.post("/banking/ai-insight", { question });
-    return response.data;
-  },
-
-  // Save a chat message (user or assistant)
-  saveAIChatMessage: async (role: "user" | "assistant", content: string) => {
-    const response = await api.post("/banking/ai-chat", { role, content });
-    return response.data;
-  },
-
-  // Get chat history for the user
-  getAIChatHistory: async () => {
-    const response = await api.get("/banking/ai-chat");
-    return response.data;
-  },
-
-  // Clear chat history for the user
-  clearAIChatHistory: async () => {
-    const response = await api.delete("/banking/ai-chat");
+  // Get available institutions (banks/providers)
+  getInstitutions: async () => {
+    const token = await AsyncStorage.getItem("accessToken");
+    console.log("[API] getInstitutions", { token });
+    const response = await api.get("/banking/institutions");
     return response.data;
   },
 };

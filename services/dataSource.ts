@@ -5,8 +5,7 @@ import { bankingAPI, profileAPI } from "./api";
 export const getInstitutions = async (...args: any[]) => {
   try {
     const res = await bankingAPI.getInstitutions();
-    // The real API may return { institutions: [...] }
-    return res.institutions || res;
+    return res;
   } catch (error: any) {
     console.error("Error loading institutions:", error);
 

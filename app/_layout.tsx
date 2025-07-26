@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
@@ -19,6 +20,15 @@ function RootLayoutNav() {
       setIsLoading(false);
     }
   }, [loading]);
+
+  useEffect(() => {
+    // Ensure in-app browser closes and returns to app after OAuth redirect
+    try {
+      WebBrowser.maybeCompleteAuthSession();
+    } catch (error) {
+      console.log("[WebBrowser] Session completion error:", error);
+    }
+  }, []);
 
   if (isLoading || loading) {
     return (
@@ -46,7 +56,6 @@ function RootLayoutNav() {
       <Stack.Screen name="help/index" />
       <Stack.Screen name="terms/index" />
       <Stack.Screen name="banks/index" />
-      <Stack.Screen name="banks/connect" />
       <Stack.Screen name="banks/callback" />
       <Stack.Screen name="banks/select" />
       <Stack.Screen name="credit-score/index" />

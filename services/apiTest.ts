@@ -50,25 +50,3 @@ export const testAuthEndpoints = async () => {
     };
   }
 };
-
-// Test function for banking endpoints
-export const testBankingEndpoints = async () => {
-  try {
-    console.log("Testing banking endpoints...");
-
-    // Test banking health
-    const response = await api.get("/banking/test-nordigen");
-    console.log("Banking test response:", response.data);
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error: any) {
-    console.error("Banking endpoints test failed:", error.message);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
-};

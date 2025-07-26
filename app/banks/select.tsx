@@ -66,8 +66,8 @@ export default function SelectBankScreen() {
   const loadInstitutions = async () => {
     try {
       setLoading(true);
-      const response = await bankingAPI.getInstitutions(selectedCountry);
-      setInstitutions(response.institutions || []);
+      const institutions = await bankingAPI.getInstitutions();
+      setInstitutions(institutions || []);
     } catch (error: any) {
       console.error("Error loading institutions:", error);
       showError(
@@ -94,7 +94,6 @@ export default function SelectBankScreen() {
   const handleBankSelection = async (institution: Institution) => {
     try {
       const response = await bankingAPI.connectBank({
-        institutionId: institution.id,
         redirectUrl: "expenzez://banks/callback",
       });
 

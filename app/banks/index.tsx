@@ -29,6 +29,8 @@ import {
 import { formatCurrency } from "../../utils/formatters";
 import { useTheme } from "../../contexts/ThemeContext";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { bankingAPI } from "../../services/api";
 
 /**
  * Bank Account Interface
@@ -73,22 +75,10 @@ export default function BanksScreen() {
     try {
       setLoading(true);
       setError(null);
-      const accountIds = await getAllAccountIds();
-      setAccountIds(accountIds);
-
-      // Fetch account details for each account
-      const accountDetails = await Promise.all(
-        accountIds.map(async (id: string) => {
-          try {
-            return await getAccountDetails(id);
-          } catch (error) {
-            console.error(`Error fetching account ${id}:`, error);
-            return null;
-          }
-        })
-      );
-
-      setAccounts(accountDetails.filter(Boolean));
+      const accessToken = await AsyncStorage.getItem("accessToken");
+      if (!accessToken) throw new Error("No access token found");
+      const accountsData = await bankingAPI.getAccounts(accessToken);
+      setAccounts(accountsData.accounts || []);
     } catch (error) {
       console.error("Error fetching accounts:", error);
       setError("Failed to load accounts");

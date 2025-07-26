@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, Image, ActivityIndicator } from "react-native";
+import { SvgXml } from "react-native-svg";
 import { spacing, borderRadius } from "../../constants/theme";
 import { useTheme } from "../../contexts/ThemeContext";
 import { BANK_LOGOS } from "../../constants/data";
@@ -12,15 +13,6 @@ interface BankLogoProps {
   variant?: "default" | "compact" | "detailed";
 }
 
-/**
- * Reusable BankLogo component for consistent bank logo display
- * Now uses actual bank logo images from the internet
- *
- * @param bankName - Name of the bank (must match BANK_LOGOS keys) or object with name and logo
- * @param size - Size variant for the logo
- * @param showName - Whether to show the bank name
- * @param variant - Display variant (default, compact, detailed)
- */
 export default function BankLogo({
   bankName,
   logoUrl,
@@ -30,19 +22,14 @@ export default function BankLogo({
 }: BankLogoProps) {
   const { colors, shadows } = useTheme();
   const [imageError, setImageError] = useState(false);
+  const [svgXml, setSvgXml] = useState<string | null>(null);
+  const [svgLoading, setSvgLoading] = useState(false);
 
-  // Extract bank name string from the prop
   const bankNameString =
     typeof bankName === "string" ? bankName : bankName?.name || "Bank";
-
-  // Extract logo URL from the prop if it's an object
   const logoFromProp =
     typeof bankName === "object" ? bankName?.logo : undefined;
-
-  // Get bank info from our data
   const bankInfo = BANK_LOGOS[bankNameString as keyof typeof BANK_LOGOS];
-
-  // Fallback for unknown banks
   const fallbackInfo = {
     logoUrl:
       "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Bank_logo_placeholder.svg/1200px-Bank_logo_placeholder.svg.png",
@@ -63,7 +50,6 @@ export default function BankLogo({
 
   const bank = bankInfo || fallbackInfo;
 
-  // Size configurations
   const getSizeConfig = () => {
     switch (size) {
       case "small":
@@ -89,7 +75,6 @@ export default function BankLogo({
 
   const sizeConfig = getSizeConfig();
 
-  // Variant configurations
   const getVariantConfig = () => {
     switch (variant) {
       case "compact":
@@ -121,7 +106,7 @@ export default function BankLogo({
       justifyContent: "center" as const,
       width: sizeConfig.containerSize,
       height: sizeConfig.containerSize,
-      backgroundColor: bank.color + "20", // 20% opacity
+      backgroundColor: "#fff", // Always white for best logo contrast
       padding: variantConfig.padding,
       ...shadows.sm,
     };
@@ -154,35 +139,76 @@ export default function BankLogo({
 
   const variantConfig = getVariantConfig();
 
+  // Helper: check if logoToUse is SVG
+  const isSvg = logoToUse && logoToUse.endsWith(".svg");
+
+  // Fetch SVG XML if needed
+  useEffect(() => {
+    let isMounted = true;
+    if (isSvg && !imageError) {
+      setSvgLoading(true);
+      fetch(logoToUse)
+        .then((res) => res.text())
+        .then((xml) => {
+          if (isMounted) {
+            // Improved SVG patching
+            let patchedXml = xml.replace(/fill=["']currentColor["']/gi, "");
+            patchedXml = patchedXml.replace(/fill=["']#?000["']/gi, "");
+            patchedXml = patchedXml.replace(/fill=["']black["']/gi, "");
+            patchedXml = patchedXml.replace(
+              /<style[\s\S]*?>[\s\S]*?<\/style>/gi,
+              ""
+            );
+            setSvgXml(patchedXml);
+            setSvgLoading(false);
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            setImageError(true);
+            setSvgLoading(false);
+          }
+        });
+    } else {
+      setSvgXml(null);
+      setSvgLoading(false);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [logoToUse, isSvg, imageError]);
+
   return (
     <View style={styles.container}>
       {/* Logo Container */}
       <View style={getLogoContainerStyle()}>
         {!imageError ? (
-          <Image
-            source={{
-              uri: logoToUse,
-              // Add cache policy to improve loading
-              cache: "force-cache",
-            }}
-            style={[
-              styles.logoImage,
-              {
-                width: sizeConfig.imageSize,
-                height: sizeConfig.imageSize,
-              },
-            ]}
-            resizeMode="contain"
-            onError={() => {
-              console.log(`Failed to load bank logo for: ${bankNameString}`);
-              setImageError(true);
-            }}
-            onLoad={() => {
-              console.log(
-                `Successfully loaded bank logo for: ${bankNameString}`
-              );
-            }}
-          />
+          isSvg ? (
+            svgLoading ? (
+              <ActivityIndicator color={colors.primary[500]} />
+            ) : svgXml ? (
+              <SvgXml
+                xml={svgXml}
+                width={sizeConfig.imageSize}
+                height={sizeConfig.imageSize}
+              />
+            ) : (
+              <Text style={styles.emoji}>🏦</Text>
+            )
+          ) : (
+            <Image
+              source={{ uri: logoToUse, cache: "force-cache" }}
+              style={[
+                styles.logoImage,
+                {
+                  width: sizeConfig.imageSize,
+                  height: sizeConfig.imageSize,
+                },
+              ]}
+              resizeMode="contain"
+              onError={() => setImageError(true)}
+            />
+          )
         ) : (
           // Fallback to emoji if image fails to load
           <Text

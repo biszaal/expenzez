@@ -110,11 +110,7 @@ export default function SpendingPage() {
       router.replace("/auth/Login");
       return;
     }
-    // Disabled: Do not redirect to /banks/connect when hasBank is false
-    // if (hasBank === false && !checkingBank) {
-    //   router.replace("/banks/connect");
-    //   return;
-    // }
+    
     // Fetch categories, months, profile, and real transactions from API
     const fetchData = async () => {
       const cats = await getSpendingCategories();

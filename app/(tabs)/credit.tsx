@@ -118,10 +118,6 @@ export default function CreditScreen() {
     if (!authLoggedIn) {
       router.replace("/auth/Login");
     }
-    // Disabled: Do not redirect to /banks/connect when hasBank is false
-    // if (hasBank === false && !checkingBank) {
-    //   router.replace("/banks/connect");
-    // }
   }, [authLoggedIn, hasBank, checkingBank]);
 
   if (!authLoggedIn || checkingBank) {
