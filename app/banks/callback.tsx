@@ -12,6 +12,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
 import { bankingAPI, authAPI } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as WebBrowser from "expo-web-browser";
 
 export default function BankCallbackScreen() {
   const router = useRouter();
@@ -26,6 +27,9 @@ export default function BankCallbackScreen() {
   const { code, error: oauthError } = params;
 
   useEffect(() => {
+    // Complete the auth session to close the in-app browser
+    WebBrowser.maybeCompleteAuthSession();
+
     // Add a small delay to ensure the screen is fully loaded
     const timer = setTimeout(() => {
       handleCallback();
@@ -109,6 +113,10 @@ export default function BankCallbackScreen() {
             "Success",
             "Your bank account has been connected successfully."
           );
+          // Set a flag to trigger refresh on the home screen
+          await AsyncStorage.setItem("bankConnected", "true");
+          // Ensure the in-app browser closes after success
+          WebBrowser.maybeCompleteAuthSession();
           setTimeout(() => {
             try {
               router.push("/(tabs)");
@@ -147,6 +155,7 @@ export default function BankCallbackScreen() {
                 "Failed to complete bank connection. Please try again."
             );
             setTimeout(() => {
+              WebBrowser.maybeCompleteAuthSession(); // Ensure browser closes on API error
               try {
                 router.push("/(tabs)");
               } catch (navError) {
@@ -160,6 +169,7 @@ export default function BankCallbackScreen() {
         setMessage("Bank connection failed. No code provided.");
         showError("Failed to connect bank account. Please try again.");
         setTimeout(() => {
+          WebBrowser.maybeCompleteAuthSession(); // Ensure browser closes on missing code
           try {
             router.push("/(tabs)");
           } catch (navError) {
@@ -172,6 +182,7 @@ export default function BankCallbackScreen() {
       setStatus("error");
       setMessage("An error occurred while processing the connection.");
       showError("Connection processing failed. Please try again.");
+      WebBrowser.maybeCompleteAuthSession(); // Ensure browser closes on general error
       setTimeout(() => {
         try {
           router.push("/(tabs)");

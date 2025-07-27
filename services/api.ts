@@ -151,31 +151,47 @@ export const bankingAPI = {
     return response.data;
   },
 
-  // Get connected accounts
-  getAccounts: async (accessToken: string) => {
+  // Get connected banks for the authenticated user
+  getConnectedBanks: async () => {
     const token = await AsyncStorage.getItem("accessToken");
-    console.log("[API] getAccounts", { accessToken, token });
-    const response = await api.post("/banking/accounts", { accessToken });
+    console.log("[API] getConnectedBanks", { token });
+    const response = await api.get("/banking/connected-banks");
+    return response.data;
+  },
+
+  // Get connected accounts (legacy)
+  getAccounts: async () => {
+    const token = await AsyncStorage.getItem("accessToken");
+    console.log("[API] getAccounts", { token });
+    const response = await api.post("/banking/accounts", {});
+    return response.data;
+  },
+
+  // Get all user transactions
+  getAllTransactions: async (limit?: number, startKey?: any) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    console.log("[API] getAllTransactions", { token, limit, startKey });
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    if (startKey) params.append('startKey', JSON.stringify(startKey));
+    const response = await api.get(`/banking/transactions?${params.toString()}`);
     return response.data;
   },
 
   // Get account transactions
-  getTransactions: async (accessToken: string, accountId: string) => {
+  getTransactions: async (accountId: string, limit?: number) => {
     const token = await AsyncStorage.getItem("accessToken");
-    console.log("[API] getTransactions", { accessToken, accountId, token });
-    const response = await api.post("/banking/account/transactions", {
-      accessToken,
-      accountId,
-    });
+    console.log("[API] getTransactions", { accountId, token, limit });
+    const params = limit ? `?limit=${limit}` : '';
+    const response = await api.get(`/banking/account/${accountId}/transactions${params}`);
     return response.data;
   },
 
   // Get account balance
-  getBalance: async (accessToken: string, accountId: string) => {
+  getBalance: async (accountId: string) => {
     const token = await AsyncStorage.getItem("accessToken");
-    console.log("[API] getBalance", { accessToken, accountId, token });
+    console.log("[API] getBalance", { accountId, token });
     const response = await api.post("/banking/account/balance", {
-      accessToken,
       accountId,
     });
     return response.data;
@@ -184,8 +200,23 @@ export const bankingAPI = {
   // Handle bank callback after user consent (exchange code for token)
   handleCallback: async (code: string) => {
     const token = await AsyncStorage.getItem("accessToken");
-    console.log("[API] handleCallback", { code, token });
-    const response = await api.post("/banking/callback", { code });
+    const user = await AsyncStorage.getItem("user");
+    let userId = null;
+
+    try {
+      if (user) {
+        const userData = JSON.parse(user);
+        userId = userData.sub || userData.userId;
+      }
+    } catch (e) {
+      console.log("[API] Could not parse user data");
+    }
+
+    console.log("[API] handleCallback", { code, token, userId });
+    const response = await api.post("/banking/callback", {
+      code,
+      userId, // Include userId as fallback
+    });
     return response.data;
   },
 

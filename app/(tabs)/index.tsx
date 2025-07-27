@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,7 +19,7 @@ import { useAuth } from "../auth/AuthContext";
 import { bankingAPI } from "../../services/api";
 import { COLORS, SPACING, SHADOWS } from "../../constants/Colors";
 import BankLogo from "../../components/ui/BankLogo";
-import { Card } from "../../components/ui"; 
+import { Card } from "../../components/ui";
 
 interface Account {
   id: string;
@@ -71,33 +72,31 @@ export default function HomePage() {
       // Removed testTransactions call as it does not exist
 
       // Fetch accounts
-      const accountsData = await bankingAPI.getAccounts(accessToken);
+      const accountsData = await bankingAPI.getAccounts();
       console.log("Fetched accounts:", accountsData);
-      setAccounts(accountsData.accounts || []);
+
+      // Handle the new account structure
+      const accounts = accountsData.accounts || [];
+      setAccounts(accounts);
 
       // Calculate total balance
-      const total =
-        accountsData.accounts?.reduce((sum: number, account: Account) => {
-          return sum + (account.balance || 0);
-        }, 0) || 0;
+      const total = accounts.reduce((sum: number, account: Account) => {
+        return sum + (account.balance || 0);
+      }, 0);
       setTotalBalance(total);
       console.log("Total balance calculated:", total);
 
       // Fetch transactions for all accounts
       let allTransactions: Transaction[] = [];
-      console.log(
-        "Fetching transactions for accounts:",
-        accountsData.accounts?.length || 0
-      );
+      console.log("Fetching transactions for accounts:", accounts.length);
 
-      if (accountsData.accounts && accountsData.accounts.length > 0) {
-        for (const account of accountsData.accounts) {
+      if (accounts.length > 0) {
+        for (const account of accounts) {
           try {
             console.log(
               `Fetching transactions for account: ${account.id} (${account.name})`
             );
             const transactionsData = await bankingAPI.getTransactions(
-              accessToken,
               account.id
             );
             console.log(
@@ -106,16 +105,16 @@ export default function HomePage() {
             );
 
             if (
-              transactionsData.transactions?.booked &&
-              transactionsData.transactions.booked.length > 0
+              transactionsData.results?.booked &&
+              transactionsData.results.booked.length > 0
             ) {
               console.log(
-                `Found ${transactionsData.transactions.booked.length} transactions for account ${account.id}`
+                `Found ${transactionsData.results.booked.length} transactions for account ${account.id}`
               );
-              const normalized = transactionsData.transactions.booked.map(
+              const normalized = transactionsData.results.booked.map(
                 (tx: any, idx: number) => {
                   const normalizedTx = {
-                    id: tx.id || tx.transactionId || `${account.id}-${idx}`,
+                    id: tx.transaction_id || tx.id || `${account.id}-${idx}`,
                     amount: Number(
                       tx.amount || tx.transactionAmount?.amount || 0
                     ),
@@ -125,8 +124,12 @@ export default function HomePage() {
                       tx.description ||
                       tx.remittanceInformationUnstructured ||
                       "Transaction",
-                    date: tx.date || tx.bookingDate || new Date().toISOString(),
-                    category: tx.category || "Other",
+                    date:
+                      tx.timestamp ||
+                      tx.date ||
+                      tx.bookingDate ||
+                      new Date().toISOString(),
+                    category: tx.proprietaryBankTransactionCode || "Other",
                   };
                   console.log(`Normalized transaction ${idx}:`, normalizedTx);
                   return normalizedTx;
@@ -137,7 +140,7 @@ export default function HomePage() {
               console.log(`No transactions found for account ${account.id}`);
               console.log(
                 `Transactions data structure:`,
-                transactionsData.transactions
+                transactionsData.results
               );
             }
           } catch (error) {
@@ -214,7 +217,18 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    fetchData();
+    // Check if a bank was just connected and trigger refresh
+    const checkBankConnected = async () => {
+      const bankConnected = await AsyncStorage.getItem("bankConnected");
+      if (bankConnected === "true") {
+        console.log("[HomePage] Bank was just connected, refreshing data...");
+        await fetchData();
+        await AsyncStorage.removeItem("bankConnected");
+      } else {
+        fetchData();
+      }
+    };
+    checkBankConnected();
   }, []);
 
   const percentUsed = userBudget ? (thisMonthSpent / userBudget) * 100 : 0;

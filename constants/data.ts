@@ -15,7 +15,7 @@ export const APP_CONFIG = {
 
 // API configuration
 export const API_CONFIG = {
-  baseUrl: "http://192.168.1.76:3001/api",
+  baseUrl: "http://192.168.0.93:3001/api",
   timeout: 10000,
   retryAttempts: 3,
 } as const;
@@ -190,7 +190,7 @@ export const DEFAULTS = {
 // Environment-specific configuration
 export const ENV_CONFIG = {
   development: {
-    apiUrl: "http://192.168.1.76:3001/api",
+    apiUrl: "http://192.168.0.93:3001/api",
     logLevel: "debug",
   },
   production: {
