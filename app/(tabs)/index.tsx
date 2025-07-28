@@ -44,7 +44,17 @@ export default function HomePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { colors } = useTheme();
-  const styles = createStyles(colors);
+  
+  // Fallback colors if theme isn't loaded yet
+  const safeColors = colors || {
+    background: { primary: "#ffffff", secondary: "#f9fafb", tertiary: "#f3f4f6" },
+    text: { primary: "#111827", secondary: "#6b7280", tertiary: "#9ca3af" },
+    primary: { 500: "#7c3aed" },
+    success: { 100: "#dcfce7", 500: "#10b981" },
+    error: { 500: "#ef4444" }
+  };
+  
+  const styles = createStyles(safeColors);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totalBalance, setTotalBalance] = useState(0);
