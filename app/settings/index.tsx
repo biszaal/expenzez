@@ -30,7 +30,7 @@ export default function SettingsPage() {
             shadows.sm,
           ]}
           onPress={() => {
-            if (window.history.length > 1) {
+            if (router.canGoBack()) {
               router.back();
             } else {
               router.replace("/(tabs)");

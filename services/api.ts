@@ -235,6 +235,32 @@ export const bankingAPI = {
     const response = await api.post("/banking/transactions/refresh", {});
     return response.data;
   },
+
+  // Get cached bank connections and balances when TrueLayer token is expired
+  getCachedBankData: async () => {
+    try {
+      const token = await AsyncStorage.getItem("accessToken");
+      console.log("[API] getCachedBankData", { token });
+      const response = await api.get("/banking/cached-data");
+      return response.data;
+    } catch (error: any) {
+      console.error("[API] Failed to get cached bank data:", error);
+      throw error;
+    }
+  },
+
+  // Check if bank connections need to be refreshed (expired tokens)
+  checkBankConnectionStatus: async () => {
+    try {
+      const token = await AsyncStorage.getItem("accessToken");
+      console.log("[API] checkBankConnectionStatus", { token });
+      const response = await api.get("/banking/connection-status");
+      return response.data;
+    } catch (error: any) {
+      console.error("[API] Failed to check bank connection status:", error);
+      throw error;
+    }
+  },
 };
 
 // Profile API functions
