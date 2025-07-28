@@ -16,8 +16,9 @@ import * as WebBrowser from "expo-web-browser";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../auth/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import { bankingAPI } from "../../services/api";
-import { COLORS, SPACING, SHADOWS } from "../../constants/Colors";
+import { SPACING, SHADOWS } from "../../constants/Colors";
 import BankLogo from "../../components/ui/BankLogo";
 import { Card } from "../../components/ui";
 
@@ -42,6 +43,8 @@ interface Transaction {
 export default function HomePage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totalBalance, setTotalBalance] = useState(0);
@@ -281,7 +284,7 @@ export default function HomePage() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary.main} />
+          <ActivityIndicator size="large" color={colors.primary[500]} />
           <Text style={styles.loadingText}>
             Loading your financial overview...
           </Text>
@@ -774,10 +777,10 @@ export default function HomePage() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: colors.background.secondary,
   },
   scrollView: {
     flex: 1,
@@ -789,23 +792,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: colors.background.primary,
   },
   loadingText: {
     marginTop: SPACING.md,
     fontSize: 16,
-    color: COLORS.text.secondary,
+    color: colors.text.secondary,
   },
   loadingSubtext: {
     marginTop: SPACING.sm,
     fontSize: 14,
-    color: COLORS.text.tertiary,
+    color: colors.text.tertiary,
   },
   header: {
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.xl,
     paddingBottom: SPACING.lg,
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: colors.background.primary,
   },
   headerContent: {
     flexDirection: "row",
@@ -815,18 +818,18 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: "700",
-    color: COLORS.text.primary,
+    color: colors.text.primary,
     marginBottom: SPACING.xs,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: COLORS.text.secondary,
+    color: colors.text.secondary,
   },
   headerButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: colors.background.primary,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -835,7 +838,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   balanceCard: {
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: colors.background.primary,
     borderRadius: SPACING.lg,
     padding: SPACING.xl,
     alignItems: "center",
@@ -848,7 +851,7 @@ const styles = StyleSheet.create({
   },
   balanceLabel: {
     fontSize: 16,
-    color: COLORS.text.secondary,
+    color: colors.text.secondary,
   },
   balanceValue: {
     fontSize: 36,
@@ -861,7 +864,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   balanceChangeBadge: {
-    backgroundColor: COLORS.success.light,
+    backgroundColor: colors.success[100],
     borderRadius: 10,
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xs,
@@ -870,18 +873,18 @@ const styles = StyleSheet.create({
   balanceChangeText: {
     fontSize: 12,
     fontWeight: "600",
-    color: COLORS.success.main,
+    color: colors.success[500],
   },
   balanceChangeLabel: {
     fontSize: 12,
-    color: COLORS.text.secondary,
+    color: colors.text.secondary,
   },
   addBankCardWrapper: {
     paddingHorizontal: SPACING.lg,
     marginBottom: SPACING.lg,
   },
   addBankCard: {
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: colors.background.primary,
     borderRadius: SPACING.lg,
     padding: SPACING.lg,
     flexDirection: "row",
@@ -902,7 +905,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: COLORS.background.tertiary,
+    backgroundColor: colors.background.tertiary,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -912,11 +915,11 @@ const styles = StyleSheet.create({
   addBankTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.text.primary,
+    color: colors.text.primary,
   },
   addBankSubtitle: {
     fontSize: 12,
-    color: COLORS.text.secondary,
+    color: colors.text.secondary,
   },
   addBankButton: {
     flexDirection: "row",
@@ -924,7 +927,7 @@ const styles = StyleSheet.create({
   },
   addBankButtonText: {
     fontSize: 14,
-    color: COLORS.primary.main,
+    color: colors.primary[500],
     fontWeight: "500",
     marginRight: SPACING.xs,
   },
@@ -941,11 +944,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "600",
-    color: COLORS.text.primary,
+    color: colors.text.primary,
   },
   sectionLink: {
     fontSize: 14,
-    color: COLORS.primary.main,
+    color: colors.primary[500],
   },
   quickActionsRow: {
     flexDirection: "row",
@@ -953,7 +956,7 @@ const styles = StyleSheet.create({
   },
   quickActionCard: {
     flex: 1,
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: colors.background.primary,
     borderRadius: SPACING.lg,
     padding: SPACING.lg,
     alignItems: "center",
@@ -962,7 +965,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: COLORS.background.tertiary,
+    backgroundColor: colors.background.tertiary,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: SPACING.sm,
@@ -970,12 +973,12 @@ const styles = StyleSheet.create({
   quickActionLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.text.primary,
+    color: colors.text.primary,
     textAlign: "center",
     marginBottom: SPACING.xs,
   },
   overviewCard: {
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: colors.background.primary,
     borderRadius: SPACING.lg,
     padding: SPACING.xl,
   },
@@ -986,12 +989,12 @@ const styles = StyleSheet.create({
   },
   overviewLabel: {
     fontSize: 14,
-    color: COLORS.text.secondary,
+    color: colors.text.secondary,
   },
   overviewValue: {
     fontSize: 24,
     fontWeight: "700",
-    color: COLORS.text.primary,
+    color: colors.text.primary,
   },
   progressBarWrapper: {
     marginTop: SPACING.md,
@@ -1003,11 +1006,11 @@ const styles = StyleSheet.create({
   },
   progressBarLabel: {
     fontSize: 14,
-    color: COLORS.text.secondary,
+    color: colors.text.secondary,
   },
   progressBarBg: {
     height: 8,
-    backgroundColor: COLORS.background.tertiary,
+    backgroundColor: colors.background.tertiary,
     borderRadius: 4,
     overflow: "hidden",
   },
@@ -1016,7 +1019,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   transactionsList: {
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: colors.background.primary,
     borderRadius: SPACING.lg,
     padding: SPACING.md,
   },
@@ -1026,13 +1029,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: SPACING.sm,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.background.secondary,
+    borderBottomColor: colors.background.secondary,
   },
   transactionIcon: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: COLORS.background.tertiary,
+    backgroundColor: colors.background.tertiary,
     justifyContent: "center",
     alignItems: "center",
     marginRight: SPACING.sm,
@@ -1043,12 +1046,12 @@ const styles = StyleSheet.create({
   },
   transactionTitle: {
     fontSize: 14,
-    color: COLORS.text.primary,
+    color: colors.text.primary,
     fontWeight: "500",
   },
   transactionSubtitle: {
     fontSize: 12,
-    color: COLORS.text.tertiary,
+    color: colors.text.tertiary,
     marginTop: SPACING.xs,
   },
   transactionAmountPositive: {
@@ -1094,7 +1097,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 14,
-    color: COLORS.error.main,
+    color: colors.error[500],
     textAlign: "center",
   },
   banksScrollView: {
@@ -1106,40 +1109,40 @@ const styles = StyleSheet.create({
     borderRadius: SPACING.lg,
     padding: SPACING.md,
     marginRight: SPACING.md,
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: colors.background.primary,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: COLORS.background.secondary,
+    borderColor: colors.background.secondary,
   },
   bankCardTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: COLORS.text.primary,
+    color: colors.text.primary,
     marginTop: SPACING.sm,
     textAlign: "center",
   },
   bankCardSubtitle: {
     fontSize: 12,
-    color: COLORS.text.tertiary,
+    color: colors.text.tertiary,
     marginTop: SPACING.xs,
     textAlign: "center",
   },
   bankCardBalance: {
     fontSize: 16,
     fontWeight: "700",
-    color: COLORS.text.primary,
+    color: colors.text.primary,
     marginTop: SPACING.sm,
   },
   emptyText: {
     fontSize: 16,
-    color: COLORS.text.secondary,
+    color: colors.text.secondary,
     textAlign: "center",
     marginTop: SPACING.md,
   },
   emptySubtext: {
     fontSize: 14,
-    color: COLORS.text.tertiary,
+    color: colors.text.tertiary,
     marginTop: SPACING.xs,
     textAlign: "center",
   },
@@ -1148,7 +1151,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.lg,
   },
   aiAssistantCard: {
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: colors.background.primary,
     borderRadius: SPACING.lg,
     padding: SPACING.lg,
     marginTop: SPACING.md,
@@ -1174,7 +1177,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: COLORS.background.tertiary,
+    backgroundColor: colors.background.tertiary,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1184,17 +1187,17 @@ const styles = StyleSheet.create({
   aiAssistantTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.text.primary,
+    color: colors.text.primary,
   },
   aiAssistantSubtitle: {
     fontSize: 12,
-    color: COLORS.text.secondary,
+    color: colors.text.secondary,
   },
   aiAssistantButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: colors.background.primary,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1207,7 +1210,7 @@ const styles = StyleSheet.create({
   loadingTransactionsText: {
     marginLeft: SPACING.sm,
     fontSize: 14,
-    color: COLORS.text.secondary,
+    color: colors.text.secondary,
   },
   refreshTransactionsButton: {
     flexDirection: "row",
@@ -1216,21 +1219,21 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: colors.background.primary,
     borderRadius: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.primary.main,
+    borderColor: colors.primary[500],
   },
   refreshTransactionsText: {
     marginLeft: SPACING.xs,
     fontSize: 14,
-    color: COLORS.primary.main,
+    color: colors.primary[500],
     fontWeight: "500",
   },
   connectBankButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.primary.main,
+    backgroundColor: colors.primary[500],
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderRadius: SPACING.md,
