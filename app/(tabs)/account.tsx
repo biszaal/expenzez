@@ -220,28 +220,32 @@ export default function AccountScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-            Account
-          </Text>
-          <Text
-            style={[styles.headerSubtitle, { color: colors.text.secondary }]}
-          >
-            Manage your account.
-          </Text>
-          <TouchableOpacity
-            style={[
-              styles.settingsButton,
-              { backgroundColor: colors.background.primary },
-              shadows.sm,
-            ]}
-            onPress={() => router.push("/settings")}
-          >
-            <Ionicons
-              name="settings-outline"
-              size={24}
-              color={colors.primary[500]}
-            />
-          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
+                Account
+              </Text>
+              <Text
+                style={[styles.headerSubtitle, { color: colors.text.secondary }]}
+              >
+                Manage your account.
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.settingsButton,
+                { backgroundColor: colors.background.primary },
+                shadows.sm,
+              ]}
+              onPress={() => router.push("/settings")}
+            >
+              <Ionicons
+                name="settings-outline"
+                size={24}
+                color={colors.primary[500]}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Profile Card */}
@@ -473,12 +477,10 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
   },
   headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
     flex: 1,
   },
   backButton: {
