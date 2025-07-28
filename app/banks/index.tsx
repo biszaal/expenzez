@@ -70,15 +70,48 @@ export default function BanksScreen() {
   const [accountIds, setAccountIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasExpiredTokens, setHasExpiredTokens] = useState(false);
+  const [showingCachedData, setShowingCachedData] = useState(false);
 
   const fetchAccounts = async () => {
     try {
       setLoading(true);
       setError(null);
-      const accessToken = await AsyncStorage.getItem("accessToken");
-      if (!accessToken) throw new Error("No access token found");
-      const accountsData = await bankingAPI.getAccounts(accessToken);
-      setAccounts(accountsData.accounts || []);
+      setHasExpiredTokens(false);
+      setShowingCachedData(false);
+
+      // First, check connection status
+      const connectionStatus = await bankingAPI.checkBankConnectionStatus();
+      
+      if (connectionStatus.hasExpiredTokens) {
+        console.log("Expired tokens detected, showing cached data");
+        setHasExpiredTokens(true);
+        setShowingCachedData(true);
+        
+        // Get cached bank data
+        const cachedData = await bankingAPI.getCachedBankData();
+        
+        // Transform cached data to BankAccount format
+        const transformedAccounts = cachedData.connections.map((conn: any) => ({
+          id: conn.accountId,
+          name: conn.bankName,
+          iban: conn.accountNumber,
+          institution: {
+            id: conn.accountId,
+            name: conn.bankName,
+            logo: conn.logo || "",
+          },
+          balance: conn.balance,
+          currency: conn.currency,
+          status: conn.isExpired ? "Token Expired" : "Active",
+        }));
+        
+        setAccounts(transformedAccounts);
+      } else {
+        // Normal flow - fetch fresh data
+        const accountsData = await bankingAPI.getAccounts();
+        setAccounts(accountsData.accounts || []);
+      }
     } catch (error) {
       console.error("Error fetching accounts:", error);
       setError("Failed to load accounts");
@@ -106,13 +139,34 @@ export default function BanksScreen() {
       {/* Header with title and add button */}
       <Header
         title="Banks"
-        subtitle="Manage your connected accounts"
+        subtitle={showingCachedData ? "Showing last saved data" : "Manage your connected accounts"}
         showBackButton={false}
         rightButton={{
           icon: "add-circle-outline",
-          onPress: () => router.push("/banks/connect"),
+          onPress: () => router.push("/banks/select"),
         }}
       />
+
+      {/* Expired Token Warning Banner */}
+      {hasExpiredTokens && (
+        <View style={[styles.warningBanner, { backgroundColor: "#FEF3C7", borderColor: "#F59E0B" }]}>
+          <Ionicons name="warning-outline" size={20} color="#D97706" />
+          <View style={styles.warningContent}>
+            <Text style={[styles.warningTitle, { color: "#92400E" }]}>
+              Bank Connection Expired
+            </Text>
+            <Text style={[styles.warningText, { color: "#B45309" }]}>
+              Your bank connection has expired. Reconnect to get fresh data.
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.reconnectButton, { backgroundColor: colors.primary[500] }]}
+            onPress={() => router.push("/banks/select")}
+          >
+            <Text style={styles.reconnectButtonText}>Reconnect</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <ScrollView
         style={styles.scrollView}
@@ -124,7 +178,7 @@ export default function BanksScreen() {
           <TouchableOpacity
             style={[styles.addButton, { backgroundColor: colors.primary[500] }]}
             activeOpacity={0.9}
-            onPress={() => router.push("/banks/connect")}
+            onPress={() => router.push("/banks/select")}
           >
             <Ionicons name="add-circle-outline" size={24} color="#fff" />
             <Text style={styles.addButtonText}>Add Bank Account</Text>
@@ -159,7 +213,7 @@ export default function BanksScreen() {
               subtitle="Connect your first bank account to get started"
               actionButton={{
                 title: "Add Bank Account",
-                onPress: () => router.push("/banks/connect"),
+                onPress: () => router.push("/banks/select"),
               }}
             />
           ) : (
@@ -211,15 +265,24 @@ export default function BanksScreen() {
                         currency: account.currency,
                       })}
                     </Text>
-                    <Text
-                      style={{
-                        color: colors.text.tertiary,
-                        fontSize: 12,
-                        marginTop: 2,
-                      }}
-                    >
-                      Status: {account.status}
-                    </Text>
+                    <View style={styles.statusContainer}>
+                      <Text
+                        style={{
+                          color: colors.text.tertiary,
+                          fontSize: 12,
+                          marginTop: 2,
+                        }}
+                      >
+                        Status: {account.status}
+                      </Text>
+                      {account.status === "Token Expired" && (
+                        <Badge
+                          text="Expired"
+                          variant="warning"
+                          size="small"
+                        />
+                      )}
+                    </View>
                   </View>
                 </View>
               ))}
@@ -230,10 +293,10 @@ export default function BanksScreen() {
         {/* Quick Actions Section */}
         <Section title="Quick Actions">
           <ListItem
-            icon={{ name: "sync-outline", backgroundColor: "#DBEAFE" }}
-            title={loading ? "Syncing..." : "Sync Accounts"}
-            subtitle="Update your account balances"
-            onPress={fetchAccounts}
+            icon={{ name: "sync-outline", backgroundColor: showingCachedData ? "#F3F4F6" : "#DBEAFE" }}
+            title={loading ? "Syncing..." : showingCachedData ? "Reconnect to Sync" : "Sync Accounts"}
+            subtitle={showingCachedData ? "Bank connection needed to sync" : "Update your account balances"}
+            onPress={showingCachedData ? () => router.push("/banks/select") : fetchAccounts}
             disabled={loading}
             rightElement={
               loading ? (
@@ -323,6 +386,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: spacing.xs,
   },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   bankActions: {
     flexDirection: "row",
     alignItems: "center",
@@ -330,5 +397,36 @@ const styles = StyleSheet.create({
   },
   disconnectButton: {
     padding: spacing.sm,
+  },
+  warningBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: spacing.md,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+  },
+  warningContent: {
+    flex: 1,
+    marginLeft: spacing.sm,
+  },
+  warningTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  warningText: {
+    fontSize: 12,
+  },
+  reconnectButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  reconnectButtonText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
   },
 });
