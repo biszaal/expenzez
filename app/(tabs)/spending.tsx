@@ -284,6 +284,17 @@ export default function SpendingPage() {
         setLoading(true);
         setError(null);
 
+        // Check for expired tokens first
+        try {
+          const connectionStatus = await bankingAPI.checkBankConnectionStatus();
+          if (connectionStatus.hasExpiredTokens) {
+            console.log("Expired tokens detected in spending tab");
+            // Still attempt to fetch transactions, API may have cached data
+          }
+        } catch (statusError) {
+          console.log("Could not check connection status, proceeding with transaction fetch");
+        }
+
         // Fetch all transactions using the centralized API
         const transactionsData = await bankingAPI.getAllTransactions();
 
