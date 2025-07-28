@@ -227,6 +227,14 @@ export const bankingAPI = {
     const response = await api.get("/banking/institutions");
     return response.data;
   },
+
+  // Refresh transactions manually (trigger sync from TrueLayer)
+  refreshTransactions: async () => {
+    const token = await AsyncStorage.getItem("accessToken");
+    console.log("[API] refreshTransactions", { token });
+    const response = await api.post("/banking/transactions/refresh", {});
+    return response.data;
+  },
 };
 
 // Profile API functions

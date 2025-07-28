@@ -49,6 +49,7 @@ export default function HomePage() {
   const [userBudget, setUserBudget] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshingTransactions, setRefreshingTransactions] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
 
@@ -77,6 +78,13 @@ export default function HomePage() {
 
       // Handle the new account structure
       const accounts = accountsData.accounts || [];
+      
+      // Check if accounts are empty due to expired TrueLayer test connections
+      if (accounts.length === 0) {
+        console.log("No accounts found - may need to reconnect banks in test mode");
+        setWarning("🧪 Demo Mode: Bank connections reset periodically. This is normal in test mode - just reconnect to see your data again!");
+      }
+      
       setAccounts(accounts);
 
       // Calculate total balance
@@ -216,6 +224,33 @@ export default function HomePage() {
     setRefreshing(false);
   };
 
+  const onRefreshTransactions = async () => {
+    try {
+      setRefreshingTransactions(true);
+      setError(null);
+      console.log("[HomePage] Manual transaction refresh triggered");
+      
+      // Call the refresh API endpoint
+      const response = await bankingAPI.refreshTransactions();
+      console.log("[HomePage] Refresh response:", response);
+      
+      // Show success message briefly
+      if (response.stats) {
+        const { totalTransactionsSynced, successfulAccounts } = response.stats;
+        console.log(`[HomePage] Synced ${totalTransactionsSynced} transactions from ${successfulAccounts} accounts`);
+      }
+      
+      // Refresh the page data to show new transactions
+      await fetchData();
+      
+    } catch (error: any) {
+      console.error("[HomePage] Transaction refresh failed:", error);
+      setError(error.response?.data?.message || "Failed to refresh transactions. Please try again.");
+    } finally {
+      setRefreshingTransactions(false);
+    }
+  };
+
   useEffect(() => {
     // Check if a bank was just connected and trigger refresh
     const checkBankConnected = async () => {
@@ -268,6 +303,28 @@ export default function HomePage() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F8F9FB" }}>
+      {/* Demo Mode Banner */}
+      <View style={{
+        backgroundColor: "#F3F4F6",
+        padding: 12,
+        margin: 16,
+        borderRadius: 12,
+        borderLeftWidth: 4,
+        borderLeftColor: "#6366F1",
+        flexDirection: "row",
+        alignItems: "center"
+      }}>
+        <Ionicons name="flask-outline" size={20} color="#6366F1" />
+        <Text style={{
+          marginLeft: 8,
+          fontSize: 13,
+          color: "#4B5563",
+          flex: 1
+        }}>
+          <Text style={{ fontWeight: "600" }}>Demo Mode</Text> - Banking data resets periodically. Perfect for testing! 🚀
+        </Text>
+      </View>
+
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
@@ -360,7 +417,7 @@ export default function HomePage() {
                 if (response.link) {
                   await WebBrowser.openAuthSessionAsync(
                     response.link,
-                    "exp://192.168.0.93:8081/--/banks/callback"
+                    "exp://192.168.1.76:8081/--/banks/callback"
                   );
                 } else {
                   alert("Failed to get bank authentication link");
@@ -443,11 +500,29 @@ export default function HomePage() {
             <Text style={{ fontSize: 18, fontWeight: "700", color: "#222" }}>
               Recent Transactions
             </Text>
-            <TouchableOpacity onPress={() => router.push("/transactions")}>
-              <Text style={{ color: "#7C3AED", fontWeight: "600" }}>
-                See All
-              </Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <TouchableOpacity 
+                onPress={onRefreshTransactions}
+                disabled={refreshingTransactions}
+                style={{ opacity: refreshingTransactions ? 0.6 : 1 }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  {refreshingTransactions ? (
+                    <ActivityIndicator size="small" color="#7C3AED" />
+                  ) : (
+                    <Ionicons name="refresh-outline" size={18} color="#7C3AED" />
+                  )}
+                  <Text style={{ color: "#7C3AED", fontWeight: "600", marginLeft: 4 }}>
+                    {refreshingTransactions ? "Syncing..." : "Refresh"}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push("/transactions")}>
+                <Text style={{ color: "#7C3AED", fontWeight: "600" }}>
+                  See All
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
           {transactions.slice(0, 4).map((tx, idx) => (
             <View
@@ -501,16 +576,30 @@ export default function HomePage() {
             </View>
           ))}
           {transactions.length === 0 && (
-            <Text
-              style={{
-                color: "#64748B",
-                fontSize: 15,
-                textAlign: "center",
-                marginTop: 10,
-              }}
-            >
-              No recent transactions.
-            </Text>
+            <View style={{ alignItems: "center", marginTop: 20 }}>
+              <Text
+                style={{
+                  color: "#64748B",
+                  fontSize: 15,
+                  textAlign: "center",
+                  marginBottom: 10,
+                }}
+              >
+                No recent transactions found.
+              </Text>
+              {accounts.length === 0 && (
+                <Text
+                  style={{
+                    color: "#6366F1",
+                    fontSize: 13,
+                    textAlign: "center",
+                    fontStyle: "italic",
+                  }}
+                >
+                  🔄 Connect a demo bank above to see sample transactions
+                </Text>
+              )}
+            </View>
           )}
         </Card>
 
@@ -578,9 +667,60 @@ export default function HomePage() {
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
             {accounts.length === 0 && (
-              <Text style={{ color: "#64748B", fontSize: 15 }}>
-                No connected banks.
-              </Text>
+              <View style={{ width: "100%", alignItems: "center", paddingVertical: 20 }}>
+                <Ionicons name="link-outline" size={48} color="#D1D5DB" />
+                <Text style={{ 
+                  color: "#64748B", 
+                  fontSize: 16, 
+                  textAlign: "center",
+                  marginTop: 12,
+                  marginBottom: 8
+                }}>
+                  No banks connected
+                </Text>
+                <Text style={{ 
+                  color: "#9CA3AF", 
+                  fontSize: 13, 
+                  textAlign: "center",
+                  marginBottom: 16
+                }}>
+                  Demo mode connections reset automatically
+                </Text>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: "#7C3AED",
+                    paddingHorizontal: 24,
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    flexDirection: "row",
+                    alignItems: "center"
+                  }}
+                  onPress={async () => {
+                    try {
+                      const response = await bankingAPI.connectBank();
+                      if (response.link) {
+                        await WebBrowser.openAuthSessionAsync(
+                          response.link,
+                          "exp://192.168.1.76:8081/--/banks/callback"
+                        );
+                      } else {
+                        alert("Failed to get bank authentication link");
+                      }
+                    } catch (error) {
+                      alert("Failed to start bank connection. Please try again.");
+                    }
+                  }}
+                >
+                  <Ionicons name="add-circle-outline" size={20} color="#fff" />
+                  <Text style={{ 
+                    color: "#fff", 
+                    fontWeight: "600",
+                    marginLeft: 8
+                  }}>
+                    Connect Demo Bank
+                  </Text>
+                </TouchableOpacity>
+              </View>
             )}
             {accounts.map((account) => (
               <View

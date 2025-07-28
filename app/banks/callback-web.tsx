@@ -16,7 +16,7 @@ export default function BankCallbackWeb() {
       requisition_id: requisition_id as string,
     };
 
-    const appUrl = `exp://192.168.0.93:8081/banks/callback?${new URLSearchParams(callbackData).toString()}`;
+    const appUrl = `exp://192.168.1.76:8081/banks/callback?${new URLSearchParams(callbackData).toString()}`;
 
     // Try to open the app
     Linking.openURL(appUrl).catch(() => {
@@ -32,7 +32,7 @@ export default function BankCallbackWeb() {
       requisition_id: requisition_id as string,
     };
 
-    const appUrl = `exp://192.168.0.93:8081/banks/callback?${new URLSearchParams(callbackData).toString()}`;
+    const appUrl = `exp://192.168.1.76:8081/banks/callback?${new URLSearchParams(callbackData).toString()}`;
     Linking.openURL(appUrl);
   };
 
