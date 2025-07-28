@@ -30,6 +30,11 @@ type Transaction = {
   date: string;
   category?: string;
   accountId?: string;
+  accountName?: string;
+  institution?: string | { name: string; logo?: string };
+  type?: 'debit' | 'credit';
+  balance?: number;
+  merchant?: string;
   [key: string]: any;
 };
 
@@ -90,75 +95,50 @@ export default function TransactionsPage() {
     try {
       setLoading(true);
       setError(null);
-      const accessToken = await AsyncStorage.getItem("accessToken");
-      if (!accessToken) throw new Error("No access token found");
 
       console.log("=== FETCHING TRANSACTIONS DATA ===");
 
-      console.log("User is logged in, attempting to fetch accounts");
+      // Fetch accounts for account names (optional)
+      try {
+        const accountsData = await bankingAPI.getAccounts();
+        console.log("Fetched accounts:", accountsData);
+        setAccounts(accountsData.accounts || []);
+      } catch (accountError) {
+        console.warn("Failed to fetch accounts:", accountError);
+        setAccounts([]);
+      }
 
-      // Fetch accounts
-      const accountsData = await bankingAPI.getAccounts(accessToken);
-      console.log("Fetched accounts:", accountsData);
-      setAccounts(accountsData.accounts || []);
+      // Fetch all transactions using the new getAllTransactions API
+      console.log("Fetching all transactions...");
+      const transactionsData = await bankingAPI.getAllTransactions();
+      console.log("Raw transactions data:", transactionsData);
 
-      // Fetch transactions for all accounts
       let allTransactions: Transaction[] = [];
-      console.log(
-        "Fetching transactions for accounts:",
-        accountsData.accounts?.length || 0
-      );
 
-      if (accountsData.accounts && accountsData.accounts.length > 0) {
-        for (const account of accountsData.accounts) {
-          try {
-            console.log(
-              `Fetching transactions for account: ${account.id} (${account.name})`
-            );
-            const transactionsData = await bankingAPI.getTransactions(
-              accessToken,
-              account.id
-            );
-            console.log(
-              `Raw transactions data for ${account.id}:`,
-              transactionsData
-            );
-
-            if (
-              transactionsData.transactions &&
-              Array.isArray(transactionsData.transactions) &&
-              transactionsData.transactions.length > 0
-            ) {
-              console.log(
-                `Found ${transactionsData.transactions.length} transactions for account ${account.id}`
-              );
-              const normalized = transactionsData.transactions.map(
-                (tx: any, idx: number) => ({
-                  id: tx.id || `${account.id}-${idx}`,
-                  amount: Number(tx.amount || 0),
-                  currency: tx.currency || "GBP",
-                  description: tx.description || "Transaction",
-                  date: tx.date || new Date().toISOString(),
-                  category: tx.category || "Other",
-                  accountId: account.id,
-                  accountName: account.name,
-                  institution: account.institution,
-                })
-              );
-              allTransactions = [...allTransactions, ...normalized];
-            } else {
-              console.log(`No transactions found for account ${account.id}`);
-            }
-          } catch (error) {
-            console.error(
-              `Failed to fetch transactions for account ${account.id}:`,
-              error
-            );
-            // Continue with other accounts even if one fails
-          }
-        }
+      if (
+        transactionsData.transactions &&
+        Array.isArray(transactionsData.transactions) &&
+        transactionsData.transactions.length > 0
+      ) {
+        console.log(`Found ${transactionsData.transactions.length} total transactions`);
+        
+        // Transform transactions to match our Transaction type
+        allTransactions = transactionsData.transactions.map((tx: any, idx: number) => ({
+          id: tx.transactionId || tx.id || `tx-${idx}`,
+          amount: tx.type === 'debit' ? -Math.abs(Number(tx.amount || 0)) : Math.abs(Number(tx.amount || 0)),
+          currency: tx.currency || "GBP",
+          description: tx.description || "Transaction",
+          date: tx.date || tx.createdAt || new Date().toISOString(),
+          category: tx.category || "Other",
+          accountId: tx.accountId,
+          accountName: tx.accountName || "Unknown Account",
+          institution: tx.institution || "Unknown Bank",
+          type: tx.type,
+          balance: tx.balance,
+          merchant: tx.merchant,
+        }));
       } else {
-        console.log("No accounts found, showing empty state");
+        console.log("No transactions found");
         allTransactions = [];
       }
 
@@ -166,6 +146,7 @@ export default function TransactionsPage() {
       allTransactions.sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       );
+      
       console.log(`Total transactions loaded: ${allTransactions.length}`);
       setTransactions(allTransactions);
 
