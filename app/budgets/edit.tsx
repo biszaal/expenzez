@@ -11,8 +11,10 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../contexts/ThemeContext";
-import { getSpendingCategories } from "../../services/dataSource";
+import { bankingAPI } from "../../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import dayjs from "dayjs";
 
 export default function EditBudgetPage() {
   const router = useRouter();
@@ -22,16 +24,93 @@ export default function EditBudgetPage() {
   const [mainBudget, setMainBudget] = useState<string>("2000");
   const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
-    getSpendingCategories().then((cats) => {
-      setCategories(cats);
-      setBudgets(
-        Object.fromEntries(
-          cats.map((c: any) => [c.id, String(c.defaultBudget || 0)])
-        )
-      );
-      setLoading(false);
+  // Generate categories dynamically from transaction data (same logic as spending tab)
+  const generateCategoriesFromTransactions = (transactions: any[]) => {
+    const categoryMap = new Map<string, { count: number; totalSpent: number }>();
+    
+    transactions.forEach(tx => {
+      if (tx.amount < 0) { // Only expenses
+        const category = tx.category || "Other";
+        const existing = categoryMap.get(category) || { count: 0, totalSpent: 0 };
+        categoryMap.set(category, {
+          count: existing.count + 1,
+          totalSpent: existing.totalSpent + Math.abs(tx.amount)
+        });
+      }
     });
+
+    const categories = Array.from(categoryMap.entries()).map(([name, data], index) => ({
+      id: name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase(),
+      name,
+      icon: getCategoryIcon(name),
+      color: getCategoryColor(name, index)
+    }));
+
+    return categories;
+  };
+
+  const getCategoryIcon = (categoryName: string) => {
+    const name = categoryName.toLowerCase();
+    if (name.includes('food') || name.includes('dining') || name.includes('restaurant')) return 'restaurant-outline';
+    if (name.includes('transport') || name.includes('travel') || name.includes('uber') || name.includes('taxi')) return 'car-outline';
+    if (name.includes('shop') || name.includes('retail') || name.includes('amazon')) return 'bag-outline';
+    if (name.includes('entertainment') || name.includes('game') || name.includes('movie')) return 'game-controller-outline';
+    if (name.includes('bill') || name.includes('utility') || name.includes('electric') || name.includes('gas')) return 'flash-outline';
+    if (name.includes('health') || name.includes('fitness') || name.includes('gym') || name.includes('medical')) return 'fitness-outline';
+    return 'pricetag-outline';
+  };
+
+  const getCategoryColor = (categoryName: string, index: number) => {
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3', '#95A5A6'];
+    return colors[index % colors.length];
+  };
+
+  React.useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load existing budgets from storage
+        const storedMainBudget = await AsyncStorage.getItem('mainBudget');
+        const storedCategoryBudgets = await AsyncStorage.getItem('categoryBudgets');
+        
+        if (storedMainBudget) {
+          setMainBudget(storedMainBudget);
+        }
+
+        // Fetch transactions to generate categories
+        const transactionsData = await bankingAPI.getAllTransactions();
+        let allTransactions: any[] = [];
+        
+        if (transactionsData.transactions && Array.isArray(transactionsData.transactions)) {
+          allTransactions = transactionsData.transactions.map((tx: any, idx: number) => ({
+            id: tx.transactionId || tx.id || `tx-${idx}`,
+            amount: tx.type === 'debit' ? -Math.abs(Number(tx.amount || 0)) : Math.abs(Number(tx.amount || 0)),
+            category: tx.category || "Other",
+            date: tx.date || tx.createdAt || new Date().toISOString(),
+          }));
+        }
+
+        const dynamicCategories = generateCategoriesFromTransactions(allTransactions);
+        setCategories(dynamicCategories);
+
+        // Set up budget state
+        const initialBudgets: Record<string, string> = {};
+        const parsedStoredBudgets = storedCategoryBudgets ? JSON.parse(storedCategoryBudgets) : {};
+        
+        dynamicCategories.forEach(cat => {
+          // Use stored budget if available, otherwise default to 0
+          initialBudgets[cat.id] = String(parsedStoredBudgets[cat.id] || 0);
+        });
+        
+        setBudgets(initialBudgets);
+      } catch (error) {
+        console.error("Error loading budget data:", error);
+        Alert.alert("Error", "Failed to load budget data. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   const handleBudgetChange = (id: string, value: string) => {
@@ -50,13 +129,31 @@ export default function EditBudgetPage() {
   const remaining = mainBudgetNum - totalAssigned;
   const overBudget = totalAssigned > mainBudgetNum;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (overBudget) {
       Alert.alert("Over Budget", "Assigned budgets exceed the main budget.");
       return;
     }
-    // TODO: Save budgets to backend or local state
-    router.back();
+    
+    try {
+      // Save main budget
+      await AsyncStorage.setItem('mainBudget', mainBudget);
+      
+      // Convert string budgets to numbers and save
+      const numericBudgets: Record<string, number> = {};
+      Object.entries(budgets).forEach(([id, value]) => {
+        numericBudgets[id] = parseFloat(value) || 0;
+      });
+      
+      await AsyncStorage.setItem('categoryBudgets', JSON.stringify(numericBudgets));
+      
+      Alert.alert("Success", "Budgets saved successfully!", [
+        { text: "OK", onPress: () => router.back() }
+      ]);
+    } catch (error) {
+      console.error("Error saving budgets:", error);
+      Alert.alert("Error", "Failed to save budgets. Please try again.");
+    }
   };
 
   if (loading)
