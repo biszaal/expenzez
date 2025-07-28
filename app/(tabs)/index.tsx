@@ -294,7 +294,7 @@ export default function HomePage() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <ActivityIndicator size="large" color={safeColors.primary[500]} />
           <Text style={styles.loadingText}>
             Loading your financial overview...
           </Text>
@@ -315,25 +315,14 @@ export default function HomePage() {
       : undefined;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#F8F9FB" }}>
+    <SafeAreaView style={styles.container}>
       {/* Demo Mode Banner */}
-      <View style={{
-        backgroundColor: "#F3F4F6",
-        padding: 12,
-        margin: 16,
-        borderRadius: 12,
-        borderLeftWidth: 4,
-        borderLeftColor: "#6366F1",
-        flexDirection: "row",
-        alignItems: "center"
-      }}>
-        <Ionicons name="flask-outline" size={20} color="#6366F1" />
-        <Text style={{
-          marginLeft: 8,
-          fontSize: 13,
-          color: "#4B5563",
-          flex: 1
-        }}>
+      <View style={[styles.demoBanner, {
+        backgroundColor: safeColors.background.tertiary,
+        borderLeftColor: safeColors.primary[500],
+      }]}>
+        <Ionicons name="flask-outline" size={20} color={safeColors.primary[500]} />
+        <Text style={[styles.demoBannerText, { color: safeColors.text.secondary }]}>
           <Text style={{ fontWeight: "600" }}>Demo Mode</Text> - Banking data resets periodically. Perfect for testing! 🚀
         </Text>
       </View>
@@ -1254,5 +1243,18 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: "white",
     fontWeight: "600",
     marginLeft: SPACING.xs,
+  },
+  demoBanner: {
+    padding: 12,
+    margin: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  demoBannerText: {
+    marginLeft: 8,
+    fontSize: 13,
+    flex: 1,
   },
 });
