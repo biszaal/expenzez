@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useNotifications } from "../../contexts/NotificationContext";
 import {
   spacing,
   borderRadius,
@@ -134,21 +135,19 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
   const { colors, isDark } = useTheme();
-  const [notificationSettings, setNotificationSettings] = useState<any[]>([]);
-  const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    clearNotifications,
+    preferences,
+    updatePreferences,
+    loading,
+    error,
+  } = useNotifications();
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      setLoading(true);
-      const settings = await getNotificationSettings();
-      const recents = await getRecentNotifications();
-      setNotificationSettings(settings);
-      setRecentNotifications(recents);
-      setLoading(false);
-    };
-    fetchNotifications();
-  }, []);
+  // Remove the old fetch logic as we now use the notification context
 
   // Request permissions for push notifications
   React.useEffect(() => {
@@ -159,23 +158,48 @@ export default function NotificationsScreen() {
 
   const sendTestNotification = async () => {
     try {
-      // This would typically call a real notification API
-      // For now, we'll just show a success message
-      Alert.alert("Success", "Notification sent successfully!");
-    } catch (error) {
-      Alert.alert("Error", "Failed to send notification");
+      console.log("🔔 [Notification] Starting test notification...");
+      
+      // Use the notification API to send a test notification
+      const { notificationAPI } = await import("../../services/api");
+      
+      console.log("🔔 [Notification] Calling API...");
+      const response = await notificationAPI.sendNotification({
+        type: 'account',
+        title: 'Test Notification',
+        message: 'This is a test notification from your app!',
+        priority: 'normal',
+      });
+      
+      console.log("🔔 [Notification] Success response:", response);
+      Alert.alert("Success", "Test notification sent!");
+    } catch (error: any) {
+      console.error("🔔 [Notification] Test notification failed:", {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+        },
+        code: error.code,
+        stack: error.stack,
+      });
+      
+      Alert.alert(
+        "Error", 
+        `Failed to send test notification\n\nStatus: ${error.response?.status || 'Unknown'}\nMessage: ${error.message}`
+      );
     }
   };
 
-  const markAsRead = (id: string) => {
-    setRecentNotifications((prev) =>
-      prev.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+  const handleMarkAsRead = (id: string) => {
+    markAsRead(id);
   };
 
-  const clearAllNotifications = () => {
+  const handleClearAllNotifications = () => {
     Alert.alert(
       "Clear All Notifications",
       "Are you sure you want to clear all notifications?",
@@ -184,7 +208,7 @@ export default function NotificationsScreen() {
         {
           text: "Clear All",
           style: "destructive",
-          onPress: () => setRecentNotifications([]),
+          onPress: () => clearNotifications(),
         },
       ]
     );
@@ -235,6 +259,7 @@ export default function NotificationsScreen() {
           </View>
         </View>
 
+
         {/* Test Notification Button */}
         <TouchableOpacity
           style={[styles.testButton, { backgroundColor: colors.primary[500] }]}
@@ -259,15 +284,15 @@ export default function NotificationsScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
               Recent Notifications
             </Text>
-            {recentNotifications.length > 0 && (
-              <TouchableOpacity onPress={clearAllNotifications}>
+            {notifications.length > 0 && (
+              <TouchableOpacity onPress={handleClearAllNotifications}>
                 <Text style={{ color: colors.error[600], fontWeight: "600" }}>
                   Clear All
                 </Text>
               </TouchableOpacity>
             )}
           </View>
-          {recentNotifications.length === 0 ? (
+          {notifications.length === 0 ? (
             <View style={{ alignItems: "center", marginVertical: 32 }}>
               <MaterialCommunityIcons
                 name="bell-off-outline"
@@ -295,7 +320,7 @@ export default function NotificationsScreen() {
               </Text>
             </View>
           ) : (
-            recentNotifications.map((notification) => (
+            notifications.map((notification) => (
               <TouchableOpacity
                 key={notification.id}
                 style={{
@@ -318,7 +343,7 @@ export default function NotificationsScreen() {
                   position: "relative",
                 }}
                 activeOpacity={0.85}
-                onPress={() => markAsRead(notification.id)}
+                onPress={() => handleMarkAsRead(notification.id)}
               >
                 <View
                   style={{
@@ -328,41 +353,47 @@ export default function NotificationsScreen() {
                     alignItems: "center",
                     justifyContent: "center",
                     backgroundColor:
-                      notification.type === "success"
-                        ? colors.success[100]
-                        : notification.type === "warning"
+                      notification.type === "transaction"
+                        ? colors.primary[100]
+                        : notification.type === "budget"
                           ? colors.warning[100]
-                          : notification.type === "info"
-                            ? colors.primary[100]
-                            : notification.type === "error"
+                          : notification.type === "account"
+                            ? colors.success[100]
+                            : notification.type === "security"
                               ? colors.error[100]
-                              : colors.primary[50],
+                              : notification.type === "insight"
+                                ? colors.primary[100]
+                                : colors.primary[50],
                     marginRight: 16,
                   }}
                 >
                   <MaterialCommunityIcons
                     name={
-                      notification.type === "success"
-                        ? "check-circle-outline"
-                        : notification.type === "warning"
-                          ? "alert-circle-outline"
-                          : notification.type === "info"
-                            ? "information-outline"
-                            : notification.type === "error"
-                              ? "close-circle-outline"
-                              : "bell-outline"
+                      notification.type === "transaction"
+                        ? "swap-horizontal-outline"
+                        : notification.type === "budget"
+                          ? "chart-line"
+                          : notification.type === "account"
+                            ? "bank-outline"
+                            : notification.type === "security"
+                              ? "shield-check-outline"
+                              : notification.type === "insight"
+                                ? "lightbulb-outline"
+                                : "bell-outline"
                     }
                     size={28}
                     color={
-                      notification.type === "success"
-                        ? colors.success[500]
-                        : notification.type === "warning"
+                      notification.type === "transaction"
+                        ? colors.primary[500]
+                        : notification.type === "budget"
                           ? colors.warning[500]
-                          : notification.type === "info"
-                            ? colors.primary[500]
-                            : notification.type === "error"
+                          : notification.type === "account"
+                            ? colors.success[500]
+                            : notification.type === "security"
                               ? colors.error[500]
-                              : colors.primary[500]
+                              : notification.type === "insight"
+                                ? colors.primary[500]
+                                : colors.primary[500]
                     }
                   />
                 </View>
