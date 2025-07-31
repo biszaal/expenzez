@@ -22,6 +22,7 @@ interface Message {
   content: string;
 }
 
+
 export default function AIAssistantScreen() {
   const { colors } = useTheme();
   const router = useRouter();

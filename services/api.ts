@@ -12,6 +12,9 @@ console.log("🔧 API Configuration:", {
   environment: CURRENT_API_CONFIG,
 });
 
+console.log("🔧 Full API_BASE_URL:", API_BASE_URL);
+console.log("🔧 CURRENT_API_CONFIG:", CURRENT_API_CONFIG);
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -141,6 +144,30 @@ export const authAPI = {
   },
 };
 
+// Simple in-memory cache for API responses
+const apiCache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+
+const getCachedData = (key: string): any | null => {
+  const cached = apiCache.get(key);
+  if (!cached) return null;
+  
+  const now = Date.now();
+  if (now - cached.timestamp > cached.ttl) {
+    apiCache.delete(key);
+    return null;
+  }
+  
+  return cached.data;
+};
+
+const setCachedData = (key: string, data: any, ttlMinutes: number = 5): void => {
+  apiCache.set(key, {
+    data,
+    timestamp: Date.now(),
+    ttl: ttlMinutes * 60 * 1000, // Convert minutes to milliseconds
+  });
+};
+
 // Banking API functions
 export const bankingAPI = {
   // Connect a bank account using TrueLayer
@@ -159,22 +186,42 @@ export const bankingAPI = {
     return response.data;
   },
 
-  // Get connected accounts (legacy)
+  // Get connected accounts (legacy) with caching
   getAccounts: async () => {
+    const cacheKey = 'user_accounts';
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+      console.log("[API] 🚀 Using cached accounts data");
+      return cached;
+    }
+
     const token = await AsyncStorage.getItem("accessToken");
     console.log("[API] getAccounts", { token });
     const response = await api.post("/banking/accounts", {});
+    
+    // Cache for 2 minutes since account data changes frequently
+    setCachedData(cacheKey, response.data, 2);
     return response.data;
   },
 
-  // Get all user transactions
+  // Get all user transactions with caching
   getAllTransactions: async (limit?: number, startKey?: any) => {
+    const cacheKey = `all_transactions_${limit || 'all'}_${JSON.stringify(startKey || {})}`;
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+      console.log("[API] 🚀 Using cached transactions data");
+      return cached;
+    }
+
     const token = await AsyncStorage.getItem("accessToken");
     console.log("[API] getAllTransactions", { token, limit, startKey });
     const params = new URLSearchParams();
     if (limit) params.append('limit', limit.toString());
     if (startKey) params.append('startKey', JSON.stringify(startKey));
     const response = await api.get(`/banking/transactions?${params.toString()}`);
+    
+    // Cache for 3 minutes since transaction data changes less frequently
+    setCachedData(cacheKey, response.data, 3);
     return response.data;
   },
 
@@ -261,13 +308,72 @@ export const bankingAPI = {
       throw error;
     }
   },
+
+  // AI Assistant functionality
+  getAIInsight: async (message: string) => {
+    try {
+      const token = await AsyncStorage.getItem("accessToken");
+      console.log("[API] getAIInsight", { token, message });
+      const response = await api.post("/ai/insight", { message });
+      return response.data;
+    } catch (error: any) {
+      console.error("[API] Failed to get AI insight:", error);
+      throw error;
+    }
+  },
+
+  getAIChatHistory: async () => {
+    try {
+      const token = await AsyncStorage.getItem("accessToken");
+      console.log("[API] getAIChatHistory", { token });
+      const response = await api.get("/ai/chat-history");
+      return response.data;
+    } catch (error: any) {
+      console.error("[API] Failed to get AI chat history:", error);
+      throw error;
+    }
+  },
+
+  saveAIChatMessage: async (role: "user" | "assistant", content: string) => {
+    try {
+      const token = await AsyncStorage.getItem("accessToken");
+      console.log("[API] saveAIChatMessage", { token, role, content });
+      const response = await api.post("/ai/chat-message", { role, content });
+      return response.data;
+    } catch (error: any) {
+      console.error("[API] Failed to save AI chat message:", error);
+      throw error;
+    }
+  },
+
+  clearAIChatHistory: async () => {
+    try {
+      const token = await AsyncStorage.getItem("accessToken");
+      console.log("[API] clearAIChatHistory", { token });
+      const response = await api.delete("/ai/chat-history");
+      return response.data;
+    } catch (error: any) {
+      console.error("[API] Failed to clear AI chat history:", error);
+      throw error;
+    }
+  },
 };
 
 // Profile API functions
 export const profileAPI = {
-  // Get user profile
+  // Get user profile with caching
   getProfile: async () => {
+    const cacheKey = 'user_profile';
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+      console.log("[API] 🚀 Using cached profile data");
+      return cached;
+    }
+
     const response = await api.get("/profile");
+    
+    // Cache for 5 minutes since profile data changes infrequently
+    setCachedData(cacheKey, response.data, 5);
     return response.data;
   },
 
@@ -284,16 +390,130 @@ export const profileAPI = {
     return response.data;
   },
 
-  // Get credit score
+  // Get credit score with caching
   getCreditScore: async () => {
+    const cacheKey = 'user_credit_score';
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+      console.log("[API] 🚀 Using cached credit score data");
+      return cached;
+    }
+
     const response = await api.get("/credit-score");
+    
+    // Cache for 10 minutes since credit score changes rarely
+    setCachedData(cacheKey, response.data, 10);
     return response.data;
   },
 
-  // Get goals
+  // Get goals with caching
   getGoals: async () => {
+    const cacheKey = 'user_goals';
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+      console.log("[API] 🚀 Using cached goals data");
+      return cached;
+    }
+
     const response = await api.get("/goals");
+    
+    // Cache for 5 minutes since goals might be updated moderately
+    setCachedData(cacheKey, response.data, 5);
     return response.data;
+  },
+};
+
+// Notification API
+export const notificationAPI = {
+  // Device token management
+  registerToken: async (tokenData: {
+    token: string;
+    platform: 'ios' | 'android' | 'web';
+    deviceInfo?: {
+      deviceName?: string;
+      osVersion?: string;
+      appVersion?: string;
+    };
+  }) => {
+    try {
+      const response = await api.post('/notifications/tokens', tokenData);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error registering notification token:', error);
+      throw error;
+    }
+  },
+
+  deactivateToken: async (tokenId?: string, token?: string) => {
+    try {
+      const response = await api.delete('/notifications/tokens', {
+        data: { tokenId, token },
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('Error deactivating notification token:', error);
+      throw error;
+    }
+  },
+
+  getTokens: async () => {
+    try {
+      const response = await api.get('/notifications/tokens');
+      return response.data;
+    } catch (error: any) {
+      console.error('Error getting notification tokens:', error);
+      throw error;
+    }
+  },
+
+  // Preferences management
+  getPreferences: async () => {
+    try {
+      const response = await api.get('/notifications/preferences');
+      return response.data;
+    } catch (error: any) {
+      console.error('Error getting notification preferences:', error);
+      throw error;
+    }
+  },
+
+  updatePreferences: async (preferences: any) => {
+    try {
+      const response = await api.put('/notifications/preferences', preferences);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error updating notification preferences:', error);
+      throw error;
+    }
+  },
+
+  // Send notification (for testing)
+  sendNotification: async (notificationData: {
+    type: 'transaction' | 'budget' | 'account' | 'security' | 'insight';
+    title: string;
+    message: string;
+    data?: Record<string, any>;
+    priority?: 'low' | 'normal' | 'high';
+  }) => {
+    try {
+      console.log('🔔 [API] Sending notification with config:', {
+        baseURL: API_BASE_URL,
+        fullURL: `${API_BASE_URL}/notifications/send`,
+        data: notificationData,
+      });
+      
+      const response = await api.post('/notifications/send', notificationData);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error sending notification:', error);
+      console.error('🔔 [API] Request details:', {
+        baseURL: API_BASE_URL,
+        url: error.config?.url,
+        method: error.config?.method,
+        fullRequestURL: error.config?.baseURL + error.config?.url,
+      });
+      throw error;
+    }
   },
 };
 
