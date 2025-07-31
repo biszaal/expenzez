@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from "react-native";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
 import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
+import { NotificationProvider } from "../contexts/NotificationContext";
 import SecurityLock from "../components/SecurityLock";
 
 function RootLayoutNav() {
@@ -72,7 +73,9 @@ export default function RootLayout() {
     <ThemeProvider>
       <AuthProvider>
         <SecurityProvider>
-          <RootLayoutNav />
+          <NotificationProvider>
+            <RootLayoutNav />
+          </NotificationProvider>
         </SecurityProvider>
       </AuthProvider>
     </ThemeProvider>

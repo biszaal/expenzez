@@ -45,20 +45,36 @@ export default function AccountScreen() {
       try {
         setLoading(true);
 
-        // Fetch user profile
-        const profileData = await getProfile();
-        setProfile(profileData);
+        // 🚀 PERFORMANCE: Fetch all user data in parallel
+        const [profileData, creditScoreData, goalsData] = await Promise.all([
+          getProfile().catch(err => {
+            console.error("❌ Error fetching profile:", err);
+            return null;
+          }),
+          getCreditScore().catch(err => {
+            console.error("❌ Error fetching credit score:", err);
+            return { score: null };
+          }),
+          getGoals().catch(err => {
+            console.error("❌ Error fetching goals:", err);
+            return { completed: 0, total: 0 };
+          })
+        ]);
 
-        // Fetch real credit score
-        const creditScoreData = await getCreditScore();
+        // Set profile data
+        if (profileData) {
+          setProfile(profileData);
+        }
+
+        // Set credit score
         setCreditScore(creditScoreData.score);
 
-        // Fetch real goals data
-        const goalsData = await getGoals();
+        // Set goals data
         setGoalsMet({
           completed: goalsData.completed,
           total: goalsData.total,
         });
+
       } catch (error) {
         console.error("Error fetching user data:", error);
         showError("Failed to load user data");
@@ -133,8 +149,23 @@ export default function AccountScreen() {
 
   // Get member since date
   const getMemberSince = () => {
-    // TODO: Get from user profile or auth context
-    return "2024";
+    if (profile?.createdAt) {
+      return new Date(profile.createdAt).getFullYear().toString();
+    }
+    if (user?.createdAt) {
+      return new Date(user.createdAt).getFullYear().toString();
+    }
+    // If no creation date available, show current year as fallback
+    return new Date().getFullYear().toString();
+  };
+
+  // Handle coming soon features
+  const showComingSoon = (featureName: string) => {
+    Alert.alert(
+      "Coming Soon",
+      `${featureName} feature is currently under development and will be available in a future update.`,
+      [{ text: "OK", style: "default" }]
+    );
   };
 
   const getStatColors = () => {
@@ -157,7 +188,7 @@ export default function AccountScreen() {
       title: "Personal Information",
       subtitle: "Update your details",
       icon: (
-        <Ionicons name="person-outline" size={24} color={colors.primary[500]} />
+        <Ionicons name="person-outline" size={24} color={colors?.primary?.[500] || "#3B82F6"} />
       ),
       route: "/profile/personal",
     },
@@ -165,7 +196,7 @@ export default function AccountScreen() {
       title: "Security",
       subtitle: "Password, 2FA, and more",
       icon: (
-        <Ionicons name="shield-outline" size={24} color={colors.primary[500]} />
+        <Ionicons name="shield-outline" size={24} color={colors?.primary?.[500] || "#3B82F6"} />
       ),
       route: "/security",
     },
@@ -176,7 +207,7 @@ export default function AccountScreen() {
         <Ionicons
           name="notifications-outline"
           size={24}
-          color={colors.primary[500]}
+          color={colors?.primary?.[500] || "#3B82F6"}
         />
       ),
       route: "/notifications",
@@ -279,7 +310,7 @@ export default function AccountScreen() {
             </View>
             <TouchableOpacity
               style={styles.editButton}
-              onPress={() => router.push("/profile/personal")}
+              onPress={() => showComingSoon("Edit Profile")}
             >
               <Text style={styles.editButtonText}>Edit Profile</Text>
               <Ionicons
@@ -294,7 +325,11 @@ export default function AccountScreen() {
 
         {/* Quick Stats */}
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
+          <TouchableOpacity 
+          style={styles.statCard}
+          onPress={() => showComingSoon("Credit Score")}
+          activeOpacity={0.7}
+        >
             <LinearGradient
               colors={statColors.creditScore.gradient as [string, string]}
               style={[styles.statGradient, shadows.md]}
@@ -320,12 +355,16 @@ export default function AccountScreen() {
                   { color: statColors.creditScore.text },
                 ]}
               >
-                {creditScore !== null ? creditScore : "N/A"}
+                Coming Soon
               </Text>
             </LinearGradient>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.statCard}>
+          <TouchableOpacity 
+            style={styles.statCard}
+            onPress={() => showComingSoon("Goals Tracking")}
+            activeOpacity={0.7}
+          >
             <LinearGradient
               colors={statColors.goals.gradient as [string, string]}
               style={[styles.statGradient, shadows.md]}
@@ -345,12 +384,10 @@ export default function AccountScreen() {
               <Text
                 style={[styles.statValue, { color: statColors.goals.text }]}
               >
-                {goalsMet.total > 0
-                  ? `${goalsMet.completed}/${goalsMet.total}`
-                  : "N/A"}
+                Coming Soon
               </Text>
             </LinearGradient>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Menu Options */}
@@ -368,7 +405,7 @@ export default function AccountScreen() {
               shadows.lg,
             ]}
           >
-            {profileOptions.map((option, index) => (
+            {profileOptions?.map((option, index) => (
               <TouchableOpacity
                 key={option.title}
                 style={[
@@ -378,7 +415,15 @@ export default function AccountScreen() {
                     borderBottomWidth: 1,
                   },
                 ]}
-                onPress={() => router.push(option.route as any)}
+                onPress={() => {
+                  // Check if route is implemented
+                  const implementedRoutes = ["/settings"];
+                  if (implementedRoutes.includes(option.route)) {
+                    router.push(option.route as any);
+                  } else {
+                    showComingSoon(option.title);
+                  }
+                }}
               >
                 <View
                   style={[
@@ -453,7 +498,7 @@ export default function AccountScreen() {
             Version 1.0.0
           </Text>
           <Text style={[styles.appCopyright, { color: colors.text.tertiary }]}>
-            © 2024 expenzez. All rights reserved.
+            © {new Date().getFullYear()} expenzez. All rights reserved.
           </Text>
         </View>
       </ScrollView>

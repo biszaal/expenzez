@@ -17,7 +17,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useNotifications } from "../../contexts/NotificationContext";
 import { bankingAPI } from "../../services/api";
+import { useDataFetcher, useBatchDataFetcher } from "../../hooks/useDataFetcher";
+import { DataTransformers } from "../../utils/dataTransformers";
 import { SPACING, SHADOWS } from "../../constants/Colors";
 import BankLogo from "../../components/ui/BankLogo";
 import { Card } from "../../components/ui";
@@ -44,6 +47,7 @@ export default function HomePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { unreadCount } = useNotifications();
   
   // Fallback colors if theme isn't loaded yet
   const safeColors = colors || {
@@ -51,7 +55,7 @@ export default function HomePage() {
     text: { primary: "#111827", secondary: "#6b7280", tertiary: "#9ca3af" },
     primary: { 500: "#7c3aed" },
     success: { 100: "#dcfce7", 500: "#10b981" },
-    error: { 500: "#ef4444" }
+    error: { 100: "#fee2e2", 500: "#ef4444" }
   };
   
   const styles = createStyles(safeColors);
@@ -85,107 +89,62 @@ export default function HomePage() {
       // Test if there are any transactions in the database
       // Removed testTransactions call as it does not exist
 
-      // Fetch accounts
-      const accountsData = await bankingAPI.getAccounts();
-      console.log("Fetched accounts:", accountsData);
+      // 🚀 PERFORMANCE: Fetch accounts and transactions in parallel
+      console.log("🚀 PERFORMANCE: Fetching accounts and transactions in parallel...");
+      
+      const [accountsData, transactionsData] = await Promise.all([
+        bankingAPI.getAccounts().catch(err => {
+          console.error("❌ Error fetching accounts:", err);
+          return { accounts: [] };
+        }),
+        bankingAPI.getAllTransactions(100).catch(err => {
+          console.error("❌ Error fetching transactions:", err);
+          return { transactions: [] };
+        })
+      ]);
+      
+      console.log("✅ Parallel fetch completed:", { accountsData, transactionsData });
 
-      // Handle the new account structure
+      // Handle accounts
       const accounts = accountsData.accounts || [];
-      
-      // Check if accounts are empty due to expired TrueLayer test connections
-      if (accounts.length === 0) {
-        console.log("No accounts found - may need to reconnect banks in test mode");
-        setWarning("🧪 Demo Mode: Bank connections reset periodically. This is normal in test mode - just reconnect to see your data again!");
-      }
-      
       setAccounts(accounts);
-
-      // Calculate total balance
+      
+      // Calculate total balance efficiently
       const total = accounts.reduce((sum: number, account: Account) => {
         return sum + (account.balance || 0);
       }, 0);
       setTotalBalance(total);
-      console.log("Total balance calculated:", total);
+      console.log(`✅ Total balance: ${total}`);
 
-      // Fetch transactions for all accounts
+      // Handle transactions
       let allTransactions: Transaction[] = [];
-      console.log("Fetching transactions for accounts:", accounts.length);
-
-      if (accounts.length > 0) {
-        for (const account of accounts) {
-          try {
-            console.log(
-              `Fetching transactions for account: ${account.id} (${account.name})`
-            );
-            const transactionsData = await bankingAPI.getTransactions(
-              account.id
-            );
-            console.log(
-              `Raw transactions data for ${account.id}:`,
-              transactionsData
-            );
-
-            if (
-              transactionsData.results?.booked &&
-              transactionsData.results.booked.length > 0
-            ) {
-              console.log(
-                `Found ${transactionsData.results.booked.length} transactions for account ${account.id}`
-              );
-              const normalized = transactionsData.results.booked.map(
-                (tx: any, idx: number) => {
-                  const normalizedTx = {
-                    id: tx.transaction_id || tx.id || `${account.id}-${idx}`,
-                    amount: Number(
-                      tx.amount || tx.transactionAmount?.amount || 0
-                    ),
-                    currency:
-                      tx.currency || tx.transactionAmount?.currency || "GBP",
-                    description:
-                      tx.description ||
-                      tx.remittanceInformationUnstructured ||
-                      "Transaction",
-                    date:
-                      tx.timestamp ||
-                      tx.date ||
-                      tx.bookingDate ||
-                      new Date().toISOString(),
-                    category: tx.proprietaryBankTransactionCode || "Other",
-                  };
-                  console.log(`Normalized transaction ${idx}:`, normalizedTx);
-                  return normalizedTx;
-                }
-              );
-              allTransactions = [...allTransactions, ...normalized];
-            } else {
-              console.log(`No transactions found for account ${account.id}`);
-              console.log(
-                `Transactions data structure:`,
-                transactionsData.results
-              );
-            }
-          } catch (error) {
-            console.error(
-              `Failed to fetch transactions for account ${account.id}:`,
-              error
-            );
-            // Continue with other accounts even if one fails
-          }
-        }
+      if (transactionsData.transactions && transactionsData.transactions.length > 0) {
+        allTransactions = transactionsData.transactions.map((tx: any) => ({
+          id: tx.id || tx.transactionId,
+          amount: parseFloat(tx.amount) || 0,
+          currency: tx.currency || 'GBP',
+          description: tx.description || 'Transaction',
+          date: tx.date || new Date().toISOString(),
+          category: tx.category || 'Other',
+        }));
+        
+        // Sort by date (most recent first)
+        allTransactions.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        
+        console.log(`✅ PERFORMANCE: Loaded ${allTransactions.length} transactions efficiently`);
       } else {
-        console.log("No accounts found, skipping transaction fetch");
+        console.log("📭 No transactions found in database");
       }
-
-      // Sort transactions by date (most recent first)
-      allTransactions.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-      console.log(`Total transactions loaded: ${allTransactions.length}`);
-      console.log("All transactions:", allTransactions);
-
-      // If no transactions found, do not add any sample data
-      // allTransactions remains empty
+      
       setTransactions(allTransactions);
+      
+      // Check if user needs to connect banks
+      if (accounts.length === 0) {
+        console.log("⚠️ No accounts found - user may need to connect banks");
+        setWarning("No bank accounts connected. Please connect your bank account to see your financial data.");
+      }
 
       // Calculate this month's spending
       const now = new Date();
@@ -316,15 +275,26 @@ export default function HomePage() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Demo Mode Banner */}
-      <View style={[styles.demoBanner, {
-        backgroundColor: safeColors.background.tertiary,
-        borderLeftColor: safeColors.primary[500],
-      }]}>
-        <Ionicons name="flask-outline" size={20} color={safeColors.primary[500]} />
-        <Text style={[styles.demoBannerText, { color: safeColors.text.secondary }]}>
-          <Text style={{ fontWeight: "600" }}>Demo Mode</Text> - Banking data resets periodically. Perfect for testing! 🚀
-        </Text>
+      {/* Header with notification icon */}
+      <View style={[styles.header, { backgroundColor: safeColors.background.primary }]}>
+        <View style={styles.headerContent}>
+          <Text style={[styles.headerTitle, { color: safeColors.text.primary }]}>
+            Expenzez
+          </Text>
+          <TouchableOpacity
+            style={[styles.notificationButton, { backgroundColor: safeColors.background.secondary }]}
+            onPress={() => router.push("/notifications")}
+          >
+            <Ionicons name="notifications-outline" size={24} color={safeColors.primary[500]} />
+            {unreadCount > 0 && (
+              <View style={[styles.notificationBadge, { backgroundColor: safeColors.primary[500] }]}>
+                <Text style={styles.notificationBadgeText}>
+                  {unreadCount > 99 ? '99+' : unreadCount.toString()}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -340,7 +310,7 @@ export default function HomePage() {
             marginBottom: 20,
             borderRadius: 20,
             padding: 24,
-            backgroundColor: "#7C3AED",
+            backgroundColor: safeColors.primary[500],
           }}
         >
           <Text
@@ -353,7 +323,7 @@ export default function HomePage() {
           >
             Good morning{user?.name ? `, ${user.name.split(" ")[0]}` : ""}
           </Text>
-          <Text style={{ color: "#E0E7FF", fontSize: 15, marginBottom: 18 }}>
+          <Text style={{ color: "rgba(255, 255, 255, 0.8)", fontSize: 15, marginBottom: 18 }}>
             Let&apos;s check your finances
           </Text>
           <View
@@ -375,7 +345,7 @@ export default function HomePage() {
             </Text>
             <Ionicons name="eye-outline" size={22} color="#fff" />
           </View>
-          <Text style={{ color: "#C7D2FE", fontSize: 14 }}>Total Balance</Text>
+          <Text style={{ color: "rgba(255, 255, 255, 0.7)", fontSize: 14 }}>Total Balance</Text>
         </Card>
 
         {/* Quick Actions */}
@@ -390,7 +360,7 @@ export default function HomePage() {
             style={{
               flex: 1,
               marginRight: 8,
-              backgroundColor: "#fff",
+              backgroundColor: safeColors.background.primary,
               borderRadius: 16,
               padding: 18,
               alignItems: "center",
@@ -398,8 +368,8 @@ export default function HomePage() {
             }}
             onPress={() => router.push("/expenses/add")}
           >
-            <Ionicons name="add-circle-outline" size={28} color="#7C3AED" />
-            <Text style={{ fontWeight: "600", color: "#222", marginTop: 6 }}>
+            <Ionicons name="add-circle-outline" size={28} color={safeColors.primary[500]} />
+            <Text style={{ fontWeight: "600", color: safeColors.text.primary, marginTop: 6 }}>
               Add Expense
             </Text>
           </TouchableOpacity>
@@ -407,7 +377,7 @@ export default function HomePage() {
             style={{
               flex: 1,
               marginLeft: 8,
-              backgroundColor: "#fff",
+              backgroundColor: safeColors.background.primary,
               borderRadius: 16,
               padding: 18,
               alignItems: "center",
@@ -429,8 +399,8 @@ export default function HomePage() {
               }
             }}
           >
-            <Ionicons name="link-outline" size={28} color="#7C3AED" />
-            <Text style={{ fontWeight: "600", color: "#222", marginTop: 6 }}>
+            <Ionicons name="link-outline" size={28} color={safeColors.primary[500]} />
+            <Text style={{ fontWeight: "600", color: safeColors.text.primary, marginTop: 6 }}>
               Connect Bank
             </Text>
           </TouchableOpacity>
@@ -442,7 +412,7 @@ export default function HomePage() {
             marginBottom: 20,
             borderRadius: 20,
             padding: 20,
-            backgroundColor: "#fff",
+            backgroundColor: safeColors.background.primary,
             ...SHADOWS.sm,
           }}
         >
@@ -454,11 +424,11 @@ export default function HomePage() {
               marginBottom: 10,
             }}
           >
-            <Text style={{ fontSize: 18, fontWeight: "700", color: "#222" }}>
+            <Text style={{ fontSize: 18, fontWeight: "700", color: safeColors.text.primary }}>
               This Month
             </Text>
             <TouchableOpacity onPress={() => router.push("/spending")}>
-              <Text style={{ color: "#7C3AED", fontWeight: "600" }}>
+              <Text style={{ color: safeColors.primary[500], fontWeight: "600" }}>
                 View All
               </Text>
             </TouchableOpacity>
@@ -467,14 +437,14 @@ export default function HomePage() {
             style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
             <View>
-              <Text style={{ color: "#64748B", fontSize: 14 }}>Spent</Text>
-              <Text style={{ fontSize: 20, fontWeight: "bold", color: "#222" }}>
+              <Text style={{ color: safeColors.text.secondary, fontSize: 14 }}>Spent</Text>
+              <Text style={{ fontSize: 20, fontWeight: "bold", color: safeColors.text.primary }}>
                 £{thisMonthSpent.toFixed(2)}
               </Text>
             </View>
             <View>
-              <Text style={{ color: "#64748B", fontSize: 14 }}>Budget</Text>
-              <Text style={{ fontSize: 20, fontWeight: "bold", color: "#222" }}>
+              <Text style={{ color: safeColors.text.secondary, fontSize: 14 }}>Budget</Text>
+              <Text style={{ fontSize: 20, fontWeight: "bold", color: safeColors.text.primary }}>
                 £{userBudget?.toFixed(2) || "0"}
               </Text>
             </View>
@@ -487,7 +457,7 @@ export default function HomePage() {
             marginBottom: 20,
             borderRadius: 20,
             padding: 20,
-            backgroundColor: "#fff",
+            backgroundColor: safeColors.background.primary,
             ...SHADOWS.sm,
           }}
         >
@@ -499,7 +469,7 @@ export default function HomePage() {
               marginBottom: 10,
             }}
           >
-            <Text style={{ fontSize: 18, fontWeight: "700", color: "#222" }}>
+            <Text style={{ fontSize: 18, fontWeight: "700", color: safeColors.text.primary }}>
               Recent Transactions
             </Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
@@ -510,17 +480,17 @@ export default function HomePage() {
               >
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   {refreshingTransactions ? (
-                    <ActivityIndicator size="small" color="#7C3AED" />
+                    <ActivityIndicator size="small" color={safeColors.primary[500]} />
                   ) : (
-                    <Ionicons name="refresh-outline" size={18} color="#7C3AED" />
+                    <Ionicons name="refresh-outline" size={18} color={safeColors.primary[500]} />
                   )}
-                  <Text style={{ color: "#7C3AED", fontWeight: "600", marginLeft: 4 }}>
+                  <Text style={{ color: safeColors.primary[500], fontWeight: "600", marginLeft: 4 }}>
                     {refreshingTransactions ? "Syncing..." : "Refresh"}
                   </Text>
                 </View>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => router.push("/transactions")}>
-                <Text style={{ color: "#7C3AED", fontWeight: "600" }}>
+                <Text style={{ color: safeColors.primary[500], fontWeight: "600" }}>
                   See All
                 </Text>
               </TouchableOpacity>
@@ -542,7 +512,7 @@ export default function HomePage() {
                   borderRadius: 18,
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: tx.amount >= 0 ? "#DCFCE7" : "#FEE2E2",
+                  backgroundColor: tx.amount >= 0 ? safeColors.success[100] : safeColors.error[100],
                   marginRight: 12,
                 }}
               >
@@ -551,17 +521,17 @@ export default function HomePage() {
                     tx.amount >= 0 ? "arrow-up-circle" : "arrow-down-circle"
                   }
                   size={22}
-                  color={tx.amount >= 0 ? "#22C55E" : "#EF4444"}
+                  color={tx.amount >= 0 ? safeColors.success[500] : safeColors.error[500]}
                 />
               </View>
               <View style={{ flex: 1 }}>
                 <Text
-                  style={{ fontWeight: "600", color: "#222", fontSize: 15 }}
+                  style={{ fontWeight: "600", color: safeColors.text.primary, fontSize: 15 }}
                   numberOfLines={1}
                 >
                   {tx.description}
                 </Text>
-                <Text style={{ color: "#64748B", fontSize: 13, marginTop: 2 }}>
+                <Text style={{ color: safeColors.text.secondary, fontSize: 13, marginTop: 2 }}>
                   {new Date(tx.date).toLocaleDateString()}
                 </Text>
               </View>
@@ -569,7 +539,7 @@ export default function HomePage() {
                 style={{
                   fontWeight: "700",
                   fontSize: 15,
-                  color: tx.amount >= 0 ? "#22C55E" : "#EF4444",
+                  color: tx.amount >= 0 ? safeColors.success[500] : safeColors.error[500],
                   marginLeft: 8,
                 }}
               >
@@ -581,7 +551,7 @@ export default function HomePage() {
             <View style={{ alignItems: "center", marginTop: 20 }}>
               <Text
                 style={{
-                  color: "#64748B",
+                  color: safeColors.text.secondary,
                   fontSize: 15,
                   textAlign: "center",
                   marginBottom: 10,
@@ -592,7 +562,7 @@ export default function HomePage() {
               {accounts.length === 0 && (
                 <Text
                   style={{
-                    color: "#6366F1",
+                    color: safeColors.primary[500],
                     fontSize: 13,
                     textAlign: "center",
                     fontStyle: "italic",
@@ -611,7 +581,7 @@ export default function HomePage() {
             marginBottom: 20,
             borderRadius: 20,
             padding: 20,
-            backgroundColor: "#F3F0FF",
+            backgroundColor: safeColors.background.primary,
             ...SHADOWS.sm,
           }}
         >
@@ -621,7 +591,7 @@ export default function HomePage() {
                 width: 44,
                 height: 44,
                 borderRadius: 22,
-                backgroundColor: "#7C3AED",
+                backgroundColor: safeColors.primary[500],
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 14,
@@ -631,11 +601,11 @@ export default function HomePage() {
             </View>
             <View style={{ flex: 1 }}>
               <Text
-                style={{ fontWeight: "700", fontSize: 16, color: "#7C3AED" }}
+                style={{ fontWeight: "700", fontSize: 16, color: safeColors.primary[500] }}
               >
                 Ask Your AI
               </Text>
-              <Text style={{ color: "#7C3AED", fontSize: 13, marginTop: 2 }}>
+              <Text style={{ color: safeColors.primary[500], fontSize: 13, marginTop: 2 }}>
                 Get insights about your spending
               </Text>
             </View>
@@ -643,7 +613,7 @@ export default function HomePage() {
               onPress={() => router.push("/ai-assistant")}
               style={{ marginLeft: 10 }}
             >
-              <Ionicons name="arrow-forward-circle" size={28} color="#7C3AED" />
+              <Ionicons name="arrow-forward-circle" size={28} color={safeColors.primary[500]} />
             </TouchableOpacity>
           </View>
         </Card>
@@ -653,7 +623,7 @@ export default function HomePage() {
           style={{
             borderRadius: 20,
             padding: 20,
-            backgroundColor: "#fff",
+            backgroundColor: safeColors.background.primary,
             ...SHADOWS.sm,
           }}
         >
@@ -661,7 +631,7 @@ export default function HomePage() {
             style={{
               fontSize: 18,
               fontWeight: "700",
-              color: "#222",
+              color: safeColors.text.primary,
               marginBottom: 12,
             }}
           >
@@ -670,9 +640,9 @@ export default function HomePage() {
           <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
             {accounts.length === 0 && (
               <View style={{ width: "100%", alignItems: "center", paddingVertical: 20 }}>
-                <Ionicons name="link-outline" size={48} color="#D1D5DB" />
+                <Ionicons name="link-outline" size={48} color={safeColors.text.tertiary} />
                 <Text style={{ 
-                  color: "#64748B", 
+                  color: safeColors.text.secondary, 
                   fontSize: 16, 
                   textAlign: "center",
                   marginTop: 12,
@@ -681,7 +651,7 @@ export default function HomePage() {
                   No banks connected
                 </Text>
                 <Text style={{ 
-                  color: "#9CA3AF", 
+                  color: safeColors.text.tertiary, 
                   fontSize: 13, 
                   textAlign: "center",
                   marginBottom: 16
@@ -690,7 +660,7 @@ export default function HomePage() {
                 </Text>
                 <TouchableOpacity
                   style={{
-                    backgroundColor: "#7C3AED",
+                    backgroundColor: safeColors.primary[500],
                     paddingHorizontal: 24,
                     paddingVertical: 12,
                     borderRadius: 12,
@@ -731,7 +701,7 @@ export default function HomePage() {
                   width: 140,
                   marginRight: 16,
                   marginBottom: 16,
-                  backgroundColor: "#F3F4F6",
+                  backgroundColor: safeColors.background.tertiary,
                   borderRadius: 16,
                   padding: 14,
                   alignItems: "center",
@@ -746,7 +716,7 @@ export default function HomePage() {
                 <Text
                   style={{
                     fontWeight: "600",
-                    color: "#222",
+                    color: safeColors.text.primary,
                     fontSize: 15,
                     marginTop: 6,
                   }}
@@ -754,14 +724,14 @@ export default function HomePage() {
                 >
                   {getBankName(account.institution)}
                 </Text>
-                <Text style={{ color: "#64748B", fontSize: 13, marginTop: 2 }}>
+                <Text style={{ color: safeColors.text.secondary, fontSize: 13, marginTop: 2 }}>
                   {account.type}
                 </Text>
                 <Text
                   style={{
                     fontWeight: "700",
                     fontSize: 15,
-                    color: "#7C3AED",
+                    color: safeColors.primary[500],
                     marginTop: 4,
                   }}
                 >
@@ -815,6 +785,36 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    ...SHADOWS.sm,
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+  originalHeaderTitle: {
     fontSize: 28,
     fontWeight: "700",
     color: colors.text.primary,
