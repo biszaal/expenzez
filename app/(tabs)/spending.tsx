@@ -376,10 +376,22 @@ export default function SpendingPage() {
       fullPrevMonthData.push(fullPrevCumulative);
     }
 
-    // Build labels for full month
+    // Build labels for full month with key dates
     for (let i = 1; i <= maxDay; i++) {
       const dayStr = i.toString().padStart(2, "0");
-      labels.push(dayStr);
+      
+      // Show formatted dates at key positions
+      if (i === 1) {
+        labels.push(`1 ${selectedDate.format('MMM')}`);
+      } else if (i === Math.floor(maxDay / 2)) {
+        labels.push(`${i} ${selectedDate.format('MMM')}`);
+      } else if (isCurrentMonth && i === todayDate) {
+        labels.push(`${todayDate} ${selectedDate.format('MMM')}`);
+      } else if (i === maxDay) {
+        labels.push(`${maxDay} ${selectedDate.format('MMM')}`);
+      } else {
+        labels.push('');
+      }
     }
 
     // Build current month data (only up to today if current month)
@@ -1190,7 +1202,7 @@ export default function SpendingPage() {
                         <View style={{ position: 'absolute', opacity: 0 }}>
                         <LineChart
                         data={{
-                          labels: dailySpendingData.labels.slice(0, dailySpendingData.data.length).map(() => ""),
+                          labels: dailySpendingData.labels.slice(0, dailySpendingData.data.length),
                           datasets: [
                             {
                               data: dailySpendingData.data,
@@ -1334,7 +1346,7 @@ export default function SpendingPage() {
                           ]}>
                             <LineChart
                               data={{
-                                labels: dailySpendingData.labels.slice(0, dailySpendingData.data.length).map(() => ""),
+                                labels: dailySpendingData.labels.slice(0, dailySpendingData.data.length),
                                 datasets: [
                                   {
                                     data: dailySpendingData.data,
@@ -1386,7 +1398,7 @@ export default function SpendingPage() {
                                 fillShadowGradientToOpacity: 0,
                                 decimalPlaces: 0,
                                 color: (opacity = 1) => "transparent",
-                                labelColor: (opacity = 1) => "transparent",
+                                labelColor: (opacity = 1) => colors.text.secondary,
                                 style: {
                                   borderRadius: 20,
                                 },
@@ -1402,7 +1414,8 @@ export default function SpendingPage() {
                                   strokeWidth: 0,
                                 },
                                 propsForLabels: {
-                                  fontSize: 0,
+                                  fontSize: 12,
+                                  fontWeight: "500",
                                 },
                                 formatYLabel: () => "",
                                 yAxisMin: () => 0,
