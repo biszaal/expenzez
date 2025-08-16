@@ -353,27 +353,25 @@ export default function SpendingPage() {
     const todayDate = today.date();
     const isCurrentMonth = selectedMonth === currentMonth;
     
-    // If current month and previous month has no spending in first [todayDate] days,
-    // extend the view to show meaningful previous month data
+    // Smart chart range calculation to show meaningful comparison data
     let maxDay = isCurrentMonth ? Math.min(todayDate, daysInMonth) : daysInMonth;
     
     if (isCurrentMonth) {
-      // Check if previous month has any spending in first [todayDate] days
-      const prevHasEarlySpending = Object.keys(previousMonthSpending).some(day => 
-        parseInt(day) <= todayDate && previousMonthSpending[day] > 0
-      );
+      // Always extend view to show significant previous month spending for comparison
+      const prevSpendingDays = Object.keys(previousMonthSpending)
+        .map(day => parseInt(day))
+        .filter(day => previousMonthSpending[day.toString().padStart(2, "0")] > 0)
+        .sort((a, b) => a - b);
       
-      // If no early spending in previous month, extend view to show some previous month data
-      if (!prevHasEarlySpending) {
-        const prevSpendingDays = Object.keys(previousMonthSpending)
-          .map(day => parseInt(day))
-          .filter(day => previousMonthSpending[day.toString().padStart(2, "0")] > 0)
-          .sort((a, b) => a - b);
+      if (prevSpendingDays.length > 0) {
+        // Find the last significant spending day in previous month
+        const lastPrevSpendingDay = prevSpendingDays[prevSpendingDays.length - 1];
+        const totalPrevSpending = Object.values(previousMonthSpending).reduce((a, b) => a + b, 0);
         
-        if (prevSpendingDays.length > 0) {
-          // Show up to the first significant spending day in previous month, but cap at reasonable limit
-          const firstPrevSpendingDay = prevSpendingDays[0];
-          maxDay = Math.min(Math.max(todayDate, firstPrevSpendingDay + 2), daysInMonth);
+        // If previous month has substantial spending, extend the view to show it
+        if (totalPrevSpending > 50) { // If more than £50 spending in previous month
+          // Extend to show at least until the last spending day in previous month
+          maxDay = Math.min(Math.max(todayDate + 3, lastPrevSpendingDay), daysInMonth);
         }
       }
     }
@@ -416,10 +414,13 @@ export default function SpendingPage() {
     console.log('Chart Data Debug:', {
       selectedMonth,
       prevMonth,
+      maxDay,
+      todayDate: dayjs().date(),
       currentMonthTxns: currentTransactions.length,
       previousMonthTxns: previousTransactions.length,
       prevMonthDataLength: prevMonthData.length,
       prevMonthDataSample: prevMonthData.slice(0, 10),
+      prevMonthDataLast: prevMonthData.slice(-5),
       currentDataSample: data.slice(0, 10),
       hasNonZeroPrevData: prevMonthData.some(val => val > 0),
       maxPrevValue: Math.max(...prevMonthData),
