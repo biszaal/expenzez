@@ -412,6 +412,18 @@ export default function SpendingPage() {
       prevMonthData.push(prevDataPoint);
     }
 
+    // Debug log to check if previous month data exists
+    console.log('Chart Data Debug:', {
+      selectedMonth,
+      prevMonth,
+      currentMonthTxns: currentTransactions.length,
+      previousMonthTxns: previousTransactions.length,
+      prevMonthDataLength: prevMonthData.length,
+      prevMonthDataSample: prevMonthData.slice(0, 5),
+      currentDataSample: data.slice(0, 5),
+      hasNonZeroPrevData: prevMonthData.some(val => val > 0)
+    });
+
     return { labels, data, prevMonthData };
   }, [transactions, selectedMonth]);
 
@@ -1161,6 +1173,24 @@ export default function SpendingPage() {
                     ]}
                   >
 
+                    {/* Chart Legend */}
+                    <View style={styles.chartLegendContainer}>
+                      <View style={styles.chartLegendItem}>
+                        <View style={[styles.chartLegendDot, { backgroundColor: monthlyOverBudget ? colors.error[500] : colors.primary[500] }]} />
+                        <Text style={[styles.chartLegendText, { color: colors.text.primary }]}>
+                          {dayjs(selectedMonth).format('MMM YYYY')}
+                        </Text>
+                      </View>
+                      {dailySpendingData.prevMonthData && dailySpendingData.prevMonthData.length > 0 && (
+                        <View style={styles.chartLegendItem}>
+                          <View style={[styles.chartLegendDot, { backgroundColor: 'rgba(156, 163, 175, 1)' }]} />
+                          <Text style={[styles.chartLegendText, { color: colors.text.secondary }]}>
+                            {dayjs(selectedMonth).subtract(1, 'month').format('MMM YYYY')}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
                     {/* Current Day Value Display */}
                     <View style={styles.currentValueContainer}>
                       <Text style={[styles.currentValue, { color: colors.success[500] }]}>
@@ -1202,13 +1232,16 @@ export default function SpendingPage() {
                               withShadow: true,
                               withDots: false,
                             },
-                            ...(dailySpendingData.prevMonthData
+                            // Always include previous month data if it exists, even if all zeros
+                            ...(dailySpendingData.prevMonthData && dailySpendingData.prevMonthData.length > 0
                               ? [
                                   {
-                                    data: dailySpendingData.prevMonthData,
+                                    data: dailySpendingData.prevMonthData.length === dailySpendingData.data.length 
+                                      ? dailySpendingData.prevMonthData 
+                                      : [...dailySpendingData.prevMonthData, ...new Array(Math.max(0, dailySpendingData.data.length - dailySpendingData.prevMonthData.length)).fill(0)],
                                     color: (opacity = 1) =>
-                                      `rgba(156, 163, 175, ${opacity * 0.6})`, // Lighter gray line for previous month
-                                    strokeWidth: 3,
+                                      `rgba(156, 163, 175, ${opacity})`, // Gray line for previous month
+                                    strokeWidth: 2,
                                     withDots: false,
                                     withShadow: false,
                                   },
@@ -1348,13 +1381,16 @@ export default function SpendingPage() {
                                     withShadow: true,
                                     withDots: false,
                                   },
-                                  ...(dailySpendingData.prevMonthData
+                                  // Always include previous month data if it exists, even if all zeros
+                                  ...(dailySpendingData.prevMonthData && dailySpendingData.prevMonthData.length > 0
                                     ? [
                                         {
-                                          data: dailySpendingData.prevMonthData,
+                                          data: dailySpendingData.prevMonthData.length === dailySpendingData.data.length 
+                                            ? dailySpendingData.prevMonthData 
+                                            : [...dailySpendingData.prevMonthData, ...new Array(Math.max(0, dailySpendingData.data.length - dailySpendingData.prevMonthData.length)).fill(0)],
                                           color: (opacity = 1) =>
-                                            `rgba(156, 163, 175, ${opacity * 0.6})`,
-                                          strokeWidth: 3,
+                                            `rgba(156, 163, 175, ${opacity})`,
+                                          strokeWidth: 2,
                                           withDots: false,
                                           withShadow: false,
                                         },
@@ -2940,11 +2976,35 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   
+  // Chart Legend Styles
+  chartLegendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    gap: 24,
+  },
+  chartLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  chartLegendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  chartLegendText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
   // Current Value Display Styles
   currentValueContainer: {
     alignItems: 'center',
     marginBottom: 16,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingHorizontal: 16, // Add horizontal padding only to the value display
   },
   currentValue: {
