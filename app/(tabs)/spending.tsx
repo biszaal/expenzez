@@ -376,22 +376,22 @@ export default function SpendingPage() {
       fullPrevMonthData.push(fullPrevCumulative);
     }
 
-    // Build chart data for full month range
+    // Build labels for full month
     for (let i = 1; i <= maxDay; i++) {
       const dayStr = i.toString().padStart(2, "0");
       labels.push(dayStr);
+    }
 
-      // Add current month data only up to today (for current month)
-      if (i <= currentMonthDataLimit) {
-        const currentDaySpending = currentMonthSpending[dayStr] || 0;
-        currentCumulative += currentDaySpending;
-        data.push(currentCumulative);
-      } else {
-        // For future days in current month, keep the last value (flat line)
-        data.push(currentCumulative);
-      }
+    // Build current month data (only up to today if current month)
+    for (let i = 1; i <= currentMonthDataLimit; i++) {
+      const dayStr = i.toString().padStart(2, "0");
+      const currentDaySpending = currentMonthSpending[dayStr] || 0;
+      currentCumulative += currentDaySpending;
+      data.push(currentCumulative);
+    }
 
-      // Add previous month cumulative data (from complete calculation)
+    // Build previous month data (always full month)
+    for (let i = 1; i <= maxDay; i++) {
       const prevDataPoint = fullPrevMonthData[i - 1] || 0;
       prevMonthData.push(prevDataPoint);
     }
@@ -1076,22 +1076,6 @@ export default function SpendingPage() {
                     </Text>
                   </View>
                 </View>
-                <TouchableOpacity
-                  style={[
-                    styles.premiumPersonalizeButton,
-                    { borderColor: "#4ECDC4" },
-                  ]}
-                >
-                  <Ionicons name="settings" size={16} color="#4ECDC4" />
-                  <Text
-                    style={[
-                      styles.premiumPersonalizeText,
-                      { color: "#4ECDC4" },
-                    ]}
-                  >
-                    Customize
-                  </Text>
-                </TouchableOpacity>
               </View>
 
               {/* Spending Stats */}
@@ -1206,7 +1190,7 @@ export default function SpendingPage() {
                         <View style={{ position: 'absolute', opacity: 0 }}>
                         <LineChart
                         data={{
-                          labels: dailySpendingData.labels.map(() => ""),
+                          labels: dailySpendingData.labels.slice(0, dailySpendingData.data.length).map(() => ""),
                           datasets: [
                             {
                               data: dailySpendingData.data,
@@ -1218,13 +1202,11 @@ export default function SpendingPage() {
                               withShadow: true,
                               withDots: false,
                             },
-                            // Always include previous month data if it exists, even if all zeros
+                            // Previous month data (trimmed to match current month length for comparison)
                             ...(dailySpendingData.prevMonthData && dailySpendingData.prevMonthData.length > 0
                               ? [
                                   {
-                                    data: dailySpendingData.prevMonthData.length === dailySpendingData.data.length 
-                                      ? dailySpendingData.prevMonthData 
-                                      : [...dailySpendingData.prevMonthData, ...new Array(Math.max(0, dailySpendingData.data.length - dailySpendingData.prevMonthData.length)).fill(0)],
+                                    data: dailySpendingData.prevMonthData.slice(0, dailySpendingData.data.length),
                                     color: (opacity = 1) =>
                                       `rgba(156, 163, 175, ${Math.min(1, opacity + 0.3)})`, // Darker gray line for previous month
                                     strokeWidth: 3,
@@ -1304,11 +1286,8 @@ export default function SpendingPage() {
                         segments={0}
                         bezier
                         renderDotContent={({ x, y, index, indexData }) => {
-                          // Show dot on current day (today) if viewing current month
-                          const isCurrentMonth = dayjs(selectedMonth).format('YYYY-MM') === dayjs().format('YYYY-MM');
-                          const currentDayIndex = isCurrentMonth ? dayjs().date() - 1 : dailySpendingData.data.length - 1;
-                          
-                          if (index === currentDayIndex) {
+                          // Show dot on the last data point (current day for current month)
+                          if (index === dailySpendingData.data.length - 1) {
                             return (
                               <Animated.View key={index} style={{
                                 position: 'absolute',
@@ -1355,7 +1334,7 @@ export default function SpendingPage() {
                           ]}>
                             <LineChart
                               data={{
-                                labels: dailySpendingData.labels.map(() => ""),
+                                labels: dailySpendingData.labels.slice(0, dailySpendingData.data.length).map(() => ""),
                                 datasets: [
                                   {
                                     data: dailySpendingData.data,
@@ -1367,13 +1346,11 @@ export default function SpendingPage() {
                                     withShadow: true,
                                     withDots: false,
                                   },
-                                  // Always include previous month data if it exists, even if all zeros
+                                  // Previous month data (trimmed to match current month length for comparison)
                                   ...(dailySpendingData.prevMonthData && dailySpendingData.prevMonthData.length > 0
                                     ? [
                                         {
-                                          data: dailySpendingData.prevMonthData.length === dailySpendingData.data.length 
-                                            ? dailySpendingData.prevMonthData 
-                                            : [...dailySpendingData.prevMonthData, ...new Array(Math.max(0, dailySpendingData.data.length - dailySpendingData.prevMonthData.length)).fill(0)],
+                                          data: dailySpendingData.prevMonthData.slice(0, dailySpendingData.data.length),
                                           color: (opacity = 1) =>
                                             `rgba(156, 163, 175, ${Math.min(1, opacity + 0.3)})`,
                                           strokeWidth: 3,
@@ -1453,11 +1430,8 @@ export default function SpendingPage() {
                               segments={0}
                               bezier
                               renderDotContent={({ x, y, index, indexData }) => {
-                                // Show dot on current day (today) if viewing current month
-                                const isCurrentMonth = dayjs(selectedMonth).format('YYYY-MM') === dayjs().format('YYYY-MM');
-                                const currentDayIndex = isCurrentMonth ? dayjs().date() - 1 : dailySpendingData.data.length - 1;
-                                
-                                if (index === currentDayIndex) {
+                                // Show dot on the last data point (current day for current month)
+                                if (index === dailySpendingData.data.length - 1) {
                                   return (
                                     <Animated.View key={index} style={{
                                       position: 'absolute',
