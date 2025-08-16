@@ -340,24 +340,30 @@ export const getRecentNotifications = async () => {
     
     // Temporary fallback: Return sample notifications until backend is deployed
     if (error.response?.status === 404) {
-      return [
-        {
-          id: "temp-1",
-          title: "Welcome to Expenzez!",
-          message: "Your notification system is being set up. You'll receive real-time alerts once your bank accounts sync.",
-          timestamp: Date.now() - 30 * 60 * 1000, // 30 minutes ago
-          type: "account",
-          isRead: false,
-        },
-        {
-          id: "temp-2", 
-          title: "Notification System Ready",
-          message: "Once deployed, you'll receive alerts for transactions, budget limits, security events, and AI insights.",
-          timestamp: Date.now() - 60 * 60 * 1000, // 1 hour ago
-          type: "insight",
-          isRead: true,
-        }
-      ];
+      // These fallback notifications should only show once, on first login
+      // Check if user has seen the welcome notification before
+      const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+      const welcomeShownKey = "welcome_notification_shown";
+      const hasShownWelcome = await AsyncStorage.getItem(welcomeShownKey);
+      
+      if (hasShownWelcome) {
+        // User has already seen the welcome notification, don't show it again
+        return [];
+      } else {
+        // Mark welcome as shown for future logins
+        await AsyncStorage.setItem(welcomeShownKey, "true");
+        
+        return [
+          {
+            id: "temp-1",
+            title: "Welcome to Expenzez!",
+            message: "Your notification system is being set up. You'll receive real-time alerts once your bank accounts sync.",
+            timestamp: Date.now() - 30 * 60 * 1000, // 30 minutes ago
+            type: "account",
+            isRead: false,
+          }
+        ];
+      }
     }
     
     // Return empty array for other errors
