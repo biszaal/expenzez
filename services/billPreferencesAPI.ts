@@ -138,7 +138,7 @@ export const mergeBillsWithPreferences = (detectedBills: any[], preferences: Bil
     }
     
     return bill;
-  });
+  }).filter(bill => !bill.isIgnored); // Filter out ignored bills
 };
 
 // Helper to create bill preference from detected bill

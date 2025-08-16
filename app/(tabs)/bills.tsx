@@ -256,17 +256,21 @@ export default function BillsScreen() {
 
   const updateBillCategory = async (bill: DetectedBill, newCategory: string) => {
     try {
-      // TODO: Re-enable backend sync once API is deployed
-      // await BillPreferencesAPI.updateBillCategory(bill.id, newCategory);
+      try {
+        await BillPreferencesAPI.updateBillCategory(bill.id, newCategory);
+        showSuccess(`Moved ${bill.name} to ${newCategory}`);
+      } catch (apiError) {
+        console.warn('Backend API not available, using local storage only:', apiError);
+        showSuccess(`Moved ${bill.name} to ${newCategory} (local only)`);
+      }
       
-      // Update local state (temporary local-only storage)
+      // Update local state
       const updatedBills = bills.map(b => 
         b.id === bill.id 
           ? { ...b, category: newCategory, userModified: true }
           : b
       );
       setBills(updatedBills);
-      showSuccess(`Moved ${bill.name} to ${newCategory} (local only)`);
     } catch (error) {
       console.error('Failed to update bill category:', error);
       showError(`Failed to update ${bill.name} category`);
@@ -275,17 +279,21 @@ export default function BillsScreen() {
 
   const markBillInactive = async (bill: DetectedBill) => {
     try {
-      // TODO: Re-enable backend sync once API is deployed
-      // await BillPreferencesAPI.updateBillStatus(bill.id, 'inactive');
+      try {
+        await BillPreferencesAPI.updateBillStatus(bill.id, 'inactive');
+        showSuccess(`${bill.name} marked as inactive`);
+      } catch (apiError) {
+        console.warn('Backend API not available, using local storage only:', apiError);
+        showSuccess(`${bill.name} marked as inactive (local only)`);
+      }
       
-      // Update local state (temporary local-only storage)
+      // Update local state
       const updatedBills = bills.map(b => 
         b.id === bill.id 
           ? { ...b, status: 'inactive' as const, userModified: true }
           : b
       );
       setBills(updatedBills);
-      showSuccess(`${bill.name} marked as inactive (local only)`);
     } catch (error) {
       console.error('Failed to mark bill as inactive:', error);
       showError(`Failed to update ${bill.name} status`);
@@ -294,17 +302,21 @@ export default function BillsScreen() {
 
   const reactivateBill = async (bill: DetectedBill) => {
     try {
-      // TODO: Re-enable backend sync once API is deployed
-      // await BillPreferencesAPI.updateBillStatus(bill.id, 'active');
+      try {
+        await BillPreferencesAPI.updateBillStatus(bill.id, 'active');
+        showSuccess(`${bill.name} reactivated`);
+      } catch (apiError) {
+        console.warn('Backend API not available, using local storage only:', apiError);
+        showSuccess(`${bill.name} reactivated (local only)`);
+      }
       
-      // Update local state (temporary local-only storage)
+      // Update local state
       const updatedBills = bills.map(b => 
         b.id === bill.id 
           ? { ...b, status: 'active' as const, userModified: true }
           : b
       );
       setBills(updatedBills);
-      showSuccess(`${bill.name} reactivated (local only)`);
     } catch (error) {
       console.error('Failed to reactivate bill:', error);
       showError(`Failed to reactivate ${bill.name}`);
@@ -328,13 +340,23 @@ export default function BillsScreen() {
 
   const removeBill = async (bill: DetectedBill) => {
     try {
-      // TODO: Re-enable backend sync once API is deployed
-      // await BillPreferencesAPI.deleteBillPreference(bill.id);
+      // Mark bill as ignored in preferences so it won't appear again
+      const preference = BillPreferencesAPI.createPreferenceFromBill(bill, { 
+        isIgnored: true,
+        status: 'inactive' as const
+      });
       
-      // Update local state (temporary local-only storage)
+      try {
+        await BillPreferencesAPI.saveBillPreference(preference);
+        showSuccess(`${bill.name} removed successfully`);
+      } catch (apiError) {
+        console.warn('Backend API not available, using local storage only:', apiError);
+        showSuccess(`${bill.name} removed successfully (local only)`);
+      }
+      
+      // Update local state - remove from display
       const updatedBills = bills.filter(b => b.id !== bill.id);
       setBills(updatedBills);
-      showSuccess(`${bill.name} removed successfully (local only)`);
     } catch (error) {
       console.error('Failed to remove bill:', error);
       showError(`Failed to remove ${bill.name}`);
