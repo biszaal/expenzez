@@ -353,28 +353,9 @@ export default function SpendingPage() {
     const todayDate = today.date();
     const isCurrentMonth = selectedMonth === currentMonth;
     
-    // Smart chart range calculation to show meaningful comparison data
-    let maxDay = isCurrentMonth ? Math.min(todayDate, daysInMonth) : daysInMonth;
-    
-    if (isCurrentMonth) {
-      // Always extend view to show significant previous month spending for comparison
-      const prevSpendingDays = Object.keys(previousMonthSpending)
-        .map(day => parseInt(day))
-        .filter(day => previousMonthSpending[day.toString().padStart(2, "0")] > 0)
-        .sort((a, b) => a - b);
-      
-      if (prevSpendingDays.length > 0) {
-        // Find the last significant spending day in previous month
-        const lastPrevSpendingDay = prevSpendingDays[prevSpendingDays.length - 1];
-        const totalPrevSpending = Object.values(previousMonthSpending).reduce((a, b) => a + b, 0);
-        
-        // If previous month has substantial spending, extend the view to show it
-        if (totalPrevSpending > 50) { // If more than £50 spending in previous month
-          // Extend to show at least until the last spending day in previous month
-          maxDay = Math.min(Math.max(todayDate + 3, lastPrevSpendingDay), daysInMonth);
-        }
-      }
-    }
+    // Show full month for comparison, but limit current month data to today
+    let maxDay = daysInMonth; // Always show full month range
+    let currentMonthDataLimit = isCurrentMonth ? todayDate : daysInMonth;
 
     // Create arrays for chart with cumulative data
     const labels: string[] = [];
@@ -395,38 +376,37 @@ export default function SpendingPage() {
       fullPrevMonthData.push(fullPrevCumulative);
     }
 
-    // Now build chart data up to maxDay, using full previous month data where available
+    // Build chart data for full month range
     for (let i = 1; i <= maxDay; i++) {
       const dayStr = i.toString().padStart(2, "0");
       labels.push(dayStr);
 
-      // Add current month daily spending to cumulative
-      const currentDaySpending = currentMonthSpending[dayStr] || 0;
-      currentCumulative += currentDaySpending;
-      data.push(currentCumulative);
+      // Add current month data only up to today (for current month)
+      if (i <= currentMonthDataLimit) {
+        const currentDaySpending = currentMonthSpending[dayStr] || 0;
+        currentCumulative += currentDaySpending;
+        data.push(currentCumulative);
+      } else {
+        // For future days in current month, keep the last value (flat line)
+        data.push(currentCumulative);
+      }
 
       // Add previous month cumulative data (from complete calculation)
       const prevDataPoint = fullPrevMonthData[i - 1] || 0;
       prevMonthData.push(prevDataPoint);
     }
 
-    // Debug log to check if previous month data exists
+    // Debug log for chart data verification
     console.log('Chart Data Debug:', {
       selectedMonth,
-      prevMonth,
       maxDay,
+      currentMonthDataLimit,
       todayDate: dayjs().date(),
-      currentMonthTxns: currentTransactions.length,
-      previousMonthTxns: previousTransactions.length,
+      isCurrentMonth,
+      dataLength: data.length,
       prevMonthDataLength: prevMonthData.length,
-      prevMonthDataSample: prevMonthData.slice(0, 10),
-      prevMonthDataLast: prevMonthData.slice(-5),
-      currentDataSample: data.slice(0, 10),
-      hasNonZeroPrevData: prevMonthData.some(val => val > 0),
       maxPrevValue: Math.max(...prevMonthData),
       maxCurrentValue: Math.max(...data),
-      prevMonthSpendingKeys: Object.keys(previousMonthSpending),
-      prevMonthSpendingValues: Object.values(previousMonthSpending),
       prevMonthSpendingTotal: Object.values(previousMonthSpending).reduce((a, b) => a + b, 0)
     });
 
@@ -1324,8 +1304,11 @@ export default function SpendingPage() {
                         segments={0}
                         bezier
                         renderDotContent={({ x, y, index, indexData }) => {
-                          // Only show dot on the last data point (current day)
-                          if (index === dailySpendingData.data.length - 1) {
+                          // Show dot on current day (today) if viewing current month
+                          const isCurrentMonth = dayjs(selectedMonth).format('YYYY-MM') === dayjs().format('YYYY-MM');
+                          const currentDayIndex = isCurrentMonth ? dayjs().date() - 1 : dailySpendingData.data.length - 1;
+                          
+                          if (index === currentDayIndex) {
                             return (
                               <Animated.View key={index} style={{
                                 position: 'absolute',
@@ -1470,8 +1453,11 @@ export default function SpendingPage() {
                               segments={0}
                               bezier
                               renderDotContent={({ x, y, index, indexData }) => {
-                                // Only show dot on the last data point (current day)
-                                if (index === dailySpendingData.data.length - 1) {
+                                // Show dot on current day (today) if viewing current month
+                                const isCurrentMonth = dayjs(selectedMonth).format('YYYY-MM') === dayjs().format('YYYY-MM');
+                                const currentDayIndex = isCurrentMonth ? dayjs().date() - 1 : dailySpendingData.data.length - 1;
+                                
+                                if (index === currentDayIndex) {
                                   return (
                                     <Animated.View key={index} style={{
                                       position: 'absolute',
