@@ -412,8 +412,22 @@ export default function SpendingPage() {
       prevMonthData.push(prevDataPoint);
     }
 
-    // Optional: Keep debug log for development (can be removed in production)
-    // console.log('Chart Data Debug:', { selectedMonth, prevMonth, hasNonZeroPrevData: prevMonthData.some(val => val > 0) });
+    // Debug log to check if previous month data exists
+    console.log('Chart Data Debug:', {
+      selectedMonth,
+      prevMonth,
+      currentMonthTxns: currentTransactions.length,
+      previousMonthTxns: previousTransactions.length,
+      prevMonthDataLength: prevMonthData.length,
+      prevMonthDataSample: prevMonthData.slice(0, 10),
+      currentDataSample: data.slice(0, 10),
+      hasNonZeroPrevData: prevMonthData.some(val => val > 0),
+      maxPrevValue: Math.max(...prevMonthData),
+      maxCurrentValue: Math.max(...data),
+      prevMonthSpendingKeys: Object.keys(previousMonthSpending),
+      prevMonthSpendingValues: Object.values(previousMonthSpending),
+      prevMonthSpendingTotal: Object.values(previousMonthSpending).reduce((a, b) => a + b, 0)
+    });
 
     return { labels, data, prevMonthData };
   }, [transactions, selectedMonth]);
@@ -1231,8 +1245,8 @@ export default function SpendingPage() {
                                       ? dailySpendingData.prevMonthData 
                                       : [...dailySpendingData.prevMonthData, ...new Array(Math.max(0, dailySpendingData.data.length - dailySpendingData.prevMonthData.length)).fill(0)],
                                     color: (opacity = 1) =>
-                                      `rgba(156, 163, 175, ${opacity})`, // Gray line for previous month
-                                    strokeWidth: 2,
+                                      `rgba(156, 163, 175, ${Math.min(1, opacity + 0.3)})`, // Darker gray line for previous month
+                                    strokeWidth: 3,
                                     withDots: false,
                                     withShadow: false,
                                   },
@@ -1242,6 +1256,9 @@ export default function SpendingPage() {
                         }}
                         fromZero={false}
                         yAxisInterval={1}
+                        showGrid={false}
+                        showHorizontalLines={false}
+                        showVerticalLines={false}
                         width={width}
                         height={200}
                         yAxisLabel=""
@@ -1281,21 +1298,15 @@ export default function SpendingPage() {
                             fontSize: 0,
                           },
                           formatYLabel: () => "",
-                          yAxisMin: () => {
-                            const allData = [
-                              ...dailySpendingData.data,
-                              ...(dailySpendingData.prevMonthData || [])
-                            ];
-                            const minValue = Math.min(...allData.filter(v => v > 0));
-                            return Math.max(0, minValue - 50);
-                          },
+                          yAxisMin: () => 0,
                           yAxisMax: () => {
                             const allData = [
                               ...dailySpendingData.data,
                               ...(dailySpendingData.prevMonthData || [])
                             ];
                             const maxValue = Math.max(...allData);
-                            return maxValue + 50;
+                            // Force a reasonable scale that makes both lines visible
+                            return Math.max(1000, maxValue * 1.1);
                           },
                         }}
                         style={{
@@ -1380,8 +1391,8 @@ export default function SpendingPage() {
                                             ? dailySpendingData.prevMonthData 
                                             : [...dailySpendingData.prevMonthData, ...new Array(Math.max(0, dailySpendingData.data.length - dailySpendingData.prevMonthData.length)).fill(0)],
                                           color: (opacity = 1) =>
-                                            `rgba(156, 163, 175, ${opacity})`,
-                                          strokeWidth: 2,
+                                            `rgba(156, 163, 175, ${Math.min(1, opacity + 0.3)})`,
+                                          strokeWidth: 3,
                                           withDots: false,
                                           withShadow: false,
                                         },
@@ -1391,6 +1402,9 @@ export default function SpendingPage() {
                               }}
                               fromZero={false}
                               yAxisInterval={1}
+                              showGrid={false}
+                              showHorizontalLines={false}
+                              showVerticalLines={false}
                               width={width}
                               height={200}
                               yAxisLabel=""
@@ -1430,21 +1444,15 @@ export default function SpendingPage() {
                                   fontSize: 0,
                                 },
                                 formatYLabel: () => "",
-                                yAxisMin: () => {
-                                  const allData = [
-                                    ...dailySpendingData.data,
-                                    ...(dailySpendingData.prevMonthData || [])
-                                  ];
-                                  const minValue = Math.min(...allData.filter(v => v > 0));
-                                  return Math.max(0, minValue - 50);
-                                },
+                                yAxisMin: () => 0,
                                 yAxisMax: () => {
                                   const allData = [
                                     ...dailySpendingData.data,
                                     ...(dailySpendingData.prevMonthData || [])
                                   ];
                                   const maxValue = Math.max(...allData);
-                                  return maxValue + 50;
+                                  // Force a reasonable scale that makes both lines visible
+                                  return Math.max(1000, maxValue * 1.1);
                                 },
                               }}
                               style={{
