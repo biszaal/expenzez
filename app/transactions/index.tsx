@@ -1,750 +1,649 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState, useMemo } from "react";
 import {
-  ActivityIndicator,
-  StyleSheet,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
-  SectionList,
-  FlatList,
-  ScrollView,
+  StyleSheet,
   RefreshControl,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
-import { useAuth } from "../../app/auth/AuthContext";
+import { useAlert } from "../../hooks/useAlert";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
-import { bankingAPI } from "../../services/api";
-import { formatCurrency } from "../../utils/formatters";
+import { useAuthGuard } from "../../hooks/useAuthGuard";
+import { getTransactions } from "../../services/dataSource";
+import { getMerchantInfo } from "../../services/merchantService";
+import { getBankLogoInfo } from "../../services/api";
+import MonthFilter from "../../components/ui/MonthFilter";
 import dayjs from "dayjs";
 
-// Transaction type
-type Transaction = {
+interface Transaction {
   id: string;
   amount: number;
-  currency: string;
   description: string;
   date: string;
+  merchant: string;
   category?: string;
-  accountId?: string;
-  accountName?: string;
-  institution?: string | { name: string; logo?: string };
-  type?: 'debit' | 'credit';
-  balance?: number;
-  merchant?: string;
-  [key: string]: any;
-};
-
-// Account type
-type Account = {
-  id: string;
-  name: string;
-  institution: string | { name: string; logo?: string };
-  balance: number;
-  currency: string;
-  type: string;
-};
-
-// Helper to get unique years and months from transactions
-function getAvailableYearsMonths(transactions: Transaction[]) {
-  const years = new Set<string>();
-  const monthsByYear: Record<string, Set<string>> = {};
-  transactions.forEach((txn) => {
-    if (!txn.date) return;
-    const date = dayjs(txn.date);
-    const year = date.format("YYYY");
-    const month = date.format("MMMM");
-    years.add(year);
-    if (!monthsByYear[year]) monthsByYear[year] = new Set();
-    monthsByYear[year].add(month);
-  });
-  const yearsArr = Array.from(years).sort((a, b) => b.localeCompare(a));
-  const monthsArr = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  return { years: yearsArr, monthsByYear, monthsArr };
+  accountId: string;
+  bankName: string;
+  type: 'debit' | 'credit';
+  originalAmount: number;
+  accountType?: string;
+  isPending?: boolean;
 }
 
-export default function TransactionsPage() {
+interface GroupedTransaction {
+  date: string;
+  transactions: Transaction[];
+}
+
+export default function TransactionsScreen() {
   const router = useRouter();
+  const { merchant } = useLocalSearchParams<{ merchant?: string }>();
+  const { isLoggedIn } = useAuth();
+  const { isLoggedIn: authLoggedIn, hasBank, checkingBank } = useAuthGuard(undefined, true);
   const { colors } = useTheme();
-  const { isLoggedIn, logout } = useAuth();
+  const { showSuccess, showError } = useAlert();
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedYear, setSelectedYear] = useState<string>("");
-  const [selectedMonth, setSelectedMonth] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(dayjs().format('YYYY-MM'));
+  const [lastUpdated, setLastUpdated] = useState(dayjs().format('HH:mm'));
 
-  const fetchData = async () => {
+  const fetchTransactions = async (showRefresh = false) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (showRefresh) setRefreshing(true);
+      else setLoading(true);
 
-      console.log("=== FETCHING TRANSACTIONS DATA ===");
-
-      // Fetch accounts for account names (optional)
-      try {
-        const accountsData = await bankingAPI.getAccounts();
-        console.log("Fetched accounts:", accountsData);
-        setAccounts(accountsData.accounts || []);
-      } catch (accountError) {
-        console.warn("Failed to fetch accounts:", accountError);
-        setAccounts([]);
-      }
-
-      // Fetch all transactions using the new getAllTransactions API
-      console.log("Fetching all transactions...");
-      const transactionsData = await bankingAPI.getAllTransactions();
-      console.log("Raw transactions data:", transactionsData);
-
-      let allTransactions: Transaction[] = [];
-
-      if (
-        transactionsData.transactions &&
-        Array.isArray(transactionsData.transactions) &&
-        transactionsData.transactions.length > 0
-      ) {
-        console.log(`Found ${transactionsData.transactions.length} total transactions`);
-        
-        // Transform transactions to match our Transaction type
-        allTransactions = transactionsData.transactions.map((tx: any, idx: number) => ({
-          id: tx.transactionId || tx.id || `tx-${idx}`,
-          amount: tx.type === 'debit' ? -Math.abs(Number(tx.amount || 0)) : Math.abs(Number(tx.amount || 0)),
-          currency: tx.currency || "GBP",
-          description: tx.description || "Transaction",
-          date: tx.date || tx.createdAt || new Date().toISOString(),
-          category: tx.category || "Other",
-          accountId: tx.accountId,
-          accountName: tx.accountName || "Unknown Account",
-          institution: tx.institution || "Unknown Bank",
-          type: tx.type,
-          balance: tx.balance,
-          merchant: tx.merchant,
-        }));
-      } else {
-        console.log("No transactions found");
-        allTransactions = [];
-      }
-
-      // Sort transactions by date (most recent first)
-      allTransactions.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
+      const transactionsData = await getTransactions();
       
-      console.log(`Total transactions loaded: ${allTransactions.length}`);
-      setTransactions(allTransactions);
+      if (transactionsData && transactionsData.length > 0) {
+        const formattedTransactions: Transaction[] = transactionsData.map((tx: any) => ({
+          id: tx.id || tx.transaction_id,
+          amount: Math.abs(tx.amount || 0),
+          description: tx.description || tx.merchant_name || 'Unknown',
+          date: tx.date || tx.timestamp,
+          merchant: tx.merchant_name || tx.description || 'Unknown Merchant',
+          category: tx.category,
+          accountId: tx.account_id || 'unknown',
+          bankName: tx.bank_name || 'Unknown Bank',
+          type: (tx.amount || 0) < 0 ? 'debit' : 'credit',
+          originalAmount: tx.amount || 0,
+          accountType: tx.account_type || (tx.amount < 0 ? 'Credit Card' : 'Current Account'),
+          isPending: tx.status === 'pending' || tx.pending,
+        }));
 
-      // Set default selected year and month to most recent
-      if (allTransactions.length > 0) {
-        const mostRecent = dayjs(allTransactions[0].date);
-        setSelectedYear(mostRecent.format("YYYY"));
-        setSelectedMonth(mostRecent.format("MMMM"));
-      }
-
-      console.log("=== TRANSACTIONS DATA FETCH COMPLETE ===");
-    } catch (error: any) {
-      console.error("Error fetching transactions data:", error);
-
-      // Handle authentication errors
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        setError("Authentication failed. Please log in again.");
-        // Clear auth data and logout
-        await logout();
+        setTransactions(formattedTransactions);
+        setLastUpdated(dayjs().format('HH:mm'));
+        
+        if (showRefresh) {
+          showSuccess(`Loaded ${formattedTransactions.length} transactions`);
+        }
       } else {
-        setError("Failed to load transactions. Please try again.");
+        setTransactions([]);
+        if (showRefresh) {
+          showError("No transaction data available");
+        }
       }
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      showError("Failed to load transactions");
+      setTransactions([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchData();
-    setRefreshing(false);
+  const onRefresh = () => {
+    fetchTransactions(true);
   };
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      setError("Please log in to view transactions");
-      setLoading(false);
-      return;
+    if (!authLoggedIn) {
+      router.replace("/auth/Login");
     }
-    fetchData();
+  }, [authLoggedIn, hasBank, checkingBank]);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchTransactions();
+    }
   }, [isLoggedIn]);
 
-  // Get available years and months
-  const { years, monthsByYear, monthsArr } =
-    getAvailableYearsMonths(transactions);
+  useEffect(() => {
+    if (merchant) {
+      setSearchQuery(decodeURIComponent(merchant));
+    }
+  }, [merchant]);
 
-  // Filtered transactions for selected year/month
-  const filteredTransactions = transactions.filter((txn) => {
-    if (!txn.date) return false;
-    const date = dayjs(txn.date);
-    return (
-      date.format("YYYY") === selectedYear &&
-      date.format("MMMM") === selectedMonth
-    );
-  });
-
-  // Group filtered transactions by day
-  const groupedByDay = React.useMemo(() => {
-    const groups: Record<string, Transaction[]> = {};
-    filteredTransactions.forEach((txn) => {
-      const date = txn.date ? dayjs(txn.date) : null;
-      if (!date) return;
-      const key = date.format("YYYY-MM-DD");
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(txn);
+  // Generate available months from transactions
+  const availableMonths = useMemo(() => {
+    const monthsSet = new Set<string>();
+    transactions.forEach(tx => {
+      const month = dayjs(tx.date).format('YYYY-MM');
+      monthsSet.add(month);
     });
-    // Sort keys descending (most recent day first)
-    const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
-    return sortedKeys.map((key) => ({
-      title: dayjs(key).format("D MMMM YYYY"),
-      data: groups[key].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      ),
+
+    const months = Array.from(monthsSet).sort().reverse().slice(0, 6);
+    return months.map(month => ({
+      key: month,
+      label: dayjs(month).format('MMM'),
+      isActive: true
     }));
-  }, [filteredTransactions]);
+  }, [transactions]);
 
-  // Calculate summary statistics for selected period
-  const summaryStats = React.useMemo(() => {
-    const income = filteredTransactions
-      .filter((txn) => txn.amount > 0)
-      .reduce((sum, txn) => sum + txn.amount, 0);
+  // Filter and group transactions
+  const { filteredTransactions, pendingTransactions } = useMemo(() => {
+    let filtered = transactions;
 
-    const expenses = filteredTransactions
-      .filter((txn) => txn.amount < 0)
-      .reduce((sum, txn) => sum + Math.abs(txn.amount), 0);
+    // Month filter
+    filtered = filtered.filter(tx => 
+      dayjs(tx.date).format('YYYY-MM') === selectedMonth
+    );
 
-    const netAmount = income - expenses;
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(tx => 
+        tx.description.toLowerCase().includes(query) ||
+        tx.merchant.toLowerCase().includes(query) ||
+        tx.bankName?.toLowerCase().includes(query)
+      );
+    }
+
+    // Separate pending and completed transactions
+    const pending = filtered.filter(tx => tx.isPending);
+    const completed = filtered.filter(tx => !tx.isPending);
 
     return {
-      totalTransactions: filteredTransactions.length,
-      income,
-      expenses,
-      netAmount,
+      filteredTransactions: completed.sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf()),
+      pendingTransactions: pending.sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf())
     };
+  }, [transactions, selectedMonth, searchQuery]);
+
+  // Group transactions by date
+  const groupedTransactions = useMemo(() => {
+    const groups: GroupedTransaction[] = [];
+    const dateGroups = new Map<string, Transaction[]>();
+
+    filteredTransactions.forEach(tx => {
+      const dateKey = dayjs(tx.date).format('YYYY-MM-DD');
+      if (!dateGroups.has(dateKey)) {
+        dateGroups.set(dateKey, []);
+      }
+      dateGroups.get(dateKey)!.push(tx);
+    });
+
+    dateGroups.forEach((txs, date) => {
+      groups.push({
+        date,
+        transactions: txs
+      });
+    });
+
+    return groups.sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf());
   }, [filteredTransactions]);
 
-  const horizontalPadding = 16;
+  const formatDateHeader = (date: string) => {
+    return dayjs(date).format('ddd DD MMM');
+  };
+
+  const formatTransactionTime = (date: string) => {
+    return dayjs(date).format('HH:mm');
+  };
+
+  const getMerchantLogo = (description: string) => {
+    const merchantInfo = getMerchantInfo(description);
+    return merchantInfo.logo;
+  };
+
+  const getBankIcon = (accountType: string) => {
+    if (accountType?.toLowerCase().includes('credit')) {
+      return '💳';
+    }
+    return '🏦';
+  };
+
+  if (!authLoggedIn || checkingBank) {
+    return null;
+  }
+
+  if (!hasBank && transactions.length === 0 && !loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+        <View style={styles.emptyState}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.primary[100] }]}>
+            <Ionicons name="link-outline" size={48} color={colors.primary[500]} />
+          </View>
+          <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
+            Connect Your Bank
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: colors.text.secondary }]}>
+            Connect your bank account to view your transactions
+          </Text>
+          <TouchableOpacity
+            style={[styles.connectButton, { backgroundColor: colors.primary[500] }]}
+            onPress={() => router.push("/banks")}
+          >
+            <Text style={styles.connectButtonText}>Connect Bank</Text>
+            <Ionicons name="arrow-forward" size={16} color="white" />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView
-      style={[
-        styles.safeArea,
-        { backgroundColor: colors.background.secondary },
-      ]}
-    >
-      <View
-        style={[
-          styles.topBar,
-          { backgroundColor: colors.background.secondary },
-        ]}
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary[500]]}
+            tintColor={colors.primary[500]}
+          />
+        }
       >
-        <TouchableOpacity
-          style={[
-            styles.backButton,
-            { backgroundColor: colors.background.primary },
-            shadows.sm,
-          ]}
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="chevron-back" size={26} color={colors.primary[500]} />
-        </TouchableOpacity>
-        <Text style={[styles.topBarTitle, { color: colors.text.primary }]}>
-          Transactions
-        </Text>
-        <View style={{ width: 32 }} />
-      </View>
-      {/* Month & Year Picker */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: 18,
-          marginTop: 10,
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-        }}
-      >
-        {/* Year Picker */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginRight: 12 }}
-        >
-          {years.map((year) => (
-            <TouchableOpacity
-              key={year}
-              style={{
-                backgroundColor:
-                  year === selectedYear
-                    ? colors.primary[500]
-                    : colors.background.primary,
-                borderRadius: 999,
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                marginRight: 8,
-                borderWidth: 1,
-                borderColor:
-                  year === selectedYear
-                    ? colors.primary[500]
-                    : colors.border.light,
-              }}
-              onPress={() => {
-                setSelectedYear(year);
-                // Set month to first available for this year if current month not available
-                if (!monthsByYear[year]?.has(selectedMonth)) {
-                  setSelectedMonth(
-                    Array.from(monthsByYear[year] || [])[0] || ""
-                  );
-                }
-              }}
-            >
-              <Text
-                style={{
-                  color: year === selectedYear ? "#FFF" : colors.primary[500],
-                  fontWeight: "700",
-                  fontSize: 16,
-                }}
-              >
-                {year}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-        {/* Month Picker */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {monthsArr.map((month) =>
-            monthsByYear[selectedYear]?.has(month) ? (
-              <TouchableOpacity
-                key={month}
-                style={{
-                  backgroundColor:
-                    month === selectedMonth
-                      ? colors.primary[500]
-                      : colors.background.primary,
-                  borderRadius: 999,
-                  paddingHorizontal: 18,
-                  paddingVertical: 10,
-                  marginRight: 8,
-                  borderWidth: 1,
-                  borderColor:
-                    month === selectedMonth
-                      ? colors.primary[500]
-                      : colors.border.light,
-                }}
-                onPress={() => setSelectedMonth(month)}
-              >
-                <Text
-                  style={{
-                    color:
-                      month === selectedMonth ? "#FFF" : colors.primary[500],
-                    fontWeight: "600",
-                    fontSize: 16,
-                  }}
-                >
-                  {month}
-                </Text>
-              </TouchableOpacity>
-            ) : null
-          )}
-        </ScrollView>
-      </View>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: colors.background.secondary }]}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
+          </TouchableOpacity>
+          
+          <View style={styles.headerContent}>
+            <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
+              ALL TRANSACTIONS
+            </Text>
+            <Text style={[styles.headerSubtitle, { color: colors.text.secondary }]}>
+              Updated today, {lastUpdated}
+            </Text>
+          </View>
 
-      {/* Summary Statistics */}
-      {filteredTransactions.length > 0 && (
-        <View
-          style={[
-            styles.summaryContainer,
-            {
-              backgroundColor: colors.background.primary,
-              borderColor: colors.border.light,
-            },
-          ]}
-        >
-          <View style={styles.summaryRow}>
-            <View style={styles.summaryItem}>
-              <Text
-                style={[styles.summaryLabel, { color: colors.text.secondary }]}
-              >
-                Total Transactions
-              </Text>
-              <Text
-                style={[styles.summaryValue, { color: colors.text.primary }]}
-              >
-                {summaryStats.totalTransactions}
-              </Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text
-                style={[styles.summaryLabel, { color: colors.text.secondary }]}
-              >
-                Income
-              </Text>
-              <Text
-                style={[styles.summaryValue, { color: colors.success[500] }]}
-              >
-                {formatCurrency(summaryStats.income)}
-              </Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text
-                style={[styles.summaryLabel, { color: colors.text.secondary }]}
-              >
-                Expenses
-              </Text>
-              <Text style={[styles.summaryValue, { color: colors.error[500] }]}>
-                {formatCurrency(summaryStats.expenses)}
-              </Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text
-                style={[styles.summaryLabel, { color: colors.text.secondary }]}
-              >
-                Net
-              </Text>
-              <Text
-                style={[
-                  styles.summaryValue,
-                  {
-                    color:
-                      summaryStats.netAmount >= 0
-                        ? colors.success[500]
-                        : colors.error[500],
-                  },
-                ]}
-              >
-                {formatCurrency(summaryStats.netAmount)}
-              </Text>
-            </View>
+          <TouchableOpacity style={styles.menuButton}>
+            <Ionicons name="ellipsis-horizontal" size={24} color={colors.text.secondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Search */}
+        <View style={styles.searchSection}>
+          <View style={[styles.searchContainer, { backgroundColor: colors.background.secondary }]}>
+            <Ionicons name="search-outline" size={20} color={colors.text.tertiary} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text.primary }]}
+              placeholder="Search"
+              placeholderTextColor={colors.text.tertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
           </View>
         </View>
-      )}
 
-      {/* Transactions List - SectionList for grouped by day */}
-      <View
-        style={[
-          styles.content,
-          {
-            backgroundColor: colors.background.secondary,
-            paddingHorizontal: horizontalPadding,
-          },
-        ]}
-      >
-        {loading ? (
-          <ActivityIndicator size="small" color={colors.primary[500]} />
-        ) : groupedByDay.length === 0 ? (
-          <Text
-            style={{
-              color: colors.text.secondary,
-              textAlign: "center",
-              marginTop: 32,
-            }}
-          >
-            No transactions found for this period.
-          </Text>
-        ) : error ? (
-          <View style={styles.errorContainer}>
-            <Text style={[styles.errorText, { color: colors.text.secondary }]}>
-              {error}
-            </Text>
-            {(error.includes("Authentication failed") || !isLoggedIn) && (
-              <TouchableOpacity
-                style={[
-                  styles.loginButton,
-                  { backgroundColor: colors.primary[500] },
-                ]}
-                onPress={() => router.push("/auth/Login")}
-              >
-                <Text style={[styles.loginButtonText, { color: "#FFF" }]}>
-                  Log In
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        ) : (
-          <SectionList
-            sections={groupedByDay}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={{
-              paddingBottom: 32,
-              paddingHorizontal: horizontalPadding,
-            }}
-            renderSectionHeader={({ section: { title } }) => (
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: "700",
-                  color: colors.primary[500],
-                  marginTop: 18,
-                  marginBottom: 6,
-                  paddingHorizontal: 2,
-                }}
-              >
-                {title}
-              </Text>
-            )}
-            renderItem={({ item: txn }) => (
-              <View
-                style={[
-                  styles.transactionItem,
-                  {
-                    borderBottomColor: colors.border.light,
-                    paddingHorizontal: 2,
-                  },
-                ]}
-              >
-                <View style={styles.transactionInfo}>
-                  <View style={styles.transactionHeader}>
-                    <Text
-                      style={[
-                        styles.transactionName,
-                        { color: colors.text.primary },
-                      ]}
-                      numberOfLines={2}
-                    >
-                      {txn.description || txn.name || "Transaction"}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.transactionAmount,
-                        {
-                          color:
-                            txn.amount < 0
-                              ? colors.error[500]
-                              : colors.success[500],
-                        },
-                      ]}
-                    >
-                      {formatCurrency(txn.amount)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.transactionDetails}>
-                    {txn.category && (
-                      <View style={styles.categoryContainer}>
-                        <Ionicons
-                          name="pricetag-outline"
-                          size={12}
-                          color={colors.text.secondary}
-                        />
-                        <Text
-                          style={[
-                            styles.categoryText,
-                            { color: colors.text.secondary },
-                          ]}
-                        >
-                          {txn.category}
-                        </Text>
-                      </View>
-                    )}
-
-                    {txn.accountName && (
-                      <View style={styles.accountContainer}>
-                        <Ionicons
-                          name="card-outline"
-                          size={12}
-                          color={colors.text.secondary}
-                        />
-                        <Text
-                          style={[
-                            styles.accountText,
-                            { color: colors.text.secondary },
-                          ]}
-                        >
-                          {txn.accountName}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  <Text
-                    style={[
-                      styles.transactionDate,
-                      { color: colors.text.secondary },
-                    ]}
-                  >
-                    {txn.date
-                      ? dayjs(txn.date).format("MMM D, YYYY [at] h:mm A")
-                      : ""}
-                  </Text>
-                </View>
-              </View>
-            )}
-            stickySectionHeadersEnabled={false}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[colors.primary[500]]}
-              />
-            }
+        {/* Month Filter */}
+        {availableMonths.length > 0 && (
+          <MonthFilter
+            selectedMonth={selectedMonth}
+            onMonthSelect={setSelectedMonth}
+            availableMonths={availableMonths}
           />
         )}
-      </View>
+
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
+              Loading transactions...
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.transactionsContainer}>
+            {/* Pending Transactions */}
+            {pendingTransactions.length > 0 && (
+              <View style={styles.pendingSection}>
+                <View style={styles.pendingHeader}>
+                  <Text style={[styles.pendingTitle, { color: colors.text.primary }]}>Pending</Text>
+                  <Text style={[styles.pendingAmount, { color: colors.text.primary }]}>
+                    £{pendingTransactions.reduce((sum, tx) => sum + Math.abs(tx.originalAmount), 0).toFixed(2)}
+                  </Text>
+                </View>
+
+                {pendingTransactions.map((transaction) => (
+                  <View
+                    key={transaction.id}
+                    style={[styles.transactionCard, { backgroundColor: colors.background.secondary }]}
+                  >
+                    <View style={styles.merchantLogo}>
+                      <Text style={styles.logoText}>
+                        {getMerchantLogo(transaction.description)}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.transactionDetails}>
+                      <Text style={[styles.merchantName, { color: colors.text.primary }]}>
+                        {getMerchantInfo(transaction.description).name}
+                      </Text>
+                      <View style={styles.accountInfo}>
+                        <Text style={[styles.accountType, { color: colors.text.secondary }]}>
+                          {transaction.accountType}
+                        </Text>
+                        <Text style={styles.bankIcon}>
+                          {getBankIcon(transaction.accountType || '')}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.amountContainer}>
+                      <Text style={[
+                        styles.amount,
+                        { color: transaction.type === 'credit' ? colors.success[500] : colors.text.primary }
+                      ]}>
+                        {transaction.type === 'credit' ? '+' : ''}£{Math.abs(transaction.originalAmount).toFixed(2)}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Grouped Transactions */}
+            {groupedTransactions.map((group) => (
+              <View key={group.date} style={styles.dateGroup}>
+                <Text style={[styles.dateHeader, { color: colors.text.secondary }]}>
+                  {formatDateHeader(group.date)}
+                </Text>
+                <Text style={[styles.dateAmount, { color: colors.text.secondary }]}>
+                  £{group.transactions.reduce((sum, tx) => sum + Math.abs(tx.originalAmount), 0).toFixed(2)}
+                </Text>
+
+                {group.transactions.map((transaction) => (
+                  <View
+                    key={transaction.id}
+                    style={[styles.transactionCard, { backgroundColor: colors.background.secondary }]}
+                  >
+                    <View style={styles.merchantLogo}>
+                      <Text style={styles.logoText}>
+                        {getMerchantLogo(transaction.description)}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.transactionDetails}>
+                      <Text style={[styles.merchantName, { color: colors.text.primary }]}>
+                        {getMerchantInfo(transaction.description).name}
+                      </Text>
+                      <Text style={[styles.transactionTime, { color: colors.text.secondary }]}>
+                        {formatTransactionTime(transaction.date)}
+                      </Text>
+                      <View style={styles.accountInfo}>
+                        <Text style={[styles.accountType, { color: colors.text.secondary }]}>
+                          {transaction.accountType}
+                        </Text>
+                        <Text style={styles.bankIcon}>
+                          {getBankIcon(transaction.accountType || '')}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.amountContainer}>
+                      <Text style={[
+                        styles.amount,
+                        { color: transaction.type === 'credit' ? colors.success[500] : colors.text.primary }
+                      ]}>
+                        {transaction.type === 'credit' ? '+' : ''}£{Math.abs(transaction.originalAmount).toFixed(2)}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ))}
+
+            {/* Empty State */}
+            {groupedTransactions.length === 0 && pendingTransactions.length === 0 && (
+              <View style={styles.emptyTransactions}>
+                <Ionicons name="receipt-outline" size={48} color={colors.text.tertiary} />
+                <Text style={[styles.emptyText, { color: colors.text.secondary }]}>
+                  {searchQuery ? 'No matching transactions found' : 'No transactions for this month'}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
   },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 32,
-    paddingBottom: 16,
-    paddingHorizontal: 14,
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: spacing["2xl"],
+  },
+  
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   backButton: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  topBarTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  content: {
+  headerContent: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 20,
+    alignItems: 'center',
   },
-  transactionCard: {
-    borderRadius: 16,
-    padding: 20,
-  },
-  transactionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  transactionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginLeft: 12,
-  },
-  transactionList: {
-    gap: 16,
-  },
-  transactionItem: {
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-  },
-  transactionInfo: {
-    flex: 1,
-  },
-  transactionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
-  transactionName: {
+  headerTitle: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  menuButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Search
+  searchSection: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius["2xl"],
+    gap: spacing.sm,
+  },
+  searchInput: {
     flex: 1,
-    marginRight: 12,
+    fontSize: 16,
+    paddingVertical: spacing.xs,
+  },
+
+  // Loading
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing["4xl"],
+  },
+  loadingText: {
+    fontSize: 16,
+  },
+
+  // Transactions
+  transactionsContainer: {
+    paddingHorizontal: spacing.lg,
+  },
+  
+  // Pending Section
+  pendingSection: {
+    marginBottom: spacing.xl,
+  },
+  pendingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  pendingTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  pendingAmount: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  // Date Groups
+  dateGroup: {
+    marginBottom: spacing.lg,
+  },
+  dateHeader: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+  },
+  dateAmount: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    textAlign: 'right',
+    marginTop: -22,
+  },
+
+  // Transaction Cards
+  transactionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.sm,
+    ...shadows.sm,
+  },
+  merchantLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  logoText: {
+    fontSize: 20,
   },
   transactionDetails: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 8,
-  },
-  categoryContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  categoryText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  accountContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  accountText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  transactionDate: {
-    fontSize: 12,
-    fontWeight: "400",
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  summaryContainer: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  summaryItem: {
-    alignItems: "center",
     flex: 1,
   },
-  summaryLabel: {
-    fontSize: 12,
-    fontWeight: "500",
-    marginBottom: 4,
+  merchantName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
   },
-  summaryValue: {
+  transactionTime: {
     fontSize: 14,
-    fontWeight: "700",
+    marginBottom: 2,
   },
-  errorContainer: {
+  accountInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  accountType: {
+    fontSize: 14,
+  },
+  bankIcon: {
+    fontSize: 14,
+  },
+  amountContainer: {
+    alignItems: 'flex-end',
+  },
+  amount: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  // Empty States
+  emptyState: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
   },
-  errorText: {
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xl,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  emptySubtitle: {
     fontSize: 16,
-    textAlign: "center",
-    marginBottom: 24,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+    lineHeight: 24,
   },
-  loginButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+  connectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius["2xl"],
+    gap: spacing.sm,
   },
-  loginButtonText: {
+  connectButtonText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
+    color: 'white',
+  },
+  emptyTransactions: {
+    alignItems: 'center',
+    paddingVertical: spacing["3xl"],
+  },
+  emptyText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: spacing.md,
   },
 });

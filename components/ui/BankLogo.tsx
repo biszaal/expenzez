@@ -29,6 +29,7 @@ export default function BankLogo({
     typeof bankName === "string" ? bankName : bankName?.name || "Bank";
   const logoFromProp =
     typeof bankName === "object" ? bankName?.logo : undefined;
+    
   const bankInfo = BANK_LOGOS[bankNameString as keyof typeof BANK_LOGOS];
   const fallbackInfo = {
     logoUrl:
@@ -49,6 +50,8 @@ export default function BankLogo({
           : fallbackInfo.logoUrl;
 
   const bank = bankInfo || fallbackInfo;
+  
+  // Debug which logo is being used
 
   const getSizeConfig = () => {
     switch (size) {
@@ -148,7 +151,9 @@ export default function BankLogo({
     if (isSvg && !imageError) {
       setSvgLoading(true);
       fetch(logoToUse)
-        .then((res) => res.text())
+        .then((res) => {
+          return res.text();
+        })
         .then((xml) => {
           if (isMounted) {
             // Improved SVG patching
@@ -163,7 +168,8 @@ export default function BankLogo({
             setSvgLoading(false);
           }
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error(`[BankLogo] SVG fetch failed for ${bankNameString}:`, error);
           if (isMounted) {
             setImageError(true);
             setSvgLoading(false);
@@ -206,7 +212,12 @@ export default function BankLogo({
                 },
               ]}
               resizeMode="contain"
-              onError={() => setImageError(true)}
+              onError={(error) => {
+                console.error(`[BankLogo] Image load error for ${bankNameString}:`, error);
+                setImageError(true);
+              }}
+              onLoad={() => {
+              }}
             />
           )
         ) : (

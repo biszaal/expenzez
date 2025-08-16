@@ -31,6 +31,36 @@ interface TextFieldProps {
   style?: ViewStyle;
   inputStyle?: TextStyle;
   labelStyle?: TextStyle;
+  // iOS-specific password autofill props
+  textContentType?: 
+    | "none"
+    | "URL"
+    | "addressCity"
+    | "addressCityAndState"
+    | "addressState"
+    | "countryName"
+    | "creditCardNumber"
+    | "emailAddress"
+    | "familyName"
+    | "fullStreetAddress"
+    | "givenName"
+    | "jobTitle"
+    | "location"
+    | "middleName"
+    | "name"
+    | "namePrefix"
+    | "nameSuffix"
+    | "nickname"
+    | "organizationName"
+    | "postalCode"
+    | "streetAddressLine1"
+    | "streetAddressLine2"
+    | "sublocality"
+    | "telephoneNumber"
+    | "username"
+    | "password"
+    | "newPassword";
+  passwordRules?: string;
 }
 
 export default function TextField({
@@ -48,6 +78,8 @@ export default function TextField({
   style,
   inputStyle,
   labelStyle,
+  textContentType,
+  passwordRules,
 }: TextFieldProps) {
   const { colors } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
@@ -146,6 +178,8 @@ export default function TextField({
           editable={!disabled}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          textContentType={textContentType}
+          passwordRules={passwordRules}
         />
 
         {secureTextEntry && (

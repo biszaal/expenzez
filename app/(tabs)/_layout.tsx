@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../auth/AuthContext";
+import { LoadingScreen } from "../../components/ui";
 
 export default function TabLayout() {
   const { colors } = useTheme();
@@ -11,7 +12,7 @@ export default function TabLayout() {
 
   // Show loading screen while checking authentication
   if (loading) {
-    return null; // or a loading component
+    return <LoadingScreen message="Setting up your dashboard..." />;
   }
 
   // Redirect to login if not authenticated
@@ -55,6 +56,15 @@ export default function TabLayout() {
           title: "Spending",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="pie-chart-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="bills"
+        options={{
+          title: "Bills",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="receipt-outline" size={size} color={color} />
           ),
         }}
       />

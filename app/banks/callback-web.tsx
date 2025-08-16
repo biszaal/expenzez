@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Linking } from "react-native";
+import { DEEP_LINK_URLS } from "../../constants/config";
 
 export default function BankCallbackWeb() {
   const params = useLocalSearchParams();
@@ -16,7 +17,7 @@ export default function BankCallbackWeb() {
       requisition_id: requisition_id as string,
     };
 
-    const appUrl = `exp://192.168.1.76:8081/banks/callback?${new URLSearchParams(callbackData).toString()}`;
+    const appUrl = `${DEEP_LINK_URLS.BANK_CALLBACK}?${new URLSearchParams(callbackData).toString()}`;
 
     // Try to open the app
     Linking.openURL(appUrl).catch(() => {
@@ -32,7 +33,7 @@ export default function BankCallbackWeb() {
       requisition_id: requisition_id as string,
     };
 
-    const appUrl = `exp://192.168.1.76:8081/banks/callback?${new URLSearchParams(callbackData).toString()}`;
+    const appUrl = `${DEEP_LINK_URLS.BANK_CALLBACK}?${new URLSearchParams(callbackData).toString()}`;
     Linking.openURL(appUrl);
   };
 

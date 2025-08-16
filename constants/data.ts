@@ -13,10 +13,10 @@ export const APP_CONFIG = {
   bundleId: "com.expenzez.app",
 } as const;
 
-// API configuration
+// API configuration - now uses production API
 export const API_CONFIG = {
-  baseUrl: "http://192.168.1.76:3001/api",
-  timeout: 10000,
+  baseUrl: "https://g77tomv0vk.execute-api.eu-west-2.amazonaws.com",
+  timeout: 30000,
   retryAttempts: 3,
 } as const;
 
@@ -190,11 +190,11 @@ export const DEFAULTS = {
 // Environment-specific configuration
 export const ENV_CONFIG = {
   development: {
-    apiUrl: "http://192.168.1.76:3001/api",
+    apiUrl: "https://g77tomv0vk.execute-api.eu-west-2.amazonaws.com",
     logLevel: "debug",
   },
   production: {
-    apiUrl: "https://api.expenzez.com",
+    apiUrl: "https://g77tomv0vk.execute-api.eu-west-2.amazonaws.com",
     logLevel: "error",
   },
 } as const;
@@ -437,6 +437,43 @@ export const BANK_LOGOS = {
     description: "Digital Banking",
   },
 
+  // Uppercase variants for API compatibility
+  "NATWEST": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/natwest.png",
+    color: "#DA1710",
+    type: "traditional",
+    description: "Personal Banking",
+  },
+  "LLOYDS": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/lloyds.png",
+    color: "#D81F2A",
+    type: "traditional",
+    description: "Personal Banking",
+  },
+  "HALIFAX": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/halifax.png",
+    color: "#0058A6",
+    type: "traditional",
+    description: "Personal Banking",
+  },
+  "BARCLAYS": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/barclayspersonal.png",
+    color: "#00A1DE",
+    type: "traditional",
+    description: "Personal Banking",
+  },
+  "HSBC": {
+    logoUrl:
+      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/hsbcpersonal.png",
+    color: "#DB0011",
+    type: "traditional",
+    description: "Personal Banking",
+  },
+  
   // Default fallback
   default: {
     logoUrl:

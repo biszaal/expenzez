@@ -34,6 +34,10 @@ interface AuthContextType {
     identifier: string,
     password: string
   ) => Promise<{ success: boolean; error?: string }>;
+  autoLoginAfterVerification: (
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; error?: string }>;
   register: (
     input: RegisterInput
   ) => Promise<{ success: boolean; error?: string }>;
@@ -47,6 +51,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   userBudget: null,
   login: async () => ({ success: false }),
+  autoLoginAfterVerification: async () => ({ success: false }),
   register: async () => ({ success: false }),
   logout: async () => {},
   clearAllData: async () => {},
@@ -81,9 +86,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
 
-      // Use centralized API base URL
-      const healthUrl = `${CURRENT_API_CONFIG.baseURL.replace(/\/$/, "")}/health/protected`;
-      const response = await fetch(healthUrl, {
+      // Use centralized API base URL - use profile endpoint for token validation
+      const profileUrl = `${CURRENT_API_CONFIG.baseURL.replace(/\/$/, "")}/profile`;
+      const response = await fetch(profileUrl, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
@@ -328,13 +333,66 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const autoLoginAfterVerification = async (email: string, password: string) => {
+    try {
+      console.log("=== AUTO-LOGIN AFTER VERIFICATION STARTED ===");
+      console.log("Auto-login attempt for:", email);
+
+      const loginPayload = { email, password };
+      const response = await authAPI.login(loginPayload);
+      
+      console.log("Auto-login response:", {
+        hasResponse: !!response,
+        hasIdToken: !!response?.idToken,
+        hasAccessToken: !!response?.accessToken,
+        hasUser: !!response?.user,
+        message: response?.message,
+      });
+
+      // Check if we have a successful response with tokens
+      if (response && response.idToken && response.accessToken) {
+        console.log("Auto-login successful, storing tokens...");
+
+        // Store Cognito tokens and user data
+        const storagePromises = [
+          AsyncStorage.setItem("isLoggedIn", "true"),
+          AsyncStorage.setItem("accessToken", response.accessToken),
+          AsyncStorage.setItem("idToken", response.idToken),
+          AsyncStorage.setItem("refreshToken", response.refreshToken || ""),
+          AsyncStorage.setItem("user", JSON.stringify(response.user)),
+        ];
+
+        await Promise.all(storagePromises);
+        console.log("Auto-login tokens stored successfully");
+
+        // Update state
+        setIsLoggedIn(true);
+        setUser(response.user);
+
+        console.log("=== AUTO-LOGIN AFTER VERIFICATION COMPLETED SUCCESSFULLY ===");
+        return { success: true };
+      } else {
+        console.log("Auto-login failed: missing tokens");
+        return {
+          success: false,
+          error: response?.message || "Auto-login failed. Please try logging in manually.",
+        };
+      }
+    } catch (error: any) {
+      console.error("Auto-login error:", error);
+      const errorMessage =
+        error.response?.data?.message || "Auto-login failed. Please try logging in manually.";
+      return { success: false, error: errorMessage };
+    }
+  };
+
   const register = async (input: RegisterInput) => {
     try {
       setLoading(true);
       const response = await authAPI.register(input);
-      // Check for Cognito user sub or error
-      if (response && response.cognitoUserSub) {
-        return { success: true };
+      // Check for successful registration response
+      if (response && (response.cognitoUserSub || response.message === "User registered successfully!")) {
+        return { success: true, password: input.password }; // Return password for auto-login
       } else {
         return {
           success: false,
@@ -443,6 +501,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         userBudget,
         login,
+        autoLoginAfterVerification,
         register,
         logout,
         clearAllData,

@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   formSection: {
-    borderRadius: borderRadius["3xl"],
+    borderRadius: borderRadius["4xl"],
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   submitButton: {
-    borderRadius: borderRadius["3xl"],
+    borderRadius: borderRadius["4xl"],
     paddingVertical: spacing.md,
     alignItems: "center",
     justifyContent: "center",

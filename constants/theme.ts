@@ -1,55 +1,52 @@
-// Global theme constants for consistent design
+// Clean Purple-focused Theme
 export const lightColors = {
-  // Primary colors
+  // Primary colors - Beautiful purple palette
   primary: {
-    50: "#EFF6FF",
-    100: "#DBEAFE",
-    200: "#BFDBFE",
-    300: "#93C5FD",
-    400: "#60A5FA",
-    500: "#3B82F6",
-    600: "#2563EB",
-    700: "#1D4ED8",
-    800: "#1E40AF",
-    900: "#1E3A8A",
+    50: "#FAF5FF",
+    100: "#F3E8FF", 
+    200: "#E9D5FF",
+    300: "#D8B4FE",
+    400: "#C084FC",
+    500: "#8B5CF6", // Main purple primary
+    600: "#7C3AED",
+    700: "#6D28D9",
+    800: "#5B21B6",
+    900: "#4C1D95",
   },
 
-  // Secondary colors
-  secondary: {
-    50: "#F0FDF4",
-    100: "#DCFCE7",
-    200: "#BBF7D0",
-    300: "#86EFAC",
-    400: "#4ADE80",
-    500: "#22C55E",
-    600: "#16A34A",
-    700: "#15803D",
-    800: "#166534",
-    900: "#14532D",
+  // Accent color - Complementary color for variety
+  accent: {
+    50: "#F0F9FF",
+    100: "#E0F2FE", 
+    200: "#BAE6FD",
+    300: "#7DD3FC",
+    400: "#38BDF8",
+    500: "#0EA5E9", // Blue accent for contrast
+    600: "#0284C7",
+    700: "#0369A1",
+    800: "#075985",
+    900: "#0C4A6E",
   },
 
-  // Gray scale
+  // Neutral gray scale - Essential only
   gray: {
-    50: "#F9FAFB",
-    100: "#F3F4F6",
-    200: "#E5E7EB",
-    300: "#D1D5DB",
-    400: "#9CA3AF",
-    500: "#6B7280",
-    600: "#4B5563",
-    700: "#374151",
-    800: "#1F2937",
-    900: "#111827",
+    50: "#FAFAFA",
+    100: "#F4F4F5",
+    200: "#E4E4E7", 
+    300: "#D4D4D8",
+    400: "#A1A1AA",
+    500: "#71717A",
+    600: "#52525B",
+    700: "#3F3F46",
+    800: "#27272A",
+    900: "#18181B",
   },
 
-  // Status colors
+  // Minimal status colors - Clean and subtle
   success: {
     50: "#F0FDF4",
     100: "#DCFCE7",
-    200: "#BBF7D0",
-    300: "#86EFAC",
-    400: "#4ADE80",
-    500: "#22C55E",
+    500: "#22C55E", // Main success color
     600: "#16A34A",
     700: "#15803D",
   },
@@ -57,165 +54,159 @@ export const lightColors = {
   error: {
     50: "#FEF2F2",
     100: "#FEE2E2",
-    200: "#FECACA",
-    300: "#FCA5A5",
-    400: "#F87171",
-    500: "#EF4444",
-    600: "#DC2626",
+    500: "#EF4444", // Main error color
+    600: "#DC2626", 
     700: "#B91C1C",
   },
 
   warning: {
     50: "#FFFBEB",
     100: "#FEF3C7",
-    200: "#FDE68A",
-    300: "#FCD34D",
-    400: "#FBBF24",
-    500: "#F59E0B",
+    500: "#F59E0B", // Main warning color
     600: "#D97706",
     700: "#B45309",
   },
 
-  // Background colors
+  // Clean background system with purple tints
   background: {
-    primary: "#FFFFFF",
-    secondary: "#F8FAFC",
-    tertiary: "#F1F5F9",
+    primary: "#FFFFFF",     // Pure white
+    secondary: "#FEFBFF",   // Very subtle purple tint
+    tertiary: "#FAF5FF",    // Light purple background
+    overlay: "rgba(139, 92, 246, 0.02)", // Subtle purple overlay
   },
 
-  // Text colors
+  // Minimal text hierarchy
   text: {
-    primary: "#1F2937",
-    secondary: "#6B7280",
-    tertiary: "#9CA3AF",
-    inverse: "#FFFFFF",
+    primary: "#18181B",     // Near black - high contrast
+    secondary: "#52525B",   // Medium gray - readable
+    tertiary: "#A1A1AA",    // Light gray - subtle text
+    inverse: "#FFFFFF",     // White text on dark backgrounds
+    muted: "#D4D4D8",      // Very light - placeholders
   },
 
-  // Border colors
+  // Simple border system
   border: {
-    light: "#E5E7EB",
-    medium: "#D1D5DB",
-    dark: "#9CA3AF",
+    light: "#F3E8FF",      // Very subtle purple tint
+    medium: "#E9D5FF",     // Standard borders with purple tint
+    dark: "#D8B4FE",       // Pronounced borders
+    focus: "#8B5CF6",      // Purple focus state
   },
 
-  // Shadow colors
+  // Minimal shadow system
   shadow: {
-    light: "rgba(0, 0, 0, 0.05)",
-    medium: "rgba(0, 0, 0, 0.1)",
-    dark: "rgba(0, 0, 0, 0.15)",
+    subtle: "rgba(0, 0, 0, 0.02)", // Almost invisible
+    soft: "rgba(0, 0, 0, 0.05)",   // Gentle elevation
+    medium: "rgba(0, 0, 0, 0.08)",  // Card elevation
+    strong: "rgba(0, 0, 0, 0.12)",  // Modal/overlay
   },
 };
 
 export const darkColors = {
-  // Primary colors (darker for dark mode)
+  // Primary colors - Purple palette for dark mode
   primary: {
-    50: "#0F172A",
-    100: "#1E293B",
-    200: "#334155",
-    300: "#475569",
-    400: "#64748B",
-    500: "#8B5CF6",
-    600: "#A78BFA",
-    700: "#C4B5FD",
-    800: "#DDD6FE",
-    900: "#EDE9FE",
+    50: "#4C1D95",
+    100: "#5B21B6",
+    200: "#6D28D9",
+    300: "#7C3AED",
+    400: "#8B5CF6",
+    500: "#C084FC", // Lighter purple for dark mode
+    600: "#D8B4FE",
+    700: "#E9D5FF",
+    800: "#F3E8FF",
+    900: "#FAF5FF",
   },
 
-  // Secondary colors (darker for dark mode)
-  secondary: {
-    50: "#052e16",
-    100: "#064e3b",
-    200: "#065f46",
-    300: "#047857",
-    400: "#059669",
-    500: "#10b981",
-    600: "#34d399",
-    700: "#6ee7b7",
-    800: "#a7f3d0",
-    900: "#d1fae5",
+  // Accent color - Blue accent for variety in dark mode
+  accent: {
+    50: "#0C4A6E",
+    100: "#075985",
+    200: "#0369A1",
+    300: "#0284C7",
+    400: "#0EA5E9",
+    500: "#38BDF8", // Blue accent
+    600: "#7DD3FC",
+    700: "#BAE6FD",
+    800: "#E0F2FE",
+    900: "#F0F9FF",
   },
 
-  // Gray scale (darker for dark mode)
+  // Neutral gray scale - Inverted for dark mode
   gray: {
-    50: "#0F0F0F",
-    100: "#1A1A1A",
-    200: "#262626",
-    300: "#404040",
-    400: "#525252",
-    500: "#737373",
-    600: "#A3A3A3",
-    700: "#D4D4D4",
-    800: "#E5E5E5",
-    900: "#F5F5F5",
+    50: "#18181B",
+    100: "#27272A",
+    200: "#3F3F46",
+    300: "#52525B",
+    400: "#71717A",
+    500: "#A1A1AA",
+    600: "#D4D4D8",
+    700: "#E4E4E7",
+    800: "#F4F4F5",
+    900: "#FAFAFA",
   },
 
-  // Status colors (darker for dark mode)
+  // Minimal status colors - Same as light mode
   success: {
-    50: "#052e16",
-    100: "#064e3b",
-    200: "#065f46",
-    300: "#047857",
-    400: "#059669",
-    500: "#10b981",
-    600: "#34d399",
-    700: "#6ee7b7",
+    50: "#0F2419",
+    100: "#14532D", 
+    500: "#22C55E", // Main success color
+    600: "#16A34A",
+    700: "#15803D",
   },
 
   error: {
-    50: "#450a0a",
-    100: "#7f1d1d",
-    200: "#991b1b",
-    300: "#b91c1c",
-    400: "#dc2626",
-    500: "#ef4444",
-    600: "#f87171",
-    700: "#fca5a5",
+    50: "#450A0A",
+    100: "#7F1D1D",
+    500: "#EF4444", // Main error color
+    600: "#DC2626",
+    700: "#B91C1C",
   },
 
   warning: {
-    50: "#451a03",
-    100: "#78350f",
-    200: "#92400e",
-    300: "#a16207",
-    400: "#ca8a04",
-    500: "#eab308",
-    600: "#fbbf24",
-    700: "#fcd34d",
+    50: "#451A03",
+    100: "#78350F",
+    500: "#F59E0B", // Main warning color
+    600: "#D97706",
+    700: "#B45309",
   },
 
-  // Background colors (darker for dark mode)
+  // Clean background system for dark mode with purple tints
   background: {
-    primary: "#0F0F0F",
-    secondary: "#1A1A1A",
-    tertiary: "#262626",
+    primary: "#0F0F11",     // Deep black with purple hint
+    secondary: "#1A1625",   // Dark purple tint
+    tertiary: "#2A1F3D",    // Card backgrounds with purple
+    overlay: "rgba(139, 92, 246, 0.05)", // Purple overlay
   },
 
-  // Text colors (darker for dark mode)
+  // Minimal text hierarchy for dark mode
   text: {
-    primary: "#F5F5F5",
-    secondary: "#D4D4D4",
-    tertiary: "#A3A3A3",
-    inverse: "#0F0F0F",
+    primary: "#FAFAFA",     // Near white - high contrast
+    secondary: "#D4D4D8",   // Light gray - readable  
+    tertiary: "#A1A1AA",    // Medium gray - subtle text
+    inverse: "#18181B",     // Dark text on light backgrounds
+    muted: "#52525B",      // Very dark - placeholders
   },
 
-  // Border colors (darker for dark mode)
+  // Simple border system for dark mode with purple tints
   border: {
-    light: "#262626",
-    medium: "#404040",
-    dark: "#525252",
+    light: "#2A1F3D",      // Very subtle purple tint
+    medium: "#3D2A5C",     // Standard borders with purple
+    dark: "#52525B",       // Pronounced borders
+    focus: "#C084FC",      // Purple focus state for dark mode
   },
 
-  // Shadow colors (darker for dark mode)
+  // Minimal shadow system for dark mode
   shadow: {
-    light: "rgba(0, 0, 0, 0.5)",
-    medium: "rgba(0, 0, 0, 0.7)",
-    dark: "rgba(0, 0, 0, 0.9)",
+    subtle: "rgba(0, 0, 0, 0.5)", // More visible in dark mode
+    soft: "rgba(0, 0, 0, 0.6)",   // Gentle elevation
+    medium: "rgba(0, 0, 0, 0.7)", // Card elevation
+    strong: "rgba(0, 0, 0, 0.8)", // Modal/overlay
   },
 };
 
 // Legacy colors export for backward compatibility
 export const colors = lightColors;
 
+// Minimal typography system - clean and readable
 export const typography = {
   fontSizes: {
     xs: 12,
@@ -240,13 +231,12 @@ export const typography = {
     "4xl": 32,
   },
 
+  // Simplified font weights - professional hierarchy
   fontWeights: {
-    normal: "400",
-    medium: "500",
-    semibold: "600",
-    bold: "700",
-    extrabold: "800",
-    black: "900",
+    normal: "400",   // Regular text
+    medium: "500",   // Slightly emphasized
+    semibold: "600", // Important text
+    bold: "700",     // Headings and strong emphasis
   },
 
   // Alias for backward compatibility
@@ -255,65 +245,76 @@ export const typography = {
     medium: "500",
     semibold: "600",
     bold: "700",
-    extrabold: "800",
-    black: "900",
+    // Removed extrabold and black for minimal approach
   },
 
+  // Clean line heights for readability
   lineHeights: {
-    tight: 1.25,
-    normal: 1.5,
-    relaxed: 1.75,
+    tight: 1.25,    // Headings
+    normal: 1.5,    // Body text  
+    relaxed: 1.6,   // Long form content
   },
 
+  // Minimal letter spacing
   letterSpacing: {
-    tight: -0.5,
-    normal: 0,
-    wide: 0.5,
+    tight: -0.25,   // Headings
+    normal: 0,      // Body text
+    wide: 0.25,     // Buttons and labels
   },
 };
 
+// Minimal spacing system - consistent rhythm
 export const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
-  "2xl": 48,
-  "3xl": 64,
+  xs: 4,     // Tight spacing
+  sm: 8,     // Small gaps
+  md: 16,    // Standard spacing
+  lg: 24,    // Comfortable spacing  
+  xl: 32,    // Large spacing
+  "2xl": 48, // Section spacing
+  "3xl": 64, // Page spacing
 };
 
+// Minimal border radius system - subtle and clean with more curves
 export const borderRadius = {
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
-  "2xl": 20,
-  "3xl": 24,
-  full: 9999,
+  sm: 8,     // Small elements
+  md: 12,    // Standard elements
+  lg: 16,    // Cards and containers
+  xl: 20,    // Large containers
+  "2xl": 24, // Special containers
+  "3xl": 32, // Extra large containers - more curved
+  "4xl": 40, // Very large containers - very curved
+  full: 9999, // Circular elements
 };
 
-// Create shadow styles for both light and dark modes
+// Create minimal shadow styles for both light and dark modes
 export const createShadows = (colorScheme: "light" | "dark") => {
   const shadowColors =
     colorScheme === "dark" ? darkColors.shadow : lightColors.shadow;
 
   return {
     sm: {
-      shadowColor: shadowColors.light,
+      shadowColor: shadowColors.subtle,
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 1,
       shadowRadius: 2,
       elevation: 1,
     },
     md: {
+      shadowColor: shadowColors.soft,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    lg: {
       shadowColor: shadowColors.medium,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 1,
       shadowRadius: 8,
       elevation: 4,
     },
-    lg: {
-      shadowColor: shadowColors.dark,
+    xl: {
+      shadowColor: shadowColors.strong,
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 1,
       shadowRadius: 16,
@@ -325,11 +326,14 @@ export const createShadows = (colorScheme: "light" | "dark") => {
 // Legacy shadows export for backward compatibility
 export const shadows = createShadows("light");
 
+// Minimal layout system - clean and spacious
 export const layout = {
-  screenPadding: 24,
-  cardPadding: 24,
-  buttonHeight: 48,
-  inputHeight: 48,
+  screenPadding: 20,   // Reduced padding for cleaner look
+  cardPadding: 16,     // More compact cards
+  buttonHeight: 44,    // Slightly smaller buttons
+  inputHeight: 44,     // Matching input height
+  headerHeight: 56,    // Standard header height
+  tabHeight: 60,       // Tab bar height
 };
 
 export default {

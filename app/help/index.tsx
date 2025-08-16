@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   contactSubtitle: {
     fontSize: typography.fontSizes.sm,
   },
-  contactButton: {
+  contactButtonSecondary: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: borderRadius.full,

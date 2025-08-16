@@ -28,7 +28,8 @@
             }
           }
         }
-      }
+      },
+      "bundleIdentifier": "com.biszaal.expenzez"
     },
     "android": {
       "adaptiveIcon": {
@@ -36,7 +37,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "package": "com.biszaal.expenzez"
     },
     "web": {
       "bundler": "metro",

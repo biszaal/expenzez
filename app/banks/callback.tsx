@@ -24,7 +24,11 @@ export default function BankCallbackScreen() {
   const [message, setMessage] = useState("Processing bank connection...");
 
   const params = useLocalSearchParams();
-  const { code, error: oauthError } = params;
+  const { code, error: oauthError, reconnect } = params;
+
+  // Check if this is a reconnection flow
+  const isReconnecting = !!reconnect;
+  const reconnectAccountId = reconnect as string;
 
   useEffect(() => {
     // Complete the auth session to close the in-app browser
@@ -101,18 +105,38 @@ export default function BankCallbackScreen() {
         }
 
         try {
-          const response = await bankingAPI.handleCallback(code as string);
-          console.log(
-            "[BankCallbackScreen] handleCallback response:",
-            response
-          );
-          console.log("[CALLBACK] TrueLayer token response:", response);
-          setStatus("success");
-          setMessage("Bank connected successfully!");
-          showAlert(
-            "Success",
-            "Your bank account has been connected successfully."
-          );
+          let response;
+          if (isReconnecting && reconnectAccountId) {
+            console.log("[CALLBACK] Reconnecting bank:", reconnectAccountId);
+            setMessage("Reconnecting your bank account...");
+            response = await bankingAPI.reconnectBank(
+              reconnectAccountId,
+              code as string
+            );
+            console.log(
+              "[BankCallbackScreen] reconnectBank response:",
+              response
+            );
+            setStatus("success");
+            setMessage("Bank reconnected successfully!");
+            showAlert(
+              "Success",
+              "Your bank account has been reconnected successfully."
+            );
+          } else {
+            console.log("[CALLBACK] Creating new bank connection");
+            response = await bankingAPI.handleCallback(code as string);
+            console.log(
+              "[BankCallbackScreen] handleCallback response:",
+              response
+            );
+            setStatus("success");
+            setMessage("Bank connected successfully!");
+            showAlert(
+              "Success",
+              "Your bank account has been connected successfully."
+            );
+          }
           // Set a flag to trigger refresh on the home screen
           await AsyncStorage.setItem("bankConnected", "true");
           // Ensure the in-app browser closes after success
