@@ -412,17 +412,8 @@ export default function SpendingPage() {
       prevMonthData.push(prevDataPoint);
     }
 
-    // Debug log to check if previous month data exists
-    console.log('Chart Data Debug:', {
-      selectedMonth,
-      prevMonth,
-      currentMonthTxns: currentTransactions.length,
-      previousMonthTxns: previousTransactions.length,
-      prevMonthDataLength: prevMonthData.length,
-      prevMonthDataSample: prevMonthData.slice(0, 5),
-      currentDataSample: data.slice(0, 5),
-      hasNonZeroPrevData: prevMonthData.some(val => val > 0)
-    });
+    // Optional: Keep debug log for development (can be removed in production)
+    // console.log('Chart Data Debug:', { selectedMonth, prevMonth, hasNonZeroPrevData: prevMonthData.some(val => val > 0) });
 
     return { labels, data, prevMonthData };
   }, [transactions, selectedMonth]);
