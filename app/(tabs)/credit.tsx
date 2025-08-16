@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -24,62 +25,54 @@ import { getProfile } from "../../services/dataSource";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
-const creditOptions = [
+const getCreditOptions = (colors: any) => [
   {
-    icon: (
-      <MaterialCommunityIcons name="bank-outline" size={28} color="#3B82F6" />
-    ),
+    icon: "bank-outline",
     name: "Loans",
     desc: "Flexible options for big dreams",
-    bg: "#EBDFFC",
+    status: "Coming Soon",
+    gradient: [colors.primary[100], colors.primary[50]],
+    iconColor: colors.primary[500],
   },
   {
-    icon: <MaterialCommunityIcons name="car" size={28} color="#3B82F6" />,
-    name: "Auto finance",
+    icon: "car",
+    name: "Auto Finance",
     desc: "Drive now, pay later",
-    bg: "#F3EDFC",
+    status: "Coming Soon",
+    gradient: [colors.secondary?.[100] || colors.primary[100], colors.secondary?.[50] || colors.primary[50]],
+    iconColor: colors.secondary?.[500] || colors.primary[500],
   },
   {
-    icon: <MaterialCommunityIcons name="home-roof" size={28} color="#3B82F6" />,
-    name: "Renovation credit",
+    icon: "home-roof",
+    name: "Renovation Credit",
     desc: "Upgrade your place",
-    bg: "#EFF1F8",
+    status: "Coming Soon",
+    gradient: [colors.success?.[100] || colors.primary[100], colors.success?.[50] || colors.primary[50]],
+    iconColor: colors.success?.[500] || colors.primary[500],
   },
   {
-    icon: (
-      <MaterialCommunityIcons
-        name="swap-horizontal"
-        size={28}
-        color="#3B82F6"
-      />
-    ),
-    name: "Debt optimizer",
+    icon: "swap-horizontal",
+    name: "Debt Optimizer",
     desc: "Merge & manage debts",
-    bg: "#F5F3FF",
+    status: "Coming Soon",
+    gradient: [colors.warning?.[100] || colors.primary[100], colors.warning?.[50] || colors.primary[50]],
+    iconColor: colors.warning?.[500] || colors.primary[500],
   },
   {
-    icon: (
-      <MaterialCommunityIcons
-        name="credit-card-outline"
-        size={28}
-        color="#3B82F6"
-      />
-    ),
-    name: "Cards explorer",
+    icon: "credit-card-outline",
+    name: "Cards Explorer",
     desc: "Find your perfect card",
-    bg: "#F3F0FB",
+    status: "Coming Soon",
+    gradient: [colors.primary[100], colors.primary[50]],
+    iconColor: colors.primary[500],
   },
   {
-    icon: (
-      <MaterialCommunityIcons
-        name="home-city-outline"
-        size={28}
-        color="#3B82F6"
-      />
-    ),
+    icon: "home-city-outline",
     name: "Mortgages",
     desc: "Unlock your new home",
-    bg: "#F5F3FF",
+    status: "Coming Soon",
+    gradient: [colors.secondary?.[100] || colors.primary[100], colors.secondary?.[50] || colors.primary[50]],
+    iconColor: colors.secondary?.[500] || colors.primary[500],
   },
 ];
 
@@ -95,6 +88,17 @@ export default function CreditScreen() {
 
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Handle coming soon features
+  const showComingSoon = (featureName: string) => {
+    Alert.alert(
+      "Coming Soon",
+      `${featureName} feature is currently under development and will be available in a future update.`,
+      [{ text: "OK", style: "default" }]
+    );
+  };
+
+  const creditOptions = getCreditOptions(colors);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -156,145 +160,143 @@ export default function CreditScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <LinearGradient
-          colors={["rgba(34, 197, 94, 0.1)", "rgba(34, 197, 94, 0.05)"]}
-          style={styles.header}
-        >
+        {/* Premium Header */}
+        <View style={styles.premiumHeader}>
           <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
-              <LinearGradient
-                colors={[colors.primary[500], "#8B5CF6"]}
-                style={styles.headerAvatar}
-              >
-                <Text style={styles.headerAvatarText}>{getUserInitials()}</Text>
-              </LinearGradient>
-              <View>
-                <Text
-                  style={[styles.headerTitle, { color: colors.text.primary }]}
-                >
-                  Credit & Offers
-                </Text>
-                <Text
-                  style={[
-                    styles.headerSubtitle,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  Build your financial future
-                </Text>
-              </View>
+              <Text style={[styles.premiumHeaderTitle, { color: colors.text.primary }]}>
+                Credit & Loans
+              </Text>
+              <Text style={[styles.premiumHeaderSubtitle, { color: colors.text.secondary }]}>
+                Build your financial future
+              </Text>
             </View>
             <TouchableOpacity
-              style={[
-                styles.headerButton,
-                { backgroundColor: colors.background.primary },
-              ]}
+              style={[styles.premiumHelpButton, { backgroundColor: colors.background.primary, ...shadows.sm }]}
+              onPress={() => showComingSoon("Help & Support")}
             >
-              <Feather
-                name="help-circle"
-                size={24}
-                color={colors.primary[500]}
-              />
+              <Ionicons name="help-circle-outline" size={20} color={colors.primary[500]} />
             </TouchableOpacity>
           </View>
-        </LinearGradient>
-
-        {/* Credit options - vertical stack layout */}
-        <View style={styles.verticalWrapper}>
-          {creditOptions.map((opt) => (
-            <TouchableOpacity
-              key={opt.name}
-              style={[
-                styles.verticalCard,
-                { backgroundColor: colors.background.primary },
-              ]}
-            >
-              <LinearGradient
-                colors={["#FFFFFF", "#F8FAFC"]}
-                style={styles.verticalCardIconBg}
-              >
-                {opt.icon}
-              </LinearGradient>
-              <View style={styles.verticalCardContent}>
-                <Text
-                  style={[
-                    styles.verticalCardTitle,
-                    { color: colors.text.primary },
-                  ]}
-                >
-                  {opt.name}
-                </Text>
-                <Text
-                  style={[
-                    styles.verticalCardDesc,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  {opt.desc}
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={22}
-                color={colors.primary[500]}
-              />
-            </TouchableOpacity>
-          ))}
         </View>
 
-        {/* Offers section */}
-        <View style={styles.offersWrapper}>
-          <Text style={[styles.offersTitle, { color: colors.text.primary }]}>
-            Exclusive Offers & Credit Boost
+        {/* Credit Score Card */}
+        <View style={styles.creditScoreSection}>
+          <LinearGradient
+            colors={[colors.primary[500], '#8B5CF6']}
+            style={[styles.creditScoreCard, shadows.lg]}
+          >
+            <View style={styles.creditScoreContent}>
+              <View style={styles.creditScoreHeader}>
+                <View style={styles.creditScoreAvatar}>
+                  <Text style={styles.creditScoreAvatarText}>{getUserInitials()}</Text>
+                </View>
+                <View style={styles.creditScoreBadge}>
+                  <Ionicons name="trending-up" size={16} color="white" />
+                  <Text style={styles.creditScoreBadgeText}>Premium</Text>
+                </View>
+              </View>
+              <Text style={styles.creditScoreTitle}>Your Credit Score</Text>
+              <Text style={styles.creditScoreValue}>Coming Soon</Text>
+              <Text style={styles.creditScoreSubtext}>
+                We&apos;ll help you track and improve your credit score
+              </Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.creditScoreButton}
+              onPress={() => showComingSoon("Credit Score Tracking")}
+            >
+              <Text style={styles.creditScoreButtonText}>Get Started</Text>
+              <Ionicons name="arrow-forward" size={16} color="white" />
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+
+        {/* Premium Credit Options */}
+        <View style={styles.premiumOptionsSection}>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+            Credit Products
+          </Text>
+          <View style={styles.optionsGrid}>
+            {creditOptions.map((opt, index) => (
+              <TouchableOpacity
+                key={opt.name}
+                style={styles.optionCard}
+                onPress={() => showComingSoon(opt.name)}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={opt.gradient}
+                  style={[styles.optionCardGradient, shadows.md]}
+                >
+                  <View style={[styles.optionIcon, { backgroundColor: opt.iconColor }]}>
+                    <MaterialCommunityIcons 
+                      name={opt.icon as any} 
+                      size={24} 
+                      color="white" 
+                    />
+                  </View>
+                  <Text style={[styles.optionTitle, { color: colors.text.primary }]}>
+                    {opt.name}
+                  </Text>
+                  <Text style={[styles.optionDesc, { color: colors.text.secondary }]}>
+                    {opt.desc}
+                  </Text>
+                  <View style={[styles.statusBadge, { backgroundColor: colors.background.secondary }]}>
+                    <Text style={[styles.statusText, { color: colors.text.tertiary }]}>
+                      {opt.status}
+                    </Text>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Premium Offers Section */}
+        <View style={styles.premiumOffersSection}>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+            Exclusive Offers
           </Text>
           <LinearGradient
-            colors={["#FFFFFF", "#F8FAFC"]}
-            style={[styles.offersCard, { borderColor: colors.border.light }]}
+            colors={[colors.background.primary, colors.background.secondary]}
+            style={[styles.premiumOffersCard, shadows.lg]}
           >
-            <View style={styles.offersStarsRow}>
-              <MaterialCommunityIcons
-                name="star-four-points"
-                size={30}
-                color={colors.primary[500]}
-                style={{ opacity: 0.8 }}
-              />
-              <MaterialCommunityIcons
-                name="star-outline"
-                size={30}
-                color={colors.secondary[600]}
-                style={{ marginHorizontal: 9, opacity: 0.63 }}
-              />
-              <MaterialCommunityIcons
-                name="star-four-points"
-                size={30}
-                color={colors.primary[100]}
-                style={{ opacity: 0.8 }}
-              />
+            <View style={styles.offersIconRow}>
+              <View style={[styles.offerIcon, { backgroundColor: colors.primary[500] }]}>
+                <Ionicons name="star" size={20} color="white" />
+              </View>
+              <View style={[styles.offerIcon, { backgroundColor: colors.secondary?.[500] || colors.primary[500] }]}>
+                <Ionicons name="trending-up" size={20} color="white" />
+              </View>
+              <View style={[styles.offerIcon, { backgroundColor: colors.success?.[500] || colors.primary[500] }]}>
+                <Ionicons name="shield-checkmark" size={20} color="white" />
+              </View>
             </View>
-            <Text
-              style={[styles.offersCardTitle, { color: colors.text.primary }]}
-            >
-              Boost your credit with Rent Shield
+            <Text style={[styles.premiumOffersTitle, { color: colors.text.primary }]}>
+              Credit Building Program
             </Text>
-            <Text
-              style={[styles.offersCardDesc, { color: colors.text.secondary }]}
-            >
-              Each new rent payment helps build your credit. We&apos;ll update
-              Experian, Equifax, and TransUnion for you.
+            <Text style={[styles.premiumOffersDesc, { color: colors.text.secondary }]}>
+              Build your credit score with our comprehensive program. 
+              Get personalized tips and track your progress.
             </Text>
-            <LinearGradient
-              colors={[colors.primary[500], "#8B5CF6"]}
-              style={styles.offersButton}
+            <View style={[styles.comingSoonBadge, { backgroundColor: colors.primary[100] }]}>
+              <Text style={[styles.comingSoonText, { color: colors.primary[500] }]}>
+                Coming Soon
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.premiumOffersButton}
+              onPress={() => showComingSoon("Credit Building Program")}
             >
-              <Text style={styles.offersButtonText}>Get Started</Text>
-              <Feather
-                name="arrow-right"
-                size={18}
-                color="white"
-                style={{ marginLeft: 8 }}
-              />
-            </LinearGradient>
+              <LinearGradient
+                colors={[colors.primary[500], colors.secondary?.[500] || colors.primary[600]]}
+                style={styles.premiumOffersButtonGradient}
+              >
+                <Text style={styles.premiumOffersButtonText}>Learn More</Text>
+                <Ionicons name="arrow-forward" size={16} color="white" />
+              </LinearGradient>
+            </TouchableOpacity>
           </LinearGradient>
         </View>
       </ScrollView>
@@ -312,132 +314,228 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: spacing["2xl"],
   },
-  header: {
+  // Premium Header
+  premiumHeader: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    borderBottomLeftRadius: borderRadius["3xl"],
-    borderBottomRightRadius: borderRadius["3xl"],
+    paddingVertical: spacing.xl,
   },
   headerContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
   },
   headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.md,
-  },
-  headerAvatarText: {
-    color: "white",
-    fontWeight: "700" as const,
-    fontSize: typography.fontSizes.xl,
-  },
-  headerTitle: {
-    fontSize: typography.fontSizes["2xl"],
-    fontWeight: "700" as const,
-  },
-  headerSubtitle: {
-    fontSize: typography.fontSizes.base,
-    marginTop: spacing.xs,
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.xl,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.md,
-  },
-
-  verticalWrapper: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-  },
-  verticalCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: borderRadius["3xl"],
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    width: "100%",
-    ...shadows.lg,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  verticalCardIconBg: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.md,
-    ...shadows.sm,
-  },
-  verticalCardContent: {
     flex: 1,
   },
-  verticalCardTitle: {
-    fontWeight: "700" as const,
+  premiumHeaderTitle: {
+    fontSize: typography.fontSizes["3xl"],
+    fontWeight: "800" as const,
+    letterSpacing: -0.5,
+  },
+  premiumHeaderSubtitle: {
+    fontSize: typography.fontSizes.base,
+    marginTop: spacing.xs,
+    opacity: 0.7,
+  },
+  premiumHelpButton: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius["2xl"],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // Credit Score Card
+  creditScoreSection: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  creditScoreCard: {
+    borderRadius: borderRadius["4xl"],
+    padding: spacing.xl,
+  },
+  creditScoreContent: {
+    marginBottom: spacing.lg,
+  },
+  creditScoreHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.lg,
+  },
+  creditScoreAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  creditScoreAvatarText: {
     fontSize: typography.fontSizes.lg,
+    fontWeight: "700" as const,
+    color: "white",
+  },
+  creditScoreBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
+  },
+  creditScoreBadgeText: {
+    fontSize: typography.fontSizes.xs,
+    fontWeight: "600" as const,
+    color: "white",
+  },
+  creditScoreTitle: {
+    fontSize: typography.fontSizes.lg,
+    fontWeight: "600" as const,
+    color: "rgba(255,255,255,0.9)",
     marginBottom: spacing.xs,
   },
-  verticalCardDesc: {
+  creditScoreValue: {
+    fontSize: typography.fontSizes["3xl"],
+    fontWeight: "800" as const,
+    color: "white",
+    marginBottom: spacing.sm,
+  },
+  creditScoreSubtext: {
     fontSize: typography.fontSizes.sm,
-    fontWeight: "500" as const,
+    color: "rgba(255,255,255,0.8)",
   },
-  offersWrapper: {
+  creditScoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius["2xl"],
+    gap: spacing.sm,
+  },
+  creditScoreButtonText: {
+    fontSize: typography.fontSizes.base,
+    fontWeight: "600" as const,
+    color: "white",
+  },
+
+  // Premium Options
+  premiumOptionsSection: {
     marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
+    marginBottom: spacing.xl,
   },
-  offersTitle: {
+  sectionTitle: {
+    fontSize: typography.fontSizes.xl,
     fontWeight: "700" as const,
-    fontSize: typography.fontSizes.lg,
+    marginBottom: spacing.lg,
+  },
+  optionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  optionCard: {
+    width: "47%",
     marginBottom: spacing.md,
   },
-  offersCard: {
-    borderRadius: borderRadius["3xl"],
-    padding: spacing.xl,
-    ...shadows.lg,
-    borderWidth: 1,
+  optionCardGradient: {
+    borderRadius: borderRadius["4xl"],
+    padding: spacing.lg,
+    alignItems: "center",
   },
-  offersStarsRow: {
-    flexDirection: "row",
+  optionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.md,
   },
-  offersCardTitle: {
+  optionTitle: {
+    fontSize: typography.fontSizes.base,
     fontWeight: "700" as const,
-    fontSize: typography.fontSizes.lg,
+    textAlign: "center" as const,
+    marginBottom: spacing.xs,
+  },
+  optionDesc: {
+    fontSize: typography.fontSizes.sm,
+    textAlign: "center" as const,
+    marginBottom: spacing.md,
+    opacity: 0.8,
+  },
+  statusBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+  },
+  statusText: {
+    fontSize: typography.fontSizes.xs,
+    fontWeight: "600" as const,
+    textAlign: "center" as const,
+  },
+  // Premium Offers
+  premiumOffersSection: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  premiumOffersCard: {
+    borderRadius: borderRadius["4xl"],
+    padding: spacing.xl,
+  },
+  offersIconRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  offerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  premiumOffersTitle: {
+    fontSize: typography.fontSizes.xl,
+    fontWeight: "700" as const,
     textAlign: "center" as const,
     marginBottom: spacing.sm,
   },
-  offersCardDesc: {
+  premiumOffersDesc: {
     fontSize: typography.fontSizes.base,
     textAlign: "center" as const,
     marginBottom: spacing.lg,
     lineHeight: typography.fontSizes.base * 1.5,
+    opacity: 0.9,
   },
-  offersButton: {
+  comingSoonBadge: {
+    alignSelf: "center",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    marginBottom: spacing.lg,
+  },
+  comingSoonText: {
+    fontSize: typography.fontSizes.sm,
+    fontWeight: "600" as const,
+  },
+  premiumOffersButton: {
+    borderRadius: borderRadius["2xl"],
+    overflow: "hidden",
+  },
+  premiumOffersButtonGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: borderRadius.xl,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.lg,
     paddingHorizontal: spacing.xl,
-    marginTop: spacing.md,
+    gap: spacing.sm,
   },
-  offersButtonText: {
-    color: "white",
-    fontWeight: "700" as const,
+  premiumOffersButtonText: {
     fontSize: typography.fontSizes.base,
+    fontWeight: "700" as const,
+    color: "white",
   },
 });

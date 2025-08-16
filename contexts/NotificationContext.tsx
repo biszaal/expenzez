@@ -16,21 +16,60 @@ Notifications.setNotificationHandler({
 });
 
 export interface NotificationPreferences {
+  // Delivery channels
   pushEnabled: boolean;
   emailEnabled: boolean;
   smsEnabled: boolean;
+  
+  // Alert types
   transactionAlerts: boolean;
   budgetAlerts: boolean;
   accountAlerts: boolean;
   securityAlerts: boolean;
   insightAlerts: boolean;
+  
+  // Transaction alert settings
   minimumTransactionAmount: number;
-  budgetThresholds: number[];
+  largeTransactionThreshold: number; // Amount considered "large"
+  unusualSpendingAlerts: boolean; // Spending pattern analysis
+  newMerchantAlerts: boolean;
+  
+  // Budget alert settings
+  budgetThresholds: number[]; // [75, 85, 95, 100]
+  categoryBudgetAlerts: boolean;
+  monthlyBudgetSummary: boolean;
+  
+  // Security alert settings
+  loginAlerts: boolean;
+  newDeviceAlerts: boolean;
+  failedLoginAlerts: boolean;
+  locationChangeAlerts: boolean;
+  
+  // Account & Banking alerts
+  bankConnectionAlerts: boolean;
+  lowBalanceAlerts: boolean;
+  lowBalanceThreshold: number;
+  recurringPaymentAlerts: boolean;
+  
+  // AI & Insights
+  dailyReminders: boolean;
+  weeklyInsights: boolean;
+  monthlyReports: boolean;
+  savingsTips: boolean;
+  creditScoreUpdates: boolean;
+  
+  // Timing preferences
   quietHours: {
     enabled: boolean;
     startTime: string;
     endTime: string;
   };
+  maxNotificationsPerDay: number;
+  batchNotifications: boolean; // Group similar notifications
+  
+  // Priority levels
+  immediateAlerts: ('security' | 'large_transaction' | 'low_balance')[];
+  dailyDigestAlerts: ('budget' | 'insights' | 'account')[];
 }
 
 export interface NotificationHistoryItem {
@@ -69,21 +108,59 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 const defaultPreferences: NotificationPreferences = {
+  // Delivery channels
   pushEnabled: true,
   emailEnabled: false,
   smsEnabled: false,
+  
+  // Alert types
   transactionAlerts: true,
   budgetAlerts: true,
   accountAlerts: true,
   securityAlerts: true,
   insightAlerts: true,
+  
+  // Transaction alert settings
   minimumTransactionAmount: 1.0,
-  budgetThresholds: [75, 90, 100],
+  largeTransactionThreshold: 500.0,
+  unusualSpendingAlerts: true,
+  newMerchantAlerts: false,
+  
+  // Budget alert settings
+  budgetThresholds: [75, 85, 95, 100],
+  categoryBudgetAlerts: true,
+  monthlyBudgetSummary: true,
+  
+  // Security alert settings
+  loginAlerts: true,
+  newDeviceAlerts: true,
+  failedLoginAlerts: true,
+  locationChangeAlerts: true,
+  
+  // Account & Banking alerts
+  bankConnectionAlerts: true,
+  lowBalanceAlerts: true,
+  lowBalanceThreshold: 100.0,
+  recurringPaymentAlerts: true,
+  
+  // AI & Insights
+  weeklyInsights: true,
+  monthlyReports: true,
+  savingsTips: true,
+  creditScoreUpdates: true,
+  
+  // Timing preferences
   quietHours: {
     enabled: false,
     startTime: "22:00",
     endTime: "07:00",
   },
+  maxNotificationsPerDay: 10,
+  batchNotifications: true,
+  
+  // Priority levels
+  immediateAlerts: ['security', 'large_transaction', 'low_balance'],
+  dailyDigestAlerts: ['budget', 'insights', 'account'],
 };
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -149,11 +226,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       // Load notification history
       await refreshNotifications();
 
-      console.log("[NotificationContext] Initialized successfully", {
-        tokenRegistered,
-        hasPreferences: !!preferences,
-        notificationCount: notifications.length,
-      });
     } catch (error: any) {
       console.error("[NotificationContext] Initialization failed:", error);
       setError("Failed to initialize notifications");
@@ -165,7 +237,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const registerForPushNotifications = async (): Promise<boolean> => {
     try {
       if (!Device.isDevice) {
-        console.log("[NotificationContext] Must use physical device for Push Notifications");
         return false;
       }
 
@@ -180,7 +251,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       if (finalStatus !== 'granted') {
-        console.log("[NotificationContext] Failed to get push token for push notification!");
         return false;
       }
 
@@ -190,7 +260,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       
       const token = tokenData.data;
-      console.log("[NotificationContext] Got push token:", token.substring(0, 20) + "...");
 
       // Register token with backend
       const success = await registerTokenWithBackend(token);
@@ -271,44 +340,62 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshNotifications = async () => {
     try {
-      // In a real implementation, you would fetch from your backend
-      // For now, we'll use mock data
-      const mockNotifications: NotificationHistoryItem[] = [
-        {
-          id: "1",
-          title: "Budget Alert",
-          message: "You've spent 80% of your monthly budget",
-          time: "2 hours ago",
-          type: "budget",
-          read: false,
-        },
-        {
-          id: "2",
-          title: "Transaction Complete",
-          message: "Payment of £45.20 to Tesco completed",
-          time: "1 day ago",
-          type: "transaction",
-          read: true,
-        },
-        {
-          id: "3",
-          title: "New Bank Connected",
-          message: "Your Lloyds Bank account has been connected",
-          time: "2 days ago",
-          type: "account",
-          read: true,
-        },
-      ];
+      // Import and use real data from dataSource API
+      const { getRecentNotifications } = await import("../services/dataSource");
+      const notificationData = await getRecentNotifications();
+      
+      
+      if (notificationData && notificationData.length > 0) {
+        // Load persisted read states from AsyncStorage
+        const persistedReadStates = await AsyncStorage.getItem(`notification_read_states_${user?.uid}`);
+        const readStates = persistedReadStates ? JSON.parse(persistedReadStates) : {};
+        
+        // Transform data to match NotificationHistoryItem interface and apply persisted read states
+        const notifications: NotificationHistoryItem[] = notificationData.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          message: item.message,
+          time: formatTimestamp(item.timestamp),
+          type: item.type,
+          read: readStates[item.id] !== undefined ? readStates[item.id] : item.isRead,
+          data: {
+            amount: item.amount,
+            merchant: item.merchant,
+            category: item.category,
+            location: item.location,
+            savingsAmount: item.savingsAmount,
+          }
+        }));
 
-      setNotifications(mockNotifications);
+        setNotifications(notifications);
+      } else {
+        // No real notifications from backend
+        setNotifications([]);
+      }
     } catch (error: any) {
       console.error("[NotificationContext] Error refreshing notifications:", error);
       setError("Failed to load notifications");
+      setNotifications([]);
+    }
+  };
+
+  // Helper function to format timestamp
+  const formatTimestamp = (timestamp: number): string => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+    
+    if (hours < 1) {
+      return "Just now";
+    } else if (hours < 24) {
+      return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    } else {
+      return `${days} day${days !== 1 ? 's' : ''} ago`;
     }
   };
 
   const handleNotificationReceived = (notification: Notifications.Notification) => {
-    console.log("[NotificationContext] Notification received:", notification);
     
     // Add to local notifications list
     const newNotification: NotificationHistoryItem = {
@@ -325,7 +412,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
-    console.log("[NotificationContext] User interacted with notification:", response);
     
     // Handle navigation based on notification type
     const notificationData = response.notification.request.content.data;
@@ -351,22 +437,54 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     markAsRead(notificationId);
   };
 
-  const markAsRead = (id: string) => {
+  const markAsRead = async (id: string) => {
     setNotifications(prev =>
       prev.map(notification =>
         notification.id === id ? { ...notification, read: true } : notification
       )
     );
+    
+    // Persist read state to AsyncStorage
+    await persistReadState(id, true);
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
     setNotifications(prev =>
       prev.map(notification => ({ ...notification, read: true }))
     );
+    
+    // Persist all read states to AsyncStorage
+    const allIds = notifications.map(n => n.id);
+    for (const id of allIds) {
+      await persistReadState(id, true);
+    }
   };
 
-  const clearNotifications = () => {
+  // Helper function to persist read state
+  const persistReadState = async (notificationId: string, isRead: boolean) => {
+    try {
+      const storageKey = `notification_read_states_${user?.uid}`;
+      const existingStates = await AsyncStorage.getItem(storageKey);
+      const readStates = existingStates ? JSON.parse(existingStates) : {};
+      
+      readStates[notificationId] = isRead;
+      
+      await AsyncStorage.setItem(storageKey, JSON.stringify(readStates));
+    } catch (error) {
+      console.error("[NotificationContext] Error persisting read state:", error);
+    }
+  };
+
+  const clearNotifications = async () => {
     setNotifications([]);
+    
+    // Clear persisted read states from AsyncStorage
+    try {
+      const storageKey = `notification_read_states_${user?.uid}`;
+      await AsyncStorage.removeItem(storageKey);
+    } catch (error) {
+      console.error("[NotificationContext] Error clearing notification cache:", error);
+    }
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;

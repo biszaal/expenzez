@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   Alert,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
+import { expenseAPI } from "../../services/api";
 
 const categories = [
   "Groceries",
@@ -32,17 +34,42 @@ export default function AddExpensePage() {
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!amount || isNaN(Number(amount))) {
       Alert.alert("Invalid amount", "Please enter a valid amount.");
       return;
     }
-    // For now, just log the data
-    console.log({ amount, category, date, description });
-    Alert.alert("Expense Added", "Your expense has been added!", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
+
+    const numericAmount = parseFloat(amount);
+    if (numericAmount <= 0) {
+      Alert.alert("Invalid amount", "Amount must be greater than zero.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await expenseAPI.createExpense({
+        amount: numericAmount,
+        category: category.toLowerCase(),
+        description: description.trim() || undefined,
+        date: date.toISOString(),
+      });
+
+      Alert.alert("Success", "Your expense has been added successfully!", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (error: any) {
+      console.error("Error creating expense:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to add expense. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -173,17 +200,23 @@ export default function AddExpensePage() {
 
         <TouchableOpacity
           style={{
-            backgroundColor: colors.primary[500],
+            backgroundColor: loading ? colors.gray[400] : colors.primary[500],
             paddingVertical: 16,
             borderRadius: 12,
             alignItems: "center",
             marginTop: 32,
+            opacity: loading ? 0.7 : 1,
           }}
           onPress={handleSubmit}
+          disabled={loading}
         >
-          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
-            Add Expense
-          </Text>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
+              Add Expense
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>

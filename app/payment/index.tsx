@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   },
   methodsCard: {
     backgroundColor: colors.background.primary,
-    borderRadius: borderRadius["3xl"],
+    borderRadius: borderRadius["4xl"],
     ...shadows.lg,
     borderWidth: 1,
     borderColor: colors.border.light,
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
   },
   actionsCard: {
     backgroundColor: colors.background.primary,
-    borderRadius: borderRadius["3xl"],
+    borderRadius: borderRadius["4xl"],
     ...shadows.lg,
     borderWidth: 1,
     borderColor: colors.border.light,
@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
   },
   securityCard: {
     backgroundColor: colors.background.primary,
-    borderRadius: borderRadius["3xl"],
+    borderRadius: borderRadius["4xl"],
     ...shadows.lg,
     borderWidth: 1,
     borderColor: colors.border.light,
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
   },
   historyCard: {
     backgroundColor: colors.background.primary,
-    borderRadius: borderRadius["3xl"],
+    borderRadius: borderRadius["4xl"],
     ...shadows.lg,
     borderWidth: 1,
     borderColor: colors.border.light,

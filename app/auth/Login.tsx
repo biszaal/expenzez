@@ -1,30 +1,34 @@
-// Updated Login screen using reusable components and global theme
+// Clean and Professional Login Screen
 import {
   AntDesign,
   FontAwesome,
   FontAwesome5,
-  MaterialCommunityIcons,
+  Ionicons,
 } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import React, { useState, useEffect } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
   View,
   StyleSheet,
+  StatusBar,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../auth/AuthContext";
-import { Button, TextField, Card, Typography } from "../../components/ui";
+import { TextField, Typography, LoadingScreen } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
-import { spacing, borderRadius, shadows } from "../../constants/theme";
+import { spacing, borderRadius, layout } from "../../constants/theme";
 import { jwtDecode } from "jwt-decode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAlert } from "../../hooks/useAlert";
 
+
 export default function Login() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { login } = useAuth();
   const { colors } = useTheme();
   const { showError, showSuccess } = useAlert();
@@ -32,8 +36,24 @@ export default function Login() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [userInfo, setUserInfo] = useState<any>(null);
-  // loginError state removed, use alert instead
+  const [messageShown, setMessageShown] = useState(false);
+
+  // Handle incoming parameters from registration redirect
+  useEffect(() => {
+    if (params.email) {
+      setIdentifier(params.email as string);
+    } else if (params.phone) {
+      setIdentifier(params.phone as string);
+    }
+    
+    if (params.message && !messageShown) {
+      showSuccess(params.message as string);
+      setMessageShown(true);
+    }
+  }, [params, messageShown]);
+  
+  
+
 
   const handleLogin = async () => {
     if (!identifier || !password) {
@@ -43,22 +63,61 @@ export default function Login() {
     setIsLoading(true);
     try {
       const result = await login(identifier, password);
-      console.log("[LoginScreen] login() result:", result);
       if (result.success) {
         // Optionally, auto-redirect to main app
         const idToken = await AsyncStorage.getItem("idToken");
         if (idToken) {
-          const decoded: any = jwtDecode(idToken);
-          setUserInfo(decoded);
+          jwtDecode(idToken);
         }
         showSuccess("Login successful!");
         router.replace("/(tabs)");
       } else {
-        // Only show error if not success
+        // Debug: Log the result error for debugging
+        console.log("Login failed with error:", result.error);
+        
+        // Check if it's an email verification error before showing generic error
+        if (result.error && (
+            result.error.toLowerCase().includes("not confirmed") ||
+            result.error.toLowerCase().includes("not verified") ||
+            result.error.toLowerCase().includes("verify") ||
+            result.error.toLowerCase().includes("email address not verified")
+          )) {
+          console.log("Detected email verification error, redirecting to EmailVerification page");
+          // Immediately redirect to email verification
+          router.replace({
+            pathname: "/auth/EmailVerification",
+            params: { 
+              email: identifier.includes('@') ? identifier : '', 
+              username: !identifier.includes('@') ? identifier : '',
+              message: "Please verify your email to complete login." 
+            }
+          });
+          return;
+        }
+        
+        // Only show error if not email verification issue
         showError(result.error || "Login failed. Please try again.");
       }
     } catch (error: any) {
-      console.log("[LoginScreen] login() threw error:", error);
+      console.error("Login error details:", error);
+      
+      // Check for email verification error first - redirect immediately
+      if (error.response?.status === 403 ||
+          error.response?.data?.error === "UserNotConfirmedException" || 
+          error.response?.data?.message?.toLowerCase().includes("not confirmed") ||
+          error.response?.data?.message?.toLowerCase().includes("not verified") ||
+          error.response?.data?.message?.toLowerCase().includes("verify")) {
+        // Immediately redirect to email verification without showing error
+        router.replace({
+          pathname: "/auth/EmailVerification",
+          params: { 
+            email: identifier.includes('@') ? identifier : '', 
+            message: "Please verify your email to complete login." 
+          }
+        });
+        return;
+      }
+      
       // Detect network/server error
       if (
         error?.message?.includes("Network Error") ||
@@ -70,171 +129,208 @@ export default function Login() {
           "Unable to connect to server. Please check your internet connection or try again later."
         );
       } else {
-      showError("Login failed. Please try again.");
+        // Check for other specific errors
+        const errorMessage = error.response?.data?.message || error.message || "Login failed. Please try again.";
+        showError(errorMessage);
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <SafeAreaView
-      style={[
-        styles.container,
-        { backgroundColor: colors.background.secondary },
-      ]}
-    >
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <View style={styles.content}>
-          {/* Header Section */}
-          <View style={styles.header}>
-            <View
-              style={[
-                styles.logoContainer,
-                { backgroundColor: colors.primary[500] },
-              ]}
-            >
-              <FontAwesome5 name="sign-in-alt" size={28} color="white" />
-            </View>
-            <Typography variant="h1" color="primary" align="center">
-              Welcome Back
-            </Typography>
-            <Typography variant="body" color="secondary" align="center">
-              Sign in to continue your financial journey
-            </Typography>
-          </View>
 
-          {/* Optionally, show user info after login, but now auto-redirects */}
-
-          {/* Login Form Card */}
-          <Card variant="elevated" padding="large">
-            <Typography
-              variant="h2"
-              color="primary"
-              align="center"
-              style={styles.formTitle}
-            >
-              Sign In
-            </Typography>
-
-            {/* Identifier Input */}
-            <TextField
-              label="Email or Username"
-              placeholder="you@email.com or yourusername"
-              value={identifier}
-              onChangeText={setIdentifier}
-              autoCapitalize="none"
-              required
-            />
-
-            {/* Password Input */}
-            <TextField
-              label="Password"
-              placeholder="••••••••"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              required
-            />
-
-            {/* Forgot Password */}
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Typography variant="caption" color="primary" weight="semibold">
-                Forgot password?
-              </Typography>
-            </TouchableOpacity>
-
-            {/* Login Button */}
-            <Button
-              title="Sign In"
-              onPress={handleLogin}
-              variant="primary"
-              size="large"
-              loading={isLoading}
-              fullWidth
-              style={styles.loginButton}
-              disabled={isLoading}
-            />
-
-            {/* Register Link */}
-            <TouchableOpacity
-              style={styles.registerLink}
-              onPress={() => router.push("/auth/Register")}
-            >
-              <Typography variant="body" color="secondary" align="center">
-                New to Expenzez?{" "}
-                <Typography variant="body" color="primary" weight="bold">
-                  Create account
-                </Typography>
-              </Typography>
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View
-              style={[styles.divider, { borderColor: colors.border.light }]}
-            >
-              <View
-                style={[
-                  styles.dividerLine,
-                  { backgroundColor: colors.border.light },
-                ]}
-              />
-              <Typography
-                variant="caption"
-                color="tertiary"
-                weight="semibold"
-                style={styles.dividerText}
-              >
-                or
-              </Typography>
-              <View
-                style={[
-                  styles.dividerLine,
-                  { backgroundColor: colors.border.light },
-                ]}
-              />
-            </View>
-
-            {/* Social Login Buttons */}
-            <View style={styles.socialButtons}>
-              {/* Social login buttons (not implemented) */}
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={() => showError("Google Login not implemented yet")}
-              >
-                <AntDesign name="google" size={20} color="#EA4335" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={() => showError("Facebook Login not implemented yet")}
-              >
-                <FontAwesome name="facebook" size={20} color="#4267B2" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={() => showError("Apple Login not implemented yet")}
-              >
-                <FontAwesome5 name="apple" size={20} color="#111" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={() => showError("X Login not implemented yet")}
-              >
-                <MaterialCommunityIcons
-                  name="alpha-x-circle"
-                  size={20}
-                  color="#111"
-                />
-              </TouchableOpacity>
-            </View>
-          </Card>
+  // Show full-screen loading during login process
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#6366F1', justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ 
+          width: 100, 
+          height: 100, 
+          backgroundColor: 'white', 
+          borderRadius: 50, 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          marginBottom: 20
+        }}>
+          <Ionicons name="shield-checkmark" size={60} color="#6366F1" />
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        <Typography variant="h2" style={{ color: 'white', marginBottom: 10, textAlign: 'center' }}>
+          Signing you in...
+        </Typography>
+        <Typography variant="body" style={{ color: 'rgba(255,255,255,0.8)', textAlign: 'center' }}>
+          Securing your connection...
+        </Typography>
+      </View>
+    );
+  }
+
+  return (
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background.primary} />
+      <View style={[styles.container, { backgroundColor: isLoading ? '#FF0000' : colors.background.primary }]}>
+
+        <SafeAreaView style={styles.safeArea}>
+          <KeyboardAvoidingView
+            style={styles.keyboardView}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
+            <ScrollView 
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Clean Header Section */}
+              <View style={styles.header}>
+                <View style={[styles.logoContainer, { backgroundColor: colors.primary[500] }]}>
+                  <Ionicons name="wallet-outline" size={32} color="white" />
+                </View>
+                
+                <Typography
+                  variant="h1"
+                  style={[styles.welcomeTitle, { color: colors.text.primary }]}
+                  align="center"
+                >
+                  {isLoading ? 'LOADING TEST ACTIVE!' : 'Welcome Back'}
+                </Typography>
+                <Typography
+                  variant="body"
+                  style={[styles.welcomeSubtitle, { color: colors.text.secondary }]}
+                  align="center"
+                >
+                  Sign in to your account
+                </Typography>
+              </View>
+
+              {/* Clean Login Form */}
+              <View style={[styles.formContainer, { backgroundColor: colors.background.secondary }]}>
+                <View style={styles.formContent}>
+                  {/* Clean Input Fields */}
+                  <View style={styles.inputContainer}>
+                    <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+                      Username or Email
+                    </Typography>
+                    <TextField
+                      placeholder="Enter your username or email"
+                      value={identifier}
+                      onChangeText={setIdentifier}
+                      autoCapitalize="none"
+                      style={[styles.input, {
+                        backgroundColor: colors.background.tertiary,
+                        borderColor: colors.border.medium,
+                        color: colors.text.primary
+                      }]}
+                    />
+                    {/* Show helpful message when redirected from registration */}
+                    {(params.email || params.phone) && (
+                      <View style={[styles.redirectInfo, { 
+                        backgroundColor: colors.success[50], 
+                        borderColor: colors.success[200]
+                      }]}>
+                        <Ionicons name="checkmark-circle" size={16} color={colors.success[500]} />
+                        <Typography variant="caption" style={[styles.redirectText, { color: colors.success[700] }]}>
+                          We found your account! Please enter your password to continue.
+                        </Typography>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+                      Password
+                    </Typography>
+                    <TextField
+                      placeholder="Enter your password"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={true}
+                      autoCapitalize="none"
+                      style={[styles.input, {
+                        backgroundColor: colors.background.tertiary,
+                        borderColor: colors.border.medium,
+                        color: colors.text.primary
+                      }]}
+                    />
+                  </View>
+
+                  {/* Forgot Password */}
+                  <TouchableOpacity
+                    style={styles.forgotPassword}
+                    onPress={() => router.push("/auth/ForgotPassword")}
+                  >
+                    <Typography variant="body" style={{ color: colors.primary[500] }}>
+                      Forgot password?
+                    </Typography>
+                  </TouchableOpacity>
+
+                  {/* Enhanced Login Button */}
+                  <View
+                    style={[
+                      styles.loginButton,
+                      { 
+                        backgroundColor: colors.primary[500],
+                      }
+                    ]}
+                  >
+                    <TouchableOpacity
+                      style={styles.loginButtonInner}
+                      onPress={handleLogin}
+                      disabled={isLoading}
+                    >
+                      <Typography
+                        variant="body"
+                        weight="semibold"
+                        style={{ color: 'white' }}
+                      >
+                        Sign In
+                      </Typography>
+                    </TouchableOpacity>
+                  </View>
+
+
+                  {/* Register Link */}
+                  <TouchableOpacity
+                    style={styles.registerLink}
+                    onPress={() => router.push("/auth/Register")}
+                  >
+                    <Typography variant="body" style={{ color: colors.text.secondary }} align="center">
+                      New to Expenzez?{" "}
+                      <Typography variant="body" style={{ color: colors.primary[500] }} weight="semibold">
+                        Create Account
+                      </Typography>
+                    </Typography>
+                  </TouchableOpacity>
+
+                  {/* Clean Social Login */}
+                  <View style={styles.divider}>
+                    <View style={[styles.dividerLine, { backgroundColor: colors.border.medium }]} />
+                    <Typography
+                      variant="body"
+                      style={[styles.dividerText, { color: colors.text.tertiary }]}
+                    >
+                      or continue with
+                    </Typography>
+                    <View style={[styles.dividerLine, { backgroundColor: colors.border.medium }]} />
+                  </View>
+
+                  <View style={styles.socialButtons}>
+                    <TouchableOpacity
+                      style={[styles.socialButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }]}
+                      onPress={() => showError("Google Login coming soon")}
+                    >
+                      <AntDesign name="google" size={20} color="#EA4335" />
+                      <Typography variant="body" style={[styles.socialButtonText, { color: colors.text.primary }]}>
+                        Google
+                      </Typography>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </View>
+    </>
   );
 }
 
@@ -242,73 +338,153 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  safeArea: {
+    flex: 1,
+  },
   keyboardView: {
     flex: 1,
   },
-  content: {
+  scrollView: {
     flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: spacing.lg,
   },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: layout.screenPadding,
+    paddingVertical: spacing.lg,
+  },
+
+  // Clean Header
   header: {
-    alignItems: "center",
-    marginBottom: spacing.xl,
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   logoContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  welcomeTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: spacing.sm,
+  },
+  welcomeSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    maxWidth: '80%',
+    lineHeight: 22,
+  },
+
+  // Clean Form
+  formContainer: {
+    borderRadius: borderRadius.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  formContent: {
+    padding: spacing.lg,
+  },
+
+  // Clean Inputs
+  inputContainer: {
     marginBottom: spacing.md,
-    ...shadows.md,
   },
-  formTitle: {
-    marginBottom: spacing.lg,
+  inputLabel: {
+    marginBottom: spacing.xs,
+    fontSize: 14,
   },
+  input: {
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    fontSize: 16,
+    minHeight: layout.inputHeight,
+  },
+
+  // Clean Buttons
   forgotPassword: {
-    alignSelf: "flex-end",
-    marginBottom: spacing.lg,
+    alignSelf: 'flex-end',
+    marginBottom: spacing.md,
+    paddingVertical: spacing.xs,
   },
   loginButton: {
-    marginBottom: spacing.lg,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+    minHeight: layout.buttonHeight,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  loginButtonInner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm + 2,
   },
   registerLink: {
-    alignSelf: "center",
-    marginBottom: spacing.lg,
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+    paddingVertical: spacing.sm,
   },
+
+  // Clean Social Section
   divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    borderRadius: 1,
   },
   dividerText: {
     marginHorizontal: spacing.md,
+    fontSize: 14,
   },
   socialButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  testLoginButton: {
-    alignItems: "center",
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    marginBottom: spacing.lg,
-    ...shadows.sm,
+    alignItems: 'center',
+    paddingBottom: spacing.xl, // Extra padding at bottom
   },
   socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    minHeight: layout.buttonHeight,
+    minWidth: 200,
+    gap: spacing.sm,
+  },
+  socialButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+
+  // Redirect Info Styles
+  redirectInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.sm,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    marginTop: spacing.xs,
+    gap: spacing.xs,
+  },
+  redirectText: {
     flex: 1,
-    alignItems: "center",
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 2,
-    marginHorizontal: 4,
-    ...shadows.sm,
+    fontSize: 12,
+    lineHeight: 16,
   },
 });

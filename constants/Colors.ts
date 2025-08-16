@@ -5,10 +5,10 @@
 
 export const COLORS = {
   primary: {
-    main: "#7C3AED", // Purple
-    light: "#A78BFA",
-    dark: "#5B21B6",
-    gradient: ["#7C3AED", "#8B5CF6"],
+    main: "#2563EB", // Modern Blue
+    light: "#60A5FA",
+    dark: "#1D4ED8",
+    gradient: ["#2563EB", "#3B82F6"],
   },
   secondary: {
     main: "#10B981", // Green
@@ -70,7 +70,7 @@ export const COLORS = {
     xl: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
   },
   gradients: {
-    primary: ["#7C3AED", "#8B5CF6"],
+    primary: ["#2563EB", "#3B82F6"],
     secondary: ["#10B981", "#059669"],
     accent: ["#F59E0B", "#D97706"],
     success: ["#10B981", "#059669"],

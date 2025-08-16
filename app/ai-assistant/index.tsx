@@ -121,65 +121,94 @@ export default function AIAssistantScreen() {
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.background.secondary }}
     >
-      {/* Consistent Header with Back Button */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingHorizontal: spacing.xl,
-          paddingTop: spacing.xl,
-          paddingBottom: spacing.md,
-          backgroundColor: colors.background.primary,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border.light,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ marginRight: spacing.lg, padding: spacing.sm }}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text
+      {/* Enhanced Modern Header */}
+      <View style={{
+        backgroundColor: colors.background.primary,
+        paddingHorizontal: 20,
+        paddingTop: 16,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+      }}>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <TouchableOpacity
+            onPress={() => router.back()}
             style={{
-              fontSize: typography.fontSizes["2xl"],
-              fontWeight: "700",
-              color: colors.text.primary,
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: colors.background.secondary,
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.1,
+              shadowRadius: 2,
+              elevation: 1,
             }}
           >
-            AI Finance Assistant
-          </Text>
-          <Text
-            style={{
-              fontSize: typography.fontSizes.sm,
+            <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
+          </TouchableOpacity>
+          
+          <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 16 }}>
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 4,
+            }}>
+              <View style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: colors.primary[500] + '15',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 8,
+              }}>
+                <Ionicons name="sparkles" size={18} color={colors.primary[500]} />
+              </View>
+              <Text style={{
+                fontSize: 20,
+                fontWeight: '800',
+                color: colors.text.primary,
+              }}>AI Assistant</Text>
+            </View>
+            <Text style={{
+              fontSize: 14,
               color: colors.text.secondary,
-              marginTop: spacing.xs,
-            }}
-          >
-            Ask anything about your spending, budgets, or financial goals.
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={handleClearChat}
-          disabled={loading}
-          style={{
-            marginLeft: spacing.lg,
-            padding: spacing.sm,
-            opacity: loading ? 0.5 : 1,
-          }}
-        >
-          <Text
+              textAlign: 'center',
+            }}>Financial insights & advice</Text>
+          </View>
+          
+          <TouchableOpacity
+            onPress={handleClearChat}
+            disabled={loading}
             style={{
-              color: colors.primary[500],
-              fontWeight: "600",
-              fontSize: typography.fontSizes.base,
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: loading ? colors.background.tertiary : colors.error[500] + '15',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: loading ? 0.5 : 1,
             }}
           >
-            Clear Chat
-          </Text>
-        </TouchableOpacity>
+            <Ionicons 
+              name="trash-outline" 
+              size={18} 
+              color={loading ? colors.text.tertiary : colors.error[500]} 
+            />
+          </TouchableOpacity>
+        </View>
       </View>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -204,127 +233,189 @@ export default function AIAssistantScreen() {
               <Animated.View
                 key={idx}
                 style={{
-                  marginBottom: spacing.lg,
+                  marginBottom: 20,
                   flexDirection: "row",
-                  justifyContent:
-                    msg.role === "user" ? "flex-end" : "flex-start",
+                  justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
+                  alignItems: 'flex-end',
                 }}
               >
-                <View
-                  style={{
-                    maxWidth: "80%",
-                    paddingHorizontal: spacing.lg,
-                    paddingVertical: spacing.md,
-                    borderRadius: borderRadius.xl,
-                    backgroundColor:
-                      msg.role === "user"
-                        ? colors.primary[500]
-                        : colors.background.primary,
-                    shadowColor: colors.shadow.light,
-                    shadowOpacity: 0.08,
-                    shadowRadius: 4,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: typography.fontSizes.base,
-                      color:
-                        msg.role === "user"
-                          ? colors.text.inverse
-                          : colors.text.primary,
-                    }}
-                  >
+                {/* AI Avatar */}
+                {msg.role === "assistant" && (
+                  <View style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: colors.primary[500],
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 8,
+                    marginBottom: 4,
+                  }}>
+                    <Ionicons name="sparkles" size={16} color="#fff" />
+                  </View>
+                )}
+                
+                {/* Message Bubble */}
+                <View style={{
+                  maxWidth: "75%",
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderRadius: 20,
+                  backgroundColor: msg.role === "user" 
+                    ? colors.primary[500] 
+                    : colors.background.primary,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 3,
+                  elevation: 2,
+                  borderBottomLeftRadius: msg.role === "assistant" ? 4 : 20,
+                  borderBottomRightRadius: msg.role === "user" ? 4 : 20,
+                }}>
+                  <Text style={{
+                    fontSize: 16,
+                    lineHeight: 22,
+                    color: msg.role === "user" ? "#fff" : colors.text.primary,
+                  }}>
                     {msg.content}
                   </Text>
                 </View>
+                
+                {/* User Avatar */}
+                {msg.role === "user" && (
+                  <View style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: colors.background.tertiary,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginLeft: 8,
+                    marginBottom: 4,
+                  }}>
+                    <Ionicons name="person" size={16} color={colors.text.secondary} />
+                  </View>
+                )}
               </Animated.View>
             ))}
+            {/* Enhanced Loading State */}
             {loading && (
-              <View
-                style={{
-                  marginBottom: spacing.lg,
-                  flexDirection: "row",
-                  justifyContent: "flex-start",
-                }}
-              >
-                <View
-                  style={{
-                    maxWidth: "80%",
-                    paddingHorizontal: spacing.lg,
-                    paddingVertical: spacing.md,
-                    borderRadius: borderRadius.xl,
-                    backgroundColor: colors.background.primary,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    shadowColor: colors.shadow.light,
-                    shadowOpacity: 0.08,
-                    shadowRadius: 4,
-                  }}
-                >
-                  <ActivityIndicator size="small" color={colors.primary[500]} />
-                  <Text
-                    style={{
-                      marginLeft: spacing.sm,
-                      color: colors.text.primary,
-                    }}
-                  >
-                    Thinking...
-                  </Text>
+              <Animated.View style={{
+                marginBottom: 20,
+                flexDirection: "row",
+                justifyContent: "flex-start",
+                alignItems: 'flex-end',
+              }}>
+                {/* AI Avatar */}
+                <View style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: colors.primary[500],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 8,
+                  marginBottom: 4,
+                }}>
+                  <Ionicons name="sparkles" size={16} color="#fff" />
                 </View>
-              </View>
+                
+                {/* Typing Indicator */}
+                <View style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderRadius: 20,
+                  borderBottomLeftRadius: 4,
+                  backgroundColor: colors.background.primary,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 3,
+                  elevation: 2,
+                }}>
+                  <ActivityIndicator size="small" color={colors.primary[500]} />
+                  <Text style={{
+                    marginLeft: 8,
+                    color: colors.text.secondary,
+                    fontSize: 16,
+                    fontStyle: 'italic',
+                  }}>AI is thinking...</Text>
+                </View>
+              </Animated.View>
             )}
           </ScrollView>
-          {/* Consistent Input Bar */}
-          <View
-            style={{
-              position: "absolute",
-              bottom: 24,
-              left: 0,
-              right: 0,
-              paddingHorizontal: spacing.xl,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: colors.background.primary,
-                borderRadius: borderRadius.xl,
-                shadowColor: colors.shadow.light,
-                shadowOpacity: 0.08,
-                shadowRadius: 4,
-                paddingHorizontal: spacing.lg,
-                paddingVertical: spacing.md,
-                borderWidth: 1,
-                borderColor: colors.border.light,
+          {/* Enhanced Input Bar */}
+          <View style={{
+            position: "absolute",
+            bottom: 16,
+            left: 0,
+            right: 0,
+            paddingHorizontal: 16,
+          }}>
+            <View style={{
+              flexDirection: "row",
+              alignItems: "flex-end",
+              backgroundColor: colors.background.primary,
+              borderRadius: 24,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 8,
+              elevation: 5,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderWidth: 1,
+              borderColor: colors.border.light,
               }}
             >
               <TextInput
                 style={{
                   flex: 1,
-                  fontSize: typography.fontSizes.base,
+                  maxHeight: 100,
+                  fontSize: 16,
+                  lineHeight: 22,
                   color: colors.text.primary,
+                  paddingVertical: 4,
                 }}
-                placeholder="Ask me anything about your finances..."
+                placeholder="Ask me about your spending, budgets, or goals..."
                 placeholderTextColor={colors.text.tertiary}
                 value={input}
                 onChangeText={setInput}
                 editable={!loading}
                 onSubmitEditing={sendMessage}
                 returnKeyType="send"
+                multiline
+                textAlignVertical="center"
               />
               <TouchableOpacity
                 style={{
-                  marginLeft: spacing.sm,
-                  padding: spacing.sm,
-                  borderRadius: 999,
-                  backgroundColor: colors.primary[500],
-                  opacity: !input.trim() || loading ? 0.5 : 1,
+                  marginLeft: 12,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: (!input.trim() || loading) ? colors.background.tertiary : colors.primary[500],
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 2,
                 }}
                 onPress={sendMessage}
                 disabled={!input.trim() || loading}
               >
-                <Ionicons name="send" size={22} color="#fff" />
+                {loading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Ionicons 
+                    name="arrow-up" 
+                    size={20} 
+                    color={(!input.trim() || loading) ? colors.text.tertiary : "#fff"} 
+                  />
+                )}
               </TouchableOpacity>
             </View>
           </View>

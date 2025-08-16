@@ -6,358 +6,167 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  TextInput,
-  Alert,
-  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useAuthGuard } from "../../hooks/useAuthGuard";
-import { useAlert } from "../../hooks/useAlert";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
-import { Header, Section } from "../../components/ui";
+import { useAlert } from "../../hooks/useAlert";
 import { bankingAPI } from "../../services/api";
-import {
-  spacing,
-  borderRadius,
-  shadows,
-  typography,
-} from "../../constants/theme";
+import { spacing, borderRadius, shadows } from "../../constants/theme";
 
-interface Institution {
+interface Bank {
   id: string;
   name: string;
-  logo?: string;
-  bic?: string;
-  transaction_total_days?: number;
+  logo: string;
+  isSupported: boolean;
 }
 
-export default function SelectBankScreen() {
+export default function BankSelectScreen() {
   const router = useRouter();
-  const { isLoggedIn } = useAuthGuard();
-  const { showAlert, showError } = useAlert();
   const { colors } = useTheme();
-  const [institutions, setInstitutions] = useState<Institution[]>([]);
-  const [filteredInstitutions, setFilteredInstitutions] = useState<
-    Institution[]
-  >([]);
+  const { showError, showSuccess } = useAlert();
+  
+  const [banks, setBanks] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState("gb");
-
-  const countries = [
-    { code: "gb", name: "United Kingdom", flag: "🇬🇧" },
-    { code: "de", name: "Germany", flag: "🇩🇪" },
-    { code: "fr", name: "France", flag: "🇫🇷" },
-    { code: "es", name: "Spain", flag: "🇪🇸" },
-    { code: "it", name: "Italy", flag: "🇮🇹" },
-    { code: "nl", name: "Netherlands", flag: "🇳🇱" },
-  ];
+  const [connecting, setConnecting] = useState<string | null>(null);
 
   useEffect(() => {
-    loadInstitutions();
-  }, [selectedCountry]);
+    fetchBanks();
+  }, []);
 
-  useEffect(() => {
-    filterInstitutions();
-  }, [searchQuery, institutions]);
-
-  const loadInstitutions = async () => {
+  const fetchBanks = async () => {
     try {
       setLoading(true);
-      const institutions = await bankingAPI.getInstitutions();
-      setInstitutions(institutions || []);
+      const response = await bankingAPI.getInstitutions();
+      setBanks(response.institutions || []);
     } catch (error: any) {
-      console.error("Error loading institutions:", error);
-      showError(
-        error.response?.data?.message ||
-          "Failed to load banks. Please try again."
-      );
+      console.error("Error fetching banks:", error);
+      showError("Failed to load available banks");
+      // Provide fallback banks
+      setBanks([
+        { id: "hsbc", name: "HSBC", logo: "", isSupported: true },
+        { id: "barclays", name: "Barclays", logo: "", isSupported: true },
+        { id: "lloyds", name: "Lloyds", logo: "", isSupported: true },
+        { id: "natwest", name: "NatWest", logo: "", isSupported: true },
+        { id: "santander", name: "Santander", logo: "", isSupported: true },
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filterInstitutions = () => {
-    if (!searchQuery.trim()) {
-      setFilteredInstitutions(institutions);
+  const handleBankSelect = async (bank: Bank) => {
+    if (!bank.isSupported) {
+      showError(`${bank.name} is not supported yet`);
       return;
     }
 
-    const filtered = institutions.filter((institution) =>
-      institution.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setFilteredInstitutions(filtered);
-  };
-
-  const handleBankSelection = async (institution: Institution) => {
     try {
-      const response = await bankingAPI.connectBank({
-        redirectUrl: "expenzez://banks/callback",
-      });
-
-      if (response.link) {
-        Alert.alert(
-          "Connect Bank",
-          `You'll be redirected to ${institution.name} to authorize the connection. Continue?`,
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Continue",
-              onPress: () => {
-                // In a real app, you would open the link in a WebView or external browser
-                showAlert(
-                  "Bank Connection",
-                  `Redirecting to ${institution.name}...\n\nLink: ${response.link}`
-                );
-              },
-            },
-          ]
-        );
+      setConnecting(bank.id);
+      const response = await bankingAPI.connectBankDirect(bank.id);
+      
+      if (response.authUrl) {
+        showSuccess(`Connecting to ${bank.name}...`);
+        // Navigate to bank connection flow
+        router.push({
+          pathname: "/banks/connect",
+          params: { bankId: bank.id, authUrl: response.authUrl }
+        });
       }
     } catch (error: any) {
-      console.error("Bank connection error:", error);
-      showError(
-        error.response?.data?.message ||
-          "Failed to connect bank account. Please try again."
-      );
+      console.error("Error connecting bank:", error);
+      showError(error.response?.data?.message || `Failed to connect to ${bank.name}`);
+    } finally {
+      setConnecting(null);
     }
   };
 
-  const getBankLogo = (institution: Institution, colors: any) => {
-    if (institution.logo) {
-      return (
-        <Image
-          source={{ uri: institution.logo }}
-          style={styles.bankLogo}
-          resizeMode="contain"
-        />
-      );
-    }
-    // Fallback: use a vector icon if no logo
+  if (loading) {
     return (
-      <Ionicons
-        name="business-outline"
-        size={32}
-        color={colors.primary[500]}
-        style={styles.bankLogo}
-      />
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
+            Loading banks...
+          </Text>
+        </View>
+      </SafeAreaView>
     );
-  };
-
-  if (!isLoggedIn) {
-    return null;
   }
 
   return (
-    <SafeAreaView
-      style={[
-        styles.container,
-        { backgroundColor: colors.background.secondary },
-      ]}
-    >
-      <Header
-        title="Select Bank"
-        subtitle="Choose your bank to connect"
-        showBackButton={true}
-      />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
+          Select Your Bank
+        </Text>
+        <View style={{ width: 24 }} />
+      </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Country Selection */}
-        <Section title="Select Country">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.countryScroll}
-            contentContainerStyle={styles.countryContainer}
-          >
-            {countries.map((country) => (
-              <TouchableOpacity
-                key={country.code}
-                style={[
-                  styles.countryButton,
-                  {
-                    backgroundColor: colors.background.primary,
-                    borderColor: colors.border.light,
-                  },
-                  selectedCountry === country.code && {
-                    backgroundColor: colors.primary[500],
-                    borderColor: colors.primary[500],
-                  },
-                ]}
-                onPress={() => setSelectedCountry(country.code)}
-              >
-                <Text style={styles.countryFlag}>{country.flag}</Text>
-                <Text
+      {/* Bank List */}
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
+          Choose your bank to connect your account securely
+        </Text>
+
+        <View style={styles.bankList}>
+          {banks.map((bank) => (
+            <TouchableOpacity
+              key={bank.id}
+              style={[
+                styles.bankItem,
+                { 
+                  backgroundColor: colors.background.primary,
+                  opacity: bank.isSupported ? 1 : 0.6
+                }
+              ]}
+              onPress={() => handleBankSelect(bank)}
+              disabled={connecting === bank.id || !bank.isSupported}
+            >
+              <View style={styles.bankInfo}>
+                <View
                   style={[
-                    styles.countryName,
-                    { color: colors.text.primary },
-                    selectedCountry === country.code && { color: "white" },
+                    styles.bankIcon,
+                    { backgroundColor: colors.primary[100] }
                   ]}
                 >
-                  {country.name}
+                  <Text style={[styles.bankInitial, { color: colors.primary[500] }]}>
+                    {bank.name.charAt(0)}
+                  </Text>
+                </View>
+                <Text style={[styles.bankName, { color: colors.text.primary }]}>
+                  {bank.name}
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </Section>
+              </View>
 
-        {/* Search Bar */}
-        <Section title="Search Banks">
-          <View
-            style={[
-              styles.searchContainer,
-              {
-                backgroundColor: colors.background.primary,
-                borderColor: colors.border.light,
-              },
-            ]}
-          >
-            <Ionicons
-              name="search"
-              size={20}
-              color={colors.text.secondary}
-              style={styles.searchIcon}
-            />
-            <TextInput
-              style={[styles.searchInput, { color: colors.text.primary }]}
-              placeholder="Search for your bank..."
-              placeholderTextColor={colors.text.tertiary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                onPress={() => setSearchQuery("")}
-                style={styles.clearButton}
-              >
-                <Ionicons
-                  name="close-circle"
-                  size={20}
-                  color={colors.text.secondary}
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-        </Section>
+              {connecting === bank.id ? (
+                <ActivityIndicator size="small" color={colors.primary[500]} />
+              ) : bank.isSupported ? (
+                <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+              ) : (
+                <Text style={[styles.comingSoonText, { color: colors.text.tertiary }]}>
+                  Coming Soon
+                </Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
 
-        {/* Banks List */}
-        <Section title="Available Banks">
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary[500]} />
-              <Text
-                style={[styles.loadingText, { color: colors.text.secondary }]}
-              >
-                Loading banks...
-              </Text>
-            </View>
-          ) : filteredInstitutions.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons
-                name="search-outline"
-                size={48}
-                color={colors.text.tertiary}
-              />
-              <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
-                No banks found
-              </Text>
-              <Text
-                style={[styles.emptySubtitle, { color: colors.text.secondary }]}
-              >
-                {searchQuery
-                  ? "Try a different search term"
-                  : "No banks available in this country"}
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.banksContainer}>
-              {filteredInstitutions.map((institution) => (
-                <TouchableOpacity
-                  key={institution.id}
-                  style={[
-                    styles.bankItem,
-                    {
-                      backgroundColor: colors.background.primary,
-                      borderColor: colors.border.light,
-                    },
-                    shadows.sm,
-                  ]}
-                  onPress={() => handleBankSelection(institution)}
-                >
-                  <View style={styles.bankInfo}>
-                    <View style={styles.bankLogoContainer}>
-                      {getBankLogo(institution, colors)}
-                    </View>
-                    <View style={styles.bankDetails}>
-                      <Text
-                        style={[
-                          styles.bankName,
-                          { color: colors.text.primary },
-                        ]}
-                      >
-                        {institution.name}
-                      </Text>
-                      {institution.bic && (
-                        <Text
-                          style={[
-                            styles.bankBic,
-                            { color: colors.text.secondary },
-                          ]}
-                        >
-                          BIC: {institution.bic}
-                        </Text>
-                      )}
-                      {institution.transaction_total_days && (
-                        <Text
-                          style={[
-                            styles.bankDays,
-                            { color: colors.text.secondary },
-                          ]}
-                        >
-                          {institution.transaction_total_days} days of history
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={20}
-                    color={colors.text.tertiary}
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </Section>
-
-        {/* Info Card */}
-        <Section>
-          <View
-            style={[
-              styles.infoCard,
-              {
-                backgroundColor: colors.primary[50],
-                borderColor: colors.primary[200],
-              },
-            ]}
-          >
-            <Ionicons
-              name="information-circle"
-              size={24}
-              color={colors.primary[500]}
-            />
-            <Text style={[styles.infoText, { color: colors.text.primary }]}>
-              Your bank credentials are never stored. We use secure Open Banking
-              APIs to access your data.
-            </Text>
-          </View>
-        </Section>
+        {/* Help Section */}
+        <View style={[styles.helpSection, { backgroundColor: colors.background.primary }]}>
+          <Ionicons name="information-circle" size={20} color={colors.primary[500]} />
+          <Text style={[styles.helpText, { color: colors.text.secondary }]}>
+            Your banking credentials are never stored on our servers. We use secure banking APIs to connect your accounts.
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -367,132 +176,89 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: spacing["2xl"],
-  },
-  countryScroll: {
-    marginBottom: spacing.md,
-  },
-  countryContainer: {
-    paddingHorizontal: spacing.lg,
-  },
-  countryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.xl,
-    marginRight: spacing.md,
-    borderWidth: 1,
-  },
-  countryFlag: {
-    fontSize: 20,
-    marginRight: spacing.sm,
-  },
-  countryName: {
-    fontSize: typography.fontSizes.sm,
-    fontWeight: "500",
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: borderRadius.xl,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  searchIcon: {
-    marginRight: spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: typography.fontSizes.base,
-  },
-  clearButton: {
-    marginLeft: spacing.sm,
-  },
   loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: spacing["2xl"],
   },
   loadingText: {
     marginTop: spacing.md,
-    fontSize: typography.fontSizes.base,
+    fontSize: 16,
   },
-  emptyContainer: {
+  header: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing["2xl"],
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
   },
-  emptyTitle: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: "600",
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
+  backButton: {
+    padding: spacing.sm,
   },
-  emptySubtitle: {
-    fontSize: typography.fontSizes.base,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+  },
+  subtitle: {
+    fontSize: 16,
+    marginVertical: spacing.lg,
     textAlign: "center",
   },
-  banksContainer: {
-    gap: spacing.md,
+  bankList: {
+    marginTop: spacing.md,
   },
   bankItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
+    padding: spacing.lg,
+    marginBottom: spacing.sm,
+    borderRadius: borderRadius.lg,
+    ...shadows.sm,
   },
   bankInfo: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
   },
-  bankLogoContainer: {
+  bankIcon: {
     width: 48,
     height: 48,
-    borderRadius: borderRadius.lg,
-    backgroundColor: "white",
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
   },
-  bankLogo: {
-    width: 32,
-    height: 32,
-  },
-  bankDetails: {
-    flex: 1,
+  bankInitial: {
+    fontSize: 20,
+    fontWeight: "700",
   },
   bankName: {
-    fontSize: typography.fontSizes.base,
+    fontSize: 18,
     fontWeight: "600",
-    marginBottom: spacing.xs,
   },
-  bankBic: {
-    fontSize: typography.fontSizes.sm,
-    marginBottom: spacing.xs,
+  comingSoonText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
-  bankDays: {
-    fontSize: typography.fontSizes.sm,
-  },
-  infoCard: {
+  helpSection: {
     flexDirection: "row",
     alignItems: "flex-start",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
+    padding: spacing.lg,
+    marginTop: spacing.xl,
+    borderRadius: borderRadius.lg,
+    ...shadows.sm,
   },
-  infoText: {
+  helpText: {
     flex: 1,
-    fontSize: typography.fontSizes.sm,
-    lineHeight: typography.fontSizes.sm * 1.4,
+    fontSize: 14,
+    lineHeight: 20,
     marginLeft: spacing.sm,
   },
 });

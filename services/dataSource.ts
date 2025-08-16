@@ -1,6 +1,39 @@
 // Centralized data source for real API calls
 import { bankingAPI, profileAPI } from "./api";
 
+// Helper function to extract merchant name from transaction description
+function extractMerchantFromDescription(description: string): string {
+  // Remove common prefixes and clean up merchant names
+  return description
+    .replace(/^(CARD PAYMENT TO |FASTER PAYMENT TO |DIRECT DEBIT FROM |STANDING ORDER TO )/i, '')
+    .replace(/\s+\d{2}\/\d{2}\/\d{4}.*$/i, '') // Remove dates
+    .replace(/\s+REF:.*$/i, '') // Remove reference numbers
+    .replace(/\s+\*\d+.*$/i, '') // Remove card numbers
+    .trim()
+    .substring(0, 50); // Limit length
+}
+
+// Helper function to categorize transactions based on description
+function categorizeTransaction(description: string): string {
+  const desc = description.toLowerCase();
+  
+  if (desc.includes('grocery') || desc.includes('supermarket') || desc.includes('tesco') || desc.includes('asda') || desc.includes('sainsbury')) {
+    return 'groceries';
+  } else if (desc.includes('restaurant') || desc.includes('cafe') || desc.includes('pizza') || desc.includes('mcdonald') || desc.includes('kfc')) {
+    return 'dining';
+  } else if (desc.includes('fuel') || desc.includes('petrol') || desc.includes('shell') || desc.includes('bp')) {
+    return 'transport';
+  } else if (desc.includes('shopping') || desc.includes('amazon') || desc.includes('ebay')) {
+    return 'shopping';
+  } else if (desc.includes('salary') || desc.includes('wage') || desc.includes('payroll')) {
+    return 'income';
+  } else if (desc.includes('rent') || desc.includes('mortgage') || desc.includes('utilities') || desc.includes('electric') || desc.includes('gas')) {
+    return 'bills';
+  } else {
+    return 'other';
+  }
+}
+
 // Real API-backed implementations
 export const getInstitutions = async (...args: any[]) => {
   try {
@@ -239,20 +272,95 @@ export const getLegalSections = async () => {
 
 export const getNotificationSettings = async () => {
   try {
-    // This would typically come from a backend API
-    return [];
+    // Hardcoded notification preferences for production demo
+    return {
+      pushEnabled: true,
+      emailEnabled: false,
+      smsEnabled: false,
+      transactionAlerts: true,
+      budgetAlerts: true,
+      accountAlerts: true,
+      securityAlerts: true,
+      insightAlerts: true,
+      minimumTransactionAmount: 50.0,
+      budgetThresholds: [75, 85, 95, 100],
+      quietHours: {
+        enabled: true,
+        startTime: "22:00",
+        endTime: "07:00",
+      },
+    };
   } catch (error) {
     console.error("Error loading notification settings:", error);
-    return [];
+    return {
+      pushEnabled: true,
+      emailEnabled: false,
+      smsEnabled: false,
+      transactionAlerts: true,
+      budgetAlerts: true,
+      accountAlerts: true,
+      securityAlerts: true,
+      insightAlerts: true,
+      minimumTransactionAmount: 50.0,
+      budgetThresholds: [75, 85, 95, 100],
+      quietHours: {
+        enabled: false,
+        startTime: "22:00",
+        endTime: "07:00",
+      },
+    };
   }
 };
 
 export const getRecentNotifications = async () => {
   try {
-    // This would typically come from a backend API
-    return [];
+    // Fetch real notifications from backend API
+    const { notificationAPI } = await import("./api");
+    const response = await notificationAPI.getHistory(20);
+    
+    
+    // Transform backend data to match frontend interface
+    return (response.notifications || []).map((notification: any) => ({
+      id: notification.id || notification.notificationId,
+      title: notification.title,
+      message: notification.message,
+      timestamp: new Date(notification.createdAt || notification.timestamp).getTime(),
+      type: notification.type || 'account',
+      isRead: notification.read || false,
+      ...notification.data
+    }));
   } catch (error) {
-    console.error("Error loading recent notifications:", error);
+    console.error("Error loading real notifications:", error);
+    
+    // Handle timeout errors gracefully
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      console.warn("Notification request timed out, returning empty list");
+      return [];
+    }
+    
+    // Temporary fallback: Return sample notifications until backend is deployed
+    if (error.response?.status === 404) {
+      return [
+        {
+          id: "temp-1",
+          title: "Welcome to Expenzez!",
+          message: "Your notification system is being set up. You'll receive real-time alerts once your bank accounts sync.",
+          timestamp: Date.now() - 30 * 60 * 1000, // 30 minutes ago
+          type: "account",
+          isRead: false,
+        },
+        {
+          id: "temp-2", 
+          title: "Notification System Ready",
+          message: "Once deployed, you'll receive alerts for transactions, budget limits, security events, and AI insights.",
+          timestamp: Date.now() - 60 * 60 * 1000, // 1 hour ago
+          type: "insight",
+          isRead: true,
+        }
+      ];
+    }
+    
+    // Return empty array for other errors
     return [];
   }
 };
@@ -292,7 +400,11 @@ export const getCreditScore = async () => {
 export const getGoals = async () => {
   try {
     const response = await profileAPI.getGoals();
-    return response.goals;
+    return response.goals || {
+      completed: 0,
+      total: 0,
+      items: [],
+    };
   } catch (error) {
     console.error("Error loading goals:", error);
     return {
@@ -300,6 +412,53 @@ export const getGoals = async () => {
       total: 0,
       items: [],
     };
+  }
+};
+
+export const getSavingsGoals = async () => {
+  try {
+    const response = await profileAPI.getGoals();
+    return response.savingsGoals || [];
+  } catch (error) {
+    console.error("Error loading savings goals:", error);
+    return [];
+  }
+};
+
+export const createSavingsGoal = async (goalData: {
+  title: string;
+  description?: string;
+  targetAmount: number;
+  currentAmount: number;
+  targetDate: string;
+  category: string;
+}) => {
+  try {
+    const response = await profileAPI.createGoal(goalData);
+    return response;
+  } catch (error) {
+    console.error("Error creating savings goal:", error);
+    throw error;
+  }
+};
+
+export const updateSavingsGoal = async (goalId: string, updates: any) => {
+  try {
+    const response = await profileAPI.updateGoal(goalId, updates);
+    return response;
+  } catch (error) {
+    console.error("Error updating savings goal:", error);
+    throw error;
+  }
+};
+
+export const deleteSavingsGoal = async (goalId: string) => {
+  try {
+    const response = await profileAPI.deleteGoal(goalId);
+    return response;
+  } catch (error) {
+    console.error("Error deleting savings goal:", error);
+    throw error;
   }
 };
 
@@ -378,4 +537,42 @@ const getCategoryColor = (index: number): string => {
   ];
 
   return colors[index % colors.length];
+};
+
+export const getTransactions = async () => {
+  try {
+    
+    // Use the EXACT same call as the homepage - direct API call without transformation
+    const response = await bankingAPI.getAllTransactions(100);
+    
+
+    if (!response || !response.transactions) {
+      return [];
+    }
+
+    
+    // Return the transactions exactly as they come from the API (same as homepage)
+    // Just add the fields that the UI expects
+    return response.transactions.map((tx: any, index: number) => ({
+      // Keep all original fields from DynamoDB
+      ...tx,
+      // Add UI-expected fields
+      id: tx.transactionId || tx.id || `tx_${index}`,
+      transaction_id: tx.transactionId || tx.id,
+      account_id: tx.accountId,
+      merchant_name: tx.merchant || tx.description || 'Unknown Merchant',
+      transaction_type: tx.type || (parseFloat(tx.amount || '0') < 0 ? 'debit' : 'credit'),
+      bank_name: tx.bankName || 'Unknown Bank',
+    }));
+    
+  } catch (error: any) {
+    console.error("[DataSource] Error with direct API call:", error);
+    console.error("[DataSource] Error details:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
+    return [];
+  }
 };

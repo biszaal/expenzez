@@ -1,4 +1,6 @@
 // Export all constants from a single location
 export * from "./theme";
 export { default as THEME } from "./theme";
-export const LOCAL_IP_ADDRESS = "192.168.1.76";
+export * from "./config";
+export * from "./strings";
+// Note: LOCAL_IP_ADDRESS removed - use config.ts for environment-specific URLs

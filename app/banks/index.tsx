@@ -31,22 +31,28 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { bankingAPI } from "../../services/api";
+import * as WebBrowser from "expo-web-browser";
+import { DEEP_LINK_URLS } from "../../constants/config";
 
 /**
  * Bank Account Interface
  */
 interface BankAccount {
-  id: string;
-  name: string;
-  iban: string;
-  institution: {
-    id: string;
-    name: string;
-    logo: string;
-  };
+  accountId: string;
+  bankName: string;
+  bankLogo?: string;
+  accountType: string;
+  accountNumber: string;
+  sortCode?: string;
   balance: number;
   currency: string;
-  status: string;
+  connectedAt: number;
+  lastSyncAt: number;
+  isActive: boolean;
+  status: "connected" | "expired" | "disconnected";
+  isExpired: boolean;
+  errorMessage?: string;
+  lastErrorAt?: number;
 }
 
 /**
@@ -72,6 +78,7 @@ export default function BanksScreen() {
   const [error, setError] = useState<string | null>(null);
   const [hasExpiredTokens, setHasExpiredTokens] = useState(false);
   const [showingCachedData, setShowingCachedData] = useState(false);
+  const [syncing, setSyncing] = useState<string | null>(null);
 
   const fetchAccounts = async () => {
     try {
@@ -80,41 +87,211 @@ export default function BanksScreen() {
       setHasExpiredTokens(false);
       setShowingCachedData(false);
 
-      // First, check connection status
-      const connectionStatus = await bankingAPI.checkBankConnectionStatus();
-      
-      if (connectionStatus.hasExpiredTokens) {
-        console.log("Expired tokens detected, showing cached data");
-        setHasExpiredTokens(true);
-        setShowingCachedData(true);
-        
-        // Get cached bank data
-        const cachedData = await bankingAPI.getCachedBankData();
-        
-        // Transform cached data to BankAccount format
-        const transformedAccounts = cachedData.connections.map((conn: any) => ({
-          id: conn.accountId,
-          name: conn.bankName,
-          iban: conn.accountNumber,
-          institution: {
-            id: conn.accountId,
-            name: conn.bankName,
-            logo: conn.logo || "",
-          },
-          balance: conn.balance,
-          currency: conn.currency,
-          status: conn.isExpired ? "Token Expired" : "Active",
-        }));
-        
-        setAccounts(transformedAccounts);
-      } else {
-        // Normal flow - fetch fresh data
-        const accountsData = await bankingAPI.getAccounts();
-        setAccounts(accountsData.accounts || []);
+      console.log("[Banks] Fetching connected banks...");
+
+      // Try the new getConnectedBanks API first
+      try {
+        console.log("[Banks] Calling bankingAPI.getConnectedBanks()...");
+        const banksData = await bankingAPI.getConnectedBanks();
+        console.log(
+          "[Banks] getConnectedBanks full response:",
+          JSON.stringify(banksData, null, 2)
+        );
+
+        console.log(
+          "[Banks] Checking banksData.banks:",
+          banksData.banks,
+          "Length:",
+          banksData.banks?.length
+        );
+
+        console.log(
+          "[Banks] Full API response check - banksData:",
+          JSON.stringify(banksData, null, 2)
+        );
+        console.log("[Banks] banksData.banks exists:", !!banksData.banks);
+        console.log(
+          "[Banks] banksData.banks length:",
+          banksData.banks?.length || 0
+        );
+        console.log("[Banks] banksData.banks array:", banksData.banks);
+
+        // Debug each bank's logo data specifically
+        if (banksData.banks) {
+          banksData.banks.forEach((bank: any, index: number) => {
+            console.log(`[Banks] Bank ${index + 1}:`, {
+              bankName: bank.bankName,
+              bankLogo: bank.bankLogo,
+              logoLength: bank.bankLogo?.length || 0,
+              logoType: typeof bank.bankLogo,
+            });
+          });
+        }
+
+        if (banksData.banks && Array.isArray(banksData.banks)) {
+          console.log(
+            "[Banks] Banks array received, length:",
+            banksData.banks.length
+          );
+
+          if (banksData.banks.length === 0) {
+            console.log(
+              "[Banks] Empty banks array - tokens may have expired, trying fallback..."
+            );
+            setError(
+              "Your bank connections may have expired. Trying to load cached data..."
+            );
+          }
+
+          // Transform to BankAccount format and check for expired tokens
+          const transformedAccounts = banksData.banks.map((bank: any) => ({
+            accountId: bank.accountId,
+            bankName: bank.bankName,
+            bankLogo: bank.bankLogo,
+            accountType: bank.accountType,
+            accountNumber: bank.accountNumber,
+            sortCode: bank.sortCode,
+            balance: bank.balance,
+            currency: bank.currency,
+            connectedAt: bank.connectedAt,
+            lastSyncAt: bank.lastSyncAt,
+            isActive: bank.isActive,
+            status: bank.status,
+            isExpired: bank.status === "expired" || bank.isExpired,
+            errorMessage: bank.errorMessage,
+            lastErrorAt: bank.lastErrorAt,
+          }));
+
+          console.log("[Banks] Transformed accounts:", transformedAccounts);
+          console.log(
+            "[Banks] Account logos:",
+            transformedAccounts.map((acc: { bankName: any; bankLogo: any; }) => ({
+              bankName: acc.bankName,
+              bankLogo: acc.bankLogo,
+            }))
+          );
+          // If we got empty banks array, try fallback immediately
+          if (transformedAccounts.length === 0) {
+            console.log("[Banks] No accounts found, triggering fallback...");
+            throw new Error("No banks returned from API - trying fallback");
+          }
+
+          setAccounts(transformedAccounts);
+
+          // Check if any banks have expired tokens
+          const hasExpired = transformedAccounts.some((acc: any) => acc.isExpired);
+          setHasExpiredTokens(hasExpired);
+          if (hasExpired) {
+            setShowingCachedData(true);
+            console.log("[Banks] Found expired tokens, showing warning");
+          }
+          return;
+        }
+      } catch (apiError) {
+        console.error(
+          "[Banks] getConnectedBanks failed, trying fallback:",
+          apiError
+        );
+
+        // Fallback: Try to get cached bank data if API fails
+        try {
+          const cachedData = await bankingAPI.getCachedBankData();
+          console.log("[Banks] Cached data response:", cachedData);
+
+          if (cachedData.connections && cachedData.connections.length > 0) {
+            const transformedAccounts = cachedData.connections.map(
+              (conn: any) => ({
+                accountId: conn.accountId,
+                bankName: conn.bankName,
+                bankLogo: conn.bankLogo,
+                accountType: conn.accountType,
+                accountNumber: conn.accountNumber,
+                sortCode: conn.sortCode,
+                balance: conn.balance,
+                currency: conn.currency,
+                connectedAt: conn.connectedAt,
+                lastSyncAt: conn.lastSyncAt,
+                isActive: conn.isActive,
+                status: "expired",
+                isExpired: true,
+                errorMessage: "Connection expired",
+                lastErrorAt: Date.now(),
+              })
+            );
+
+            console.log(
+              "[Banks] Using cached expired connections:",
+              transformedAccounts
+            );
+            setAccounts(transformedAccounts);
+            setHasExpiredTokens(true);
+            setShowingCachedData(true);
+            return;
+          }
+        } catch (cachedError) {
+          console.error("[Banks] Cached data also failed:", cachedError);
+        }
+
+        throw apiError; // Re-throw original error if fallback fails
       }
+
+      // No banks found from main API
+      console.log("[Banks] No banks found from main API");
+      console.log("[Banks] Checking for cached bank data as fallback...");
+
+      // Try to fetch cached bank data for expired connections
+      try {
+        const cachedResponse = await bankingAPI.getCachedBankData();
+        console.log("[Banks] Cached response:", cachedResponse);
+
+        if (
+          cachedResponse.connections &&
+          cachedResponse.connections.length > 0
+        ) {
+          console.log(
+            "[Banks] Found cached connections, transforming to expired state"
+          );
+          const cachedAccounts = cachedResponse.connections.map(
+            (conn: any) => ({
+              accountId: conn.accountId,
+              bankName: conn.bankName || "Unknown Bank",
+              bankLogo: conn.bankLogo,
+              accountType: conn.accountType || "Account",
+              accountNumber: conn.accountNumber || "",
+              sortCode: conn.sortCode,
+              balance: conn.balance || 0,
+              currency: conn.currency || "GBP",
+              connectedAt: conn.connectedAt || Date.now(),
+              lastSyncAt: conn.lastSyncAt || Date.now(),
+              isActive: false,
+              status: "expired" as const,
+              isExpired: true,
+              errorMessage:
+                "Bank connection has expired. Please reconnect to sync fresh data.",
+              lastErrorAt: Date.now(),
+            })
+          );
+
+          console.log(
+            "[Banks] Using cached expired connections:",
+            cachedAccounts
+          );
+          setAccounts(cachedAccounts);
+          setHasExpiredTokens(true);
+          setShowingCachedData(true);
+          return;
+        }
+      } catch (cachedError) {
+        console.error("[Banks] Failed to fetch cached data:", cachedError);
+      }
+
+      console.log(
+        "[Banks] No cached data available either, setting empty accounts array"
+      );
+      setAccounts([]);
     } catch (error) {
-      console.error("Error fetching accounts:", error);
-      setError("Failed to load accounts");
+      console.error("[Banks] Error fetching accounts:", error);
+      setError("Failed to load bank accounts. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -123,6 +300,81 @@ export default function BanksScreen() {
   useEffect(() => {
     fetchAccounts();
   }, []);
+
+  const handleReconnectBank = async (accountId: string) => {
+    try {
+      // Find the bank connection to get provider ID
+      const bank = accounts.find((acc) => acc.accountId === accountId);
+      if (!bank) {
+        showError("Bank connection not found");
+        return;
+      }
+
+      // Extract provider ID from cached data or connection
+      const providerId =
+        (bank as any).cachedData?.providerId ||
+        (bank as any).provider?.provider_id ||
+        accountId;
+
+      console.log(`[handleReconnectBank] Reconnecting bank:`, {
+        accountId,
+        bankName: bank.bankName,
+        providerId,
+      });
+
+      // Generate direct auth link for this specific bank (with accountId for reconnection)
+      const response = await bankingAPI.connectBankDirect(
+        providerId,
+        accountId
+      );
+
+      if (response.link) {
+        // Open TrueLayer auth page directly - no bank selection needed
+        await WebBrowser.openAuthSessionAsync(
+          response.link,
+          DEEP_LINK_URLS.BANK_CALLBACK
+        );
+      } else {
+        showError("Failed to generate reconnection link");
+      }
+    } catch (error) {
+      console.error("Error initiating reconnection:", error);
+      showError("Failed to start reconnection process");
+    }
+  };
+
+  const handleRemoveBank = async (accountId: string, bankName: string) => {
+    showConfirmation(
+      "Remove Bank Connection",
+      `Are you sure you want to remove ${bankName}? This will permanently delete all transactions and data associated with this bank account.`,
+      async () => {
+        try {
+          await bankingAPI.removeBank(accountId);
+          showSuccess("Bank connection removed successfully");
+          // Refresh the accounts list
+          await fetchAccounts();
+        } catch (error) {
+          console.error("Error removing bank:", error);
+          showError("Failed to remove bank connection");
+        }
+      }
+    );
+  };
+
+  const handleSyncAccount = async (accountId: string) => {
+    try {
+      setSyncing(accountId);
+      await bankingAPI.refreshTransactions();
+      showSuccess("Account synced successfully");
+      // Refresh the accounts list
+      await fetchAccounts();
+    } catch (error) {
+      console.error("Error syncing account:", error);
+      showError("Failed to sync account");
+    } finally {
+      setSyncing(null);
+    }
+  };
 
   // If not logged in, don't render anything (auth guard will handle redirect)
   if (!isLoggedIn) {
@@ -136,35 +388,71 @@ export default function BanksScreen() {
         { backgroundColor: colors.background.secondary },
       ]}
     >
-      {/* Header with title and add button */}
-      <Header
-        title="Banks"
-        subtitle={showingCachedData ? "Showing last saved data" : "Manage your connected accounts"}
-        showBackButton={false}
-        rightButton={{
-          icon: "add-circle-outline",
-          onPress: () => router.push("/banks/select"),
-        }}
-      />
+      {/* Minimalistic Header */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={colors.text.secondary}
+            />
+          </TouchableOpacity>
 
-      {/* Expired Token Warning Banner */}
-      {hasExpiredTokens && (
-        <View style={[styles.warningBanner, { backgroundColor: "#FEF3C7", borderColor: "#F59E0B" }]}>
-          <Ionicons name="warning-outline" size={20} color="#D97706" />
-          <View style={styles.warningContent}>
-            <Text style={[styles.warningTitle, { color: "#92400E" }]}>
-              Bank Connection Expired
+          <View style={styles.headerTitleSection}>
+            <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
+              Banks
             </Text>
-            <Text style={[styles.warningText, { color: "#B45309" }]}>
-              Your bank connection has expired. Reconnect to get fresh data.
+            <Text
+              style={[styles.headerSubtitle, { color: colors.text.tertiary }]}
+            >
+              {showingCachedData
+                ? "Showing cached data"
+                : `${accounts.length} connected`}
             </Text>
           </View>
+
           <TouchableOpacity
-            style={[styles.reconnectButton, { backgroundColor: colors.primary[500] }]}
-            onPress={() => router.push("/banks/select")}
+            style={styles.addButton}
+            onPress={() => router.push("/banks/connect")}
           >
-            <Text style={styles.reconnectButtonText}>Reconnect</Text>
+            <Ionicons name="add" size={20} color={colors.text.secondary} />
           </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Minimalistic Warning Banner */}
+      {hasExpiredTokens && (
+        <View style={styles.bannerContainer}>
+          <View
+            style={[
+              styles.warningBanner,
+              { 
+                backgroundColor: colors.background.primary,
+                borderColor: "#FFA726",
+                borderWidth: 1
+              }
+            ]}
+          >
+            <View style={styles.bannerContent}>
+              <Text style={[styles.bannerTitle, { color: colors.text.primary }]}>
+                Connection expired
+              </Text>
+              <Text style={[styles.bannerText, { color: colors.text.secondary }]}>
+                Reconnect to sync fresh data
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.bannerButton}
+              onPress={() => router.push("/banks/connect")}
+            >
+              <Text style={[styles.bannerButtonText, { color: colors.primary[500] }]}>Reconnect</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -173,15 +461,22 @@ export default function BanksScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Add Bank Button */}
+        {/* Clean Add Bank Button */}
         <Section marginTop={0}>
           <TouchableOpacity
-            style={[styles.addButton, { backgroundColor: colors.primary[500] }]}
+            style={[
+              styles.cleanAddButton,
+              { 
+                backgroundColor: colors.background.primary,
+                borderColor: colors.border.light,
+                borderWidth: 1
+              }
+            ]}
             activeOpacity={0.9}
-            onPress={() => router.push("/banks/select")}
+            onPress={() => router.push("/banks/connect")}
           >
-            <Ionicons name="add-circle-outline" size={24} color="#fff" />
-            <Text style={styles.addButtonText}>Add Bank Account</Text>
+            <Ionicons name="add" size={20} color={colors.text.secondary} />
+            <Text style={[styles.cleanAddButtonText, { color: colors.text.primary }]}>Add Bank</Text>
           </TouchableOpacity>
         </Section>
 
@@ -213,76 +508,122 @@ export default function BanksScreen() {
               subtitle="Connect your first bank account to get started"
               actionButton={{
                 title: "Add Bank Account",
-                onPress: () => router.push("/banks/select"),
+                onPress: () => router.push("/banks/connect"),
               }}
             />
           ) : (
             <View style={styles.bankList}>
               {accounts.map((account) => (
                 <View
-                  key={account.id}
+                  key={account.accountId}
                   style={[
-                    styles.bankItem,
+                    styles.cleanBankCard,
                     {
                       backgroundColor: colors.background.primary,
                       borderColor: colors.border.light,
                     },
                   ]}
                 >
-                  {/* Bank Logo */}
-                  <BankLogo
-                    bankName={account.institution.name}
-                    logoUrl={account.institution.logo}
-                    size="medium"
-                    showName={false}
-                  />
 
-                  {/* Bank Information */}
-                  <View style={styles.bankInfo}>
-                    <Text
-                      style={[styles.bankName, { color: colors.text.primary }]}
-                      numberOfLines={1}
-                    >
-                      {account.name}
-                    </Text>
+                  {/* Clean Card Header */}
+                  <View style={styles.cardHeader}>
+                    <View style={styles.bankLogoContainer}>
+                      <BankLogo
+                        bankName={account.bankName}
+                        logoUrl={account.bankLogo}
+                        size="small"
+                        showName={false}
+                      />
+                    </View>
+                    <View style={styles.bankHeaderInfo}>
+                      <Text
+                        style={[
+                          styles.bankName,
+                          { color: colors.text.primary },
+                        ]}
+                      >
+                        {account.bankName}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.accountDetails,
+                          { color: colors.text.tertiary },
+                        ]}
+                      >
+                        ••••{account.accountNumber.slice(-4)}
+                      </Text>
+                    </View>
+                    <View style={styles.statusBadge}>
+                      <Text style={[
+                        styles.statusText,
+                        { 
+                          color: account.isExpired ? "#FFA726" : "#4CAF50"
+                        }
+                      ]}>
+                        {account.isExpired ? "Expired" : "Active"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Clean Balance Section */}
+                  <View style={styles.balanceSection}>
                     <Text
                       style={[
-                        styles.bankAccount,
-                        { color: colors.text.secondary },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      IBAN: {account.iban}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.bankBalance,
+                        styles.balanceAmount,
                         { color: colors.text.primary },
                       ]}
                     >
-                      {account.balance.toLocaleString(undefined, {
-                        style: "currency",
-                        currency: account.currency,
-                      })}
+                      {formatCurrency(account.balance, account.currency)}
                     </Text>
-                    <View style={styles.statusContainer}>
-                      <Text
-                        style={{
-                          color: colors.text.tertiary,
-                          fontSize: 12,
-                          marginTop: 2,
-                        }}
+                  </View>
+
+                  {/* Clean Actions */}
+                  <View style={styles.actionButtons}>
+                    {account.isExpired ? (
+                      <TouchableOpacity
+                        style={[
+                          styles.reconnectAction,
+                          { borderColor: "#FFA726" },
+                        ]}
+                        onPress={() => handleReconnectBank(account.accountId)}
                       >
-                        Status: {account.status}
-                      </Text>
-                      {account.status === "Token Expired" && (
-                        <Badge
-                          text="Expired"
-                          variant="warning"
-                          size="small"
-                        />
-                      )}
-                    </View>
+                        <Text style={[styles.actionText, { color: "#FFA726" }]}>Reconnect</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={[
+                          styles.viewAction,
+                          { borderColor: colors.border.light },
+                        ]}
+                        onPress={() =>
+                          router.push(
+                            `/transactions?accountId=${account.accountId}`
+                          )
+                        }
+                      >
+                        <Text
+                          style={[
+                            styles.actionText,
+                            { color: colors.text.secondary },
+                          ]}
+                        >
+                          View
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity
+                      style={styles.menuButton}
+                      onPress={() =>
+                        handleRemoveBank(account.accountId, account.bankName)
+                      }
+                    >
+                      <Ionicons
+                        name="ellipsis-horizontal"
+                        size={16}
+                        color={colors.text.tertiary}
+                      />
+                    </TouchableOpacity>
                   </View>
                 </View>
               ))}
@@ -293,10 +634,27 @@ export default function BanksScreen() {
         {/* Quick Actions Section */}
         <Section title="Quick Actions">
           <ListItem
-            icon={{ name: "sync-outline", backgroundColor: showingCachedData ? "#F3F4F6" : "#DBEAFE" }}
-            title={loading ? "Syncing..." : showingCachedData ? "Reconnect to Sync" : "Sync Accounts"}
-            subtitle={showingCachedData ? "Bank connection needed to sync" : "Update your account balances"}
-            onPress={showingCachedData ? () => router.push("/banks/select") : fetchAccounts}
+            icon={{
+              name: "sync-outline",
+              backgroundColor: showingCachedData ? "#F3F4F6" : "#DBEAFE",
+            }}
+            title={
+              loading
+                ? "Syncing..."
+                : showingCachedData
+                  ? "Reconnect to Sync"
+                  : "Sync Accounts"
+            }
+            subtitle={
+              showingCachedData
+                ? "Bank connection needed to sync"
+                : "Update your account balances"
+            }
+            onPress={
+              showingCachedData
+                ? () => router.push("/banks/connect")
+                : fetchAccounts
+            }
             disabled={loading}
             rightElement={
               loading ? (
@@ -333,19 +691,17 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: spacing["2xl"],
   },
-  addButton: {
+  cleanAddButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.xl,
-    ...shadows.md,
+    paddingVertical: 16,
+    borderRadius: 8,
   },
-  addButtonText: {
-    marginLeft: spacing.sm,
-    color: "white",
-    fontSize: 16,
-    fontWeight: "700",
+  cleanAddButtonText: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: "500",
   },
   loadingContainer: {
     flex: 1,
@@ -360,73 +716,129 @@ const styles = StyleSheet.create({
   bankList: {
     gap: spacing.md,
   },
-  bankItem: {
+  // Clean Header Styles
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
+  },
+  headerContent: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    borderWidth: 1,
-    ...shadows.sm,
   },
-  bankInfo: {
+  backButton: {
+    padding: 8,
+  },
+  headerTitleSection: {
     flex: 1,
-    minWidth: 0,
-    marginLeft: spacing.md,
+    marginLeft: 16,
+    marginRight: 16,
   },
-  bankName: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: spacing.xs,
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    marginBottom: 2,
   },
-  bankAccount: {
+  headerSubtitle: {
     fontSize: 14,
   },
-  bankBalance: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: spacing.xs,
+  addButton: {
+    padding: 8,
   },
-  statusContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  bankActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  disconnectButton: {
-    padding: spacing.sm,
+  // Clean Banner Styles
+  bannerContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   warningBanner: {
     flexDirection: "row",
     alignItems: "center",
-    padding: spacing.md,
-    marginHorizontal: spacing.md,
-    marginTop: spacing.sm,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
+    padding: 16,
+    borderRadius: 8,
   },
-  warningContent: {
+  bannerContent: {
     flex: 1,
-    marginLeft: spacing.sm,
   },
-  warningTitle: {
+  bannerTitle: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "500",
     marginBottom: 2,
   },
-  warningText: {
+  bannerText: {
     fontSize: 12,
   },
-  reconnectButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+  bannerButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  reconnectButtonText: {
-    color: "white",
+  bannerButtonText: {
+    fontWeight: "500",
     fontSize: 12,
+  },
+  // Clean Bank Card Styles
+  cleanBankCard: {
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  bankLogoContainer: {
+    marginRight: 12,
+  },
+  bankHeaderInfo: {
+    flex: 1,
+  },
+  bankName: {
+    fontSize: 16,
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  accountDetails: {
+    fontSize: 12,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  balanceSection: {
+    marginBottom: 12,
+  },
+  balanceAmount: {
+    fontSize: 24,
     fontWeight: "600",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  reconnectAction: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  viewAction: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  actionText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  menuButton: {
+    padding: 8,
   },
 });

@@ -1,19 +1,10 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform, Linking } from "react-native";
 import { CURRENT_API_CONFIG } from "../config/api";
 
 // API Configuration
 const API_BASE_URL = CURRENT_API_CONFIG.baseURL;
 
-console.log("🔧 API Configuration:", {
-  baseURL: API_BASE_URL,
-  timeout: CURRENT_API_CONFIG.timeout,
-  environment: CURRENT_API_CONFIG,
-});
-
-console.log("🔧 Full API_BASE_URL:", API_BASE_URL);
-console.log("🔧 CURRENT_API_CONFIG:", CURRENT_API_CONFIG);
 
 // Create axios instance
 const api = axios.create({
@@ -24,8 +15,31 @@ const api = axios.create({
   },
 });
 
+// Create separate axios instance for AI endpoints (with user name functionality)
+const aiAPI = axios.create({
+  baseURL: API_BASE_URL, // Use same API base URL
+  timeout: CURRENT_API_CONFIG.timeout,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 // Request interceptor to add auth token
 api.interceptors.request.use(
+  async (config) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Request interceptor for AI API
+aiAPI.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem("accessToken");
     if (token) {
@@ -84,6 +98,106 @@ api.interceptors.response.use(
 
 // Auth API functions
 export const authAPI = {
+  // Check if username already exists using the existing checkUserStatus endpoint
+  checkUsernameExists: async (username: string): Promise<{ exists: boolean; error?: string }> => {
+    try {
+      // First try the main API Gateway
+      const response = await api.post("/auth/check-user-status", { username });
+      // If we get status 200, the user exists and we have their details
+      if (response.status === 200 && response.data.username) {
+        return { exists: true };
+      }
+      return { exists: false };
+    } catch (error: any) {
+      // Handle network errors first (no response)
+      if (!error.response) {
+        console.error("Username check network error:", error.message);
+        // For network errors, assume username is available but show warning
+        return { exists: false, error: "Network error. Username availability unknown." };
+      }
+
+      // If main API returns 404, try the fallback auth API Gateway
+      if (error.response?.status === 404) {
+        try {
+          const fallbackResponse = await axios.post(
+            "https://a95uq2n8k7.execute-api.eu-west-2.amazonaws.com/auth/check-user-status",
+            { username },
+            {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          // If we get a successful response, user exists
+          if (fallbackResponse.status === 200 && fallbackResponse.data.username) {
+            return { exists: true };
+          }
+          return { exists: false };
+        } catch (fallbackError: any) {
+          // Handle network errors in fallback
+          if (!fallbackError.response) {
+            console.error("Username check fallback network error:", fallbackError.message);
+            return { exists: false, error: "Network error. Username availability unknown." };
+          }
+
+          // Handle specific error status codes from the checkUserStatus Lambda
+          if (fallbackError.response?.data?.error === "UserNotFoundException") {
+            // User not found - username is available
+            return { exists: false };
+          } else if (fallbackError.response?.status === 400 && fallbackError.response?.data?.message?.includes("username")) {
+            // Missing or invalid username parameter
+            return { exists: false, error: "Invalid username format" };
+          } else if (fallbackError.response?.status >= 500) {
+            // Server error
+            return { exists: false, error: "Server error. Please try again." };
+          }
+          
+          console.error("Username check fallback error:", fallbackError);
+          return { exists: false, error: "Unable to verify username availability" };
+        }
+      } else if (error.response?.data?.error === "UserNotFoundException") {
+        // User not found - username is available
+        return { exists: false };
+      } else if (error.response?.status === 400 && error.response?.data?.message?.includes("username")) {
+        // Missing or invalid username parameter
+        return { exists: false, error: "Invalid username format" };
+      } else if (error.response?.status >= 500) {
+        // Server error
+        return { exists: false, error: "Server error. Please try again." };
+      }
+      
+      console.error("Username check error:", error);
+      return { exists: false, error: "Unable to verify username availability" };
+    }
+  },
+
+  // Check if email already exists - disabled due to AWS Cognito security measures
+  checkEmailExists: async (email: string): Promise<{ exists: boolean; error?: string }> => {
+    // AWS Cognito is configured to prevent email enumeration attacks by returning
+    // the same error message for both existing and non-existing emails.
+    // This is good security practice but prevents reliable client-side validation.
+    
+    // The proper approach is to:
+    // 1. Allow users to proceed through registration
+    // 2. Handle email existence errors on the server side during registration
+    // 3. Show appropriate error messages if registration fails due to existing email
+    
+    // For now, we'll just validate email format and let server-side handle existence
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { exists: false, error: "Invalid email format" };
+    }
+    
+    // Return as available - server will validate during registration
+    return { exists: false };
+  },
+
+  // Check if phone number already exists - temporarily disabled
+  checkPhoneExists: async (phoneNumber: string): Promise<{ exists: boolean; error?: string }> => {
+    // For now, return unavailable until we implement proper phone validation  
+    return { exists: false, error: "Phone validation temporarily unavailable" };
+  },
+
   register: async (userData: {
     username: string;
     name: string;
@@ -105,18 +219,9 @@ export const authAPI = {
     username?: string;
     password: string;
   }) => {
-    console.log("🔐 Login attempt:", {
-      url: `${API_BASE_URL}/auth/login`,
-      credentials: { ...credentials, password: "***" },
-    });
 
     try {
       const response = await api.post("/auth/login", credentials);
-      console.log("✅ Login response received:", {
-        status: response.status,
-        hasData: !!response.data,
-        message: response.data?.message,
-      });
       return response.data;
     } catch (error: any) {
       console.error("❌ Login request failed:", {
@@ -138,9 +243,83 @@ export const authAPI = {
     const response = await api.post("/auth/confirm-signup", data);
     return response.data;
   },
-  resendVerification: async (data: { email: string }) => {
+  resendVerification: async (data: { email?: string; username?: string }) => {
     const response = await api.post("/auth/resend-verification", data);
     return response.data;
+  },
+
+  forgotPassword: async (data: { username: string }) => {
+    try {
+      // Use the working Cognito endpoint first
+      const authResponse = await axios.post(
+        "https://u5f7pmlt88.execute-api.eu-west-2.amazonaws.com/auth/forgot-password",
+        data,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      return authResponse.data;
+    } catch (error: any) {
+      // Fallback to main API if needed
+      const response = await api.post("/auth/forgot-password", data);
+      return response.data;
+    }
+  },
+
+  forgotUsername: async (data: { email: string }) => {
+    try {
+      const response = await api.post("/auth/forgot-username", data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        try {
+          // Use dedicated auth API Gateway for forgot username functionality
+          const authResponse = await axios.post(
+            "https://u5f7pmlt88.execute-api.eu-west-2.amazonaws.com/auth/forgot-username",
+            data,
+            {
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000, // 10 second timeout
+            }
+          );
+          return authResponse.data;
+        } catch (fallbackError: any) {
+          // Re-throw the original 404 error so the UI can handle it appropriately
+          throw error;
+        }
+      }
+      throw error;
+    }
+  },
+
+  confirmForgotPassword: async (data: { 
+    username: string; 
+    confirmationCode: string; 
+    newPassword: string; 
+  }) => {
+    try {
+      const response = await api.post("/auth/confirm-forgot-password", data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        // Use dedicated auth API Gateway for forgot password functionality
+        const authResponse = await axios.post(
+          "https://u5f7pmlt88.execute-api.eu-west-2.amazonaws.com/auth/confirm-forgot-password",
+          data,
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        return authResponse.data;
+      }
+      throw error;
+    }
   },
 };
 
@@ -168,22 +347,92 @@ const setCachedData = (key: string, data: any, ttlMinutes: number = 5): void => 
   });
 };
 
+const clearCachedData = (key: string): void => {
+  apiCache.delete(key);
+};
+
 // Banking API functions
 export const bankingAPI = {
   // Connect a bank account using TrueLayer
   connectBank: async (data?: { redirectUrl?: string }) => {
     const token = await AsyncStorage.getItem("accessToken");
-    console.log("[API] connectBank", { token, data });
     const response = await api.post("/banking/connect", data || {});
     return response.data;
+  },
+
+  // Connect to specific bank directly (skip provider selection)
+  connectBankDirect: async (providerId: string, accountId?: string) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    
+    try {
+      const response = await api.post("/banking/connect-direct", { 
+        providerId,
+        ...(accountId && { accountId }) // Include accountId for reconnection
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404 || error.response?.status === 401) {
+        // Fallback to regular connect bank - user will select bank on TrueLayer page
+        // This still provides a decent user experience
+        const fallbackResponse = await api.post("/banking/connect", {});
+        return fallbackResponse.data;
+      }
+      throw error;
+    }
   },
 
   // Get connected banks for the authenticated user
   getConnectedBanks: async () => {
     const token = await AsyncStorage.getItem("accessToken");
-    console.log("[API] getConnectedBanks", { token });
-    const response = await api.get("/banking/connected-banks");
+    const response = await api.get("/banking/connected");
     return response.data;
+  },
+
+  // Reconnect expired bank connection
+  reconnectBank: async (accountId: string, code: string) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    
+    try {
+      const response = await api.post("/banking/reconnect", {
+        accountId,
+        code
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        // Use the newly deployed banking functions endpoint
+        const newApiResponse = await axios.post(
+          `https://djq0zgtbdd.execute-api.eu-west-2.amazonaws.com/banking/reconnect`,
+          {
+            accountId,
+            code
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        return newApiResponse.data;
+      }
+      throw error;
+    }
+  },
+
+  // Remove bank connection and all associated data
+  removeBank: async (accountId: string) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    
+    try {
+      const response = await api.delete(`/banking/remove/${accountId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("[API] removeBank failed:", error);
+      // For now, we'll show a message to the user that the bank cannot be removed automatically
+      // but the connection is already expired/invalid, so it's functionally removed
+      throw new Error("Bank connection expired - please contact support to fully remove this connection.");
+    }
   },
 
   // Get connected accounts (legacy) with caching
@@ -191,17 +440,30 @@ export const bankingAPI = {
     const cacheKey = 'user_accounts';
     const cached = getCachedData(cacheKey);
     if (cached) {
-      console.log("[API] 🚀 Using cached accounts data");
       return cached;
     }
 
     const token = await AsyncStorage.getItem("accessToken");
-    console.log("[API] getAccounts", { token });
-    const response = await api.post("/banking/accounts", {});
+    // Use the existing connected banks endpoint and transform the data
+    const response = await api.get("/banking/connected");
+    
+    // Transform connected banks to accounts format for backward compatibility
+    const accountsData = {
+      accounts: (response.data.banks || []).map((bank: any) => ({
+        id: bank.accountId,
+        name: bank.bankName || 'Unknown Bank',
+        institutionId: bank.provider?.provider_id || 'unknown',
+        currency: bank.currency || 'GBP',
+        type: bank.accountType || 'current',
+        status: bank.status || 'connected',
+        iban: `****${bank.accountNumber?.slice(-4) || '****'}`,
+        createdAt: bank.connectedAt
+      }))
+    };
     
     // Cache for 2 minutes since account data changes frequently
-    setCachedData(cacheKey, response.data, 2);
-    return response.data;
+    setCachedData(cacheKey, accountsData, 2);
+    return accountsData;
   },
 
   // Get all user transactions with caching
@@ -209,12 +471,10 @@ export const bankingAPI = {
     const cacheKey = `all_transactions_${limit || 'all'}_${JSON.stringify(startKey || {})}`;
     const cached = getCachedData(cacheKey);
     if (cached) {
-      console.log("[API] 🚀 Using cached transactions data");
       return cached;
     }
 
     const token = await AsyncStorage.getItem("accessToken");
-    console.log("[API] getAllTransactions", { token, limit, startKey });
     const params = new URLSearchParams();
     if (limit) params.append('limit', limit.toString());
     if (startKey) params.append('startKey', JSON.stringify(startKey));
@@ -228,7 +488,6 @@ export const bankingAPI = {
   // Get account transactions
   getTransactions: async (accountId: string, limit?: number) => {
     const token = await AsyncStorage.getItem("accessToken");
-    console.log("[API] getTransactions", { accountId, token, limit });
     const params = limit ? `?limit=${limit}` : '';
     const response = await api.get(`/banking/account/${accountId}/transactions${params}`);
     return response.data;
@@ -237,7 +496,6 @@ export const bankingAPI = {
   // Get account balance
   getBalance: async (accountId: string) => {
     const token = await AsyncStorage.getItem("accessToken");
-    console.log("[API] getBalance", { accountId, token });
     const response = await api.post("/banking/account/balance", {
       accountId,
     });
@@ -255,11 +513,9 @@ export const bankingAPI = {
         const userData = JSON.parse(user);
         userId = userData.sub || userData.userId;
       }
-    } catch (e) {
-      console.log("[API] Could not parse user data");
+    } catch {
     }
 
-    console.log("[API] handleCallback", { code, token, userId });
     const response = await api.post("/banking/callback", {
       code,
       userId, // Include userId as fallback
@@ -270,7 +526,6 @@ export const bankingAPI = {
   // Get available institutions (banks/providers)
   getInstitutions: async () => {
     const token = await AsyncStorage.getItem("accessToken");
-    console.log("[API] getInstitutions", { token });
     const response = await api.get("/banking/institutions");
     return response.data;
   },
@@ -278,7 +533,6 @@ export const bankingAPI = {
   // Refresh transactions manually (trigger sync from TrueLayer)
   refreshTransactions: async () => {
     const token = await AsyncStorage.getItem("accessToken");
-    console.log("[API] refreshTransactions", { token });
     const response = await api.post("/banking/transactions/refresh", {});
     return response.data;
   },
@@ -287,7 +541,6 @@ export const bankingAPI = {
   getCachedBankData: async () => {
     try {
       const token = await AsyncStorage.getItem("accessToken");
-      console.log("[API] getCachedBankData", { token });
       const response = await api.get("/banking/cached-data");
       return response.data;
     } catch (error: any) {
@@ -296,11 +549,22 @@ export const bankingAPI = {
     }
   },
 
+  // Refresh account balances (placeholder function for compatibility)
+  refreshBalances: async () => {
+    try {
+      const token = await AsyncStorage.getItem("accessToken");
+      // For now, just return success - in a real app this would trigger balance refresh
+      return { message: "Balance refresh initiated", success: true };
+    } catch (error: any) {
+      console.error("[API] Failed to refresh balances:", error);
+      throw error;
+    }
+  },
+
   // Check if bank connections need to be refreshed (expired tokens)
   checkBankConnectionStatus: async () => {
     try {
       const token = await AsyncStorage.getItem("accessToken");
-      console.log("[API] checkBankConnectionStatus", { token });
       const response = await api.get("/banking/connection-status");
       return response.data;
     } catch (error: any) {
@@ -313,8 +577,7 @@ export const bankingAPI = {
   getAIInsight: async (message: string) => {
     try {
       const token = await AsyncStorage.getItem("accessToken");
-      console.log("[API] getAIInsight", { token, message });
-      const response = await api.post("/ai/insight", { message });
+      const response = await aiAPI.post("/ai/insight", { message });
       return response.data;
     } catch (error: any) {
       console.error("[API] Failed to get AI insight:", error);
@@ -325,8 +588,7 @@ export const bankingAPI = {
   getAIChatHistory: async () => {
     try {
       const token = await AsyncStorage.getItem("accessToken");
-      console.log("[API] getAIChatHistory", { token });
-      const response = await api.get("/ai/chat-history");
+      const response = await aiAPI.get("/ai/chat-history");
       return response.data;
     } catch (error: any) {
       console.error("[API] Failed to get AI chat history:", error);
@@ -337,8 +599,7 @@ export const bankingAPI = {
   saveAIChatMessage: async (role: "user" | "assistant", content: string) => {
     try {
       const token = await AsyncStorage.getItem("accessToken");
-      console.log("[API] saveAIChatMessage", { token, role, content });
-      const response = await api.post("/ai/chat-message", { role, content });
+      const response = await aiAPI.post("/ai/chat-message", { role, content });
       return response.data;
     } catch (error: any) {
       console.error("[API] Failed to save AI chat message:", error);
@@ -349,13 +610,185 @@ export const bankingAPI = {
   clearAIChatHistory: async () => {
     try {
       const token = await AsyncStorage.getItem("accessToken");
-      console.log("[API] clearAIChatHistory", { token });
-      const response = await api.delete("/ai/chat-history");
+      const response = await aiAPI.delete("/ai/chat-history");
       return response.data;
     } catch (error: any) {
       console.error("[API] Failed to clear AI chat history:", error);
       throw error;
     }
+  },
+};
+
+// Expense API functions
+export const expenseAPI = {
+  // Create a new expense
+  createExpense: async (expenseData: {
+    amount: number;
+    category: string;
+    description?: string;
+    date: string;
+    receipt?: {
+      url?: string;
+      filename?: string;
+    };
+    tags?: string[];
+    isRecurring?: boolean;
+    recurringPattern?: {
+      frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+      interval?: number;
+      endDate?: string;
+    };
+  }) => {
+    const response = await api.post("/expenses", expenseData);
+    
+    // Clear related cache
+    clearCachedData('user_expenses');
+    clearCachedData('expense_categories');
+    return response.data;
+  },
+
+  // Get user expenses with filtering
+  getExpenses: async (params?: {
+    limit?: number;
+    startKey?: string;
+    category?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const cacheKey = `user_expenses_${JSON.stringify(params || {})}`;
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.startKey) queryParams.append('startKey', params.startKey);
+    if (params?.category) queryParams.append('category', params.category);
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+
+    const response = await api.get(`/expenses?${queryParams.toString()}`);
+    
+    // Cache for 3 minutes
+    setCachedData(cacheKey, response.data, 3);
+    return response.data;
+  },
+
+  // Update an expense
+  updateExpense: async (expenseId: string, updates: any) => {
+    const response = await api.put(`/expenses/${expenseId}`, updates);
+    
+    // Clear cache after updating
+    clearCachedData('user_expenses');
+    clearCachedData('expense_categories');
+    return response.data;
+  },
+
+  // Delete an expense
+  deleteExpense: async (expenseId: string) => {
+    const response = await api.delete(`/expenses/${expenseId}`);
+    
+    // Clear cache after deleting
+    clearCachedData('user_expenses');
+    clearCachedData('expense_categories');
+    return response.data;
+  },
+
+  // Get a specific expense by ID
+  getExpenseById: async (expenseId: string) => {
+    const response = await api.get(`/expenses/${expenseId}`);
+    return response.data;
+  },
+
+  // Get expense categories with statistics
+  getExpenseCategories: async () => {
+    const cacheKey = 'expense_categories';
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const response = await api.get("/expenses/categories");
+    
+    // Cache for 5 minutes
+    setCachedData(cacheKey, response.data, 5);
+    return response.data;
+  },
+};
+
+// Budget API functions
+export const budgetAPI = {
+  // Create a new budget
+  createBudget: async (budgetData: {
+    name: string;
+    category: string;
+    amount: number;
+    period: 'weekly' | 'monthly' | 'yearly';
+    startDate: string;
+    endDate?: string;
+    alertThreshold?: number;
+    isActive?: boolean;
+  }) => {
+    const response = await api.post("/budgets", budgetData);
+    
+    // Clear related cache
+    clearCachedData('user_budgets');
+    clearCachedData('budget_alerts');
+    return response.data;
+  },
+
+  // Get user budgets
+  getBudgets: async (activeOnly = true) => {
+    const cacheKey = `user_budgets_${activeOnly}`;
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const params = new URLSearchParams();
+    if (activeOnly) params.append('active', 'true');
+
+    const response = await api.get(`/budgets?${params.toString()}`);
+    
+    // Cache for 5 minutes
+    setCachedData(cacheKey, response.data, 5);
+    return response.data;
+  },
+
+  // Update a budget
+  updateBudget: async (budgetId: string, updates: any) => {
+    const response = await api.put(`/budgets/${budgetId}`, updates);
+    
+    // Clear cache after updating
+    clearCachedData('user_budgets');
+    clearCachedData('budget_alerts');
+    return response.data;
+  },
+
+  // Delete a budget
+  deleteBudget: async (budgetId: string) => {
+    const response = await api.delete(`/budgets/${budgetId}`);
+    
+    // Clear cache after deleting
+    clearCachedData('user_budgets');
+    clearCachedData('budget_alerts');
+    return response.data;
+  },
+
+  // Get budget alerts
+  getBudgetAlerts: async () => {
+    const cacheKey = 'budget_alerts';
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const response = await api.get("/budgets/alerts");
+    
+    // Cache for 2 minutes (alerts should be fresh)
+    setCachedData(cacheKey, response.data, 2);
+    return response.data;
   },
 };
 
@@ -366,7 +799,6 @@ export const profileAPI = {
     const cacheKey = 'user_profile';
     const cached = getCachedData(cacheKey);
     if (cached) {
-      console.log("[API] 🚀 Using cached profile data");
       return cached;
     }
 
@@ -395,7 +827,6 @@ export const profileAPI = {
     const cacheKey = 'user_credit_score';
     const cached = getCachedData(cacheKey);
     if (cached) {
-      console.log("[API] 🚀 Using cached credit score data");
       return cached;
     }
 
@@ -411,7 +842,6 @@ export const profileAPI = {
     const cacheKey = 'user_goals';
     const cached = getCachedData(cacheKey);
     if (cached) {
-      console.log("[API] 🚀 Using cached goals data");
       return cached;
     }
 
@@ -419,6 +849,40 @@ export const profileAPI = {
     
     // Cache for 5 minutes since goals might be updated moderately
     setCachedData(cacheKey, response.data, 5);
+    return response.data;
+  },
+
+  // Create a new savings goal
+  createGoal: async (goalData: {
+    title: string;
+    description?: string;
+    targetAmount: number;
+    currentAmount: number;
+    targetDate: string;
+    category: string;
+  }) => {
+    const response = await api.post("/goals", goalData);
+    
+    // Clear cache after creating
+    clearCachedData('user_goals');
+    return response.data;
+  },
+
+  // Update a savings goal
+  updateGoal: async (goalId: string, updates: any) => {
+    const response = await api.put(`/goals/${goalId}`, updates);
+    
+    // Clear cache after updating
+    clearCachedData('user_goals');
+    return response.data;
+  },
+
+  // Delete a savings goal
+  deleteGoal: async (goalId: string) => {
+    const response = await api.delete(`/goals/${goalId}`);
+    
+    // Clear cache after deleting
+    clearCachedData('user_goals');
     return response.data;
   },
 };
@@ -496,11 +960,6 @@ export const notificationAPI = {
     priority?: 'low' | 'normal' | 'high';
   }) => {
     try {
-      console.log('🔔 [API] Sending notification with config:', {
-        baseURL: API_BASE_URL,
-        fullURL: `${API_BASE_URL}/notifications/send`,
-        data: notificationData,
-      });
       
       const response = await api.post('/notifications/send', notificationData);
       return response.data;
@@ -512,6 +971,24 @@ export const notificationAPI = {
         method: error.config?.method,
         fullRequestURL: error.config?.baseURL + error.config?.url,
       });
+      throw error;
+    }
+  },
+  // Get notification history from DynamoDB
+  getHistory: async (limit?: number) => {
+    try {
+      const response = await api.get('/notifications/history', {
+        params: { limit: limit || 50 },
+        timeout: 45000, // 45 seconds timeout for notifications
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        console.error('Notification history request timed out');
+        // Return empty result instead of throwing
+        return { success: false, notifications: [], count: 0 };
+      }
+      console.error('Error fetching notification history:', error);
       throw error;
     }
   },

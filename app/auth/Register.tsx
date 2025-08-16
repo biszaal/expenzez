@@ -1,4 +1,4 @@
-// Updated Register screen using reusable components and global theme
+// Clean and Professional Register Screen
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -7,15 +7,18 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
+  StyleSheet,
+  StatusBar,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "./AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
-import { spacing } from "../../constants/theme";
+import { spacing, borderRadius, layout } from "../../constants/theme";
 import RegisterStep1 from "./RegisterStep1";
 import RegisterStep2 from "./RegisterStep2";
 import RegisterStep3 from "./RegisterStep3";
 import RegisterStep4 from "./RegisterStep4";
+import RegisterStep5 from "./RegisterStep5";
 import { Typography } from "../../components/ui";
 import { useAlert } from "../../hooks/useAlert";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,6 +35,12 @@ const initialState = {
   dob: "",
   phone: "",
   address: "",
+  address1: "",
+  address2: "",
+  city: "",
+  state: "",
+  postcode: "",
+  country: "",
 };
 
 export default function Register() {
@@ -42,7 +51,7 @@ export default function Register() {
   const [values, setValues] = useState(initialState);
   const [isLoading, setIsLoading] = useState(false);
   const [registrationError, setRegistrationError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [passwordError] = useState("");
   const { showError, showSuccess } = useAlert();
 
   const handleChange = (key: string, value: string) => {
@@ -50,14 +59,7 @@ export default function Register() {
   };
 
   const handleNext = () => {
-    if (step === 1) {
-      if (values.password !== values.confirmPassword) {
-        setPasswordError("Passwords do not match");
-        return;
-      } else {
-        setPasswordError("");
-      }
-    }
+    // Password validation is now handled in step 3
     setStep((s) => s + 1);
   };
   const handleBack = () => setStep((s) => s - 1);
@@ -70,12 +72,23 @@ export default function Register() {
       );
       return;
     }
-    // Validate phone and password here as before
-    const isValidPhone = /^\+[1-9]\d{1,14}$/.test(values.phone);
-    if (!isValidPhone) {
-      showError("Phone number must be in E.164 format, e.g. +447911123456");
-      return;
-    }
+    // Phone validation is handled in RegisterStep5 component
+    // If we reach here, the phone should already be in E.164 format
+    console.log("Registration data being submitted:", {
+      username: values.username,
+      email: values.email,
+      phone_number: values.phone,
+      phone_raw: values.phone, // Show raw phone value for debugging
+      phone_length: values.phone?.length || 0,
+      name: values.name,
+      given_name: values.givenName,
+      family_name: values.familyName,
+      hasPassword: !!values.password,
+      passwordLength: values.password?.length,
+      birthdate: values.dob,
+      address: values.address,
+      gender: values.gender
+    });
     const isValidPassword = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(
       values.password
     );
@@ -103,8 +116,11 @@ export default function Register() {
       if (result.success) {
         showSuccess("Registration successful! Please verify your email.");
         router.replace({
-          pathname: "/auth/VerifyEmail",
-          params: { username: values.username, email: values.email },
+          pathname: "/auth/EmailVerification",
+          params: { 
+            email: values.email,
+            password: values.password // Pass password for auto-login after verification
+          },
         });
         return;
       } else {
@@ -120,114 +136,363 @@ export default function Register() {
         }
       }
     } catch (err: any) {
+      // Debug logging to understand the error structure
+      console.log("Registration error details:", {
+        status: err.response?.status,
+        error: err.response?.data?.error,
+        message: err.response?.data?.message,
+        fullData: err.response?.data
+      });
+      
       let errorMsg = err.message || "Something went wrong. Try again later.";
-      if (
-        err.response?.data?.error === "UsernameExistsException" ||
-        err.response?.data?.message?.includes("User already exists")
-      ) {
-        errorMsg =
-          "An account with this username or email already exists. Please log in or verify your email if you haven't done so.";
+      let shouldRedirectToLogin = false;
+      
+      // Enhanced error handling for different types of user existence errors
+      if (err.response?.data?.error === "UsernameExistsException") {
+        errorMsg = "This username is already taken. Please choose a different username.";
+      } else if (err.response?.data?.error === "EmailExistsException" || 
+                 (err.response?.status === 409 && err.response?.data?.message?.toLowerCase().includes("email"))) {
+        // Redirect to login for email that already exists
+        console.log("Redirecting to login due to email exists");
+        shouldRedirectToLogin = true;
+        try {
+          showSuccess("Account found! Redirecting to login...");
+          setTimeout(() => {
+            router.replace({
+              pathname: "/auth/Login",
+              params: { email: values.email, message: "An account with this email already exists. Please log in." }
+            });
+          }, 2000);
+        } catch (redirectError) {
+          console.error("Error during redirect:", redirectError);
+        }
+        return;
+      } else if (err.response?.data?.error === "PhoneNumberExistsException" ||
+                 (err.response?.status === 409 && err.response?.data?.message?.toLowerCase().includes("phone"))) {
+        // Redirect to login for phone that already exists
+        console.log("Redirecting to login due to phone exists");
+        shouldRedirectToLogin = true;
+        try {
+          showSuccess("Account found! Redirecting to login...");
+          setTimeout(() => {
+            router.replace({
+              pathname: "/auth/Login",
+              params: { phone: values.phone, message: "An account with this phone number already exists. Please log in." }
+            });
+          }, 2000);
+        } catch (redirectError) {
+          console.error("Error during redirect:", redirectError);
+        }
+        return;
+      } else if (err.response?.data?.message?.includes("User already exists")) {
+        shouldRedirectToLogin = true;
+        showSuccess("Account found! Redirecting to login...");
+        setTimeout(() => {
+          router.replace({
+            pathname: "/auth/Login",
+            params: { email: values.email, message: "An account with these details already exists. Please log in or verify your email." }
+          });
+        }, 2000);
+        return;
       } else if (
         err.response?.data?.error === "InvalidPasswordException" ||
         err.response?.data?.message?.toLowerCase().includes("password")
       ) {
-        errorMsg =
-          "Password does not meet requirements. It must have uppercase, lowercase, number, and symbol.";
+        errorMsg = "Password does not meet requirements. It must have uppercase, lowercase, number, and symbol.";
+      } else if (err.response?.data?.message?.toLowerCase().includes("username")) {
+        errorMsg = "Username is not available. Please choose a different username.";
+      } else if (err.response?.data?.message?.toLowerCase().includes("email")) {
+        // Fallback for email-related errors - redirect to login
+        shouldRedirectToLogin = true;
+        showSuccess("Account found! Redirecting to login...");
+        setTimeout(() => {
+          router.replace({
+            pathname: "/auth/Login",
+            params: { email: values.email, message: "Email address is already registered. Please log in instead." }
+          });
+        }, 2000);
+        return;
+      } else if (err.response?.data?.message?.toLowerCase().includes("phone")) {
+        // Fallback for phone-related errors - redirect to login
+        shouldRedirectToLogin = true;
+        showSuccess("Account found! Redirecting to login...");
+        setTimeout(() => {
+          router.replace({
+            pathname: "/auth/Login",
+            params: { phone: values.phone, message: "Phone number is already registered. Please log in instead." }
+          });
+        }, 2000);
+        return;
+      } else if (err.response?.status === 400) {
+        // Handle 400 errors with specific messages
+        console.log("Handling 400 error:", err.response?.data);
+        if (err.response?.data?.error === "InvalidPhoneNumberException") {
+          errorMsg = "Phone number format is invalid. Please use format: +447911123456";
+        } else if (err.response?.data?.error === "InvalidPasswordException") {
+          errorMsg = "Password does not meet requirements. It must have uppercase, lowercase, number, and symbol.";
+        } else if (err.response?.data?.error === "InvalidParameterException") {
+          if (err.response?.data?.details?.toLowerCase().includes("phone")) {
+            errorMsg = "Phone number format is invalid. Please use format: +447911123456";
+          } else if (err.response?.data?.message?.toLowerCase().includes("required")) {
+            errorMsg = "Missing required information. Please fill in all required fields.";
+          } else {
+            errorMsg = "Invalid registration parameters. Please check your input.";
+          }
+        } else if (err.response?.data?.message?.toLowerCase().includes("phone")) {
+          errorMsg = "Phone number format is invalid. Please check the format.";
+        } else if (err.response?.data?.message?.toLowerCase().includes("password")) {
+          errorMsg = "Password does not meet requirements. It must have uppercase, lowercase, number, and symbol.";
+        } else {
+          errorMsg = err.response?.data?.message || "Registration failed. Please check your details.";
+        }
+      } else if (err.response?.status === 409) {
+        // Handle any 409 error as a duplicate user scenario
+        console.log("Handling 409 error as duplicate user");
+        try {
+          showSuccess("Account found! Redirecting to login...");
+          setTimeout(() => {
+            router.replace({
+              pathname: "/auth/Login",
+              params: { 
+                email: values.email, 
+                message: "An account with these details already exists. Please log in instead." 
+              }
+            });
+          }, 2000);
+        } catch (redirectError) {
+          console.error("Error during 409 redirect:", redirectError);
+        }
+        return;
       }
+      
       setRegistrationError(errorMsg);
-      console.error(err);
+      console.error("Registration error:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.background.secondary }}
-    >
-      {/* Top Back Button */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          padding: spacing.md,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => router.replace("/auth/Login")}
-          style={{ padding: 4, marginRight: 8 }}
-          accessibilityLabel="Back to Login"
-        >
-          <Ionicons name="chevron-back" size={28} color={colors.primary[500]} />
-        </TouchableOpacity>
-        <Typography variant="h2" color="primary">
-          Register
-        </Typography>
-      </View>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: "center",
-            padding: spacing.lg,
-          }}
-        >
-          <View style={{ flex: 1, justifyContent: "center" }}>
-            {registrationError ? (
-              <View style={{ marginBottom: spacing.lg }}>
-                <Typography variant="body" color="error" align="center">
-                  {registrationError}
-                </Typography>
-              </View>
-            ) : null}
-            {step === 1 && (
-              <RegisterStep1
-                values={values}
-                onChange={handleChange}
-                onNext={handleNext}
-                passwordError={passwordError}
-              />
-            )}
-            {step === 2 && (
-              <RegisterStep2
-                values={values}
-                onChange={handleChange}
-                onNext={handleNext}
-                onBack={handleBack}
-              />
-            )}
-            {step === 3 && (
-              <RegisterStep3
-                values={values}
-                onChange={handleChange}
-                onNext={handleNext}
-                onBack={handleBack}
-              />
-            )}
-            {step === 4 && (
-              <RegisterStep4
-                values={values}
-                onBack={handleBack}
-                onSubmit={handleSubmit}
-                isLoading={isLoading}
-                disabled={isLoading}
-              />
-            )}
-            {/* Go to Login Button */}
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background.primary} />
+      <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+
+        <SafeAreaView style={styles.safeArea}>
+          {/* Clean Header Section */}
+          <View style={styles.header}>
             <TouchableOpacity
               onPress={() => router.replace("/auth/Login")}
-              style={{ marginTop: spacing.lg, alignSelf: "center" }}
+              style={[styles.backButton, { backgroundColor: colors.background.secondary }]}
+              accessibilityLabel="Back to Login"
             >
-              <Typography variant="body" color="primary" weight="bold">
-                Already have an account? Go to Login
-              </Typography>
+              <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
             </TouchableOpacity>
+            
+            <View style={styles.headerContent}>
+              <View style={[styles.logoContainer, { backgroundColor: '#8B5CF6' }]}>
+                <Ionicons name="person-add-outline" size={28} color="white" />
+              </View>
+              
+              <Typography
+                variant="h1"
+                style={[styles.welcomeTitle, { color: colors.text.primary }]}
+                align="center"
+              >
+                Create Account
+              </Typography>
+              <Typography
+                variant="body"
+                style={[styles.welcomeSubtitle, { color: colors.text.secondary }]}
+                align="center"
+              >
+                Step {step} of 5
+              </Typography>
+            </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+          <KeyboardAvoidingView
+            style={styles.keyboardView}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Clean Form Container */}
+              <View style={[styles.formContainer, { backgroundColor: colors.background.secondary }]}>
+                <View style={styles.formContent}>
+                  {registrationError ? (
+                    <View style={[styles.errorContainer, { backgroundColor: colors.error[50], borderColor: colors.error[200] }]}>
+                      <Ionicons name="warning" size={20} color={colors.error[500]} />
+                      <Typography variant="body" style={[styles.errorText, { color: colors.error[700] }]}>
+                        {registrationError}
+                      </Typography>
+                    </View>
+                  ) : null}
+
+                    {step === 1 && (
+                      <RegisterStep1
+                        values={values}
+                        onChange={handleChange}
+                        onNext={handleNext}
+                      />
+                    )}
+                    {step === 2 && (
+                      <RegisterStep2
+                        values={values}
+                        onChange={handleChange}
+                        onNext={handleNext}
+                        onBack={handleBack}
+                      />
+                    )}
+                    {step === 3 && (
+                      <RegisterStep3
+                        values={values}
+                        onChange={handleChange}
+                        onNext={handleNext}
+                        onBack={handleBack}
+                        passwordError={passwordError}
+                      />
+                    )}
+                    {step === 4 && (
+                      <RegisterStep4
+                        values={values}
+                        onChange={handleChange}
+                        onNext={handleNext}
+                        onBack={handleBack}
+                      />
+                    )}
+                    {step === 5 && (
+                      <RegisterStep5
+                        values={values}
+                        onChange={handleChange}
+                        onBack={handleBack}
+                        onSubmit={handleSubmit}
+                        isLoading={isLoading}
+                      />
+                    )}
+
+                  {/* Clean Login Link */}
+                  <TouchableOpacity
+                    onPress={() => router.replace("/auth/Login")}
+                    style={styles.loginLink}
+                  >
+                    <Typography variant="body" style={{ color: colors.text.secondary }} align="center">
+                      Already have an account?{" "}
+                      <Typography variant="body" style={{ color: '#8B5CF6' }} weight="semibold">
+                        Sign In
+                      </Typography>
+                    </Typography>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </View>
+    </>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+
+  // Clean Header
+  header: {
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    position: 'relative',
+  },
+  backButton: {
+    position: 'absolute',
+    left: layout.screenPadding,
+    top: spacing.md,
+    zIndex: 1,
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerContent: {
+    alignItems: 'center',
+    paddingTop: spacing.lg,
+  },
+  logoContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  welcomeTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: spacing.xs,
+  },
+  welcomeSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+
+  // Content and keyboard handling
+  keyboardView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: layout.screenPadding,
+    paddingVertical: spacing.lg,
+  },
+
+  // Clean Form
+  formContainer: {
+    borderRadius: borderRadius.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: spacing.lg,
+  },
+  formContent: {
+    padding: spacing.lg,
+  },
+
+  // Error handling
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    marginBottom: spacing.lg,
+  },
+  errorText: {
+    marginLeft: spacing.sm,
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 18,
+  },
+
+  // Login link
+  loginLink: {
+    alignSelf: 'center',
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingBottom: spacing.xl, // Extra padding at bottom
+  },
+});

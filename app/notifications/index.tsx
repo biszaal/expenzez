@@ -96,40 +96,7 @@ const notificationSettings: NotificationSetting[] = [
   },
 ];
 
-const recentNotifications = [
-  {
-    id: "1",
-    title: "Budget Alert",
-    message: "You've spent 80% of your monthly budget",
-    time: "2 hours ago",
-    type: "warning",
-    read: false,
-  },
-  {
-    id: "2",
-    title: "Transaction Complete",
-    message: "Payment of £45.20 to Tesco completed",
-    time: "1 day ago",
-    type: "info",
-    read: true,
-  },
-  {
-    id: "3",
-    title: "Credit Score Update",
-    message: "Your credit score increased by 15 points",
-    time: "2 days ago",
-    type: "success",
-    read: true,
-  },
-  {
-    id: "4",
-    title: "Security Alert",
-    message: "New device logged into your account",
-    time: "3 days ago",
-    type: "warning",
-    read: true,
-  },
-];
+// Removed hardcoded notifications - now using real data from NotificationContext
 
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -156,59 +123,21 @@ export default function NotificationsScreen() {
     }
   }, []);
 
-  const sendTestNotification = async () => {
-    try {
-      console.log("🔔 [Notification] Starting test notification...");
-      
-      // Use the notification API to send a test notification
-      const { notificationAPI } = await import("../../services/api");
-      
-      console.log("🔔 [Notification] Calling API...");
-      const response = await notificationAPI.sendNotification({
-        type: 'account',
-        title: 'Test Notification',
-        message: 'This is a test notification from your app!',
-        priority: 'normal',
-      });
-      
-      console.log("🔔 [Notification] Success response:", response);
-      Alert.alert("Success", "Test notification sent!");
-    } catch (error: any) {
-      console.error("🔔 [Notification] Test notification failed:", {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        config: {
-          url: error.config?.url,
-          method: error.config?.method,
-          headers: error.config?.headers,
-        },
-        code: error.code,
-        stack: error.stack,
-      });
-      
-      Alert.alert(
-        "Error", 
-        `Failed to send test notification\n\nStatus: ${error.response?.status || 'Unknown'}\nMessage: ${error.message}`
-      );
-    }
-  };
 
   const handleMarkAsRead = (id: string) => {
     markAsRead(id);
   };
 
-  const handleClearAllNotifications = () => {
+  const handleMarkAllAsRead = () => {
     Alert.alert(
-      "Clear All Notifications",
-      "Are you sure you want to clear all notifications?",
+      "Mark All as Read",
+      "Mark all notifications as read?",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Clear All",
-          style: "destructive",
-          onPress: () => clearNotifications(),
+          text: "Mark Read",
+          style: "default",
+          onPress: () => markAllAsRead(),
         },
       ]
     );
@@ -260,15 +189,6 @@ export default function NotificationsScreen() {
         </View>
 
 
-        {/* Test Notification Button */}
-        <TouchableOpacity
-          style={[styles.testButton, { backgroundColor: colors.primary[500] }]}
-          onPress={sendTestNotification}
-        >
-          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
-            Send Test Notification
-          </Text>
-        </TouchableOpacity>
 
         {/* Recent Notifications Section */}
         <View style={{ marginVertical: 16 }}>
@@ -285,9 +205,9 @@ export default function NotificationsScreen() {
               Recent Notifications
             </Text>
             {notifications.length > 0 && (
-              <TouchableOpacity onPress={handleClearAllNotifications}>
-                <Text style={{ color: colors.error[600], fontWeight: "600" }}>
-                  Clear All
+              <TouchableOpacity onPress={handleMarkAllAsRead}>
+                <Text style={{ color: colors.primary[600], fontWeight: "600" }}>
+                  Mark All Read
                 </Text>
               </TouchableOpacity>
             )}
@@ -593,7 +513,7 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSizes.sm,
   },
   actionsCard: {
-    borderRadius: borderRadius["3xl"],
+    borderRadius: borderRadius["4xl"],
     borderWidth: 1,
   },
   actionItem: {
@@ -647,16 +567,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     zIndex: 1,
-  },
-  testButton: {
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
-    marginVertical: 16,
-    marginHorizontal: 24,
-    shadowColor: "transparent", // No shadow for this button
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    shadowOffset: { width: 0, height: 0 },
   },
 });

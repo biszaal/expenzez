@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   },
   contentCard: {
     backgroundColor: colors.background.primary,
-    borderRadius: borderRadius["3xl"],
+    borderRadius: borderRadius["4xl"],
     padding: spacing.lg,
     ...shadows.lg,
     borderWidth: 1,
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   },
   actionsCard: {
     backgroundColor: colors.background.primary,
-    borderRadius: borderRadius["3xl"],
+    borderRadius: borderRadius["4xl"],
     ...shadows.lg,
     borderWidth: 1,
     borderColor: colors.border.light,
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.background.primary,
-    borderRadius: borderRadius["3xl"],
+    borderRadius: borderRadius["4xl"],
     padding: spacing.lg,
     ...shadows.lg,
     borderWidth: 1,
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
   },
   acceptanceCard: {
     backgroundColor: colors.background.primary,
-    borderRadius: borderRadius["3xl"],
+    borderRadius: borderRadius["4xl"],
     padding: spacing.lg,
     ...shadows.lg,
     borderWidth: 1,
