@@ -958,7 +958,7 @@ export default function HomePage() {
         </View>
 
         {/* Simple Connected Banks Card */}
-        <Card style={[styles.monthlyCard, { backgroundColor: safeColors.background.primary }]}>
+        <Card style={[styles.monthlyCard, { backgroundColor: safeColors.background.primary }] as any}>
           <View style={styles.monthlyHeader}>
             <View>
               <Text style={[styles.monthlyTitle, { color: safeColors.text.primary }]}>
@@ -1513,8 +1513,15 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: 20,
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.lg,
-    ...SHADOWS.sm,
-  },
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  } as any,
   monthlyHeader: {
     flexDirection: "row",
     justifyContent: "space-between",

@@ -64,33 +64,33 @@ export default function RegisterStep1({
     <View style={styles.container}>
       {/* Clean Progress Indicator */}
       <View style={styles.progressContainer}>
-        <View style={[styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }])}>
           <Typography variant="caption" style={styles.activeStepText}>1</Typography>
         </View>
-        <View style={[styles.progressLine, { backgroundColor: colors.border.medium }]} />
-        <View style={[styles.progressStep, { backgroundColor: colors.background.tertiary }]}>
-          <Typography variant="caption" style={[styles.stepText, { color: colors.text.tertiary }]}>2</Typography>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
+          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>2</Typography>
         </View>
-        <View style={[styles.progressLine, { backgroundColor: colors.border.medium }]} />
-        <View style={[styles.progressStep, { backgroundColor: colors.background.tertiary }]}>
-          <Typography variant="caption" style={[styles.stepText, { color: colors.text.tertiary }]}>3</Typography>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
+          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>3</Typography>
         </View>
-        <View style={[styles.progressLine, { backgroundColor: colors.border.medium }]} />
-        <View style={[styles.progressStep, { backgroundColor: colors.background.tertiary }]}>
-          <Typography variant="caption" style={[styles.stepText, { color: colors.text.tertiary }]}>4</Typography>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
+          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>4</Typography>
         </View>
-        <View style={[styles.progressLine, { backgroundColor: colors.border.medium }]} />
-        <View style={[styles.progressStep, { backgroundColor: colors.background.tertiary }]}>
-          <Typography variant="caption" style={[styles.stepText, { color: colors.text.tertiary }]}>5</Typography>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
+          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>5</Typography>
         </View>
       </View>
 
       {/* Clean Header */}
       <View style={styles.header}>
-        <Typography variant="h2" style={[styles.title, { color: colors.text.primary }]}>
+        <Typography variant="h2" style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])}>
           Personal Details
         </Typography>
-        <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
+        <Typography variant="body" style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])}>
           Tell us your name and choose a username
         </Typography>
       </View>
@@ -98,7 +98,7 @@ export default function RegisterStep1({
       {/* Clean Form Fields */}
       <View style={styles.formFields}>
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
             First Name
           </Typography>
           <TextField
@@ -106,16 +106,16 @@ export default function RegisterStep1({
             value={values.givenName}
             onChangeText={(v) => onChange("givenName", v)}
             autoCapitalize="words"
-            style={[styles.input, {
+            style={StyleSheet.flatten([styles.input, {
               backgroundColor: colors.background.tertiary,
               borderColor: colors.border.medium,
               color: colors.text.primary
-            }]}
+            }])}
           />
         </View>
         
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
             Last Name
           </Typography>
           <TextField
@@ -123,16 +123,16 @@ export default function RegisterStep1({
             value={values.familyName}
             onChangeText={(v) => onChange("familyName", v)}
             autoCapitalize="words"
-            style={[styles.input, {
+            style={StyleSheet.flatten([styles.input, {
               backgroundColor: colors.background.tertiary,
               borderColor: colors.border.medium,
               color: colors.text.primary
-            }]}
+            }])}
           />
         </View>
         
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
             Username
           </Typography>
           <TextField
@@ -141,11 +141,11 @@ export default function RegisterStep1({
             onChangeText={(v) => onChange("username", v)}
             autoCapitalize="none"
             autoCorrect={false}
-            style={[styles.input, {
+            style={StyleSheet.flatten([styles.input, {
               backgroundColor: colors.background.tertiary,
               borderColor: colors.border.medium,
               color: colors.text.primary
-            }]}
+            }])}
           />
           
           {/* Clean Username Status */}
@@ -154,28 +154,28 @@ export default function RegisterStep1({
               {usernameStatus.checking ? (
                 <>
                   <ActivityIndicator size="small" color="#8B5CF6" />
-                  <Typography variant="caption" style={[styles.statusText, { color: colors.text.secondary }]}>
+                  <Typography variant="caption" style={StyleSheet.flatten([styles.statusText, { color: colors.text.secondary }])}>
                     Checking availability...
                   </Typography>
                 </>
               ) : usernameStatus.exists === true ? (
                 <>
                   <Ionicons name="close-circle" size={16} color={colors.error[500]} />
-                  <Typography variant="caption" style={[styles.statusText, { color: colors.error[600] }]}>
+                  <Typography variant="caption" style={StyleSheet.flatten([styles.statusText, { color: colors.error[600] }])}>
                     Username taken. Choose another.
                   </Typography>
                 </>
               ) : usernameStatus.exists === false ? (
                 <>
                   <Ionicons name="checkmark-circle" size={16} color={colors.success[500]} />
-                  <Typography variant="caption" style={[styles.statusText, { color: colors.success[600] }]}>
+                  <Typography variant="caption" style={StyleSheet.flatten([styles.statusText, { color: colors.success[600] }])}>
                     Username available!
                   </Typography>
                 </>
               ) : usernameStatus.error ? (
                 <>
                   <Ionicons name="warning" size={16} color={colors.warning[500]} />
-                  <Typography variant="caption" style={[styles.statusText, { color: colors.warning[600] }]}>
+                  <Typography variant="caption" style={StyleSheet.flatten([styles.statusText, { color: colors.warning[600] }])}>
                     {usernameStatus.error}
                   </Typography>
                 </>
@@ -188,7 +188,7 @@ export default function RegisterStep1({
       <Button 
         title="Continue" 
         onPress={handleNext} 
-        style={[styles.continueButton, { backgroundColor: '#8B5CF6' }]}
+        style={StyleSheet.flatten([styles.continueButton, { backgroundColor: '#8B5CF6' }])}
         disabled={
           !values.givenName.trim() || 
           !values.familyName.trim() || 

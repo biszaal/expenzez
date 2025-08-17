@@ -223,10 +223,10 @@ export const getSpendingCategories = async () => {
     }
 
     // Return dynamic categories based on actual spending
-    return Array.from(categories).map((category, index) => ({
-      id: category.toLowerCase().replace(/\s+/g, "-"),
-      name: category,
-      icon: getCategoryIcon(category as string),
+    return Array.from(categories).map((category: any, index) => ({
+      id: String(category).toLowerCase().replace(/\s+/g, "-"),
+      name: String(category),
+      icon: getCategoryIcon(String(category)),
       defaultBudget: 0, // Will be set by user
       spent: 0, // Will be calculated from transactions
       color: getCategoryColor(index),
@@ -333,13 +333,13 @@ export const getRecentNotifications = async () => {
     console.error("Error loading real notifications:", error);
     
     // Handle timeout errors gracefully
-    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+    if ((error as any).code === 'ECONNABORTED' || (error as any).message?.includes('timeout')) {
       console.warn("Notification request timed out, returning empty list");
       return [];
     }
     
     // Temporary fallback: Return sample notifications until backend is deployed
-    if (error.response?.status === 404) {
+    if ((error as any).response?.status === 404) {
       // These fallback notifications should only show once, on first login
       // Check if user has seen the welcome notification before
       const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;

@@ -85,33 +85,33 @@ export default function RegisterStep3({
     <View style={styles.container}>
       {/* Clean Progress Indicator */}
       <View style={styles.progressContainer}>
-        <View style={[styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
           <Ionicons name="checkmark" size={16} color="#8B5CF6" />
         </View>
-        <View style={[styles.progressLine, { backgroundColor: '#8B5CF6' }]} />
-        <View style={[styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
           <Ionicons name="checkmark" size={16} color="#8B5CF6" />
         </View>
-        <View style={[styles.progressLine, { backgroundColor: '#8B5CF6' }]} />
-        <View style={[styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }])}>
           <Typography variant="caption" style={styles.activeStepText}>3</Typography>
         </View>
-        <View style={[styles.progressLine, { backgroundColor: colors.border.medium }]} />
-        <View style={[styles.progressStep, { backgroundColor: colors.background.tertiary }]}>
-          <Typography variant="caption" style={[styles.stepText, { color: colors.text.tertiary }]}>4</Typography>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
+          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>4</Typography>
         </View>
-        <View style={[styles.progressLine, { backgroundColor: colors.border.medium }]} />
-        <View style={[styles.progressStep, { backgroundColor: colors.background.tertiary }]}>
-          <Typography variant="caption" style={[styles.stepText, { color: colors.text.tertiary }]}>5</Typography>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
+          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>5</Typography>
         </View>
       </View>
 
       {/* Clean Header */}
       <View style={styles.header}>
-        <Typography variant="h2" style={[styles.title, { color: colors.text.primary }]}>
+        <Typography variant="h2" style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])}>
           Account Security
         </Typography>
-        <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
+        <Typography variant="body" style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])}>
           Set up your login credentials
         </Typography>
       </View>
@@ -120,7 +120,7 @@ export default function RegisterStep3({
       <View style={styles.formFields}>
         {/* Email Field */}
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
             Email Address
           </Typography>
           <TextField
@@ -134,11 +134,11 @@ export default function RegisterStep3({
             autoCapitalize="none"
             autoCorrect={false}
             textContentType="emailAddress"
-            style={[styles.input, {
+            style={StyleSheet.flatten([styles.input, {
               backgroundColor: colors.background.tertiary,
               borderColor: colors.border.medium,
               color: colors.text.primary
-            }]}
+            }])}
           />
           
           {/* Clean Email Status */}
@@ -147,14 +147,14 @@ export default function RegisterStep3({
               {emailStatus.error ? (
                 <>
                   <Ionicons name="close-circle" size={16} color={colors.error[500]} />
-                  <Typography variant="caption" style={[styles.statusText, { color: colors.error[600] }]}>
+                  <Typography variant="caption" style={StyleSheet.flatten([styles.statusText, { color: colors.error[600] }])}>
                     {emailStatus.error}
                   </Typography>
                 </>
               ) : values.email.includes('@') && !emailStatus.error ? (
                 <>
                   <Ionicons name="checkmark-circle" size={16} color={colors.success[500]} />
-                  <Typography variant="caption" style={[styles.statusText, { color: colors.success[600] }]}>
+                  <Typography variant="caption" style={StyleSheet.flatten([styles.statusText, { color: colors.success[600] }])}>
                     Valid email format
                   </Typography>
                 </>
@@ -165,7 +165,7 @@ export default function RegisterStep3({
 
         {/* Password Field */}
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
             Password
           </Typography>
           <TextField
@@ -179,17 +179,17 @@ export default function RegisterStep3({
             autoCapitalize="none"
             textContentType="newPassword"
             passwordRules="minlength: 8; required: lower; required: upper; required: digit; required: special;"
-            style={[styles.input, {
+            style={StyleSheet.flatten([styles.input, {
               backgroundColor: colors.background.tertiary,
               borderColor: colors.border.medium,
               color: colors.text.primary
-            }]}
+            }])}
           />
         </View>
 
         {/* Confirm Password Field */}
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
             Confirm Password
           </Typography>
           <TextField
@@ -202,20 +202,20 @@ export default function RegisterStep3({
             secureTextEntry={true}
             autoCapitalize="none"
             textContentType="newPassword"
-            style={[styles.input, {
+            style={StyleSheet.flatten([styles.input, {
               backgroundColor: colors.background.tertiary,
               borderColor: colors.border.medium,
               color: colors.text.primary
-            }]}
+            }])}
           />
         </View>
 
         {/* Clean Password Requirements */}
-        <View style={[styles.requirementsContainer, { 
+        <View style={StyleSheet.flatten([styles.requirementsContainer, { 
           backgroundColor: colors.background.tertiary, 
           borderColor: colors.border.light
-        }]}>
-          <Typography variant="caption" style={[styles.requirementsTitle, { color: colors.text.secondary }]}>
+        }])}>
+          <Typography variant="caption" style={StyleSheet.flatten([styles.requirementsTitle, { color: colors.text.secondary }])}>
             Password requirements:
           </Typography>
           
@@ -225,7 +225,7 @@ export default function RegisterStep3({
               size={16} 
               color={values.password.length >= 8 ? colors.success[500] : colors.text.tertiary} 
             />
-            <Typography variant="caption" style={[styles.requirementText, { color: colors.text.tertiary }]}>
+            <Typography variant="caption" style={StyleSheet.flatten([styles.requirementText, { color: colors.text.tertiary }])}>
               At least 8 characters
             </Typography>
           </View>
@@ -236,7 +236,7 @@ export default function RegisterStep3({
               size={16} 
               color={/[A-Z]/.test(values.password) ? colors.success[500] : colors.text.tertiary} 
             />
-            <Typography variant="caption" style={[styles.requirementText, { color: colors.text.tertiary }]}>
+            <Typography variant="caption" style={StyleSheet.flatten([styles.requirementText, { color: colors.text.tertiary }])}>
               One uppercase letter
             </Typography>
           </View>
@@ -247,7 +247,7 @@ export default function RegisterStep3({
               size={16} 
               color={/[a-z]/.test(values.password) ? colors.success[500] : colors.text.tertiary} 
             />
-            <Typography variant="caption" style={[styles.requirementText, { color: colors.text.tertiary }]}>
+            <Typography variant="caption" style={StyleSheet.flatten([styles.requirementText, { color: colors.text.tertiary }])}>
               One lowercase letter
             </Typography>
           </View>
@@ -258,7 +258,7 @@ export default function RegisterStep3({
               size={16} 
               color={/\d/.test(values.password) ? colors.success[500] : colors.text.tertiary} 
             />
-            <Typography variant="caption" style={[styles.requirementText, { color: colors.text.tertiary }]}>
+            <Typography variant="caption" style={StyleSheet.flatten([styles.requirementText, { color: colors.text.tertiary }])}>
               One number
             </Typography>
           </View>
@@ -269,7 +269,7 @@ export default function RegisterStep3({
               size={16} 
               color={/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(values.password) ? colors.success[500] : colors.text.tertiary} 
             />
-            <Typography variant="caption" style={[styles.requirementText, { color: colors.text.tertiary }]}>
+            <Typography variant="caption" style={StyleSheet.flatten([styles.requirementText, { color: colors.text.tertiary }])}>
               One special character
             </Typography>
           </View>
@@ -277,12 +277,12 @@ export default function RegisterStep3({
 
         {/* Error Message */}
         {currentError ? (
-          <View style={[styles.errorContainer, { 
+          <View style={StyleSheet.flatten([styles.errorContainer, { 
             backgroundColor: colors.error[50], 
             borderColor: colors.error[200]
-          }]}>
+          }])}>
             <Ionicons name="warning" size={20} color={colors.error[500]} />
-            <Typography variant="body" style={[styles.errorText, { color: colors.error[700] }]}>
+            <Typography variant="body" style={StyleSheet.flatten([styles.errorText, { color: colors.error[700] }])}>
               {currentError}
             </Typography>
           </View>
@@ -294,13 +294,13 @@ export default function RegisterStep3({
         <Button 
           title="Back" 
           onPress={onBack} 
-          style={[styles.backButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }]}
-          titleStyle={{ color: colors.text.primary }}
+          style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }])}
+          textStyle={{ color: colors.text.primary }}
         />
         <Button 
           title="Continue" 
           onPress={handleNext}
-          style={[styles.continueButton, { backgroundColor: '#8B5CF6' }]}
+          style={StyleSheet.flatten([styles.continueButton, { backgroundColor: '#8B5CF6' }])}
           disabled={
             !values.email || 
             !values.password || 

@@ -99,33 +99,33 @@ export default function RegisterStep4({
     <View style={styles.container}>
       {/* Clean Progress Indicator */}
       <View style={styles.progressContainer}>
-        <View style={[styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
           <Ionicons name="checkmark" size={16} color="#8B5CF6" />
         </View>
-        <View style={[styles.progressLine, { backgroundColor: '#8B5CF6' }]} />
-        <View style={[styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
           <Ionicons name="checkmark" size={16} color="#8B5CF6" />
         </View>
-        <View style={[styles.progressLine, { backgroundColor: '#8B5CF6' }]} />
-        <View style={[styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
           <Ionicons name="checkmark" size={16} color="#8B5CF6" />
         </View>
-        <View style={[styles.progressLine, { backgroundColor: '#8B5CF6' }]} />
-        <View style={[styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }])}>
           <Typography variant="caption" style={styles.activeStepText}>4</Typography>
         </View>
-        <View style={[styles.progressLine, { backgroundColor: colors.border.medium }]} />
-        <View style={[styles.progressStep, { backgroundColor: colors.background.tertiary }]}>
-          <Typography variant="caption" style={[styles.stepText, { color: colors.text.tertiary }]}>5</Typography>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
+          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>5</Typography>
         </View>
       </View>
 
       {/* Clean Header */}
       <View style={styles.header}>
-        <Typography variant="h2" style={[styles.title, { color: colors.text.primary }]}>
+        <Typography variant="h2" style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])}>
           Address Information
         </Typography>
-        <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
+        <Typography variant="body" style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])}>
           Enter your current address
         </Typography>
       </View>
@@ -136,7 +136,7 @@ export default function RegisterStep4({
           {/* Address Search Section */}
           {!useManualEntry && (
             <View style={styles.inputContainer}>
-              <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+              <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
                 Search Address
               </Typography>
               <CustomAddressSearch
@@ -172,12 +172,12 @@ export default function RegisterStep4({
 
           {/* Error Message */}
           {addressError && (
-            <View style={[styles.errorContainer, { 
+            <View style={StyleSheet.flatten([styles.errorContainer, { 
               backgroundColor: colors.error[50], 
               borderColor: colors.error[200]
-            }]}>
+            }])}>
               <Ionicons name="warning" size={20} color={colors.error[500]} />
-              <Typography variant="body" style={[styles.errorText, { color: colors.error[700] }]}>
+              <Typography variant="body" style={StyleSheet.flatten([styles.errorText, { color: colors.error[700] }])}>
                 {addressError}
               </Typography>
             </View>
@@ -187,101 +187,105 @@ export default function RegisterStep4({
             <>
           {/* Address Line 1 */}
           <View style={styles.inputContainer}>
-            <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+            <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
               Address Line 1 *
             </Typography>
             <TextField
               placeholder="Enter your street address"
               value={values.address1}
               onChangeText={(v) => onChange("address1", v)}
-              style={[styles.input, {
+              style={StyleSheet.flatten([styles.input, {
                 backgroundColor: colors.background.tertiary,
                 borderColor: colors.border.medium,
                 color: colors.text.primary
-              }]}
+              }])}
             />
           </View>
 
           {/* Address Line 2 */}
           <View style={styles.inputContainer}>
-            <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+            <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
               Address Line 2
             </Typography>
             <TextField
               placeholder="Apartment, unit, etc. (optional)"
               value={values.address2}
               onChangeText={(v) => onChange("address2", v)}
-              style={[styles.input, {
+              style={StyleSheet.flatten([styles.input, {
                 backgroundColor: colors.background.tertiary,
                 borderColor: colors.border.medium,
                 color: colors.text.primary
-              }]}
+              }])}
             />
           </View>
 
           {/* City */}
           <View style={styles.inputContainer}>
-            <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+            <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
               City *
             </Typography>
             <TextField
               placeholder="Enter your city"
               value={values.city}
               onChangeText={(v) => onChange("city", v)}
-              style={[styles.input, {
+              style={StyleSheet.flatten([styles.input, {
                 backgroundColor: colors.background.tertiary,
                 borderColor: colors.border.medium,
                 color: colors.text.primary
-              }]}
+              }])}
             />
           </View>
 
           {/* State/Province and Postal Code */}
           <View style={styles.rowContainer}>
-            <View style={[styles.inputContainer, { flex: 1, marginRight: spacing.sm }]}>
-              <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+            <View style={StyleSheet.flatten([styles.inputContainer, { flex: 1, marginRight: spacing.sm }])}>
+              <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
                 State/Province
               </Typography>
               <TextField
                 placeholder="State"
                 value={values.state}
                 onChangeText={(v) => onChange("state", v)}
-                style={[styles.input, {
+                style={StyleSheet.flatten([styles.input, {
                   backgroundColor: colors.background.tertiary,
                   borderColor: colors.border.medium,
+                }])}
+                inputStyle={{
                   color: colors.text.primary
-                }]}
+                }}
               />
             </View>
 
-            <View style={[styles.inputContainer, { flex: 1, marginLeft: spacing.sm }]}>
-              <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+            <View style={StyleSheet.flatten([styles.inputContainer, { flex: 1, marginLeft: spacing.sm }])}>
+              <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
                 Postal Code
               </Typography>
               <TextField
                 placeholder="ZIP/Postal"
                 value={values.postcode}
                 onChangeText={(v) => onChange("postcode", v)}
-                style={[styles.input, {
+                style={StyleSheet.flatten([styles.input, {
                   backgroundColor: colors.background.tertiary,
                   borderColor: colors.border.medium,
+                }])}
+                inputStyle={{
                   color: colors.text.primary
-                }]}
+                }}
               />
             </View>
           </View>
 
           {/* Country Picker */}
           <View style={styles.inputContainer}>
-            <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+            <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
               Country *
             </Typography>
             <TouchableOpacity
               onPress={() => setShowCountryPicker(!showCountryPicker)}
-              style={[styles.countryInput, {
+              style={StyleSheet.flatten([styles.countryInput, {
                 backgroundColor: colors.background.tertiary,
                 borderColor: colors.border.medium,
-              }]}
+              }])}
             >
               <Typography variant="body" style={{ color: selectedCountry ? colors.text.primary : colors.text.tertiary }}>
                 {selectedCountry ? `${selectedCountry.flag} ${selectedCountry.label}` : "Select your country"}
@@ -292,12 +296,12 @@ export default function RegisterStep4({
 
           {/* Country Options */}
           {showCountryPicker && (
-            <View style={[styles.countryList, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }]}>
+            <View style={StyleSheet.flatten([styles.countryList, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }])}>
               <ScrollView style={styles.countryScrollView} nestedScrollEnabled={true}>
                 {countries.map((country) => (
                   <TouchableOpacity
                     key={country.value}
-                    style={[styles.countryOption, { borderBottomColor: colors.border.light }]}
+                    style={StyleSheet.flatten([styles.countryOption, { borderBottomColor: colors.border.light }])}
                     onPress={() => {
                       onChange("country", country.value);
                       setShowCountryPicker(false);
@@ -321,13 +325,13 @@ export default function RegisterStep4({
         <Button 
           title="Back" 
           onPress={onBack} 
-          style={[styles.backButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }]}
-          titleStyle={{ color: colors.text.primary }}
+          style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }])}
+          textStyle={{ color: colors.text.primary }}
         />
         <Button 
           title="Continue" 
           onPress={handleNext}
-          style={[styles.continueButton, { backgroundColor: '#8B5CF6' }]}
+          style={StyleSheet.flatten([styles.continueButton, { backgroundColor: '#8B5CF6' }])}
           disabled={!values.address1?.trim() || !values.city?.trim() || !values.country}
         />
       </View>

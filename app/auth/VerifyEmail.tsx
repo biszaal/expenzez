@@ -221,14 +221,14 @@ export default function VerifyEmail() {
                   
                   <Typography
                     variant="h1"
-                    style={[styles.title, { color: 'white' }]}
+                    style={StyleSheet.flatten([styles.title, { color: 'white' }])}
                     align="center"
                   >
                     Verify Your Email
                   </Typography>
                   <Typography
                     variant="body"
-                    style={[styles.subtitle, { color: 'rgba(255,255,255,0.8)' }]}
+                    style={StyleSheet.flatten([styles.subtitle, { color: 'rgba(255,255,255,0.8)' }])}
                     align="center"
                   >
                     We&apos;ve sent a 6-digit code to {email}
@@ -250,7 +250,7 @@ export default function VerifyEmail() {
                   <View style={styles.formContent}>
                     <Typography
                       variant="h2"
-                      style={[styles.formTitle, { color: colors.text.primary }]}
+                      style={StyleSheet.flatten([styles.formTitle, { color: colors.text.primary }])}
                       align="center"
                     >
                       Enter Verification Code
@@ -280,9 +280,8 @@ export default function VerifyEmail() {
                         <TextField
                           placeholder="Enter 6-digit code"
                           value={code}
-                          onChangeText={setCode}
+                          onChangeText={(text) => setCode(text.slice(0, 6))}
                           keyboardType="number-pad"
-                          maxLength={6}
                           style={styles.enhancedInput}
                         />
                       </View>
@@ -290,7 +289,7 @@ export default function VerifyEmail() {
 
                     {/* Enhanced Verify Button */}
                     <TouchableOpacity
-                      style={[styles.verifyButton, { opacity: isLoading ? 0.7 : 1 }]}
+                      style={StyleSheet.flatten([styles.verifyButton, { opacity: isLoading ? 0.7 : 1 }])}
                       onPress={handleConfirm}
                       disabled={isLoading}
                     >

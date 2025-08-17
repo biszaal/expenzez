@@ -226,7 +226,7 @@ export default function CreditScreen() {
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={opt.gradient}
+                  colors={opt.gradient as any}
                   style={[styles.optionCardGradient, shadows.md]}
                 >
                   <View style={[styles.optionIcon, { backgroundColor: opt.iconColor }]}>

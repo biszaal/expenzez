@@ -1,6 +1,6 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter, useFocusEffect } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Dimensions,
   ScrollView,
@@ -530,6 +530,47 @@ export default function SpendingPage() {
     totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
   const overBudget = totalSpent > totalBudget;
 
+  // Calculate monthly spending data using useMemo to avoid dependency issues
+  const monthlyData = useMemo(() => {
+    // Filter transactions for selected month
+    const filteredTransactions = transactions.filter((txn) => {
+      const txnDate = new Date(txn.date || txn.timestamp);
+      const txnMonth = `${txnDate.getFullYear()}-${String(txnDate.getMonth() + 1).padStart(2, "0")}`;
+      return txnMonth === selectedMonth;
+    });
+
+    // Calculate monthly spending by category
+    const monthlySpentByCategory: Record<string, number> = {};
+    filteredTransactions.forEach((txn) => {
+      if (txn.amount < 0) {
+        const category = txn.category || "Other";
+        monthlySpentByCategory[category] =
+          (monthlySpentByCategory[category] || 0) + Math.abs(txn.amount);
+      }
+    });
+
+    const monthlyTotalSpent = Object.values(monthlySpentByCategory).reduce(
+      (sum, amount) => sum + amount,
+      0
+    );
+
+    // Use monthly totals for budget calculations
+    const monthlySpentPercentage =
+      totalBudget > 0 ? (monthlyTotalSpent / totalBudget) * 100 : 0;
+    const monthlyOverBudget = monthlyTotalSpent > totalBudget;
+
+    return {
+      filteredTransactions,
+      monthlySpentByCategory,
+      monthlyTotalSpent,
+      monthlySpentPercentage,
+      monthlyOverBudget
+    };
+  }, [transactions, selectedMonth, totalBudget]);
+
+  // Extract values for use in animation useEffect
+  const { monthlySpentPercentage, monthlyOverBudget } = monthlyData;
+
   React.useEffect(() => {
     // Reset animations and start fresh
     animatedProgress.setValue(0);
@@ -648,28 +689,12 @@ export default function SpendingPage() {
     );
   }
 
-  // Filter transactions for selected month
-  const filteredTransactions = transactions.filter((tx) => {
-    if (!tx.date) return false;
-    const txDate = dayjs(tx.date);
-    const selectedDate = dayjs(selectedMonth);
-    return txDate.format("YYYY-MM") === selectedMonth;
-  });
-
-  // Calculate spending for selected month only
-  const monthlySpentByCategory: Record<string, number> = {};
-  filteredTransactions.forEach((txn) => {
-    if (txn.amount < 0) {
-      const category = txn.category || "Other";
-      monthlySpentByCategory[category] =
-        (monthlySpentByCategory[category] || 0) + Math.abs(txn.amount);
-    }
-  });
-
-  const monthlyTotalSpent = Object.values(monthlySpentByCategory).reduce(
-    (sum, amount) => sum + amount,
-    0
-  );
+  // Use calculated data from useMemo
+  const { 
+    filteredTransactions, 
+    monthlySpentByCategory, 
+    monthlyTotalSpent 
+  } = monthlyData;
 
   // Calculate previous month comparison
   const selectedMonthIndex = months.findIndex((m) => m.value === selectedMonth);
@@ -707,11 +732,6 @@ export default function SpendingPage() {
     if (sortBy === "name") return a.name.localeCompare(b.name);
     return 0;
   });
-
-  // Use monthly totals for budget calculations
-  const monthlySpentPercentage =
-    totalBudget > 0 ? (monthlyTotalSpent / totalBudget) * 100 : 0;
-  const monthlyOverBudget = monthlyTotalSpent > totalBudget;
   const donutProgress = monthlyOverBudget ? 100 : monthlySpentPercentage;
   const donutColor = monthlyOverBudget
     ? colors.error[500]
@@ -1248,7 +1268,6 @@ export default function SpendingPage() {
                           backgroundGradientFromOpacity: 0,
                           backgroundGradientToOpacity: 0,
                           fillShadowGradient: monthlyOverBudget ? colors.error[500] : colors.primary[500],
-                          fillShadowGradientFrom: monthlyOverBudget ? colors.error[500] : colors.primary[500],
                           fillShadowGradientTo: monthlyOverBudget ? colors.error[100] : colors.primary[100],
                           fillShadowGradientFromOpacity: 0.1,
                           fillShadowGradientToOpacity: 0,
@@ -1273,8 +1292,8 @@ export default function SpendingPage() {
                             fontSize: 0,
                           },
                           formatYLabel: () => "",
-                          yAxisMin: () => 0,
-                          yAxisMax: () => {
+                          yAxisMin: 0,
+                          yAxisMax: (() => {
                             const allData = [
                               ...dailySpendingData.data,
                               ...(dailySpendingData.prevMonthData || [])
@@ -1282,7 +1301,7 @@ export default function SpendingPage() {
                             const maxValue = Math.max(...allData);
                             // Force a reasonable scale that makes both lines visible
                             return Math.max(1000, maxValue * 1.1);
-                          },
+                          })(),
                         }}
                         style={{
                           marginVertical: 8,
@@ -1291,10 +1310,6 @@ export default function SpendingPage() {
                         }}
                         withDots={false}
                         withShadow={false}
-                        withInnerLines={false}
-                        withOuterLines={false}
-                        withVerticalLines={false}
-                        withHorizontalLines={false}
                         segments={0}
                         bezier
                         renderDotContent={({ x, y, index, indexData }) => {
@@ -1392,7 +1407,6 @@ export default function SpendingPage() {
                                 backgroundGradientFromOpacity: 0,
                                 backgroundGradientToOpacity: 0,
                                 fillShadowGradient: monthlyOverBudget ? colors.error[500] : colors.primary[500],
-                                fillShadowGradientFrom: monthlyOverBudget ? colors.error[500] : colors.primary[500],
                                 fillShadowGradientTo: monthlyOverBudget ? colors.error[100] : colors.primary[100],
                                 fillShadowGradientFromOpacity: 0.1,
                                 fillShadowGradientToOpacity: 0,
@@ -1418,8 +1432,8 @@ export default function SpendingPage() {
                                   fontWeight: "500",
                                 },
                                 formatYLabel: () => "",
-                                yAxisMin: () => 0,
-                                yAxisMax: () => {
+                                yAxisMin: 0,
+                                yAxisMax: (() => {
                                   const allData = [
                                     ...dailySpendingData.data,
                                     ...(dailySpendingData.prevMonthData || [])
@@ -1427,7 +1441,7 @@ export default function SpendingPage() {
                                   const maxValue = Math.max(...allData);
                                   // Force a reasonable scale that makes both lines visible
                                   return Math.max(1000, maxValue * 1.1);
-                                },
+                                })(),
                               }}
                               style={{
                                 marginVertical: 8,
@@ -1436,10 +1450,6 @@ export default function SpendingPage() {
                               }}
                               withDots={false}
                               withShadow={false}
-                              withInnerLines={false}
-                              withOuterLines={false}
-                              withVerticalLines={false}
-                              withHorizontalLines={false}
                               segments={0}
                               bezier
                               renderDotContent={({ x, y, index, indexData }) => {
@@ -2262,7 +2272,7 @@ const styles = StyleSheet.create({
   // Premium Header Styles
   premiumHeader: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl,
+    paddingTop: spacing["3xl"],
     paddingBottom: spacing.xl,
   },
   premiumHeaderContent: {
@@ -3161,11 +3171,6 @@ const styles = StyleSheet.create({
     gap: 24,
     marginBottom: 12,
   },
-  chartLegendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
   chartLegendLine: {
     width: 16,
     height: 3,
@@ -3177,10 +3182,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderStyle: "dashed",
     borderRadius: 1,
-  },
-  chartLegendText: {
-    fontSize: 11,
-    fontWeight: "500",
   },
   enhancedXAxis: {
     flexDirection: "row",

@@ -275,34 +275,34 @@ export default function Register() {
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background.primary} />
-      <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background.primary }])}>
 
         <SafeAreaView style={styles.safeArea}>
           {/* Clean Header Section */}
           <View style={styles.header}>
             <TouchableOpacity
               onPress={() => router.replace("/auth/Login")}
-              style={[styles.backButton, { backgroundColor: colors.background.secondary }]}
+              style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.secondary }])}
               accessibilityLabel="Back to Login"
             >
               <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
             </TouchableOpacity>
             
             <View style={styles.headerContent}>
-              <View style={[styles.logoContainer, { backgroundColor: '#8B5CF6' }]}>
+              <View style={StyleSheet.flatten([styles.logoContainer, { backgroundColor: '#8B5CF6' }])}>
                 <Ionicons name="person-add-outline" size={28} color="white" />
               </View>
               
               <Typography
                 variant="h1"
-                style={[styles.welcomeTitle, { color: colors.text.primary }]}
+                style={StyleSheet.flatten([styles.welcomeTitle, { color: colors.text.primary }])}
                 align="center"
               >
                 Create Account
               </Typography>
               <Typography
                 variant="body"
-                style={[styles.welcomeSubtitle, { color: colors.text.secondary }]}
+                style={StyleSheet.flatten([styles.welcomeSubtitle, { color: colors.text.secondary }])}
                 align="center"
               >
                 Step {step} of 5
@@ -321,12 +321,12 @@ export default function Register() {
               showsVerticalScrollIndicator={false}
             >
               {/* Clean Form Container */}
-              <View style={[styles.formContainer, { backgroundColor: colors.background.secondary }]}>
+              <View style={StyleSheet.flatten([styles.formContainer, { backgroundColor: colors.background.secondary }])}>
                 <View style={styles.formContent}>
                   {registrationError ? (
-                    <View style={[styles.errorContainer, { backgroundColor: colors.error[50], borderColor: colors.error[200] }]}>
+                    <View style={StyleSheet.flatten([styles.errorContainer, { backgroundColor: colors.error[50], borderColor: colors.error[200] }])}>
                       <Ionicons name="warning" size={20} color={colors.error[500]} />
-                      <Typography variant="body" style={[styles.errorText, { color: colors.error[700] }]}>
+                      <Typography variant="body" style={StyleSheet.flatten([styles.errorText, { color: colors.error[700] }])}>
                         {registrationError}
                       </Typography>
                     </View>

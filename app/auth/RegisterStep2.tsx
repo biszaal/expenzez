@@ -47,33 +47,33 @@ export default function RegisterStep2({
     <View style={styles.container}>
       {/* Clean Progress Indicator */}
       <View style={styles.progressContainer}>
-        <View style={[styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
           <Ionicons name="checkmark" size={16} color="#8B5CF6" />
         </View>
-        <View style={[styles.progressLine, { backgroundColor: '#8B5CF6' }]} />
-        <View style={[styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }])}>
           <Typography variant="caption" style={styles.activeStepText}>2</Typography>
         </View>
-        <View style={[styles.progressLine, { backgroundColor: colors.border.medium }]} />
-        <View style={[styles.progressStep, { backgroundColor: colors.background.tertiary }]}>
-          <Typography variant="caption" style={[styles.stepText, { color: colors.text.tertiary }]}>3</Typography>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
+          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>3</Typography>
         </View>
-        <View style={[styles.progressLine, { backgroundColor: colors.border.medium }]} />
-        <View style={[styles.progressStep, { backgroundColor: colors.background.tertiary }]}>
-          <Typography variant="caption" style={[styles.stepText, { color: colors.text.tertiary }]}>4</Typography>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
+          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>4</Typography>
         </View>
-        <View style={[styles.progressLine, { backgroundColor: colors.border.medium }]} />
-        <View style={[styles.progressStep, { backgroundColor: colors.background.tertiary }]}>
-          <Typography variant="caption" style={[styles.stepText, { color: colors.text.tertiary }]}>5</Typography>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
+          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>5</Typography>
         </View>
       </View>
 
       {/* Clean Header */}
       <View style={styles.header}>
-        <Typography variant="h2" style={[styles.title, { color: colors.text.primary }]}>
+        <Typography variant="h2" style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])}>
           Personal Details
         </Typography>
-        <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
+        <Typography variant="body" style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])}>
           Tell us about yourself
         </Typography>
       </View>
@@ -83,15 +83,15 @@ export default function RegisterStep2({
 
         {/* Date of Birth */}
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
             Date of Birth
           </Typography>
           <TouchableOpacity
             onPress={() => setShowDatePicker(true)}
-            style={[styles.dateInput, {
+            style={StyleSheet.flatten([styles.dateInput, {
               backgroundColor: colors.background.tertiary,
               borderColor: colors.border.medium,
-            }]}
+            }])}
           >
             <Typography variant="body" style={{ color: values.dob ? colors.text.primary : colors.text.tertiary }}>
               {values.dob ? selectedDate.toLocaleDateString() : "Select your date of birth"}
@@ -102,7 +102,7 @@ export default function RegisterStep2({
 
         {/* Gender Selection */}
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
             Gender
           </Typography>
           <View style={styles.genderContainer}>
@@ -110,14 +110,14 @@ export default function RegisterStep2({
               <TouchableOpacity
                 key={option.value}
                 onPress={() => onChange("gender", option.value)}
-                style={[styles.genderOption, {
+                style={StyleSheet.flatten([styles.genderOption, {
                   backgroundColor: values.gender === option.value 
                     ? '#8B5CF6' 
                     : colors.background.tertiary,
                   borderColor: values.gender === option.value 
                     ? '#8B5CF6' 
                     : colors.border.medium,
-                }]}
+                }])}
               >
                 <Ionicons 
                   name={option.icon as any} 
@@ -146,13 +146,13 @@ export default function RegisterStep2({
         <Button 
           title="Back" 
           onPress={onBack} 
-          style={[styles.backButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }]}
-          titleStyle={{ color: colors.text.primary }}
+          style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }])}
+          textStyle={{ color: colors.text.primary }}
         />
         <Button 
           title="Continue" 
           onPress={handleNext}
-          style={[styles.continueButton, { backgroundColor: '#8B5CF6' }]}
+          style={StyleSheet.flatten([styles.continueButton, { backgroundColor: '#8B5CF6' }])}
           disabled={!values.dob || !values.gender}
         />
       </View>

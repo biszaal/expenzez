@@ -290,16 +290,16 @@ export default function NotificationsScreen() {
                   <MaterialCommunityIcons
                     name={
                       notification.type === "transaction"
-                        ? "swap-horizontal-outline"
+                        ? "swap-horizontal"
                         : notification.type === "budget"
                           ? "chart-line"
                           : notification.type === "account"
-                            ? "bank-outline"
+                            ? "bank"
                             : notification.type === "security"
-                              ? "shield-check-outline"
+                              ? "shield-check"
                               : notification.type === "insight"
-                                ? "lightbulb-outline"
-                                : "bell-outline"
+                                ? "lightbulb"
+                                : "bell"
                     }
                     size={28}
                     color={

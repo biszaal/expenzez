@@ -91,7 +91,7 @@ export default function ForgotPasswordScreen() {
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background.primary} />
-      <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background.primary }])}>
 
         <SafeAreaView style={styles.safeArea}>
           <KeyboardAvoidingView
@@ -109,7 +109,7 @@ export default function ForgotPasswordScreen() {
                 {/* Back Button */}
                 <TouchableOpacity
                   onPress={() => router.back()}
-                  style={[styles.backButton, { backgroundColor: colors.background.secondary }]}
+                  style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.secondary }])}
                   accessibilityLabel="Go back"
                 >
                   <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
@@ -117,20 +117,20 @@ export default function ForgotPasswordScreen() {
 
                 {/* Header Content */}
                 <View style={styles.headerContent}>
-                  <View style={[styles.iconContainer, { backgroundColor: '#8B5CF6' }]}>
+                  <View style={StyleSheet.flatten([styles.iconContainer, { backgroundColor: '#8B5CF6' }])}>
                     <Ionicons name="lock-closed-outline" size={28} color="white" />
                   </View>
                   
                   <Typography
                     variant="h1"
-                    style={[styles.title, { color: colors.text.primary }]}
+                    style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])}
                     align="center"
                   >
                     Reset Password
                   </Typography>
                   <Typography
                     variant="body"
-                    style={[styles.subtitle, { color: colors.text.secondary }]}
+                    style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])}
                     align="center"
                   >
                     Enter your username and we'll send you a reset code
@@ -140,18 +140,18 @@ export default function ForgotPasswordScreen() {
 
               {/* Clean Form Container */}
               <View style={styles.formSection}>
-                <View style={[styles.formContainer, { backgroundColor: colors.background.secondary }]}>
+                <View style={StyleSheet.flatten([styles.formContainer, { backgroundColor: colors.background.secondary }])}>
                   <View style={styles.formContent}>
                     {/* Success State */}
                     {emailSent && (
                       <View style={styles.successContainer}>
-                        <View style={[styles.successIcon, { backgroundColor: colors.success[500] }]}>
+                        <View style={StyleSheet.flatten([styles.successIcon, { backgroundColor: colors.success[500] }])}>
                           <Ionicons name="checkmark" size={28} color="white" />
                         </View>
                         
                         <Typography
                           variant="h2"
-                          style={[styles.successTitle, { color: colors.text.primary }]}
+                          style={StyleSheet.flatten([styles.successTitle, { color: colors.text.primary }])}
                           align="center"
                         >
                           Code Sent
@@ -159,31 +159,31 @@ export default function ForgotPasswordScreen() {
                         
                         <Typography
                           variant="body"
-                          style={[styles.successMessage, { color: colors.text.secondary }]}
+                          style={StyleSheet.flatten([styles.successMessage, { color: colors.text.secondary }])}
                           align="center"
                         >
                           Reset code sent to {userEmail}
                         </Typography>
 
-                        <View style={[styles.instructionBox, { backgroundColor: colors.background.tertiary, borderColor: colors.border.light }]}>
-                          <Typography variant="caption" style={[styles.instructionText, { color: colors.text.secondary }]}>
+                        <View style={StyleSheet.flatten([styles.instructionBox, { backgroundColor: colors.background.tertiary, borderColor: colors.border.light }])}>
+                          <Typography variant="caption" style={StyleSheet.flatten([styles.instructionText, { color: colors.text.secondary }])}>
                             Check your email for the 6-digit code, then create your new password.
                           </Typography>
                         </View>
 
                         {/* Resend Button */}
                         <TouchableOpacity
-                          style={[
+                          style={StyleSheet.flatten([
                             styles.resendButton,
                             { 
                               backgroundColor: resendCooldown > 0 ? colors.gray[300] : '#8B5CF6',
                               opacity: resendCooldown > 0 ? 0.6 : 1
                             }
-                          ]}
+                          ])}
                           onPress={handleResend}
                           disabled={resendCooldown > 0 || isLoading}
                         >
-                          <Typography variant="body" style={[styles.resendText, { color: 'white' }]}>
+                          <Typography variant="body" style={StyleSheet.flatten([styles.resendText, { color: 'white' }])}>
                             {resendCooldown > 0 
                               ? `Resend in ${resendCooldown}s`
                               : isLoading 
@@ -194,7 +194,7 @@ export default function ForgotPasswordScreen() {
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                          style={[styles.continueButton, { backgroundColor: '#8B5CF6' }]}
+                          style={StyleSheet.flatten([styles.continueButton, { backgroundColor: '#8B5CF6' }])}
                           onPress={() => {
                             router.push({
                               pathname: "/auth/ResetPassword",
@@ -214,7 +214,7 @@ export default function ForgotPasswordScreen() {
                       <>
                         {/* Clean Username Input */}
                         <View style={styles.inputContainer}>
-                          <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+                          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
                             Username
                           </Typography>
                           <TextField
@@ -223,23 +223,23 @@ export default function ForgotPasswordScreen() {
                             onChangeText={setUsername}
                             autoCapitalize="none"
                             autoCorrect={false}
-                            style={[styles.input, { 
+                            style={StyleSheet.flatten([styles.input, { 
                               backgroundColor: colors.background.tertiary,
                               borderColor: colors.border.medium,
                               color: colors.text.primary
-                            }]}
+                            }])}
                           />
                         </View>
 
                         {/* Clean Submit Button */}
                         <TouchableOpacity
-                          style={[
+                          style={StyleSheet.flatten([
                             styles.submitButton, 
                             { 
                               backgroundColor: '#8B5CF6',
                               opacity: isLoading ? 0.7 : 1 
                             }
-                          ]}
+                          ])}
                           onPress={handleSubmit}
                           disabled={isLoading}
                         >

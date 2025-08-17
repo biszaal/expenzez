@@ -12,6 +12,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -144,6 +146,7 @@ const defaultPreferences: NotificationPreferences = {
   recurringPaymentAlerts: true,
   
   // AI & Insights
+  dailyReminders: true,
   weeklyInsights: true,
   monthlyReports: true,
   savingsTips: true,
@@ -347,7 +350,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       
       if (notificationData && notificationData.length > 0) {
         // Load persisted read states from AsyncStorage
-        const persistedReadStates = await AsyncStorage.getItem(`notification_read_states_${user?.uid}`);
+        const persistedReadStates = await AsyncStorage.getItem(`notification_read_states_${user?.id}`);
         const readStates = persistedReadStates ? JSON.parse(persistedReadStates) : {};
         
         // Transform data to match NotificationHistoryItem interface and apply persisted read states
@@ -463,7 +466,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   // Helper function to persist read state
   const persistReadState = async (notificationId: string, isRead: boolean) => {
     try {
-      const storageKey = `notification_read_states_${user?.uid}`;
+      const storageKey = `notification_read_states_${user?.id}`;
       const existingStates = await AsyncStorage.getItem(storageKey);
       const readStates = existingStates ? JSON.parse(existingStates) : {};
       
@@ -480,7 +483,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     
     // Clear persisted read states from AsyncStorage
     try {
-      const storageKey = `notification_read_states_${user?.uid}`;
+      const storageKey = `notification_read_states_${user?.id}`;
       await AsyncStorage.removeItem(storageKey);
     } catch (error) {
       console.error("[NotificationContext] Error clearing notification cache:", error);

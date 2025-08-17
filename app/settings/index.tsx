@@ -53,11 +53,14 @@ export default function SettingsPage() {
     Alert.alert(
       "Select Currency",
       "Choose your preferred currency",
-      currencyOptions.map(option => ({
-        text: `${option.symbol} ${option.name}`,
-        onPress: () => setCurrency(option.code),
-        style: currency === option.code ? 'default' : 'default'
-      })).concat([{ text: "Cancel", style: "cancel" }])
+      [
+        ...currencyOptions.map(option => ({
+          text: `${option.symbol} ${option.name}`,
+          onPress: () => setCurrency(option.code),
+          style: currency === option.code ? 'default' as const : 'default' as const
+        })),
+        { text: "Cancel", style: "cancel" as const }
+      ]
     );
   };
 
@@ -365,7 +368,7 @@ export default function SettingsPage() {
               </Text>
               <Switch
                 value={preferences?.pushEnabled ?? true}
-                onValueChange={(value) => updatePreferences({ pushEnabled: value })}
+                onValueChange={(value) => { updatePreferences({ pushEnabled: value }); }}
                 trackColor={{ false: colors.background.tertiary, true: colors.primary[200] || colors.primary[500] + '40' }}
                 thumbColor={preferences?.pushEnabled ? colors.primary[500] : colors.text.tertiary}
                 disabled={notificationLoading}
@@ -394,7 +397,7 @@ export default function SettingsPage() {
               </Text>
               <Switch
                 value={preferences?.transactionAlerts ?? true}
-                onValueChange={(value) => updatePreferences({ transactionAlerts: value })}
+                onValueChange={(value) => { updatePreferences({ transactionAlerts: value }); }}
                 trackColor={{ false: colors.background.tertiary, true: colors.primary[200] || colors.primary[500] + '40' }}
                 thumbColor={preferences?.transactionAlerts ? colors.primary[500] : colors.text.tertiary}
                 disabled={notificationLoading}
@@ -423,7 +426,7 @@ export default function SettingsPage() {
               </Text>
               <Switch
                 value={preferences?.budgetAlerts ?? true}
-                onValueChange={(value) => updatePreferences({ budgetAlerts: value })}
+                onValueChange={(value) => { updatePreferences({ budgetAlerts: value }); }}
                 trackColor={{ false: colors.background.tertiary, true: colors.primary[200] || colors.primary[500] + '40' }}
                 thumbColor={preferences?.budgetAlerts ? colors.primary[500] : colors.text.tertiary}
                 disabled={notificationLoading}

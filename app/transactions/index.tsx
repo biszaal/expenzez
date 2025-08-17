@@ -18,7 +18,6 @@ import { spacing, borderRadius, shadows } from "../../constants/theme";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { getTransactions } from "../../services/dataSource";
 import { getMerchantInfo } from "../../services/merchantService";
-import { getBankLogoInfo } from "../../services/api";
 import MonthFilter from "../../components/ui/MonthFilter";
 import dayjs from "dayjs";
 
@@ -31,7 +30,7 @@ interface Transaction {
   category?: string;
   accountId: string;
   bankName: string;
-  type: 'debit' | 'credit';
+  type: "debit" | "credit";
   originalAmount: number;
   accountType?: string;
   isPending?: boolean;
@@ -46,7 +45,11 @@ export default function TransactionsScreen() {
   const router = useRouter();
   const { merchant } = useLocalSearchParams<{ merchant?: string }>();
   const { isLoggedIn } = useAuth();
-  const { isLoggedIn: authLoggedIn, hasBank, checkingBank } = useAuthGuard(undefined, true);
+  const {
+    isLoggedIn: authLoggedIn,
+    hasBank,
+    checkingBank,
+  } = useAuthGuard(undefined, true);
   const { colors } = useTheme();
   const { showSuccess, showError } = useAlert();
 
@@ -54,8 +57,8 @@ export default function TransactionsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState(dayjs().format('YYYY-MM'));
-  const [lastUpdated, setLastUpdated] = useState(dayjs().format('HH:mm'));
+  const [selectedMonth, setSelectedMonth] = useState(dayjs().format("YYYY-MM"));
+  const [lastUpdated, setLastUpdated] = useState(dayjs().format("HH:mm"));
 
   const fetchTransactions = async (showRefresh = false) => {
     try {
@@ -63,26 +66,30 @@ export default function TransactionsScreen() {
       else setLoading(true);
 
       const transactionsData = await getTransactions();
-      
+
       if (transactionsData && transactionsData.length > 0) {
-        const formattedTransactions: Transaction[] = transactionsData.map((tx: any) => ({
-          id: tx.id || tx.transaction_id,
-          amount: Math.abs(tx.amount || 0),
-          description: tx.description || tx.merchant_name || 'Unknown',
-          date: tx.date || tx.timestamp,
-          merchant: tx.merchant_name || tx.description || 'Unknown Merchant',
-          category: tx.category,
-          accountId: tx.account_id || 'unknown',
-          bankName: tx.bank_name || 'Unknown Bank',
-          type: (tx.amount || 0) < 0 ? 'debit' : 'credit',
-          originalAmount: tx.amount || 0,
-          accountType: tx.account_type || (tx.amount < 0 ? 'Credit Card' : 'Current Account'),
-          isPending: tx.status === 'pending' || tx.pending,
-        }));
+        const formattedTransactions: Transaction[] = transactionsData.map(
+          (tx: any) => ({
+            id: tx.id || tx.transaction_id,
+            amount: Math.abs(tx.amount || 0),
+            description: tx.description || tx.merchant_name || "Unknown",
+            date: tx.date || tx.timestamp,
+            merchant: tx.merchant_name || tx.description || "Unknown Merchant",
+            category: tx.category,
+            accountId: tx.account_id || "unknown",
+            bankName: tx.bank_name || "Unknown Bank",
+            type: (tx.amount || 0) < 0 ? "debit" : "credit",
+            originalAmount: tx.amount || 0,
+            accountType:
+              tx.account_type ||
+              (tx.amount < 0 ? "Credit Card" : "Current Account"),
+            isPending: tx.status === "pending" || tx.pending,
+          })
+        );
 
         setTransactions(formattedTransactions);
-        setLastUpdated(dayjs().format('HH:mm'));
-        
+        setLastUpdated(dayjs().format("HH:mm"));
+
         if (showRefresh) {
           showSuccess(`Loaded ${formattedTransactions.length} transactions`);
         }
@@ -107,6 +114,7 @@ export default function TransactionsScreen() {
   };
 
   useEffect(() => {
+    console.log("Transactions", transactions);
     if (!authLoggedIn) {
       router.replace("/auth/Login");
     }
@@ -127,16 +135,16 @@ export default function TransactionsScreen() {
   // Generate available months from transactions
   const availableMonths = useMemo(() => {
     const monthsSet = new Set<string>();
-    transactions.forEach(tx => {
-      const month = dayjs(tx.date).format('YYYY-MM');
+    transactions.forEach((tx) => {
+      const month = dayjs(tx.date).format("YYYY-MM");
       monthsSet.add(month);
     });
 
     const months = Array.from(monthsSet).sort().reverse().slice(0, 6);
-    return months.map(month => ({
+    return months.map((month) => ({
       key: month,
-      label: dayjs(month).format('MMM'),
-      isActive: true
+      label: dayjs(month).format("MMM"),
+      isActive: true,
     }));
   }, [transactions]);
 
@@ -145,27 +153,32 @@ export default function TransactionsScreen() {
     let filtered = transactions;
 
     // Month filter
-    filtered = filtered.filter(tx => 
-      dayjs(tx.date).format('YYYY-MM') === selectedMonth
+    filtered = filtered.filter(
+      (tx) => dayjs(tx.date).format("YYYY-MM") === selectedMonth
     );
 
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(tx => 
-        tx.description.toLowerCase().includes(query) ||
-        tx.merchant.toLowerCase().includes(query) ||
-        tx.bankName?.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (tx) =>
+          tx.description.toLowerCase().includes(query) ||
+          tx.merchant.toLowerCase().includes(query) ||
+          tx.bankName?.toLowerCase().includes(query)
       );
     }
 
     // Separate pending and completed transactions
-    const pending = filtered.filter(tx => tx.isPending);
-    const completed = filtered.filter(tx => !tx.isPending);
+    const pending = filtered.filter((tx) => tx.isPending);
+    const completed = filtered.filter((tx) => !tx.isPending);
 
     return {
-      filteredTransactions: completed.sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf()),
-      pendingTransactions: pending.sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf())
+      filteredTransactions: completed.sort(
+        (a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf()
+      ),
+      pendingTransactions: pending.sort(
+        (a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf()
+      ),
     };
   }, [transactions, selectedMonth, searchQuery]);
 
@@ -174,8 +187,8 @@ export default function TransactionsScreen() {
     const groups: GroupedTransaction[] = [];
     const dateGroups = new Map<string, Transaction[]>();
 
-    filteredTransactions.forEach(tx => {
-      const dateKey = dayjs(tx.date).format('YYYY-MM-DD');
+    filteredTransactions.forEach((tx) => {
+      const dateKey = dayjs(tx.date).format("YYYY-MM-DD");
       if (!dateGroups.has(dateKey)) {
         dateGroups.set(dateKey, []);
       }
@@ -185,19 +198,21 @@ export default function TransactionsScreen() {
     dateGroups.forEach((txs, date) => {
       groups.push({
         date,
-        transactions: txs
+        transactions: txs,
       });
     });
 
-    return groups.sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf());
+    return groups.sort(
+      (a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf()
+    );
   }, [filteredTransactions]);
 
   const formatDateHeader = (date: string) => {
-    return dayjs(date).format('ddd DD MMM');
+    return dayjs(date).format("ddd DD MMM");
   };
 
   const formatTransactionTime = (date: string) => {
-    return dayjs(date).format('HH:mm');
+    return dayjs(date).format("HH:mm");
   };
 
   const getMerchantLogo = (description: string) => {
@@ -206,10 +221,10 @@ export default function TransactionsScreen() {
   };
 
   const getBankIcon = (accountType: string) => {
-    if (accountType?.toLowerCase().includes('credit')) {
-      return '💳';
+    if (accountType?.toLowerCase().includes("credit")) {
+      return "💳";
     }
-    return '🏦';
+    return "🏦";
   };
 
   if (!authLoggedIn || checkingBank) {
@@ -218,19 +233,35 @@ export default function TransactionsScreen() {
 
   if (!hasBank && transactions.length === 0 && !loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <SafeAreaView
+        style={[
+          styles.container,
+          { backgroundColor: colors.background.primary },
+        ]}
+      >
         <View style={styles.emptyState}>
-          <View style={[styles.emptyIcon, { backgroundColor: colors.primary[100] }]}>
-            <Ionicons name="link-outline" size={48} color={colors.primary[500]} />
+          <View
+            style={[styles.emptyIcon, { backgroundColor: colors.primary[100] }]}
+          >
+            <Ionicons
+              name="link-outline"
+              size={48}
+              color={colors.primary[500]}
+            />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
             Connect Your Bank
           </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.text.secondary }]}>
+          <Text
+            style={[styles.emptySubtitle, { color: colors.text.secondary }]}
+          >
             Connect your bank account to view your transactions
           </Text>
           <TouchableOpacity
-            style={[styles.connectButton, { backgroundColor: colors.primary[500] }]}
+            style={[
+              styles.connectButton,
+              { backgroundColor: colors.primary[500] },
+            ]}
             onPress={() => router.push("/banks")}
           >
             <Text style={styles.connectButtonText}>Connect Bank</Text>
@@ -242,7 +273,9 @@ export default function TransactionsScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -259,30 +292,52 @@ export default function TransactionsScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: colors.background.secondary }]}
+            style={[
+              styles.backButton,
+              { backgroundColor: colors.background.secondary },
+            ]}
             onPress={() => router.back()}
           >
-            <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={colors.primary[500]}
+            />
           </TouchableOpacity>
-          
+
           <View style={styles.headerContent}>
             <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
               ALL TRANSACTIONS
             </Text>
-            <Text style={[styles.headerSubtitle, { color: colors.text.secondary }]}>
+            <Text
+              style={[styles.headerSubtitle, { color: colors.text.secondary }]}
+            >
               Updated today, {lastUpdated}
             </Text>
           </View>
 
           <TouchableOpacity style={styles.menuButton}>
-            <Ionicons name="ellipsis-horizontal" size={24} color={colors.text.secondary} />
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={24}
+              color={colors.text.secondary}
+            />
           </TouchableOpacity>
         </View>
 
         {/* Search */}
         <View style={styles.searchSection}>
-          <View style={[styles.searchContainer, { backgroundColor: colors.background.secondary }]}>
-            <Ionicons name="search-outline" size={20} color={colors.text.tertiary} />
+          <View
+            style={[
+              styles.searchContainer,
+              { backgroundColor: colors.background.secondary },
+            ]}
+          >
+            <Ionicons
+              name="search-outline"
+              size={20}
+              color={colors.text.tertiary}
+            />
             <TextInput
               style={[styles.searchInput, { color: colors.text.primary }]}
               placeholder="Search"
@@ -304,7 +359,9 @@ export default function TransactionsScreen() {
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
+            <Text
+              style={[styles.loadingText, { color: colors.text.secondary }]}
+            >
               Loading transactions...
             </Text>
           </View>
@@ -314,43 +371,79 @@ export default function TransactionsScreen() {
             {pendingTransactions.length > 0 && (
               <View style={styles.pendingSection}>
                 <View style={styles.pendingHeader}>
-                  <Text style={[styles.pendingTitle, { color: colors.text.primary }]}>Pending</Text>
-                  <Text style={[styles.pendingAmount, { color: colors.text.primary }]}>
-                    £{pendingTransactions.reduce((sum, tx) => sum + Math.abs(tx.originalAmount), 0).toFixed(2)}
+                  <Text
+                    style={[
+                      styles.pendingTitle,
+                      { color: colors.text.primary },
+                    ]}
+                  >
+                    Pending
+                  </Text>
+                  <Text
+                    style={[
+                      styles.pendingAmount,
+                      { color: colors.text.primary },
+                    ]}
+                  >
+                    £
+                    {pendingTransactions
+                      .reduce((sum, tx) => sum + Math.abs(tx.originalAmount), 0)
+                      .toFixed(2)}
                   </Text>
                 </View>
 
                 {pendingTransactions.map((transaction) => (
                   <View
                     key={transaction.id}
-                    style={[styles.transactionCard, { backgroundColor: colors.background.secondary }]}
+                    style={[
+                      styles.transactionCard,
+                      { backgroundColor: colors.background.secondary },
+                    ]}
                   >
                     <View style={styles.merchantLogo}>
                       <Text style={styles.logoText}>
                         {getMerchantLogo(transaction.description)}
                       </Text>
                     </View>
-                    
+
                     <View style={styles.transactionDetails}>
-                      <Text style={[styles.merchantName, { color: colors.text.primary }]}>
+                      <Text
+                        style={[
+                          styles.merchantName,
+                          { color: colors.text.primary },
+                        ]}
+                      >
                         {getMerchantInfo(transaction.description).name}
                       </Text>
                       <View style={styles.accountInfo}>
-                        <Text style={[styles.accountType, { color: colors.text.secondary }]}>
+                        <Text
+                          style={[
+                            styles.accountType,
+                            { color: colors.text.secondary },
+                          ]}
+                        >
                           {transaction.accountType}
                         </Text>
                         <Text style={styles.bankIcon}>
-                          {getBankIcon(transaction.accountType || '')}
+                          {getBankIcon(transaction.accountType || "")}
                         </Text>
                       </View>
                     </View>
 
                     <View style={styles.amountContainer}>
-                      <Text style={[
-                        styles.amount,
-                        { color: transaction.type === 'credit' ? colors.success[500] : colors.text.primary }
-                      ]}>
-                        {transaction.type === 'credit' ? '+' : ''}£{Math.abs(transaction.originalAmount).toFixed(2)}
+                      <Text
+                        style={[
+                          styles.amount,
+                          {
+                            color:
+                              transaction.type === "credit"
+                                ? colors.success[500]
+                                : colors.text.primary,
+                          },
+                        ]}
+                      >
+                        {transaction.type === "credit" ? "+" : ""}£
+                        {Math.abs(transaction.originalAmount).toFixed(2)}
                       </Text>
                     </View>
                   </View>
@@ -361,47 +454,80 @@ export default function TransactionsScreen() {
             {/* Grouped Transactions */}
             {groupedTransactions.map((group) => (
               <View key={group.date} style={styles.dateGroup}>
-                <Text style={[styles.dateHeader, { color: colors.text.secondary }]}>
+                <Text
+                  style={[styles.dateHeader, { color: colors.text.secondary }]}
+                >
                   {formatDateHeader(group.date)}
                 </Text>
-                <Text style={[styles.dateAmount, { color: colors.text.secondary }]}>
-                  £{group.transactions.reduce((sum, tx) => sum + Math.abs(tx.originalAmount), 0).toFixed(2)}
+                <Text
+                  style={[styles.dateAmount, { color: colors.text.secondary }]}
+                >
+                  £
+                  {group.transactions
+                    .reduce((sum, tx) => sum + Math.abs(tx.originalAmount), 0)
+                    .toFixed(2)}
                 </Text>
 
                 {group.transactions.map((transaction) => (
                   <View
                     key={transaction.id}
-                    style={[styles.transactionCard, { backgroundColor: colors.background.secondary }]}
+                    style={[
+                      styles.transactionCard,
+                      { backgroundColor: colors.background.secondary },
+                    ]}
                   >
                     <View style={styles.merchantLogo}>
                       <Text style={styles.logoText}>
                         {getMerchantLogo(transaction.description)}
                       </Text>
                     </View>
-                    
+
                     <View style={styles.transactionDetails}>
-                      <Text style={[styles.merchantName, { color: colors.text.primary }]}>
+                      <Text
+                        style={[
+                          styles.merchantName,
+                          { color: colors.text.primary },
+                        ]}
+                      >
                         {getMerchantInfo(transaction.description).name}
                       </Text>
-                      <Text style={[styles.transactionTime, { color: colors.text.secondary }]}>
+                      <Text
+                        style={[
+                          styles.transactionTime,
+                          { color: colors.text.secondary },
+                        ]}
+                      >
                         {formatTransactionTime(transaction.date)}
                       </Text>
                       <View style={styles.accountInfo}>
-                        <Text style={[styles.accountType, { color: colors.text.secondary }]}>
+                        <Text
+                          style={[
+                            styles.accountType,
+                            { color: colors.text.secondary },
+                          ]}
+                        >
                           {transaction.accountType}
                         </Text>
                         <Text style={styles.bankIcon}>
-                          {getBankIcon(transaction.accountType || '')}
+                          {getBankIcon(transaction.accountType || "")}
                         </Text>
                       </View>
                     </View>
 
                     <View style={styles.amountContainer}>
-                      <Text style={[
-                        styles.amount,
-                        { color: transaction.type === 'credit' ? colors.success[500] : colors.text.primary }
-                      ]}>
-                        {transaction.type === 'credit' ? '+' : ''}£{Math.abs(transaction.originalAmount).toFixed(2)}
+                      <Text
+                        style={[
+                          styles.amount,
+                          {
+                            color:
+                              transaction.type === "credit"
+                                ? colors.success[500]
+                                : colors.text.primary,
+                          },
+                        ]}
+                      >
+                        {transaction.type === "credit" ? "+" : ""}£
+                        {Math.abs(transaction.originalAmount).toFixed(2)}
                       </Text>
                     </View>
                   </View>
@@ -410,14 +536,23 @@ export default function TransactionsScreen() {
             ))}
 
             {/* Empty State */}
-            {groupedTransactions.length === 0 && pendingTransactions.length === 0 && (
-              <View style={styles.emptyTransactions}>
-                <Ionicons name="receipt-outline" size={48} color={colors.text.tertiary} />
-                <Text style={[styles.emptyText, { color: colors.text.secondary }]}>
-                  {searchQuery ? 'No matching transactions found' : 'No transactions for this month'}
-                </Text>
-              </View>
-            )}
+            {groupedTransactions.length === 0 &&
+              pendingTransactions.length === 0 && (
+                <View style={styles.emptyTransactions}>
+                  <Ionicons
+                    name="receipt-outline"
+                    size={48}
+                    color={colors.text.tertiary}
+                  />
+                  <Text
+                    style={[styles.emptyText, { color: colors.text.secondary }]}
+                  >
+                    {searchQuery
+                      ? "No matching transactions found"
+                      : "No transactions for this month"}
+                  </Text>
+                </View>
+              )}
           </View>
         )}
       </ScrollView>
@@ -435,12 +570,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: spacing["2xl"],
   },
-  
+
   // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
@@ -448,16 +583,16 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerContent: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: 0.5,
   },
   headerSubtitle: {
@@ -467,8 +602,8 @@ const styles = StyleSheet.create({
   menuButton: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Search
@@ -477,8 +612,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius["2xl"],
@@ -493,9 +628,9 @@ const styles = StyleSheet.create({
   // Loading
   loadingContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing["4xl"],
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing["3xl"],
   },
   loadingText: {
     fontSize: 16,
@@ -505,24 +640,24 @@ const styles = StyleSheet.create({
   transactionsContainer: {
     paddingHorizontal: spacing.lg,
   },
-  
+
   // Pending Section
   pendingSection: {
     marginBottom: spacing.xl,
   },
   pendingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: spacing.md,
   },
   pendingTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   pendingAmount: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   // Date Groups
@@ -531,23 +666,23 @@ const styles = StyleSheet.create({
   },
   dateHeader: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: spacing.sm,
     paddingHorizontal: spacing.sm,
   },
   dateAmount: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: spacing.sm,
     paddingHorizontal: spacing.sm,
-    textAlign: 'right',
+    textAlign: "right",
     marginTop: -22,
   },
 
   // Transaction Cards
   transactionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.lg,
@@ -558,8 +693,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: spacing.md,
   },
   logoText: {
@@ -570,7 +705,7 @@ const styles = StyleSheet.create({
   },
   merchantName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 2,
   },
   transactionTime: {
@@ -578,8 +713,8 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   accountInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.xs,
   },
   accountType: {
@@ -589,44 +724,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   amountContainer: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   amount: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   // Empty States
   emptyState: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: spacing.xl,
   },
   emptyIcon: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing.xl,
   },
   emptyTitle: {
     fontSize: 24,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
     marginBottom: spacing.sm,
   },
   emptySubtitle: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: spacing.xl,
     lineHeight: 24,
   },
   connectButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
     borderRadius: borderRadius["2xl"],
@@ -634,16 +769,16 @@ const styles = StyleSheet.create({
   },
   connectButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
+    fontWeight: "600",
+    color: "white",
   },
   emptyTransactions: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: spacing["3xl"],
   },
   emptyText: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: spacing.md,
   },
 });

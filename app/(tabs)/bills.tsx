@@ -127,7 +127,7 @@ export default function BillsScreen() {
           finalBills = mergedBills;
           setBills(mergedBills);
         } catch (error) {
-          console.log(`[Bills] Bill preferences API not available yet, using detected bills only:`, error.message);
+          console.log(`[Bills] Bill preferences API not available yet, using detected bills only:`, error instanceof Error ? error.message : String(error));
           setBills(detectedBills);
         }
         
@@ -145,9 +145,9 @@ export default function BillsScreen() {
       console.error("Error analyzing bills:", error);
       console.error("Error details:", JSON.stringify(error, null, 2));
       
-      if (error?.response?.status === 404) {
+      if ((error as any)?.response?.status === 404) {
         showError("Transaction service not available");
-      } else if (error?.response?.status === 401) {
+      } else if ((error as any)?.response?.status === 401) {
         showError("Please log in again");
       } else {
         showError("Failed to analyze bills");
@@ -179,9 +179,9 @@ export default function BillsScreen() {
 
   // Filter bills by selected category
   const filteredBills = useMemo(() => {
-    if (selectedCategory === "All") return bills.filter(bill => bill.status !== 'inactive');
-    if (selectedCategory === "Inactive") return bills.filter(bill => bill.status === 'inactive');
-    return bills.filter(bill => bill.category === selectedCategory && bill.status !== 'inactive');
+    if (selectedCategory === "All") return bills.filter(bill => bill.status !== 'cancelled');
+    if (selectedCategory === "Inactive") return bills.filter(bill => bill.status === 'cancelled');
+    return bills.filter(bill => bill.category === selectedCategory && bill.status !== 'cancelled');
   }, [bills, selectedCategory]);
 
   // Calculate statistics
@@ -214,7 +214,7 @@ export default function BillsScreen() {
   };
 
   const showBillManagement = (bill: DetectedBill) => {
-    const isInactive = bill.status === 'inactive';
+    const isInactive = bill.status === 'cancelled';
     
     Alert.alert(
       `Manage ${bill.name}`,
@@ -290,7 +290,7 @@ export default function BillsScreen() {
       // Update local state
       const updatedBills = bills.map(b => 
         b.id === bill.id 
-          ? { ...b, status: 'inactive' as const, userModified: true }
+          ? { ...b, status: 'cancelled' as const, userModified: true }
           : b
       );
       setBills(updatedBills);

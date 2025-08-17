@@ -156,22 +156,22 @@ export default function ExpenseManagementPage() {
               </View>
             )}
             {dateRange.startDate && (
-              <View style={[styles.filterTag, { backgroundColor: colors.blue[100] }]}>
-                <Text style={[styles.filterTagText, { color: colors.blue[700] }]}>
+              <View style={[styles.filterTag, { backgroundColor: colors.primary[100] }]}>
+                <Text style={[styles.filterTagText, { color: colors.primary[700] }]}>
                   From: {new Date(dateRange.startDate).toLocaleDateString()}
                 </Text>
                 <TouchableOpacity onPress={() => setDateRange(prev => ({ ...prev, startDate: undefined }))}>
-                  <Ionicons name="close" size={16} color={colors.blue[700]} />
+                  <Ionicons name="close" size={16} color={colors.primary[700]} />
                 </TouchableOpacity>
               </View>
             )}
             {dateRange.endDate && (
-              <View style={[styles.filterTag, { backgroundColor: colors.blue[100] }]}>
-                <Text style={[styles.filterTagText, { color: colors.blue[700] }]}>
+              <View style={[styles.filterTag, { backgroundColor: colors.primary[100] }]}>
+                <Text style={[styles.filterTagText, { color: colors.primary[700] }]}>
                   To: {new Date(dateRange.endDate).toLocaleDateString()}
                 </Text>
                 <TouchableOpacity onPress={() => setDateRange(prev => ({ ...prev, endDate: undefined }))}>
-                  <Ionicons name="close" size={16} color={colors.blue[700]} />
+                  <Ionicons name="close" size={16} color={colors.primary[700]} />
                 </TouchableOpacity>
               </View>
             )}

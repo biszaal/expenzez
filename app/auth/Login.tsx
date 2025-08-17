@@ -167,7 +167,7 @@ export default function Login() {
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background.primary} />
-      <View style={[styles.container, { backgroundColor: isLoading ? '#FF0000' : colors.background.primary }]}>
+      <View style={StyleSheet.flatten([styles.container, { backgroundColor: isLoading ? '#FF0000' : colors.background.primary }])}>
 
         <SafeAreaView style={styles.safeArea}>
           <KeyboardAvoidingView
@@ -182,20 +182,20 @@ export default function Login() {
             >
               {/* Clean Header Section */}
               <View style={styles.header}>
-                <View style={[styles.logoContainer, { backgroundColor: colors.primary[500] }]}>
+                <View style={StyleSheet.flatten([styles.logoContainer, { backgroundColor: colors.primary[500] }])}>
                   <Ionicons name="wallet-outline" size={32} color="white" />
                 </View>
                 
                 <Typography
                   variant="h1"
-                  style={[styles.welcomeTitle, { color: colors.text.primary }]}
+                  style={StyleSheet.flatten([styles.welcomeTitle, { color: colors.text.primary }])}
                   align="center"
                 >
                   {isLoading ? 'LOADING TEST ACTIVE!' : 'Welcome Back'}
                 </Typography>
                 <Typography
                   variant="body"
-                  style={[styles.welcomeSubtitle, { color: colors.text.secondary }]}
+                  style={StyleSheet.flatten([styles.welcomeSubtitle, { color: colors.text.secondary }])}
                   align="center"
                 >
                   Sign in to your account
@@ -203,11 +203,11 @@ export default function Login() {
               </View>
 
               {/* Clean Login Form */}
-              <View style={[styles.formContainer, { backgroundColor: colors.background.secondary }]}>
+              <View style={StyleSheet.flatten([styles.formContainer, { backgroundColor: colors.background.secondary }])}>
                 <View style={styles.formContent}>
                   {/* Clean Input Fields */}
                   <View style={styles.inputContainer}>
-                    <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+                    <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
                       Username or Email
                     </Typography>
                     <TextField
@@ -215,20 +215,20 @@ export default function Login() {
                       value={identifier}
                       onChangeText={setIdentifier}
                       autoCapitalize="none"
-                      style={[styles.input, {
+                      style={StyleSheet.flatten([styles.input, {
                         backgroundColor: colors.background.tertiary,
                         borderColor: colors.border.medium,
                         color: colors.text.primary
-                      }]}
+                      }])}
                     />
                     {/* Show helpful message when redirected from registration */}
                     {(params.email || params.phone) && (
-                      <View style={[styles.redirectInfo, { 
+                      <View style={StyleSheet.flatten([styles.redirectInfo, { 
                         backgroundColor: colors.success[50], 
                         borderColor: colors.success[200]
-                      }]}>
+                      }])}>
                         <Ionicons name="checkmark-circle" size={16} color={colors.success[500]} />
-                        <Typography variant="caption" style={[styles.redirectText, { color: colors.success[700] }]}>
+                        <Typography variant="caption" style={StyleSheet.flatten([styles.redirectText, { color: colors.success[700] }])}>
                           We found your account! Please enter your password to continue.
                         </Typography>
                       </View>
@@ -236,7 +236,7 @@ export default function Login() {
                   </View>
 
                   <View style={styles.inputContainer}>
-                    <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+                    <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
                       Password
                     </Typography>
                     <TextField
@@ -245,11 +245,11 @@ export default function Login() {
                       onChangeText={setPassword}
                       secureTextEntry={true}
                       autoCapitalize="none"
-                      style={[styles.input, {
+                      style={StyleSheet.flatten([styles.input, {
                         backgroundColor: colors.background.tertiary,
                         borderColor: colors.border.medium,
                         color: colors.text.primary
-                      }]}
+                      }])}
                     />
                   </View>
 
@@ -265,12 +265,12 @@ export default function Login() {
 
                   {/* Enhanced Login Button */}
                   <View
-                    style={[
+                    style={StyleSheet.flatten([
                       styles.loginButton,
                       { 
                         backgroundColor: colors.primary[500],
                       }
-                    ]}
+                    ])}
                   >
                     <TouchableOpacity
                       style={styles.loginButtonInner}
@@ -303,23 +303,23 @@ export default function Login() {
 
                   {/* Clean Social Login */}
                   <View style={styles.divider}>
-                    <View style={[styles.dividerLine, { backgroundColor: colors.border.medium }]} />
+                    <View style={StyleSheet.flatten([styles.dividerLine, { backgroundColor: colors.border.medium }])} />
                     <Typography
                       variant="body"
-                      style={[styles.dividerText, { color: colors.text.tertiary }]}
+                      style={StyleSheet.flatten([styles.dividerText, { color: colors.text.tertiary }])}
                     >
                       or continue with
                     </Typography>
-                    <View style={[styles.dividerLine, { backgroundColor: colors.border.medium }]} />
+                    <View style={StyleSheet.flatten([styles.dividerLine, { backgroundColor: colors.border.medium }])} />
                   </View>
 
                   <View style={styles.socialButtons}>
                     <TouchableOpacity
-                      style={[styles.socialButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }]}
+                      style={StyleSheet.flatten([styles.socialButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }])}
                       onPress={() => showError("Google Login coming soon")}
                     >
                       <AntDesign name="google" size={20} color="#EA4335" />
-                      <Typography variant="body" style={[styles.socialButtonText, { color: colors.text.primary }]}>
+                      <Typography variant="body" style={StyleSheet.flatten([styles.socialButtonText, { color: colors.text.primary }])}>
                         Google
                       </Typography>
                     </TouchableOpacity>

@@ -11,6 +11,7 @@ interface User {
   email: string;
   address?: string;
   birthdate?: string;
+  createdAt?: string | number | Date;
 }
 
 interface RegisterInput {

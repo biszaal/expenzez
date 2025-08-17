@@ -136,7 +136,7 @@ export default function Button({
     style,
   ];
 
-  const buttonTextStyle = [getTextStyle(), textStyle];
+  const buttonTextStyle = [getTextStyle(), textStyle] as any;
 
   return (
     <TouchableOpacity

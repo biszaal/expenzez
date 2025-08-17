@@ -29,6 +29,7 @@ export interface DetectedBill {
   averageAmount: number;
   dayOfMonth?: number; // For monthly bills
   dayOfWeek?: number; // For weekly bills
+  userModified?: boolean; // Indicates if user has manually modified this bill
 }
 
 export class BillTrackingAlgorithm {
