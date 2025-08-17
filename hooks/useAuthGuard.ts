@@ -24,7 +24,7 @@ export function useAuthGuard(redirectTo?: string, requireBank?: boolean) {
   useEffect(() => {
     // Only redirect if auth state is loaded and user is not logged in
     if (!loading && !isLoggedIn) {
-      router.replace(redirectTo || "/auth/Login");
+      router.replace((redirectTo || "/auth/Login") as any);
     }
   }, [isLoggedIn, loading, router, redirectTo]);
 

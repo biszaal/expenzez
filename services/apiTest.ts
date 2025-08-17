@@ -1,4 +1,4 @@
-import { api } from "./api";
+import api from "./api";
 
 // Test function to verify EC2 backend connection
 export const testEC2Connection = async () => {

@@ -83,7 +83,7 @@ export default function ForgotUsernameScreen() {
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background.primary} />
-      <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background.primary }])}>
         <SafeAreaView style={styles.safeArea}>
           <KeyboardAvoidingView
             style={styles.keyboardView}
@@ -100,26 +100,26 @@ export default function ForgotUsernameScreen() {
                 {/* Back Button */}
                 <TouchableOpacity
                   onPress={() => router.back()}
-                  style={[styles.backButton, { backgroundColor: colors.background.secondary }]}
+                  style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.secondary }])}
                   accessibilityLabel="Go back"
                 >
                   <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
                 </TouchableOpacity>
 
-                <View style={[styles.logoContainer, { backgroundColor: colors.primary[500] }]}>
+                <View style={StyleSheet.flatten([styles.logoContainer, { backgroundColor: colors.primary[500] }])}>
                   <Ionicons name="person-circle-outline" size={32} color="white" />
                 </View>
                 
                 <Typography
                   variant="h1"
-                  style={[styles.welcomeTitle, { color: colors.text.primary }]}
+                  style={StyleSheet.flatten([styles.welcomeTitle, { color: colors.text.primary }])}
                   align="center"
                 >
                   Forgot Username?
                 </Typography>
                 <Typography
                   variant="body"
-                  style={[styles.welcomeSubtitle, { color: colors.text.secondary }]}
+                  style={StyleSheet.flatten([styles.welcomeSubtitle, { color: colors.text.secondary }])}
                   align="center"
                 >
                   Enter your email address and we&apos;ll send your username to you
@@ -127,14 +127,14 @@ export default function ForgotUsernameScreen() {
               </View>
 
               {/* Clean Form Container */}
-              <View style={[styles.formContainer, { backgroundColor: colors.background.secondary }]}>
+              <View style={StyleSheet.flatten([styles.formContainer, { backgroundColor: colors.background.secondary }])}>
                 <View style={styles.formContent}>
                   {/* Email Input */}
                   <View style={styles.inputContainer}>
                     <Typography
                       variant="body"
                       weight="medium"
-                      style={[styles.inputLabel, { color: colors.text.primary }]}
+                      style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])}
                     >
                       Email Address
                     </Typography>
@@ -145,20 +145,20 @@ export default function ForgotUsernameScreen() {
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoCorrect={false}
-                      style={[styles.input, {
+                      style={StyleSheet.flatten([styles.input, {
                         backgroundColor: colors.background.primary,
                         borderColor: colors.border.medium,
                         color: colors.text.primary,
-                      }]}
+                      }])}
                     />
                   </View>
 
                   {/* Submit Button */}
                   <TouchableOpacity
-                    style={[styles.submitButton, {
+                    style={StyleSheet.flatten([styles.submitButton, {
                       backgroundColor: colors.primary[500],
                       opacity: isLoading ? 0.7 : 1
-                    }]}
+                    }])}
                     onPress={handleSubmit}
                     disabled={isLoading}
                   >
@@ -197,9 +197,9 @@ export default function ForgotUsernameScreen() {
 
                   {/* Help Text */}
                   <View style={styles.helpSection}>
-                    <View style={[styles.helpContainer, { backgroundColor: colors.background.tertiary }]}>
+                    <View style={StyleSheet.flatten([styles.helpContainer, { backgroundColor: colors.background.tertiary }])}>
                       <Ionicons name="information-circle-outline" size={16} color={colors.text.secondary} />
-                      <Typography variant="caption" style={[styles.helpText, { color: colors.text.secondary }]}>
+                      <Typography variant="caption" style={StyleSheet.flatten([styles.helpText, { color: colors.text.secondary }])}>
                         We&apos;ll send your username to the email address associated with your account.
                       </Typography>
                     </View>

@@ -88,7 +88,7 @@ export default function ResetPasswordScreen() {
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background.primary} />
-      <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background.primary }])}>
         <SafeAreaView style={styles.safeArea}>
           <KeyboardAvoidingView
             style={styles.keyboardView}
@@ -104,20 +104,20 @@ export default function ResetPasswordScreen() {
               <View style={styles.header}>
                 <TouchableOpacity
                   onPress={() => router.back()}
-                  style={[styles.backButton, { backgroundColor: colors.background.secondary }]}
+                  style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.secondary }])}
                 >
                   <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
                 </TouchableOpacity>
 
                 <View style={styles.headerContent}>
-                  <View style={[styles.iconContainer, { backgroundColor: '#8B5CF6' }]}>
+                  <View style={StyleSheet.flatten([styles.iconContainer, { backgroundColor: '#8B5CF6' }])}>
                     <Ionicons name="mail-outline" size={28} color="white" />
                   </View>
                   
-                  <Typography variant="h1" style={[styles.title, { color: colors.text.primary }]} align="center">
+                  <Typography variant="h1" style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])} align="center">
                     Enter Reset Code
                   </Typography>
-                  <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]} align="center">
+                  <Typography variant="body" style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])} align="center">
                     Check your email for the 6-digit verification code
                   </Typography>
                 </View>
@@ -125,21 +125,21 @@ export default function ResetPasswordScreen() {
 
               {/* Clean Form */}
               <View>
-                <View style={[styles.formContainer, { backgroundColor: colors.background.secondary }]}>
+                <View style={StyleSheet.flatten([styles.formContainer, { backgroundColor: colors.background.secondary }])}>
                   <View style={styles.formContent}>
-                    <View style={[styles.usernameDisplay, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }]}>
+                    <View style={StyleSheet.flatten([styles.usernameDisplay, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }])}>
                       <View style={styles.usernameContent}>
-                        <Typography variant="caption" style={[styles.usernameLabel, { color: colors.text.secondary }]}>
+                        <Typography variant="caption" style={StyleSheet.flatten([styles.usernameLabel, { color: colors.text.secondary }])}>
                           Resetting password for:
                         </Typography>
-                        <Typography variant="body" style={[styles.usernameValue, { color: '#8B5CF6' }]} weight="semibold">
+                        <Typography variant="body" style={StyleSheet.flatten([styles.usernameValue, { color: '#8B5CF6' }])} weight="semibold">
                           {username}
                         </Typography>
                       </View>
                     </View>
 
                     <View style={styles.inputContainer}>
-                      <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+                      <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
                         Verification Code
                       </Typography>
                       <TextField
@@ -147,16 +147,16 @@ export default function ResetPasswordScreen() {
                         value={confirmationCode}
                         onChangeText={setConfirmationCode}
                         keyboardType="number-pad"
-                        style={[styles.input, { 
+                        style={StyleSheet.flatten([styles.input, { 
                           backgroundColor: colors.background.tertiary,
                           borderColor: colors.border.medium,
                           color: colors.text.primary
-                        }]}
+                        }])}
                       />
                     </View>
 
                     <View style={styles.inputContainer}>
-                      <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+                      <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
                         New Password
                       </Typography>
                       <TextField
@@ -164,16 +164,16 @@ export default function ResetPasswordScreen() {
                         value={newPassword}
                         onChangeText={setNewPassword}
                         secureTextEntry={true}
-                        style={[styles.input, { 
+                        style={StyleSheet.flatten([styles.input, { 
                           backgroundColor: colors.background.tertiary,
                           borderColor: colors.border.medium,
                           color: colors.text.primary
-                        }]}
+                        }])}
                       />
                     </View>
 
                     <View style={styles.inputContainer}>
-                      <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+                      <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
                         Confirm Password
                       </Typography>
                       <TextField
@@ -181,11 +181,11 @@ export default function ResetPasswordScreen() {
                         value={confirmPassword}
                         onChangeText={setConfirmPassword}
                         secureTextEntry={true}
-                        style={[styles.input, { 
+                        style={StyleSheet.flatten([styles.input, { 
                           backgroundColor: colors.background.tertiary,
                           borderColor: colors.border.medium,
                           color: colors.text.primary
-                        }]}
+                        }])}
                       />
                     </View>
 
@@ -200,13 +200,13 @@ export default function ResetPasswordScreen() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={[
+                      style={StyleSheet.flatten([
                         styles.submitButton, 
                         { 
                           backgroundColor: '#8B5CF6',
                           opacity: isLoading ? 0.7 : 1 
                         }
-                      ]}
+                      ])}
                       onPress={handleSubmit}
                       disabled={isLoading}
                     >

@@ -41,6 +41,7 @@ export default function EmptyState({
           titleSize: typography.fontSizes.base,
           subtitleSize: typography.fontSizes.sm,
           padding: spacing.lg,
+          container: { alignItems: 'center', justifyContent: 'center' },
         };
       case "large":
         return {
@@ -48,6 +49,7 @@ export default function EmptyState({
           titleSize: typography.fontSizes.xl,
           subtitleSize: typography.fontSizes.base,
           padding: spacing.xl,
+          container: { alignItems: 'center', justifyContent: 'center' },
         };
       default:
         return {
@@ -55,6 +57,7 @@ export default function EmptyState({
           titleSize: typography.fontSizes.lg,
           subtitleSize: typography.fontSizes.base,
           padding: spacing.xl,
+          container: { alignItems: 'center', justifyContent: 'center' },
         };
     }
   };

@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { Typography } from "./Typography";
+import Typography from "./Typography";
 import { useTheme } from "../../contexts/ThemeContext";
 import { spacing } from "../../constants/theme";
 

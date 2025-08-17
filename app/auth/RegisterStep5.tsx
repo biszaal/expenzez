@@ -211,37 +211,37 @@ export default function RegisterStep5({
     <View style={styles.container}>
       {/* Clean Progress Indicator - All Complete */}
       <View style={styles.progressContainer}>
-        <View style={[styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
           <Ionicons name="checkmark" size={16} color="#8B5CF6" />
         </View>
-        <View style={[styles.progressLine, { backgroundColor: '#8B5CF6' }]} />
-        <View style={[styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
           <Ionicons name="checkmark" size={16} color="#8B5CF6" />
         </View>
-        <View style={[styles.progressLine, { backgroundColor: '#8B5CF6' }]} />
-        <View style={[styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
           <Ionicons name="checkmark" size={16} color="#8B5CF6" />
         </View>
-        <View style={[styles.progressLine, { backgroundColor: '#8B5CF6' }]} />
-        <View style={[styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
           <Ionicons name="checkmark" size={16} color="#8B5CF6" />
         </View>
-        <View style={[styles.progressLine, { backgroundColor: '#8B5CF6' }]} />
-        <View style={[styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
           <Ionicons name="checkmark" size={16} color="#8B5CF6" />
         </View>
-        <View style={[styles.progressLine, { backgroundColor: '#8B5CF6' }]} />
-        <View style={[styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }]}>
+        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
+        <View style={StyleSheet.flatten([styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }])}>
           <Typography variant="caption" style={styles.activeStepText}>5</Typography>
         </View>
       </View>
 
       {/* Clean Header */}
       <View style={styles.header}>
-        <Typography variant="h2" style={[styles.title, { color: colors.text.primary }]}>
+        <Typography variant="h2" style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])}>
           Phone Number
         </Typography>
-        <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
+        <Typography variant="body" style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])}>
           Add your phone number for account security
         </Typography>
       </View>
@@ -251,7 +251,7 @@ export default function RegisterStep5({
         <View style={styles.formFields}>
           {/* Phone Number Input */}
           <View style={styles.inputContainer}>
-            <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+            <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
               Phone Number *
             </Typography>
             
@@ -259,10 +259,10 @@ export default function RegisterStep5({
               {/* Country Code Picker */}
               <TouchableOpacity
                 onPress={() => setShowCountryPicker(!showCountryPicker)}
-                style={[styles.countryCodeButton, {
+                style={StyleSheet.flatten([styles.countryCodeButton, {
                   backgroundColor: colors.background.tertiary,
                   borderColor: colors.border.medium,
-                }]}
+                }])}
               >
                 <Typography variant="body" style={{ color: colors.text.primary }}>
                   {selectedCountryCode.flag} {selectedCountryCode.code}
@@ -280,22 +280,22 @@ export default function RegisterStep5({
                   // Don't update parent form state here - only on submit with proper formatting
                 }}
                 keyboardType="phone-pad"
-                style={[styles.phoneInput, {
+                style={StyleSheet.flatten([styles.phoneInput, {
                   backgroundColor: colors.background.tertiary,
                   borderColor: phoneError ? colors.error[500] : colors.border.medium,
                   color: colors.text.primary
-                }]}
+                }])}
               />
             </View>
 
             {/* Phone Error Display */}
             {phoneError && (
-              <View style={[styles.errorContainer, { 
+              <View style={StyleSheet.flatten([styles.errorContainer, { 
                 backgroundColor: colors.error[50], 
                 borderColor: colors.error[200]
-              }]}>
+              }])}>
                 <Ionicons name="warning" size={20} color={colors.error[500]} />
-                <Typography variant="body" style={[styles.errorText, { color: colors.error[700] }]}>
+                <Typography variant="body" style={StyleSheet.flatten([styles.errorText, { color: colors.error[700] }])}>
                   {phoneError}
                 </Typography>
               </View>
@@ -303,12 +303,12 @@ export default function RegisterStep5({
 
             {/* Country Code Options */}
             {showCountryPicker && (
-              <View style={[styles.countryList, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }]}>
+              <View style={StyleSheet.flatten([styles.countryList, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }])}>
                 <ScrollView style={styles.countryScrollView} nestedScrollEnabled={true}>
                   {countryCodes.map((country, index) => (
                     <TouchableOpacity
                       key={index}
-                      style={[styles.countryOption, { borderBottomColor: colors.border.light }]}
+                      style={StyleSheet.flatten([styles.countryOption, { borderBottomColor: colors.border.light }])}
                       onPress={() => {
                         setSelectedCountryCode(country);
                         setShowCountryPicker(false);
@@ -325,42 +325,42 @@ export default function RegisterStep5({
           </View>
 
           {/* Privacy Note */}
-          <View style={[styles.privacyNote, { backgroundColor: colors.background.tertiary, borderColor: colors.border.light }]}>
+          <View style={StyleSheet.flatten([styles.privacyNote, { backgroundColor: colors.background.tertiary, borderColor: colors.border.light }])}>
             <Ionicons name="shield-checkmark-outline" size={20} color="#8B5CF6" />
-            <Typography variant="caption" style={[styles.privacyText, { color: colors.text.secondary }]}>
+            <Typography variant="caption" style={StyleSheet.flatten([styles.privacyText, { color: colors.text.secondary }])}>
               Your phone number will be used for account verification and security purposes only.
             </Typography>
           </View>
 
           {/* Review Summary */}
-          <View style={[styles.summaryContainer, { backgroundColor: colors.background.tertiary, borderColor: colors.border.light }]}>
-            <Typography variant="body" style={[styles.summaryTitle, { color: colors.text.primary }]} weight="semibold">
+          <View style={StyleSheet.flatten([styles.summaryContainer, { backgroundColor: colors.background.tertiary, borderColor: colors.border.light }])}>
+            <Typography variant="body" style={StyleSheet.flatten([styles.summaryTitle, { color: colors.text.primary }])} weight="semibold">
               Account Summary
             </Typography>
             
             <View style={styles.summaryItem}>
-              <Typography variant="caption" style={[styles.summaryLabel, { color: colors.text.secondary }]}>
+              <Typography variant="caption" style={StyleSheet.flatten([styles.summaryLabel, { color: colors.text.secondary }])}>
                 Name:
               </Typography>
-              <Typography variant="caption" style={[styles.summaryValue, { color: colors.text.primary }]}>
+              <Typography variant="caption" style={StyleSheet.flatten([styles.summaryValue, { color: colors.text.primary }])}>
                 {values.givenName} {values.familyName}
               </Typography>
             </View>
             
             <View style={styles.summaryItem}>
-              <Typography variant="caption" style={[styles.summaryLabel, { color: colors.text.secondary }]}>
+              <Typography variant="caption" style={StyleSheet.flatten([styles.summaryLabel, { color: colors.text.secondary }])}>
                 Username:
               </Typography>
-              <Typography variant="caption" style={[styles.summaryValue, { color: colors.text.primary }]}>
+              <Typography variant="caption" style={StyleSheet.flatten([styles.summaryValue, { color: colors.text.primary }])}>
                 {values.username}
               </Typography>
             </View>
             
             <View style={styles.summaryItem}>
-              <Typography variant="caption" style={[styles.summaryLabel, { color: colors.text.secondary }]}>
+              <Typography variant="caption" style={StyleSheet.flatten([styles.summaryLabel, { color: colors.text.secondary }])}>
                 Email:
               </Typography>
-              <Typography variant="caption" style={[styles.summaryValue, { color: colors.text.primary }]}>
+              <Typography variant="caption" style={StyleSheet.flatten([styles.summaryValue, { color: colors.text.primary }])}>
                 {values.email}
               </Typography>
             </View>
@@ -373,13 +373,13 @@ export default function RegisterStep5({
         <Button 
           title="Back" 
           onPress={onBack} 
-          style={[styles.backButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }]}
-          titleStyle={{ color: colors.text.primary }}
+          style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }])}
+          textStyle={{ color: colors.text.primary }}
         />
         <Button 
           title={isLoading ? "Creating Account..." : "Create Account"}
           onPress={handleSubmit}
-          style={[styles.submitButton, { backgroundColor: '#8B5CF6', opacity: isLoading ? 0.7 : 1 }]}
+          style={StyleSheet.flatten([styles.submitButton, { backgroundColor: '#8B5CF6', opacity: isLoading ? 0.7 : 1 }])}
           disabled={isLoading || !phoneNumber.trim()}
         />
       </View>

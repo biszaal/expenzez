@@ -619,7 +619,7 @@ export default function BanksScreen() {
                       }
                     >
                       <Ionicons
-                        name="ellipsis-horizontal"
+                        name="trash-outline"
                         size={16}
                         color={colors.text.tertiary}
                       />

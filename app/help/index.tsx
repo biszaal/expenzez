@@ -14,6 +14,38 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+
+// Help options data
+const helpOptions = [
+  {
+    id: "faq",
+    title: "FAQ",
+    description: "Frequently asked questions",
+    icon: "help-circle-outline",
+    action: "faq"
+  },
+  {
+    id: "contact",
+    title: "Contact Support", 
+    description: "Get in touch with our team",
+    icon: "mail-outline",
+    action: "contact"
+  },
+  {
+    id: "guide",
+    title: "User Guide",
+    description: "Learn how to use the app",
+    icon: "book-outline", 
+    action: "guide"
+  },
+  {
+    id: "feedback",
+    title: "Send Feedback",
+    description: "Help us improve the app",
+    icon: "chatbubble-outline",
+    action: "feedback"
+  }
+];
 import {
   spacing,
   borderRadius,
@@ -138,7 +170,10 @@ export default function HelpSupportScreen() {
                   },
                   shadows.sm,
                 ]}
-                onPress={option.action}
+                onPress={() => {
+                  // Handle help action
+                  Alert.alert(option.title, option.description);
+                }}
               >
                 <View
                   style={[
@@ -163,7 +198,7 @@ export default function HelpSupportScreen() {
                     { color: colors.text.secondary },
                   ]}
                 >
-                  {option.subtitle}
+                  {option.description}
                 </Text>
               </TouchableOpacity>
             ))}

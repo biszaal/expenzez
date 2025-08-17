@@ -70,69 +70,69 @@ const styles = StyleSheet.create({
   // Variants
   h1: {
     fontSize: typography.fontSizes["3xl"],
-    fontWeight: typography.fontWeights.black,
+    fontWeight: typography.fontWeights.bold as any,
     lineHeight: typography.lineHeights.tight * typography.fontSizes["3xl"],
   },
 
   h2: {
     fontSize: typography.fontSizes["2xl"],
-    fontWeight: typography.fontWeights.bold,
+    fontWeight: typography.fontWeights.bold as any,
     lineHeight: typography.lineHeights.tight * typography.fontSizes["2xl"],
   },
 
   h3: {
     fontSize: typography.fontSizes.xl,
-    fontWeight: typography.fontWeights.bold,
+    fontWeight: typography.fontWeights.bold as any,
     lineHeight: typography.lineHeights.tight * typography.fontSizes.xl,
   },
 
   h4: {
     fontSize: typography.fontSizes.lg,
-    fontWeight: typography.fontWeights.semibold,
+    fontWeight: typography.fontWeights.semibold as any,
     lineHeight: typography.lineHeights.normal * typography.fontSizes.lg,
   },
 
   body: {
     fontSize: typography.fontSizes.base,
-    fontWeight: typography.fontWeights.normal,
+    fontWeight: typography.fontWeights.normal as any,
     lineHeight: typography.lineHeights.normal * typography.fontSizes.base,
   },
 
   caption: {
     fontSize: typography.fontSizes.sm,
-    fontWeight: typography.fontWeights.normal,
+    fontWeight: typography.fontWeights.normal as any,
     lineHeight: typography.lineHeights.normal * typography.fontSizes.sm,
   },
 
   label: {
     fontSize: typography.fontSizes.sm,
-    fontWeight: typography.fontWeights.semibold,
+    fontWeight: typography.fontWeights.semibold as any,
     lineHeight: typography.lineHeights.normal * typography.fontSizes.sm,
   },
 
   // Weights
   weightNormal: {
-    fontWeight: typography.fontWeights.normal,
+    fontWeight: typography.fontWeights.normal as any,
   },
 
   weightMedium: {
-    fontWeight: typography.fontWeights.medium,
+    fontWeight: typography.fontWeights.medium as any,
   },
 
   weightSemibold: {
-    fontWeight: typography.fontWeights.semibold,
+    fontWeight: typography.fontWeights.semibold as any,
   },
 
   weightBold: {
-    fontWeight: typography.fontWeights.bold,
+    fontWeight: typography.fontWeights.bold as any,
   },
 
   weightExtrabold: {
-    fontWeight: typography.fontWeights.extrabold,
+    fontWeight: typography.fontWeights.bold as any,
   },
 
   weightBlack: {
-    fontWeight: typography.fontWeights.black,
+    fontWeight: typography.fontWeights.bold as any,
   },
 
   // Alignment

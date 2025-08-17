@@ -152,8 +152,8 @@ export default function TextField({
   };
 
   const inputContainerStyle = [getInputContainerStyle()];
-  const inputStyleArray = [getInputStyle(), inputStyle];
-  const labelStyleArray = [getLabelStyle(), labelStyle];
+  const inputStyleArray = [getInputStyle(), inputStyle] as any;
+  const labelStyleArray = [getLabelStyle(), labelStyle] as any;
 
   return (
     <View style={containerStyle}>

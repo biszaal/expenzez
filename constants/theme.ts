@@ -14,6 +14,20 @@ export const lightColors = {
     900: "#4C1D95",
   },
 
+  // Secondary color - Green for financial success/positive actions
+  secondary: {
+    50: "#F0FDF4",
+    100: "#DCFCE7", 
+    200: "#BBF7D0",
+    300: "#86EFAC",
+    400: "#4ADE80",
+    500: "#22C55E", // Green secondary
+    600: "#16A34A",
+    700: "#15803D",
+    800: "#166534",
+    900: "#14532D",
+  },
+
   // Accent color - Complementary color for variety
   accent: {
     50: "#F0F9FF",
@@ -99,6 +113,72 @@ export const lightColors = {
     medium: "rgba(0, 0, 0, 0.08)",  // Card elevation
     strong: "rgba(0, 0, 0, 0.12)",  // Modal/overlay
   },
+
+  // Additional utility colors for components
+  red: {
+    50: "#FEF2F2",
+    100: "#FEE2E2",
+    200: "#FECACA",
+    300: "#FCA5A5",
+    400: "#F87171",
+    500: "#EF4444",
+    600: "#DC2626",
+    700: "#B91C1C",
+    800: "#991B1B",
+    900: "#7F1D1D",
+  },
+
+  green: {
+    50: "#F0FDF4",
+    100: "#DCFCE7",
+    200: "#BBF7D0",
+    300: "#86EFAC",
+    400: "#4ADE80",
+    500: "#22C55E",
+    600: "#16A34A",
+    700: "#15803D",
+    800: "#166534",
+    900: "#14532D",
+  },
+
+  blue: {
+    50: "#EFF6FF",
+    100: "#DBEAFE",
+    200: "#BFDBFE",
+    300: "#93C5FD",
+    400: "#60A5FA",
+    500: "#3B82F6",
+    600: "#2563EB",
+    700: "#1D4ED8",
+    800: "#1E40AF",
+    900: "#1E3A8A",
+  },
+
+  orange: {
+    50: "#FFF7ED",
+    100: "#FFEDD5",
+    200: "#FED7AA",
+    300: "#FDBA74",
+    400: "#FB923C",
+    500: "#F97316",
+    600: "#EA580C",
+    700: "#C2410C",
+    800: "#9A3412",
+    900: "#7C2D12",
+  },
+
+  yellow: {
+    50: "#FEFCE8",
+    100: "#FEF3C7",
+    200: "#FDE68A",
+    300: "#FCD34D",
+    400: "#FBBF24",
+    500: "#F59E0B",
+    600: "#D97706",
+    700: "#B45309",
+    800: "#92400E",
+    900: "#78350F",
+  },
 };
 
 export const darkColors = {
@@ -114,6 +194,20 @@ export const darkColors = {
     700: "#E9D5FF",
     800: "#F3E8FF",
     900: "#FAF5FF",
+  },
+
+  // Secondary color - Green for financial success/positive actions (dark mode)
+  secondary: {
+    50: "#14532D",
+    100: "#166534", 
+    200: "#15803D",
+    300: "#16A34A",
+    400: "#22C55E",
+    500: "#4ADE80", // Lighter green for dark mode
+    600: "#86EFAC",
+    700: "#BBF7D0",
+    800: "#DCFCE7",
+    900: "#F0FDF4",
   },
 
   // Accent color - Blue accent for variety in dark mode
@@ -200,6 +294,72 @@ export const darkColors = {
     soft: "rgba(0, 0, 0, 0.6)",   // Gentle elevation
     medium: "rgba(0, 0, 0, 0.7)", // Card elevation
     strong: "rgba(0, 0, 0, 0.8)", // Modal/overlay
+  },
+
+  // Additional utility colors for components (same as light theme)
+  red: {
+    50: "#FEF2F2",
+    100: "#FEE2E2",
+    200: "#FECACA",
+    300: "#FCA5A5",
+    400: "#F87171",
+    500: "#EF4444",
+    600: "#DC2626",
+    700: "#B91C1C",
+    800: "#991B1B",
+    900: "#7F1D1D",
+  },
+
+  green: {
+    50: "#F0FDF4",
+    100: "#DCFCE7",
+    200: "#BBF7D0",
+    300: "#86EFAC",
+    400: "#4ADE80",
+    500: "#22C55E",
+    600: "#16A34A",
+    700: "#15803D",
+    800: "#166534",
+    900: "#14532D",
+  },
+
+  blue: {
+    50: "#EFF6FF",
+    100: "#DBEAFE",
+    200: "#BFDBFE",
+    300: "#93C5FD",
+    400: "#60A5FA",
+    500: "#3B82F6",
+    600: "#2563EB",
+    700: "#1D4ED8",
+    800: "#1E40AF",
+    900: "#1E3A8A",
+  },
+
+  orange: {
+    50: "#FFF7ED",
+    100: "#FFEDD5",
+    200: "#FED7AA",
+    300: "#FDBA74",
+    400: "#FB923C",
+    500: "#F97316",
+    600: "#EA580C",
+    700: "#C2410C",
+    800: "#9A3412",
+    900: "#7C2D12",
+  },
+
+  yellow: {
+    50: "#FEFCE8",
+    100: "#FEF3C7",
+    200: "#FDE68A",
+    300: "#FCD34D",
+    400: "#FBBF24",
+    500: "#F59E0B",
+    600: "#D97706",
+    700: "#B45309",
+    800: "#92400E",
+    900: "#78350F",
   },
 };
 
