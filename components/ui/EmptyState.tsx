@@ -41,7 +41,7 @@ export default function EmptyState({
           titleSize: typography.fontSizes.base,
           subtitleSize: typography.fontSizes.sm,
           padding: spacing.lg,
-          container: { alignItems: 'center', justifyContent: 'center' },
+          container: { alignItems: 'center' as const, justifyContent: 'center' as const },
         };
       case "large":
         return {
@@ -49,7 +49,7 @@ export default function EmptyState({
           titleSize: typography.fontSizes.xl,
           subtitleSize: typography.fontSizes.base,
           padding: spacing.xl,
-          container: { alignItems: 'center', justifyContent: 'center' },
+          container: { alignItems: 'center' as const, justifyContent: 'center' as const },
         };
       default:
         return {
@@ -57,7 +57,7 @@ export default function EmptyState({
           titleSize: typography.fontSizes.lg,
           subtitleSize: typography.fontSizes.base,
           padding: spacing.xl,
-          container: { alignItems: 'center', justifyContent: 'center' },
+          container: { alignItems: 'center' as const, justifyContent: 'center' as const },
         };
     }
   };
@@ -118,7 +118,9 @@ export default function EmptyState({
   const styles = getVariantStyles();
 
   return (
-    <View style={[styles.container, { padding: styles.padding }]}>
+    <View style={[styles.container, { 
+      padding: styles.padding 
+    }]}>
       {/* Icon */}
       <View style={getIconContainerStyle()}>
         <Ionicons
@@ -150,7 +152,7 @@ export default function EmptyState({
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 });

@@ -6,7 +6,7 @@ import { spacing, borderRadius } from '../../constants/theme';
 interface MonthFilterProps {
   selectedMonth: string;
   onMonthSelect: (month: string) => void;
-  availableMonths: Array<{ key: string; label: string; isActive: boolean }>;
+  availableMonths: { key: string; label: string; isActive: boolean }[];
 }
 
 export default function MonthFilter({ selectedMonth, onMonthSelect, availableMonths }: MonthFilterProps) {

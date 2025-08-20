@@ -286,16 +286,13 @@ export default function CreditScreen() {
               </Text>
             </View>
             <TouchableOpacity
-              style={styles.premiumOffersButton}
+              style={[styles.premiumOffersButton, { backgroundColor: colors.primary[500] }]}
               onPress={() => showComingSoon("Credit Building Program")}
             >
-              <LinearGradient
-                colors={[colors.primary[500], colors.secondary?.[500] || colors.primary[600]]}
-                style={styles.premiumOffersButtonGradient}
-              >
+              <View style={styles.premiumOffersButtonContent}>
                 <Text style={styles.premiumOffersButtonText}>Learn More</Text>
                 <Ionicons name="arrow-forward" size={16} color="white" />
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
           </LinearGradient>
         </View>
@@ -525,7 +522,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius["2xl"],
     overflow: "hidden",
   },
-  premiumOffersButtonGradient: {
+  premiumOffersButtonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

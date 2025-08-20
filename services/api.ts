@@ -89,6 +89,8 @@ api.interceptors.response.use(
           "isLoggedIn",
           "user",
         ]);
+        // Clear sensitive cache data on logout
+        apiCache.clear();
       }
     }
 
@@ -989,6 +991,23 @@ export const notificationAPI = {
         return { success: false, notifications: [], count: 0 };
       }
       console.error('Error fetching notification history:', error);
+      throw error;
+    }
+  },
+
+  // Monthly AI Reports
+  getMonthlyReport: async (reportMonth: string = 'latest') => {
+    try {
+      const response = await api.get(`/ai/monthly-report/${reportMonth}`, {
+        timeout: 30000, // 30 seconds timeout
+      });
+      return response.data;
+    } catch (error: any) {
+      // Don't log 404 errors - this feature is optional
+      if (error.response?.status === 404) {
+        return { hasReports: false, message: 'Monthly reports feature not available' };
+      }
+      console.error('Error fetching monthly report:', error);
       throw error;
     }
   },

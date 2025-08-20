@@ -40,11 +40,11 @@ interface ReportData {
   avgDailySpending: number;
   categoryBreakdown: ChartData[];
   monthlyTrend: MonthlyData[];
-  topMerchants: Array<{
+  topMerchants: {
     name: string;
     amount: number;
     count: number;
-  }>;
+  }[];
 }
 
 interface ReportsSystemProps {

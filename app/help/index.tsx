@@ -14,6 +14,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import {
+  spacing,
+  borderRadius,
+  shadows,
+  typography,
+} from "../../constants/theme";
+import { getFAQ } from "../../services/dataSource";
 
 // Help options data
 const helpOptions = [
@@ -46,13 +53,6 @@ const helpOptions = [
     action: "feedback"
   }
 ];
-import {
-  spacing,
-  borderRadius,
-  shadows,
-  typography,
-} from "../../constants/theme";
-import { getFAQ } from "../../services/dataSource";
 
 interface FAQItem {
   id: string;

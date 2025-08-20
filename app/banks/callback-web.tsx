@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity , Linking } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { Linking } from "react-native";
 import { DEEP_LINK_URLS } from "../../constants/config";
 
 export default function BankCallbackWeb() {

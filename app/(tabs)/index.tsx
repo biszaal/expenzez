@@ -578,11 +578,8 @@ export default function HomePage() {
       >
         {/* Professional Balance Card */}
         <View style={styles.professionalBalanceWrapper}>
-          <LinearGradient
-            colors={['#6366F1', '#8B5CF6', '#A855F7']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.professionalBalanceCard, SHADOWS.xl]}
+          <View
+            style={[styles.professionalBalanceCard, SHADOWS.xl, { backgroundColor: '#6366F1' }]}
           >
             <View style={styles.professionalBalanceHeader}>
               <View>
@@ -603,13 +600,15 @@ export default function HomePage() {
                 £{totalBalance.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Text>
               <View style={styles.professionalBalanceMetrics}>
-                <View style={styles.professionalBalanceChange}>
-                  <View style={styles.professionalChangeIndicator}>
-                    <Ionicons name="trending-up" size={14} color="#10B981" />
-                    <Text style={styles.professionalChangeText}>+2.4%</Text>
+                {totalBalance > 0 && (
+                  <View style={styles.professionalBalanceChange}>
+                    <View style={styles.professionalChangeIndicator}>
+                      <Ionicons name="trending-up" size={14} color="#10B981" />
+                      <Text style={styles.professionalChangeText}>--</Text>
+                    </View>
+                    <Text style={styles.professionalChangeLabel}>vs last month</Text>
                   </View>
-                  <Text style={styles.professionalChangeLabel}>vs last month</Text>
-                </View>
+                )}
               </View>
             </View>
             
@@ -626,7 +625,7 @@ export default function HomePage() {
             <View style={styles.professionalDecoration1} />
             <View style={styles.professionalDecoration2} />
             <View style={styles.professionalDecoration3} />
-          </LinearGradient>
+          </View>
         </View>
 
         {/* Professional Quick Actions */}
@@ -637,11 +636,8 @@ export default function HomePage() {
               onPress={() => router.push("/ai-assistant")}
               activeOpacity={0.85}
             >
-              <LinearGradient
-                colors={['#8B5CF6', '#A855F7']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.professionalQuickActionGradient, SHADOWS.lg]}
+              <View
+                style={[styles.professionalQuickActionGradient, SHADOWS.lg, { backgroundColor: '#8B5CF6' }]}
               >
                 <View style={styles.professionalQuickActionIconContainer}>
                   <View style={styles.professionalQuickActionIcon}>
@@ -652,7 +648,7 @@ export default function HomePage() {
                   <Text style={styles.professionalQuickActionTitle}>AI Insights</Text>
                   <Text style={styles.professionalQuickActionSubtitle}>Smart analysis</Text>
                 </View>
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -660,11 +656,8 @@ export default function HomePage() {
               onPress={() => router.push("/banks")}
               activeOpacity={0.85}
             >
-              <LinearGradient
-                colors={['#3B82F6', '#2563EB']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.professionalQuickActionGradient, SHADOWS.lg]}
+              <View
+                style={[styles.professionalQuickActionGradient, SHADOWS.lg, { backgroundColor: '#3B82F6' }]}
               >
                 <View style={styles.professionalQuickActionIconContainer}>
                   <View style={styles.professionalQuickActionIcon}>
@@ -675,7 +668,7 @@ export default function HomePage() {
                   <Text style={styles.professionalQuickActionTitle}>My Banks</Text>
                   <Text style={styles.professionalQuickActionSubtitle}>Manage accounts</Text>
                 </View>
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -683,11 +676,8 @@ export default function HomePage() {
               onPress={() => router.push("/spending")}
               activeOpacity={0.85}
             >
-              <LinearGradient
-                colors={['#10B981', '#059669']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.professionalQuickActionGradient, SHADOWS.lg]}
+              <View
+                style={[styles.professionalQuickActionGradient, SHADOWS.lg, { backgroundColor: '#10B981' }]}
               >
                 <View style={styles.professionalQuickActionIconContainer}>
                   <View style={styles.professionalQuickActionIcon}>
@@ -698,7 +688,7 @@ export default function HomePage() {
                   <Text style={styles.professionalQuickActionTitle}>Analytics</Text>
                   <Text style={styles.professionalQuickActionSubtitle}>Track spending</Text>
                 </View>
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -720,11 +710,8 @@ export default function HomePage() {
               }}
               activeOpacity={0.85}
             >
-              <LinearGradient
-                colors={['#F59E0B', '#D97706']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.professionalQuickActionGradient, SHADOWS.lg]}
+              <View
+                style={[styles.professionalQuickActionGradient, SHADOWS.lg, { backgroundColor: '#F59E0B' }]}
               >
                 <View style={styles.professionalQuickActionIconContainer}>
                   <View style={styles.professionalQuickActionIcon}>
@@ -735,7 +722,7 @@ export default function HomePage() {
                   <Text style={styles.professionalQuickActionTitle}>Connect</Text>
                   <Text style={styles.professionalQuickActionSubtitle}>Add bank</Text>
                 </View>
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -775,10 +762,12 @@ export default function HomePage() {
                   <Text style={[styles.professionalMonthlyStatLabel, { color: safeColors.text.secondary }]}>
                     Spent
                   </Text>
-                  <View style={styles.professionalStatBadgeNegative}>
-                    <Ionicons name="trending-down" size={12} color="#EF4444" />
-                    <Text style={styles.professionalStatBadgeNegativeText}>24%</Text>
-                  </View>
+                  {thisMonthSpent > 0 && (
+                    <View style={styles.professionalStatBadgeNegative}>
+                      <Ionicons name="trending-down" size={12} color="#EF4444" />
+                      <Text style={styles.professionalStatBadgeNegativeText}>--</Text>
+                    </View>
+                  )}
                 </View>
                 <Text style={[styles.professionalMonthlyStatValue, { color: safeColors.text.primary }]}>
                   £{thisMonthSpent.toFixed(2)}
@@ -798,10 +787,14 @@ export default function HomePage() {
                   <Text style={[styles.professionalMonthlyStatLabel, { color: safeColors.text.secondary }]}>
                     Budget
                   </Text>
-                  <View style={styles.professionalStatBadgePositive}>
-                    <Ionicons name="checkmark-circle" size={12} color="#10B981" />
-                    <Text style={styles.professionalStatBadgePositiveText}>On track</Text>
-                  </View>
+                  {userBudget && thisMonthSpent > 0 && (
+                    <View style={styles.professionalStatBadgePositive}>
+                      <Ionicons name="checkmark-circle" size={12} color="#10B981" />
+                      <Text style={styles.professionalStatBadgePositiveText}>
+                        {thisMonthSpent <= userBudget ? 'On track' : 'Over budget'}
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 <Text style={[styles.professionalMonthlyStatValue, { color: safeColors.text.primary }]}>
                   £{(userBudget || 2000).toFixed(2)}
@@ -809,7 +802,7 @@ export default function HomePage() {
                 <View style={[styles.professionalMonthlyStatProgress, { backgroundColor: safeColors.background.secondary }]}>
                   <View style={[styles.professionalMonthlyStatProgressFill, { 
                     backgroundColor: '#10B981',
-                    width: '75%'
+                    width: userBudget && thisMonthSpent > 0 ? `${Math.min(100, ((userBudget - thisMonthSpent) / userBudget) * 100)}%` : '0%'
                   }]} />
                 </View>
               </View>

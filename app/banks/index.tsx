@@ -134,15 +134,6 @@ export default function BanksScreen() {
             banksData.banks.length
           );
 
-          if (banksData.banks.length === 0) {
-            console.log(
-              "[Banks] Empty banks array - tokens may have expired, trying fallback..."
-            );
-            setError(
-              "Your bank connections may have expired. Trying to load cached data..."
-            );
-          }
-
           // Transform to BankAccount format and check for expired tokens
           const transformedAccounts = banksData.banks.map((bank: any) => ({
             accountId: bank.accountId,
@@ -163,6 +154,16 @@ export default function BanksScreen() {
           }));
 
           console.log("[Banks] Transformed accounts:", transformedAccounts);
+          
+          // Handle empty banks array as normal case (not an error)
+          if (transformedAccounts.length === 0) {
+            console.log("[Banks] No banks connected - showing empty state");
+            setAccounts([]);
+            setHasExpiredTokens(false);
+            setShowingCachedData(false);
+            return;
+          }
+
           console.log(
             "[Banks] Account logos:",
             transformedAccounts.map((acc: { bankName: any; bankLogo: any; }) => ({
@@ -170,11 +171,6 @@ export default function BanksScreen() {
               bankLogo: acc.bankLogo,
             }))
           );
-          // If we got empty banks array, try fallback immediately
-          if (transformedAccounts.length === 0) {
-            console.log("[Banks] No accounts found, triggering fallback...");
-            throw new Error("No banks returned from API - trying fallback");
-          }
 
           setAccounts(transformedAccounts);
 

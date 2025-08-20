@@ -199,7 +199,7 @@ export default function Splash() {
             <BlurView intensity={15} tint="light" style={styles.featureCard}>
               <View style={styles.featureRow}>
                 <View style={styles.featureItem}>
-                  <Ionicons name="bank" size={20} color="rgba(255,255,255,0.9)" />
+                  <Ionicons name="business" size={20} color="rgba(255,255,255,0.9)" />
                   <Text style={styles.featureText}>Banking</Text>
                 </View>
                 <View style={styles.featureItem}>
@@ -207,7 +207,7 @@ export default function Splash() {
                   <Text style={styles.featureText}>Analytics</Text>
                 </View>
                 <View style={styles.featureItem}>
-                  <Ionicons name="brain" size={20} color="rgba(255,255,255,0.9)" />
+                  <Ionicons name="bulb" size={20} color="rgba(255,255,255,0.9)" />
                   <Text style={styles.featureText}>AI Insights</Text>
                 </View>
               </View>

@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons , MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
@@ -16,7 +16,6 @@ import {
   shadows,
   typography,
 } from "../../constants/theme";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 interface NotificationTypeInfo {
   title: string;
