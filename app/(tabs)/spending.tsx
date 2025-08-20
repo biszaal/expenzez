@@ -1,4 +1,4 @@
-import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialCommunityIcons , FontAwesome5 } from "@expo/vector-icons";
 import { useRouter, useFocusEffect } from "expo-router";
 import React, { useEffect, useState, useMemo } from "react";
 import {
@@ -12,7 +12,7 @@ import {
   Easing,
   Pressable,
   Platform,
-} from "react-native";
+ View as RNView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
@@ -26,7 +26,6 @@ import {
 import { bankingAPI } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
-import { View as RNView } from "react-native";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { LineChart } from "react-native-chart-kit";
 import Svg, {
@@ -42,7 +41,6 @@ import Svg, {
 // Create animated SVG components
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-import { FontAwesome5 } from "@expo/vector-icons";
 // REMOVE: import { VictoryPie } from "victory-native";
 
 const { width } = Dimensions.get("window");

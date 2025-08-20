@@ -73,7 +73,7 @@ export default function PersonalInformationScreen() {
   const handleCancel = () => {
     setIsEditing(false);
     // Reset form data to original values from API
-    fetchProfile();
+    getProfile();
   };
 
   // If not logged in, don't render anything (auth guard will handle redirect)

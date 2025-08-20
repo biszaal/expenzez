@@ -69,22 +69,30 @@ export default function TransactionsScreen() {
 
       if (transactionsData && transactionsData.length > 0) {
         const formattedTransactions: Transaction[] = transactionsData.map(
-          (tx: any) => ({
-            id: tx.id || tx.transaction_id,
-            amount: Math.abs(tx.amount || 0),
-            description: tx.description || tx.merchant_name || "Unknown",
-            date: tx.date || tx.timestamp,
-            merchant: tx.merchant_name || tx.description || "Unknown Merchant",
-            category: tx.category,
-            accountId: tx.account_id || "unknown",
-            bankName: tx.bank_name || "Unknown Bank",
-            type: (tx.amount || 0) < 0 ? "debit" : "credit",
-            originalAmount: tx.amount || 0,
-            accountType:
-              tx.account_type ||
-              (tx.amount < 0 ? "Credit Card" : "Current Account"),
-            isPending: tx.status === "pending" || tx.pending,
-          })
+          (tx: any) => {
+            console.log("[Transaction] Raw tx data:", {
+              id: tx.id || tx.transaction_id,
+              date: tx.date,
+              timestamp: tx.timestamp,
+              description: tx.description
+            });
+            return {
+              id: tx.id || tx.transaction_id,
+              amount: Math.abs(tx.amount || 0),
+              description: tx.description || tx.merchant_name || "Unknown",
+              date: tx.date || tx.timestamp,
+              merchant: tx.merchant_name || tx.description || "Unknown Merchant",
+              category: tx.category,
+              accountId: tx.account_id || "unknown",
+              bankName: tx.bank_name || "Unknown Bank",
+              type: (tx.amount || 0) < 0 ? "debit" : "credit",
+              originalAmount: tx.amount || 0,
+              accountType:
+                tx.account_type ||
+                (tx.amount < 0 ? "Credit Card" : "Current Account"),
+              isPending: tx.status === "pending" || tx.pending,
+            };
+          }
         );
 
         setTransactions(formattedTransactions);
@@ -212,6 +220,7 @@ export default function TransactionsScreen() {
   };
 
   const formatTransactionTime = (date: string) => {
+    console.log("[TransactionTime] Raw date:", date, "Formatted:", dayjs(date).format("HH:mm"));
     return dayjs(date).format("HH:mm");
   };
 

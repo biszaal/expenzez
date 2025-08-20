@@ -414,16 +414,13 @@ export default function BillsScreen() {
             Connect your bank account to automatically detect and track your recurring bills and subscriptions
           </Text>
           <TouchableOpacity
-            style={styles.connectButton}
+            style={[styles.connectButton, { backgroundColor: colors.primary[500] }]}
             onPress={() => router.push("/banks")}
           >
-            <LinearGradient
-              colors={[colors.primary[500], colors.secondary?.[500] || colors.primary[600]]}
-              style={styles.connectButtonGradient}
-            >
+            <View style={styles.connectButtonContent}>
               <Text style={styles.connectButtonText}>Connect Bank</Text>
               <Ionicons name="arrow-forward" size={16} color="white" />
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -826,7 +823,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius["2xl"],
     overflow: "hidden",
   },
-  connectButtonGradient: {
+  connectButtonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

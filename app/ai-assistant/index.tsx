@@ -11,15 +11,35 @@ import {
   Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { bankingAPI } from "../../services/api";
+import { bankingAPI, notificationAPI } from "../../services/api";
 import { useTheme } from "../../contexts/ThemeContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { spacing, borderRadius, typography } from "../../constants/theme";
 import { useRouter } from "expo-router";
+import MarkdownRenderer from "../../components/ui/MarkdownRenderer";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+}
+
+interface MonthlyReport {
+  userId: string;
+  reportMonth: string;
+  generatedAt: string;
+  reportData: {
+    totalIncome: number;
+    totalExpenses: number;
+    netFlow: number;
+    transactionCount: number;
+    topCategories: Array<{ category: string; amount: number; count: number }>;
+    topMerchants: Array<{ merchant: string; amount: number; count: number }>;
+    monthlyInsights: string;
+    trends: {
+      incomeChange: number;
+      expenseChange: number;
+    };
+  };
 }
 
 
@@ -29,6 +49,9 @@ export default function AIAssistantScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Fetch chat history on mount
@@ -62,7 +85,27 @@ export default function AIAssistantScreen() {
         ]);
       }
     };
+    
+    const fetchMonthlyReport = async () => {
+      try {
+        setReportLoading(true);
+        const reportData = await notificationAPI.getMonthlyReport('latest');
+        if (reportData.report) {
+          setMonthlyReport(reportData.report);
+        } else if (reportData.hasReports === false) {
+          // Feature not available yet - this is expected
+          return;
+        }
+      } catch (error: any) {
+        // Only log unexpected errors (not 404s which are handled in API)
+        console.log('Monthly reports unavailable:', error?.message || error);
+      } finally {
+        setReportLoading(false);
+      }
+    };
+    
     fetchHistory();
+    fetchMonthlyReport();
   }, []);
 
   useEffect(() => {
@@ -229,6 +272,142 @@ export default function AIAssistantScreen() {
             contentContainerStyle={{ paddingBottom: 100, paddingTop: 8 }}
             showsVerticalScrollIndicator={false}
           >
+            {/* Monthly Report Section - Optional Feature */}
+            {monthlyReport && (
+              <View style={{
+                marginBottom: 20,
+                padding: 16,
+                backgroundColor: colors.background.secondary,
+                borderRadius: borderRadius.xl,
+                borderWidth: 1,
+                borderColor: colors.primary[500] + '20',
+              }}>
+                <TouchableOpacity
+                  onPress={() => setShowReport(!showReport)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: showReport ? 16 : 0,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      backgroundColor: colors.primary[500],
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 12,
+                    }}>
+                      <Ionicons name="analytics" size={20} color="#fff" />
+                    </View>
+                    <View>
+                      <Text style={{
+                        fontSize: 16,
+                        fontWeight: '600',
+                        color: colors.text.primary,
+                      }}>
+                        {new Date(monthlyReport.reportMonth + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Report
+                      </Text>
+                      <Text style={{
+                        fontSize: 12,
+                        color: colors.text.secondary,
+                      }}>Monthly AI Financial Summary</Text>
+                    </View>
+                  </View>
+                  <Ionicons 
+                    name={showReport ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color={colors.text.secondary} 
+                  />
+                </TouchableOpacity>
+
+                {showReport && (
+                  <View>
+                    {/* Key Metrics */}
+                    <View style={{
+                      flexDirection: 'row',
+                      marginBottom: 16,
+                    }}>
+                      <View style={{ flex: 1, alignItems: 'center' }}>
+                        <Text style={{ fontSize: 24, fontWeight: '700', color: colors.success[600] }}>
+                          £{monthlyReport.reportData.totalIncome.toFixed(0)}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: colors.text.secondary }}>Income</Text>
+                      </View>
+                      <View style={{ flex: 1, alignItems: 'center' }}>
+                        <Text style={{ fontSize: 24, fontWeight: '700', color: colors.error[600] }}>
+                          £{monthlyReport.reportData.totalExpenses.toFixed(0)}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: colors.text.secondary }}>Expenses</Text>
+                      </View>
+                      <View style={{ flex: 1, alignItems: 'center' }}>
+                        <Text style={{ 
+                          fontSize: 24, 
+                          fontWeight: '700', 
+                          color: monthlyReport.reportData.netFlow >= 0 ? colors.success[600] : colors.error[600] 
+                        }}>
+                          £{monthlyReport.reportData.netFlow.toFixed(0)}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: colors.text.secondary }}>Net Flow</Text>
+                      </View>
+                    </View>
+
+                    {/* AI Insights */}
+                    <View style={{
+                      backgroundColor: colors.primary[500] + '10',
+                      borderRadius: borderRadius.lg,
+                      padding: 12,
+                      marginBottom: 12,
+                    }}>
+                      <MarkdownRenderer 
+                        content={monthlyReport.reportData.monthlyInsights}
+                        fontSize={14}
+                        lineHeight={20}
+                      />
+                    </View>
+
+                    {/* Top Categories */}
+                    {monthlyReport.reportData.topCategories.length > 0 && (
+                      <View>
+                        <Text style={{
+                          fontSize: 14,
+                          fontWeight: '600',
+                          color: colors.text.primary,
+                          marginBottom: 8,
+                        }}>Top Spending Categories</Text>
+                        {monthlyReport.reportData.topCategories.slice(0, 3).map((category, idx) => (
+                          <View key={idx} style={{
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            paddingVertical: 4,
+                          }}>
+                            <Text style={{
+                              fontSize: 13,
+                              color: colors.text.secondary,
+                              textTransform: 'capitalize',
+                            }}>
+                              {category.category}
+                            </Text>
+                            <Text style={{
+                              fontSize: 13,
+                              fontWeight: '500',
+                              color: colors.text.primary,
+                            }}>
+                              £{category.amount.toFixed(0)}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
+              </View>
+            )}
+            
             {messages.map((msg, idx) => (
               <Animated.View
                 key={idx}
@@ -272,13 +451,17 @@ export default function AIAssistantScreen() {
                   borderBottomLeftRadius: msg.role === "assistant" ? 4 : 20,
                   borderBottomRightRadius: msg.role === "user" ? 4 : 20,
                 }}>
-                  <Text style={{
-                    fontSize: 16,
-                    lineHeight: 22,
-                    color: msg.role === "user" ? "#fff" : colors.text.primary,
-                  }}>
-                    {msg.content}
-                  </Text>
+                  {msg.role === "assistant" ? (
+                    <MarkdownRenderer content={msg.content} />
+                  ) : (
+                    <Text style={{
+                      fontSize: 16,
+                      lineHeight: 22,
+                      color: msg.role === "user" ? "#fff" : colors.text.primary,
+                    }}>
+                      {msg.content}
+                    </Text>
+                  )}
                 </View>
                 
                 {/* User Avatar */}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Typography } from './ui';
 import { useTheme } from '../contexts/ThemeContext';
@@ -198,7 +198,7 @@ export default function CustomAddressSearch({
         alignItems: 'center',
         backgroundColor: colors.background.primary,
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: colors.border.light,
         borderRadius: 8,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
@@ -247,7 +247,7 @@ export default function CustomAddressSearch({
           right: 0,
           backgroundColor: colors.background.primary,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: colors.border.light,
           borderTopWidth: 0,
           borderRadius: 8,
           borderTopLeftRadius: 0,
@@ -283,22 +283,19 @@ export default function CustomAddressSearch({
                   style={{ marginRight: spacing.md }}
                 />
                 <View style={{ flex: 1 }}>
-                  <Typography 
-                    variant="body" 
-                    color="primary"
-                    style={{ marginBottom: 2 }}
+                  <Text 
+                    style={{ marginBottom: 2, color: colors.text.primary }}
                     numberOfLines={1}
                   >
                     {suggestion.main_text}
-                  </Typography>
+                  </Text>
                   {suggestion.secondary_text && (
-                    <Typography 
-                      variant="caption" 
-                      color="secondary"
+                    <Text 
+                      style={{ color: colors.text.secondary, fontSize: 12 }}
                       numberOfLines={1}
                     >
                       {suggestion.secondary_text}
-                    </Typography>
+                    </Text>
                   )}
                 </View>
               </TouchableOpacity>
@@ -316,7 +313,7 @@ export default function CustomAddressSearch({
           right: 0,
           backgroundColor: colors.background.primary,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: colors.border.light,
           borderTopWidth: 0,
           borderRadius: 8,
           borderTopLeftRadius: 0,

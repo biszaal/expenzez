@@ -209,7 +209,7 @@ export default function LoadingScreen({ message = "Loading...", variant = 'defau
                 {variant === 'login' && (
                   <Typography
                     variant="body"
-                    style={[styles.message, { fontSize: 14, marginTop: spacing.xs, opacity: 0.8 }]}
+                    style={StyleSheet.flatten([styles.message, { fontSize: 14, marginTop: spacing.xs, opacity: 0.8 }])}
                     align="center"
                   >
                     Securing your connection...

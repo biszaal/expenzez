@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "expenzez",
+    "name": "Expenzez",
     "slug": "expenzez",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -45,6 +45,7 @@
       },
       "edgeToEdgeEnabled": true,
       "usesCleartextTraffic": false,
+      "package": "com.biszaal.expenzez",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -53,8 +54,7 @@
         "android.permission.USE_BIOMETRIC",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION"
-      ],
-      "package": "com.biszaal.expenzez"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -73,7 +73,14 @@
         }
       ],
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "expenzez",
+          "project": "expenzez-mobile"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -82,8 +89,16 @@
       "router": {},
       "eas": {
         "projectId": "849d0f63-bfaa-4d69-aa89-818904092d8b"
-      }
+      },
+      "sentryDsn": "https://your-sentry-dsn@sentry.io/project-id"
     },
-    "owner": "biszaal"
+    "owner": "biszaal",
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/849d0f63-bfaa-4d69-aa89-818904092d8b"
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    }
   }
 }
