@@ -24,6 +24,10 @@
       "config": {
         "usesNonExemptEncryption": false
       },
+      "associatedDomains": [
+        "applinks:expenzez.com",
+        "applinks:www.expenzez.com"
+      ],
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
@@ -45,6 +49,12 @@
             }
           }
         },
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLName": "expenzez-redirect",
+            "CFBundleURLSchemes": ["expenzez"]
+          }
+        ],
         "NSCameraUsageDescription": "This app uses the camera to scan receipts for expense tracking.",
         "NSPhotoLibraryUsageDescription": "This app accesses your photo library to attach receipt images to expenses.",
         "NSFaceIDUsageDescription": "This app uses Face ID for secure authentication and app access.",

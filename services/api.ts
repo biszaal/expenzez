@@ -1,6 +1,7 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CURRENT_API_CONFIG } from "../config/api";
+import { getTrueLayerRedirectURL, logEnvironmentInfo } from "../config/environment";
 
 // API Configuration
 const API_BASE_URL = CURRENT_API_CONFIG.baseURL;
@@ -27,7 +28,9 @@ const aiAPI = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem("accessToken");
+    // Import tokenManager dynamically to avoid circular dependency
+    const { tokenManager } = await import('./tokenManager');
+    const token = await tokenManager.getValidAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -41,7 +44,9 @@ api.interceptors.request.use(
 // Request interceptor for AI API
 aiAPI.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem("accessToken");
+    // Import tokenManager dynamically to avoid circular dependency
+    const { tokenManager } = await import('./tokenManager');
+    const token = await tokenManager.getValidAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -62,34 +67,27 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Try to refresh the token
-        const refreshToken = await AsyncStorage.getItem("refreshToken");
-        if (refreshToken) {
-          const response = await authAPI.refreshToken(refreshToken);
+        // Import tokenManager dynamically to avoid circular dependency
+        const { tokenManager } = await import('./tokenManager');
+        
+        // Try to refresh the token using token manager
+        const newToken = await tokenManager.refreshTokenIfNeeded();
 
-          if (response.accessToken) {
-            // Store new tokens
-            await AsyncStorage.setItem("accessToken", response.accessToken);
-            if (response.idToken) {
-              await AsyncStorage.setItem("idToken", response.idToken);
-            }
-
-            // Retry the original request with new token
-            originalRequest.headers.Authorization = `Bearer ${response.accessToken}`;
-            return api(originalRequest);
-          }
+        if (newToken) {
+          // Retry the original request with new token
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest);
+        } else {
+          // Token refresh failed, clear all data
+          await tokenManager.clearAllTokens();
+          // Clear sensitive cache data on logout
+          apiCache.clear();
         }
       } catch (refreshError) {
-        console.error("Token refresh failed:", refreshError);
-        // Clear all auth data and redirect to login
-        await AsyncStorage.multiRemove([
-          "accessToken",
-          "idToken",
-          "refreshToken",
-          "isLoggedIn",
-          "user",
-        ]);
-        // Clear sensitive cache data on logout
+        console.error("❌ Token refresh in interceptor failed:", refreshError);
+        // Import tokenManager and clear all tokens
+        const { tokenManager } = await import('./tokenManager');
+        await tokenManager.clearAllTokens();
         apiCache.clear();
       }
     }
@@ -358,17 +356,29 @@ export const bankingAPI = {
   // Connect a bank account using TrueLayer
   connectBank: async (data?: { redirectUrl?: string }) => {
     const token = await AsyncStorage.getItem("accessToken");
-    const response = await api.post("/banking/connect", data || {});
+    
+    // Use environment-specific redirect URL if not provided
+    const redirectUrl = data?.redirectUrl || getTrueLayerRedirectURL();
+    
+    console.log('🏦 Connecting bank with redirect URL:', redirectUrl);
+    logEnvironmentInfo(); // Log environment info for debugging
+    
+    const response = await api.post("/banking/connect", {
+      ...data,
+      redirectUrl
+    });
     return response.data;
   },
 
   // Connect to specific bank directly (skip provider selection)
   connectBankDirect: async (providerId: string, accountId?: string) => {
     const token = await AsyncStorage.getItem("accessToken");
+    const redirectUrl = getTrueLayerRedirectURL();
     
     try {
       const response = await api.post("/banking/connect-direct", { 
         providerId,
+        redirectUrl,
         ...(accountId && { accountId }) // Include accountId for reconnection
       });
       return response.data;
@@ -376,7 +386,9 @@ export const bankingAPI = {
       if (error.response?.status === 404 || error.response?.status === 401) {
         // Fallback to regular connect bank - user will select bank on TrueLayer page
         // This still provides a decent user experience
-        const fallbackResponse = await api.post("/banking/connect", {});
+        const fallbackResponse = await api.post("/banking/connect", {
+          redirectUrl
+        });
         return fallbackResponse.data;
       }
       throw error;
@@ -618,6 +630,32 @@ export const bankingAPI = {
       console.error("[API] Failed to clear AI chat history:", error);
       throw error;
     }
+  },
+
+  // Process TrueLayer callback with authorization code
+  processCallback: async (data: {
+    code: string;
+    environment: string;
+    isTestFlight: boolean;
+  }) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    const redirectUrl = getTrueLayerRedirectURL();
+    
+    console.log('🔄 Processing banking callback:', {
+      environment: data.environment,
+      isTestFlight: data.isTestFlight,
+      redirectUrl,
+      hasCode: !!data.code
+    });
+    
+    const response = await api.post("/banking/callback", {
+      code: data.code,
+      redirectUrl,
+      environment: data.environment,
+      isTestFlight: data.isTestFlight
+    });
+    
+    return response.data;
   },
 };
 
