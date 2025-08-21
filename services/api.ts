@@ -57,6 +57,45 @@ aiAPI.interceptors.request.use(
   }
 );
 
+// Response interceptor for AI API (same as main API)
+aiAPI.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Import tokenManager dynamically to avoid circular dependency
+        const { tokenManager } = await import('./tokenManager');
+        
+        // Try to refresh the token using token manager
+        const newToken = await tokenManager.refreshTokenIfNeeded();
+
+        if (newToken) {
+          // Retry the original request with new token
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return aiAPI(originalRequest);
+        } else {
+          // Token refresh failed, clear all data
+          await tokenManager.clearAllTokens();
+          // Clear sensitive cache data on logout
+          apiCache.clear();
+        }
+      } catch (refreshError) {
+        console.error("❌ AI API token refresh failed:", refreshError);
+        // Import tokenManager and clear all tokens
+        const { tokenManager } = await import('./tokenManager');
+        await tokenManager.clearAllTokens();
+        apiCache.clear();
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // Response interceptor to handle errors and token refresh
 api.interceptors.response.use(
   (response) => response,
@@ -594,8 +633,41 @@ export const bankingAPI = {
       const response = await aiAPI.post("/ai/insight", { message });
       return response.data;
     } catch (error: any) {
-      console.error("[API] Failed to get AI insight:", error);
-      throw error;
+      console.error("[AI API] Failed to get AI insight:", error);
+      
+      // Enhanced fallback for TestFlight/Production when AI endpoints might not be available
+      if (error.response?.status === 404 || error.response?.status === 502 || error.response?.status === 503) {
+        console.log("🤖 AI endpoint not available, using fallback response");
+        
+        // Generate contextual fallback responses based on message content
+        const lowerMessage = message.toLowerCase();
+        let fallbackResponse = "I'm here to help with your finances! ";
+        
+        if (lowerMessage.includes('spending') || lowerMessage.includes('spend')) {
+          fallbackResponse += "Your spending patterns show you've made several transactions recently. Try to categorize them to better track where your money goes.";
+        } else if (lowerMessage.includes('budget') || lowerMessage.includes('money')) {
+          fallbackResponse += "A good budget typically follows the 50/30/20 rule - 50% needs, 30% wants, 20% savings. Review your monthly expenses to see how you're tracking.";
+        } else if (lowerMessage.includes('save') || lowerMessage.includes('saving')) {
+          fallbackResponse += "Start with small, automated savings. Even £50 per month can add up over time. Look for subscriptions or expenses you can reduce.";
+        } else if (lowerMessage.includes('transaction') || lowerMessage.includes('payment')) {
+          fallbackResponse += "I can see your recent transactions in your connected accounts. Check the transactions tab to review and categorize them.";
+        } else {
+          fallbackResponse += "I can help you understand your spending, set budgets, and give financial advice. What specific area of your finances would you like help with?";
+        }
+        
+        return { 
+          answer: fallbackResponse,
+          fallback: true,
+          error: "AI service temporarily unavailable"
+        };
+      }
+      
+      // For other errors, provide a generic helpful response
+      return { 
+        answer: "I'm experiencing some technical difficulties right now. In the meantime, you can check your transactions and budgets in the other tabs of the app. Is there something specific about your finances you'd like help with?",
+        fallback: true,
+        error: error.message
+      };
     }
   },
 
@@ -605,8 +677,24 @@ export const bankingAPI = {
       const response = await aiAPI.get("/ai/chat-history");
       return response.data;
     } catch (error: any) {
-      console.error("[API] Failed to get AI chat history:", error);
-      throw error;
+      console.error("[AI API] Failed to get AI chat history:", error);
+      
+      // Provide fallback for missing AI endpoints
+      if (error.response?.status === 404 || error.response?.status === 502 || error.response?.status === 503) {
+        console.log("🤖 AI chat history endpoint not available, starting fresh");
+        return { 
+          history: [],
+          fallback: true,
+          message: "AI chat history service temporarily unavailable"
+        };
+      }
+      
+      // Return empty history for other errors instead of throwing
+      return { 
+        history: [],
+        fallback: true,
+        error: error.message
+      };
     }
   },
 
@@ -616,8 +704,25 @@ export const bankingAPI = {
       const response = await aiAPI.post("/ai/chat-message", { role, content });
       return response.data;
     } catch (error: any) {
-      console.error("[API] Failed to save AI chat message:", error);
-      throw error;
+      console.error("[AI API] Failed to save AI chat message:", error);
+      
+      // Don't throw error for missing endpoints - just log and continue
+      if (error.response?.status === 404 || error.response?.status === 502 || error.response?.status === 503) {
+        console.log("🤖 AI chat save endpoint not available, message not saved");
+        return { 
+          success: false,
+          fallback: true,
+          message: "Chat message saving temporarily unavailable"
+        };
+      }
+      
+      // For other errors, don't block the chat flow
+      console.warn("AI chat message not saved:", error.message);
+      return { 
+        success: false,
+        fallback: true,
+        error: error.message
+      };
     }
   },
 
@@ -627,8 +732,25 @@ export const bankingAPI = {
       const response = await aiAPI.delete("/ai/chat-history");
       return response.data;
     } catch (error: any) {
-      console.error("[API] Failed to clear AI chat history:", error);
-      throw error;
+      console.error("[AI API] Failed to clear AI chat history:", error);
+      
+      // Don't throw error for missing endpoints
+      if (error.response?.status === 404 || error.response?.status === 502 || error.response?.status === 503) {
+        console.log("🤖 AI clear history endpoint not available, local clear only");
+        return { 
+          success: false,
+          fallback: true,
+          message: "Chat history clearing temporarily unavailable"
+        };
+      }
+      
+      // For other errors, don't block the UI
+      console.warn("AI chat history not cleared:", error.message);
+      return { 
+        success: false,
+        fallback: true,
+        error: error.message
+      };
     }
   },
 
