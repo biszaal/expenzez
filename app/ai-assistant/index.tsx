@@ -32,8 +32,8 @@ interface MonthlyReport {
     totalExpenses: number;
     netFlow: number;
     transactionCount: number;
-    topCategories: Array<{ category: string; amount: number; count: number }>;
-    topMerchants: Array<{ merchant: string; amount: number; count: number }>;
+    topCategories: { category: string; amount: number; count: number }[];
+    topMerchants: { merchant: string; amount: number; count: number }[];
     monthlyInsights: string;
     trends: {
       incomeChange: number;

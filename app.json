@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "expenzez",
+    "name": "Expenzez",
     "slug": "expenzez",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,8 +8,22 @@
     "scheme": "expenzez",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "description": "Smart expense tracking with banking integration, AI insights, and comprehensive financial management for UK users.",
+    "keywords": [
+      "expense",
+      "finance",
+      "banking",
+      "budget",
+      "money",
+      "AI"
+    ],
+    "privacy": "public",
     "ios": {
       "supportsTablet": true,
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
@@ -81,7 +95,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "849d0f63-bfaa-4d69-aa89-818904092d8b"
+        "projectId": "abdbfccb-cbc1-4be7-8fcc-76ac70f61747"
       }
     },
     "owner": "biszaal"

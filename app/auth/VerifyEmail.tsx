@@ -85,9 +85,23 @@ export default function VerifyEmail() {
       return;
     }
 
+    // Validate that code contains only digits
+    if (!/^\d{6}$/.test(code)) {
+      showError("Verification code must contain only numbers");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await authAPI.confirmSignUp({ username, code });
+      console.log("Attempting verification with:", { username, email, code: "***" });
+      
+      // Send only username and code as expected by the API
+      const response = await authAPI.confirmSignUp({ 
+        username: username || email,
+        code: code.trim()
+      });
+      
+      console.log("Verification response:", response);
       showSuccess("Email verified successfully! You can now log in.");
       
       // Navigate to login after successful verification
@@ -95,13 +109,44 @@ export default function VerifyEmail() {
         router.replace("/auth/Login");
       }, 2000);
     } catch (err: any) {
-      console.error("Email verification error:", err);
-      const errorMessage = err.response?.data?.message || err.message || "Verification failed";
+      console.error("Email verification error:", {
+        error: err,
+        response: err.response?.data,
+        status: err.response?.status,
+        message: err.message,
+      });
       
-      if (errorMessage.includes("expired")) {
+      let errorMessage = "Verification failed. Please try again.";
+      
+      // Parse error response
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // Handle specific error cases
+      if (errorMessage.toLowerCase().includes("expired") || 
+          errorMessage.toLowerCase().includes("expir")) {
         showError("Verification code has expired. Please request a new one.");
-      } else if (errorMessage.includes("invalid") || errorMessage.includes("incorrect")) {
-        showError("Invalid verification code. Please check and try again.");
+      } else if (errorMessage.toLowerCase().includes("invalid") || 
+                 errorMessage.toLowerCase().includes("incorrect") ||
+                 errorMessage.toLowerCase().includes("mismatch")) {
+        showError("Invalid verification code. Please check the code and try again.");
+      } else if (errorMessage.toLowerCase().includes("confirmed") ||
+                 errorMessage.toLowerCase().includes("already verified")) {
+        showError("Your account is already verified. You can log in now.");
+        // Auto-redirect to login if already confirmed
+        setTimeout(() => {
+          router.replace("/auth/Login");
+        }, 2000);
+      } else if (errorMessage.toLowerCase().includes("not found")) {
+        showError("User not found. Please check your email address.");
+      } else if (errorMessage.toLowerCase().includes("limit") ||
+                 errorMessage.toLowerCase().includes("too many")) {
+        showError("Too many verification attempts. Please wait a few minutes and try again.");
       } else {
         showError(errorMessage);
       }
@@ -111,19 +156,57 @@ export default function VerifyEmail() {
   };
 
   const handleResend = async () => {
-    if (!email) {
+    const identifier = email || username;
+    if (!identifier) {
       showError("Email address is required to resend verification");
       return;
     }
 
     setIsResending(true);
     try {
-      await authAPI.resendVerification({ email });
+      console.log("Resending verification with data:", { email, username });
+      
+      const response = await authAPI.resendVerification({ 
+        email: email || username,
+        username: username || email 
+      });
+      
+      console.log("Resend response:", response);
       showSuccess("Verification email sent! Please check your inbox and spam folder.");
     } catch (err: any) {
-      console.error("Resend verification error:", err);
-      const errorMessage = err.response?.data?.message || err.message || "Failed to resend verification email";
-      showError(errorMessage);
+      console.error("Resend verification error:", {
+        error: err,
+        response: err.response?.data,
+        status: err.response?.status,
+        message: err.message,
+      });
+      
+      let errorMessage = "Failed to resend verification email";
+      
+      // Parse error response
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // Handle specific error cases
+      if (errorMessage.toLowerCase().includes("confirmed") ||
+          errorMessage.toLowerCase().includes("already verified")) {
+        showError("Your account is already verified. You can log in now.");
+        setTimeout(() => {
+          router.replace("/auth/Login");
+        }, 2000);
+      } else if (errorMessage.toLowerCase().includes("not found")) {
+        showError("User not found. Please check your email address.");
+      } else if (errorMessage.toLowerCase().includes("limit") ||
+                 errorMessage.toLowerCase().includes("too many")) {
+        showError("Too many requests. Please wait 15 minutes before requesting another code.");
+      } else {
+        showError(errorMessage);
+      }
     } finally {
       setIsResending(false);
     }
