@@ -64,7 +64,7 @@ export const ENV_CONFIG: EnvironmentConfig = {
   
   // API Configuration
   apiBaseURL: environment === 'development' 
-    ? 'http://localhost:3001/api'
+    ? 'https://a95uq2n8k7.execute-api.eu-west-2.amazonaws.com' // Use production API for development too
     : 'https://a95uq2n8k7.execute-api.eu-west-2.amazonaws.com',
   
   // TrueLayer Redirect URLs
