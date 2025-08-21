@@ -120,23 +120,51 @@ export default function AIAssistantScreen() {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
+    
     try {
-      await bankingAPI.saveAIChatMessage("user", userMessage.content);
+      // Save user message (don't block on failure)
+      const saveResult = await bankingAPI.saveAIChatMessage("user", userMessage.content);
+      if (saveResult.fallback && __DEV__) {
+        console.log("💾 User message not saved to server:", saveResult.message);
+      }
+      
+      // Get AI insight (with fallback support)
       const res = await bankingAPI.getAIInsight(userMessage.content);
       const aiMessage: Message = {
         role: "assistant",
         content: res.answer || "Sorry, I couldn't generate an answer.",
       };
+      
       setMessages((prev) => [...prev, aiMessage]);
-      await bankingAPI.saveAIChatMessage("assistant", aiMessage.content);
+      
+      // Save AI response (don't block on failure)
+      const saveAIResult = await bankingAPI.saveAIChatMessage("assistant", aiMessage.content);
+      if (saveAIResult.fallback && __DEV__) {
+        console.log("💾 AI message not saved to server:", saveAIResult.message);
+      }
+      
+      // Log if using fallback response for debugging
+      if (res.fallback && __DEV__) {
+        console.log("🤖 Using fallback AI response:", res.error || res.message);
+      }
+      
     } catch (err: any) {
-      const errorMsg =
-        err?.response?.data?.message || "Sorry, something went wrong.";
+      console.error("❌ AI Assistant error:", err);
+      
+      // Provide user-friendly error message
+      const errorMsg = "I'm experiencing some technical difficulties. Please try again in a moment, or check your internet connection.";
+      
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: errorMsg },
       ]);
-      await bankingAPI.saveAIChatMessage("assistant", errorMsg);
+      
+      // Try to save error message (don't throw if it fails)
+      try {
+        await bankingAPI.saveAIChatMessage("assistant", errorMsg);
+      } catch (saveError) {
+        console.log("Failed to save error message:", saveError);
+      }
     } finally {
       setLoading(false);
     }
@@ -144,7 +172,17 @@ export default function AIAssistantScreen() {
 
   const handleClearChat = async () => {
     if (loading) return;
-    await bankingAPI.clearAIChatHistory();
+    
+    try {
+      const clearResult = await bankingAPI.clearAIChatHistory();
+      if (clearResult.fallback && __DEV__) {
+        console.log("🗑️ Chat history not cleared on server:", clearResult.message);
+      }
+    } catch (error) {
+      console.log("Failed to clear chat history on server:", error);
+    }
+    
+    // Always clear locally regardless of server response
     setMessages([
       {
         role: "assistant",
@@ -152,6 +190,7 @@ export default function AIAssistantScreen() {
           "Hi! I'm your AI finance assistant. Ask me anything about your spending, budgets, or financial goals!",
       },
     ]);
+    
     if (scrollViewRef.current) {
       setTimeout(
         () => scrollViewRef.current?.scrollToEnd({ animated: true }),
