@@ -24,7 +24,6 @@ import { getProfile } from "../../services/dataSource";
  * Features:
  * - View and edit personal information
  * - Update profile details
- * - Change avatar
  * - Save changes
  */
 export default function PersonalInformationScreen() {
@@ -76,6 +75,7 @@ export default function PersonalInformationScreen() {
     getProfile();
   };
 
+
   // If not logged in, don't render anything (auth guard will handle redirect)
   if (!isLoggedIn) {
     return null;
@@ -111,31 +111,6 @@ export default function PersonalInformationScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile Picture Section */}
-        <Section title="Profile Picture">
-          <View style={styles.profilePictureContainer}>
-            <View
-              style={[
-                styles.profilePicture,
-                { backgroundColor: colors.gray[100] },
-              ]}
-            >
-              <Ionicons name="person" size={40} color={colors.gray[400]} />
-            </View>
-            <TouchableOpacity
-              style={[
-                styles.changePictureButton,
-                { backgroundColor: colors.primary[500] },
-              ]}
-              onPress={() => {
-                // TODO: Implement image picker
-                showError("Image picker not implemented yet");
-              }}
-            >
-              <Text style={styles.changePictureText}>Change Picture</Text>
-            </TouchableOpacity>
-          </View>
-        </Section>
 
         {/* Personal Details Section */}
         <Section title="Personal Details">
@@ -421,29 +396,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: spacing["2xl"],
-  },
-  profilePictureContainer: {
-    alignItems: "center",
-    paddingVertical: spacing.lg,
-  },
-  profilePicture: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.md,
-    ...shadows.md,
-  },
-  changePictureButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-  },
-  changePictureText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "600",
   },
   formContainer: {
     gap: spacing.md,
