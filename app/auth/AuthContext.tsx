@@ -89,19 +89,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Use centralized API base URL - use profile endpoint for token validation
       const profileUrl = `${CURRENT_API_CONFIG.baseURL.replace(/\/$/, "")}/profile`;
-      const response = await fetch(profileUrl, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      });
+      
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      const isValid = response.ok;
-      console.log("Token validation result:", {
-        isValid,
-        status: response.status,
-      });
-      return isValid;
+      try {
+        const response = await fetch(profileUrl, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+        const isValid = response.ok;
+        console.log("Token validation result:", {
+          isValid,
+          status: response.status,
+        });
+        return isValid;
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          console.log("Token validation timed out");
+        } else {
+          console.log("Token validation fetch error:", fetchError);
+        }
+        return false;
+      }
     } catch (error) {
       console.log("Token validation failed:", error);
       return false;
@@ -111,8 +128,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Load login state and user data from AsyncStorage
     const loadAuthState = async () => {
+      // Add overall timeout for the entire auth loading process
+      const authTimeout = setTimeout(() => {
+        console.log("Auth loading timed out, setting loading to false");
+        setLoading(false);
+      }, 15000); // 15 second overall timeout
+
       // Uncomment the next line to force clear all data on app start (for testing)
-      // await clearAllData();
+      // TEMPORARY: Clear auth data if stuck on login screen
+      await clearAllData();
+      
+      console.log("[AuthContext] Starting auth state loading...");
       try {
         const [
           storedLogin,
@@ -130,6 +156,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           AsyncStorage.getItem("userBudget"),
         ]);
 
+        console.log("[AuthContext] Loaded auth data:", {
+          storedLogin,
+          hasUser: !!storedUser,
+          hasAccessToken: !!accessToken,
+          hasIdToken: !!idToken,
+          hasRefreshToken: !!refreshToken,
+          accessTokenValid: accessToken !== "null" && accessToken?.trim() !== "",
+          idTokenValid: idToken !== "null" && idToken?.trim() !== ""
+        });
+
         if (
           storedLogin === "true" &&
           storedUser &&
@@ -139,11 +175,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           idToken !== "null"
         ) {
           if (accessToken.trim() !== "" && idToken.trim() !== "") {
-            // Validate tokens with backend
-            const tokensValid = await validateStoredTokens(
-              accessToken,
-              idToken
-            );
+            // Try to validate tokens with backend, but don't block on failure
+            let tokensValid = false;
+            try {
+              tokensValid = await validateStoredTokens(accessToken, idToken);
+            } catch (validationError) {
+              console.log("Token validation failed, will attempt auto-login anyway:", validationError);
+              // If validation fails due to network issues, optimistically try auto-login
+              tokensValid = false;
+            }
+            
             if (tokensValid) {
               setIsLoggedIn(true);
               setUser(JSON.parse(storedUser));
@@ -153,13 +194,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               refreshToken !== "null" &&
               refreshToken.trim() !== ""
             ) {
-              // Try to refresh tokens
+              // Try to refresh tokens with timeout
               try {
                 console.log(
                   "Access token invalid, attempting refresh with refresh token..."
                 );
-                const refreshResponse =
-                  await authAPI.refreshToken(refreshToken);
+                
+                // Add timeout for refresh token request
+                const refreshPromise = authAPI.refreshToken(refreshToken);
+                const timeoutPromise = new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('Refresh timeout')), 10000)
+                );
+                
+                const refreshResponse = await Promise.race([refreshPromise, timeoutPromise]);
+                
                 if (
                   refreshResponse &&
                   refreshResponse.accessToken &&
@@ -204,15 +252,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               }
             } else {
               console.log(
-                "Auto-login failed: tokens are invalid and no refresh token"
+                "Tokens may be invalid and no refresh token available, but attempting optimistic login"
               );
-              await Promise.all([
-                AsyncStorage.removeItem("isLoggedIn"),
-                AsyncStorage.removeItem("accessToken"),
-                AsyncStorage.removeItem("idToken"),
-                AsyncStorage.removeItem("refreshToken"),
-                AsyncStorage.removeItem("user"),
-              ]);
+              // Optimistic login - let the app handle token refresh on first API call
+              setIsLoggedIn(true);
+              setUser(JSON.parse(storedUser));
+              console.log("Optimistic auto-login attempted - app will handle token refresh if needed");
             }
           } else {
             console.log("Auto-login failed: tokens are empty");
@@ -239,6 +284,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } catch (error) {
         console.error("Error loading auth state:", error);
       } finally {
+        clearTimeout(authTimeout);
         setLoading(false);
       }
     };
