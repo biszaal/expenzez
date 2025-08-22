@@ -64,6 +64,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userBudget, setUserBudget] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedAuthState, setHasLoadedAuthState] = useState(false);
 
   // Function to validate if stored tokens are still valid
   const validateStoredTokens = async (accessToken: string, idToken: string) => {
@@ -125,9 +126,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  useEffect(() => {
-    // Load login state and user data from AsyncStorage
-    const loadAuthState = async () => {
+  const loadAuthState = async () => {
       // Add overall timeout for the entire auth loading process
       const authTimeout = setTimeout(() => {
         console.log("Auth loading timed out, setting loading to false");
@@ -136,7 +135,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Uncomment the next line to force clear all data on app start (for testing)
       // TEMPORARY: Clear auth data if stuck on login screen
-      await clearAllData();
+      // await clearAllData();
       
       console.log("[AuthContext] Starting auth state loading...");
       try {
@@ -286,10 +285,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } finally {
         clearTimeout(authTimeout);
         setLoading(false);
+        setHasLoadedAuthState(true);
       }
     };
 
-    loadAuthState();
+  useEffect(() => {
+    // Only load auth state on mount if we haven't loaded it yet and we're not already logged in
+    if (!hasLoadedAuthState && !isLoggedIn) {
+      console.log("[AuthContext] Loading auth state on mount...");
+      loadAuthState();
+    } else if (hasLoadedAuthState) {
+      console.log("[AuthContext] Auth state already loaded, skipping...");
+    } else if (isLoggedIn) {
+      console.log("[AuthContext] Already logged in, skipping auth state loading...");
+      setLoading(false);
+    }
   }, []);
 
   const login = async (identifier: string, password: string) => {
@@ -332,9 +342,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         await Promise.all(storagePromises);
         console.log("Tokens stored successfully");
 
+        // Small delay to ensure AsyncStorage write is complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // Update state
         setIsLoggedIn(true);
         setUser(response.user);
+        setHasLoadedAuthState(true); // Mark that we've handled auth state
 
         console.log("Logged in user:", response.user);
         if (response.user) {
