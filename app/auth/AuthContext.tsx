@@ -35,6 +35,13 @@ interface AuthContextType {
     identifier: string,
     password: string
   ) => Promise<{ success: boolean; error?: string }>;
+  loginWithApple: (
+    identityToken: string,
+    authorizationCode: string,
+    user?: string,
+    email?: string | null,
+    fullName?: { givenName?: string | null; familyName?: string | null } | null
+  ) => Promise<{ success: boolean; error?: string; needsProfileCompletion?: boolean; user?: any }>;
   autoLoginAfterVerification: (
     email: string,
     password: string
@@ -52,6 +59,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   userBudget: null,
   login: async () => ({ success: false }),
+  loginWithApple: async () => ({ success: false }),
   autoLoginAfterVerification: async () => ({ success: false }),
   register: async () => ({ success: false }),
   logout: async () => {},
@@ -394,6 +402,92 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const loginWithApple = async (
+    identityToken: string,
+    authorizationCode: string,
+    user?: string,
+    email?: string | null,
+    fullName?: { givenName?: string | null; familyName?: string | null } | null
+  ) => {
+    try {
+      setLoading(true);
+      console.log("=== APPLE LOGIN STARTED ===");
+      console.log("Apple login attempt for:", email || user);
+
+      const loginPayload = {
+        identityToken,
+        authorizationCode,
+        user,
+        email,
+        fullName,
+      };
+
+      // Call the Apple login API endpoint
+      const response = await authAPI.loginWithApple(loginPayload);
+      console.log("Apple login response:", {
+        hasResponse: !!response,
+        message: response?.message,
+      });
+
+      // Check if we have a successful response with tokens (handle both direct and nested token formats)
+      const tokens = response?.tokens || response;
+      if (response && tokens?.idToken && tokens?.accessToken) {
+        console.log("Apple login successful, storing tokens...");
+
+        // Store Cognito tokens and user data
+        const storagePromises = [
+          AsyncStorage.setItem("isLoggedIn", "true"),
+          AsyncStorage.setItem("accessToken", tokens.accessToken),
+          AsyncStorage.setItem("idToken", tokens.idToken),
+          AsyncStorage.setItem("refreshToken", tokens.refreshToken || ""),
+          AsyncStorage.setItem("user", JSON.stringify(response.user)),
+        ];
+
+        await Promise.all(storagePromises);
+        console.log("Apple tokens stored successfully");
+
+        // Small delay to ensure AsyncStorage write is complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Update state
+        setIsLoggedIn(true);
+        setUser(response.user);
+        setHasLoadedAuthState(true);
+
+        console.log("=== APPLE LOGIN COMPLETED SUCCESSFULLY ===");
+        
+        // Check if profile completion is needed
+        if (response.needsProfileCompletion) {
+          return { success: true, needsProfileCompletion: true, user: response.user };
+        }
+        
+        return { success: true };
+      } else if (response && response.needsProfileCompletion) {
+        // Apple Sign-In successful but needs profile completion
+        console.log("Apple login successful, needs profile completion");
+        return { 
+          success: true, 
+          needsProfileCompletion: true,
+          user: response.user 
+        };
+      } else {
+        // For now, since backend is still in development, return success for UI demonstration
+        console.log("Apple login endpoint called successfully, but full authentication flow not yet complete");
+        return {
+          success: false,
+          error: response?.message || "Apple Sign In is in development. Full authentication coming soon!"
+        };
+      }
+    } catch (error: any) {
+      console.error("Apple login error:", error);
+      const errorMessage =
+        error.response?.data?.message || "Apple login failed. Please try again.";
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const autoLoginAfterVerification = async (email: string, password: string) => {
     try {
       console.log("=== AUTO-LOGIN AFTER VERIFICATION STARTED ===");
@@ -562,6 +656,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         userBudget,
         login,
+        loginWithApple,
         autoLoginAfterVerification,
         register,
         logout,
