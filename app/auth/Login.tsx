@@ -1,8 +1,5 @@
 // Clean and Professional Login Screen
 import {
-  AntDesign,
-  FontAwesome,
-  FontAwesome5,
   Ionicons,
 } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -24,13 +21,15 @@ import { spacing, borderRadius, layout } from "../../constants/theme";
 import { jwtDecode } from "jwt-decode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAlert } from "../../hooks/useAlert";
+import { AppleSignInButton, useAppleSignIn } from "../../components/auth/AppleSignInButton";
 
 export default function Login() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { login } = useAuth();
+  const { login, loginWithApple } = useAuth();
   const { colors } = useTheme();
   const { showError, showSuccess } = useAlert();
+  const { handleAppleSignIn } = useAppleSignIn();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -144,6 +143,64 @@ export default function Login() {
     }
   };
 
+  const handleAppleLogin = async () => {
+    try {
+      setIsLoading(true);
+      const credential = await handleAppleSignIn();
+      
+      if (!credential) {
+        // User canceled the sign-in process - do not show error, just return silently
+        return;
+      }
+      
+      if (credential) {
+        // Use the loginWithApple method from AuthContext
+        const result = await loginWithApple(
+          credential.identityToken,
+          credential.authorizationCode,
+          credential.user,
+          credential.email,
+          credential.fullName
+        );
+        
+        if (result.success) {
+          if (result.needsProfileCompletion) {
+            // Redirect to profile completion screen
+            router.replace({
+              pathname: "/auth/AppleProfileCompletion",
+              params: {
+                user: JSON.stringify(result.user),
+              },
+            });
+          } else {
+            showSuccess("Apple Sign In successful!");
+            router.replace("/(tabs)");
+          }
+        } else {
+          showError(result.error || "Apple Sign In failed. Please try again.");
+        }
+      }
+    } catch (error: any) {
+      console.error('Apple Sign In error:', error);
+      
+      // Handle different types of Apple Sign In errors
+      if (error.code === 'ERR_REQUEST_CANCELED') {
+        // User canceled - do not show error message
+        return;
+      } else if (error.code === 'ERR_INVALID_RESPONSE') {
+        showError('Apple Sign In encountered an issue. Please try again.');
+      } else if (error.message?.includes('not available')) {
+        showError('Apple Sign In is not available on this device.');
+      } else if (error.message?.includes('network')) {
+        showError('Network error during Apple Sign In. Please check your connection.');
+      } else {
+        // Generic fallback error
+        showError('Apple Sign In failed. Please try again or use regular login.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
   // Show full-screen loading during login process
   if (isLoading) {
     return (
@@ -371,6 +428,25 @@ export default function Login() {
                     </TouchableOpacity>
                   </View>
 
+                  {/* Apple Sign In */}
+                  <AppleSignInButton 
+                    onPress={handleAppleLogin} 
+                    type="sign-in"
+                    disabled={isLoading}
+                  />
+
+                  {/* Or Divider */}
+                  <View style={styles.dividerContainer}>
+                    <View style={[styles.dividerLine, { backgroundColor: colors.border.medium }]} />
+                    <Typography
+                      variant="caption"
+                      style={[styles.dividerText, { color: colors.text.secondary }]}
+                    >
+                      or
+                    </Typography>
+                    <View style={[styles.dividerLine, { backgroundColor: colors.border.medium }]} />
+                  </View>
+
                   {/* Register Link */}
                   <TouchableOpacity
                     style={styles.registerLink}
@@ -392,54 +468,6 @@ export default function Login() {
                     </Typography>
                   </TouchableOpacity>
 
-                  {/* Clean Social Login */}
-                  <View style={styles.divider}>
-                    <View
-                      style={StyleSheet.flatten([
-                        styles.dividerLine,
-                        { backgroundColor: colors.border.medium },
-                      ])}
-                    />
-                    <Typography
-                      variant="body"
-                      style={StyleSheet.flatten([
-                        styles.dividerText,
-                        { color: colors.text.tertiary },
-                      ])}
-                    >
-                      or continue with
-                    </Typography>
-                    <View
-                      style={StyleSheet.flatten([
-                        styles.dividerLine,
-                        { backgroundColor: colors.border.medium },
-                      ])}
-                    />
-                  </View>
-
-                  <View style={styles.socialButtons}>
-                    <TouchableOpacity
-                      style={StyleSheet.flatten([
-                        styles.socialButton,
-                        {
-                          backgroundColor: colors.background.tertiary,
-                          borderColor: colors.border.medium,
-                        },
-                      ])}
-                      onPress={() => showError("Google Login coming soon")}
-                    >
-                      <AntDesign name="google" size={20} color="#EA4335" />
-                      <Typography
-                        variant="body"
-                        style={StyleSheet.flatten([
-                          styles.socialButtonText,
-                          { color: colors.text.primary },
-                        ])}
-                      >
-                        Google
-                      </Typography>
-                    </TouchableOpacity>
-                  </View>
                 </View>
               </View>
             </ScrollView>
@@ -553,11 +581,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
 
-  // Clean Social Section
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
+  // Divider Styles
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.md,
   },
   dividerLine: {
     flex: 1,
@@ -565,27 +593,7 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     marginHorizontal: spacing.md,
-    fontSize: 14,
-  },
-  socialButtons: {
-    alignItems: "center",
-    paddingBottom: spacing.xl, // Extra padding at bottom
-  },
-  socialButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    minHeight: layout.buttonHeight,
-    minWidth: 200,
-    gap: spacing.sm,
-  },
-  socialButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: 12,
   },
 
   // Redirect Info Styles
