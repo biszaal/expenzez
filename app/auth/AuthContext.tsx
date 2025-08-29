@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Uncomment the next line to force clear all data on app start (for testing)
       // TEMPORARY: Clear auth data if stuck on login screen
-      await clearAllData(); // ENABLED: Clear all cached data to fix loading issues
+      // await clearAllData(); // DISABLED: Cache clearing completed, Apple Sign In fixed
       
       try {
         // Add timeout to AsyncStorage operations
