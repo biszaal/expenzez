@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Uncomment the next line to force clear all data on app start (for testing)
       // TEMPORARY: Clear auth data if stuck on login screen
-      // await clearAllData(); // DISABLED: Auth data clearing - issue resolved
+      await clearAllData(); // ENABLED: Clear auth data to fix loading issue
       
       try {
         const [
