@@ -102,6 +102,9 @@ interface NotificationContextType {
   clearNotifications: () => void;
   refreshNotifications: () => Promise<void>;
   
+  // Manual retry
+  retryNotificationSetup: () => Promise<void>;
+  
   // Status
   loading: boolean;
   error: string | null;
@@ -220,8 +223,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(true);
       setError(null);
 
+      // Small delay to ensure auth tokens are ready after login
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       // Register for push notifications if possible
       const tokenRegistered = await registerForPushNotifications();
+      
+      // If token registration failed due to auth, retry after a delay
+      if (!tokenRegistered) {
+        console.log("[NotificationContext] Initial token registration failed, retrying in 3 seconds...");
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        await registerForPushNotifications();
+      }
       
       // Load preferences
       await loadPreferences();
@@ -287,6 +300,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const registerTokenWithBackend = async (token: string): Promise<boolean> => {
     try {
+      console.log("[NotificationContext] Attempting to register token with backend...");
+      
       const response = await notificationAPI.registerToken({
         token,
         platform: Platform.OS as 'ios' | 'android',
@@ -297,9 +312,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       });
 
+      console.log("[NotificationContext] Token registration response:", response);
       return response.success || false;
     } catch (error: any) {
       console.error("[NotificationContext] Error registering token with backend:", error);
+      
+      // If it's a 401 error, the user might need to re-authenticate
+      if (error.response?.status === 401) {
+        console.log("[NotificationContext] Authentication error during token registration. Will retry after login.");
+        setError("Authentication required for notifications. Please log in again.");
+      }
+      
       return false;
     }
   };
@@ -490,6 +513,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const retryNotificationSetup = async () => {
+    console.log("[NotificationContext] Manual retry of notification setup...");
+    await initializeNotifications();
+  };
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const value: NotificationContextType = {
@@ -504,6 +532,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     markAllAsRead,
     clearNotifications,
     refreshNotifications,
+    retryNotificationSetup,
     loading,
     error,
   };
