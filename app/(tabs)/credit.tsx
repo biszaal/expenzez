@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { TabLoadingScreen } from "../../components/ui";
 import {
   spacing,
   borderRadius,
@@ -126,6 +127,11 @@ export default function CreditScreen() {
 
   if (!authLoggedIn || checkingBank) {
     return null;
+  }
+
+  // Show loading screen during initial load
+  if (loading) {
+    return <TabLoadingScreen message="Loading credit score..." />;
   }
 
   // Get user initials

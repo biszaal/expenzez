@@ -15,6 +15,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
+import { TabLoadingScreen } from "../../components/ui";
 import {
   spacing,
   borderRadius,
@@ -305,20 +306,7 @@ export default function AccountScreen() {
   }
 
   if (loading) {
-    return (
-      <SafeAreaView
-        style={[
-          styles.container,
-          { backgroundColor: colors.background.secondary },
-        ]}
-      >
-        <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
-            Loading...
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <TabLoadingScreen message="Loading account details..." />;
   }
 
   return (

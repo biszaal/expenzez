@@ -360,6 +360,17 @@ export const authAPI = {
       throw error;
     }
   },
+
+  loginWithApple: async (credentials: {
+    identityToken: string;
+    authorizationCode: string;
+    user?: string;
+    email?: string | null;
+    fullName?: { givenName?: string | null; familyName?: string | null } | null;
+  }) => {
+    const response = await api.post("/auth/apple-login", credentials);
+    return response.data;
+  },
 };
 
 // Simple in-memory cache for API responses

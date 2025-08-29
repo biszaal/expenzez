@@ -26,7 +26,7 @@ import { SPACING, SHADOWS } from "../../constants/Colors";
 import { APP_STRINGS } from "../../constants/strings";
 import { DEEP_LINK_URLS } from "../../constants/config";
 import BankLogo from "../../components/ui/BankLogo";
-import { Card } from "../../components/ui";
+import { Card, TabLoadingScreen } from "../../components/ui";
 import { 
   saveBalanceToCache, 
   loadBalanceFromCache, 
@@ -516,17 +516,7 @@ export default function HomePage() {
 
 
   if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={safeColors.primary[500]} />
-          <Text style={styles.loadingText}>
-            {APP_STRINGS.HOME.LOADING_FINANCIAL}
-          </Text>
-          <Text style={styles.loadingSubtext}>{APP_STRINGS.HOME.LOADING_SUBTEXT}</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <TabLoadingScreen message="Loading your financial overview..." />;
   }
 
   // Helper to get bank name and logo
