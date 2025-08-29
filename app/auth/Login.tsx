@@ -34,6 +34,7 @@ export default function Login() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const [messageShown, setMessageShown] = useState(false);
 
   // Handle incoming parameters from registration redirect
@@ -65,7 +66,11 @@ export default function Login() {
           jwtDecode(idToken);
         }
         showSuccess("Login successful!");
+        setIsNavigating(true);
+        
+        // Immediate navigation without delay
         router.replace("/(tabs)");
+        return; // Return early to prevent finally block from executing
       } else {
         // Debug: Log the result error for debugging
         console.log("Login failed with error:", result.error);
@@ -174,7 +179,11 @@ export default function Login() {
             });
           } else {
             showSuccess("Apple Sign In successful!");
+            setIsNavigating(true);
+            
+            // Immediate navigation without delay
             router.replace("/(tabs)");
+            return; // Return early to prevent finally block from executing
           }
         } else {
           showError(result.error || "Apple Sign In failed. Please try again.");
@@ -201,8 +210,8 @@ export default function Login() {
       setIsLoading(false);
     }
   };
-  // Show full-screen loading during login process
-  if (isLoading) {
+  // Show full-screen loading during login process or navigation
+  if (isLoading || isNavigating) {
     return (
       <View
         style={{
@@ -229,13 +238,13 @@ export default function Login() {
           variant="h2"
           style={{ color: "white", marginBottom: 10, textAlign: "center" }}
         >
-          Signing you in...
+          {isNavigating ? "Success!" : "Signing you in..."}
         </Typography>
         <Typography
           variant="body"
           style={{ color: "rgba(255,255,255,0.8)", textAlign: "center" }}
         >
-          Securing your connection...
+          {isNavigating ? "Loading your dashboard..." : "Securing your connection..."}
         </Typography>
       </View>
     );

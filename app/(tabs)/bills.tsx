@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
+import { TabLoadingScreen } from "../../components/ui";
 import {
   spacing,
   borderRadius,
@@ -396,6 +397,11 @@ export default function BillsScreen() {
 
   if (!authLoggedIn || checkingBank) {
     return null;
+  }
+
+  // Show loading screen during initial load
+  if (loading && bills.length === 0) {
+    return <TabLoadingScreen message="Analyzing your bills..." />;
   }
 
   // Only show "Connect Bank" if we have no bills AND no bank connection
