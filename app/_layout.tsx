@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect, useState } from "react";
+import { AppState } from "react-native";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
 import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
@@ -31,6 +32,24 @@ function RootLayoutNav() {
       console.log("[WebBrowser] Session completion error:", error);
     }
   }, []);
+
+  // Periodic cache maintenance when app becomes active
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        // Clear corrupted cache when app becomes active (every time user opens app)
+        setTimeout(() => {
+          if (auth?.clearCorruptedCache) {
+            console.log('🔄 [Layout] App became active, clearing corrupted cache');
+            auth.clearCorruptedCache();
+          }
+        }, 1000); // Small delay to avoid interfering with app startup
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [auth]);
 
   if (isLoading || loading) {
     return <AppLoadingScreen message="Setting up your account..." />;
