@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Uncomment the next line to force clear all data on app start (for testing)
       // TEMPORARY: Clear auth data if stuck on login screen
-      // await clearAllData(); // DISABLED: Auth data clearing - issue resolved
+      await clearAllData(); // ENABLED: Clear all cached data to fix loading issues
       
       try {
         // Add timeout to AsyncStorage operations
@@ -417,11 +417,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Function to manually clear all stored data (for testing)
   const clearAllData = async () => {
     try {
+      console.log('🧹 [AuthContext] Clearing ALL cached data...');
+      
       // Get all keys first
       const keys = await AsyncStorage.getAllKeys();
+      console.log('🔍 [AuthContext] Found', keys.length, 'cached keys');
 
-      // Remove all keys
+      // Remove all keys (including @expenzez_cache_ entries)
       await AsyncStorage.multiRemove(keys);
+      console.log('✅ [AuthContext] Cleared all cached data');
 
       // Update state
       setIsLoggedIn(false);
@@ -429,7 +433,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUserBudget(null);
 
     } catch (error) {
-      // Silent error handling
+      console.log('❌ [AuthContext] Error clearing cached data:', error);
     }
   };
 
