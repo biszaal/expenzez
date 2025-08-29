@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
 import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
 import { NotificationProvider } from "../contexts/NotificationContext";
+import { NetworkProvider } from "../contexts/NetworkContext";
 import SecurityLock from "../components/SecurityLock";
 
 function RootLayoutNav() {
@@ -71,13 +72,15 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <SecurityProvider>
-          <NotificationProvider>
-            <RootLayoutNav />
-          </NotificationProvider>
-        </SecurityProvider>
-      </AuthProvider>
+      <NetworkProvider>
+        <AuthProvider>
+          <SecurityProvider>
+            <NotificationProvider>
+              <RootLayoutNav />
+            </NotificationProvider>
+          </SecurityProvider>
+        </AuthProvider>
+      </NetworkProvider>
     </ThemeProvider>
   );
 }
