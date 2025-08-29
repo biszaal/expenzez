@@ -58,11 +58,19 @@ export default function BillsScreen() {
       if (showRefresh) setRefreshing(true);
       else setLoading(true);
 
+      // Add timeout protection
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Bills fetch timeout')), 8000); // 8 second timeout
+      });
+
       // Fetch transactions from the last 12 months for pattern analysis
       const startDate = dayjs().subtract(12, 'months').format('YYYY-MM-DD');
       const endDate = dayjs().format('YYYY-MM-DD');
       
-      const transactionsData = await getTransactions();
+      const transactionsData = await Promise.race([
+        getTransactions(),
+        timeoutPromise
+      ]);
       console.log(`[Bills] Raw transactions data:`, transactionsData?.length || 0, 'transactions');
       
       if (transactionsData && transactionsData.length > 0) {

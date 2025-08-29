@@ -105,7 +105,16 @@ export default function CreditScreen() {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        const profileData = await getProfile();
+        
+        // Add timeout protection
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Profile fetch timeout')), 8000); // 8 second timeout
+        });
+        
+        const profileData = await Promise.race([
+          getProfile(),
+          timeoutPromise
+        ]);
         setProfile(profileData);
       } catch (error) {
         console.error("Error fetching user profile:", error);

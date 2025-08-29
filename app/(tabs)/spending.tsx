@@ -435,8 +435,13 @@ export default function SpendingPage() {
         setLoading(true);
         setError(null);
 
-        // 🚀 PERFORMANCE: Fetch connection status and transactions in parallel
-        const [connectionStatusData, transactionsData] = await Promise.all([
+        // Add timeout protection to prevent hanging
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Data fetch timeout')), 10000); // 10 second timeout
+        });
+
+        // 🚀 PERFORMANCE: Fetch connection status and transactions in parallel with timeout
+        const dataPromise = Promise.all([
           bankingAPI.checkBankConnectionStatus().catch((err) => {
             console.log(
               "Could not check connection status, proceeding with transaction fetch"
@@ -447,6 +452,11 @@ export default function SpendingPage() {
             console.error("❌ Error fetching transactions:", err);
             return { transactions: [] };
           }),
+        ]);
+
+        const [connectionStatusData, transactionsData] = await Promise.race([
+          dataPromise,
+          timeoutPromise
         ]);
 
         if (connectionStatusData.hasExpiredTokens) {
