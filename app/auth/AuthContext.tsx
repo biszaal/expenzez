@@ -77,24 +77,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Removed aggressive token validation - let API interceptors handle token refresh
 
   const loadAuthState = async () => {
+      console.log('🔄 [AuthContext] Starting auth state loading...');
+      
       // Add overall timeout for the entire auth loading process
       const authTimeout = setTimeout(() => {
+        console.log('⏰ [AuthContext] Auth loading timeout reached (5s), setting loading to false');
         setLoading(false);
-      }, 15000); // 15 second overall timeout
+      }, 5000); // Reduced to 5 second timeout for better UX
 
       // Uncomment the next line to force clear all data on app start (for testing)
       // TEMPORARY: Clear auth data if stuck on login screen
       // await clearAllData(); // DISABLED: Auth data clearing - issue resolved
       
       try {
-        const [
-          storedLogin,
-          storedUser,
-          accessToken,
-          idToken,
-          refreshToken,
-          storedBudget,
-        ] = await Promise.all([
+        // Add timeout to AsyncStorage operations
+        const storagePromise = Promise.all([
           AsyncStorage.getItem("isLoggedIn"),
           AsyncStorage.getItem("user"),
           AsyncStorage.getItem("accessToken"),
@@ -103,6 +100,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           AsyncStorage.getItem("userBudget"),
         ]);
 
+        const storageTimeout = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('AsyncStorage timeout')), 3000);
+        });
+
+        const [
+          storedLogin,
+          storedUser,
+          accessToken,
+          idToken,
+          refreshToken,
+          storedBudget,
+        ] = await Promise.race([storagePromise, storageTimeout]);
+
+        console.log('📦 [AuthContext] Stored auth data:', { 
+          hasStoredLogin: storedLogin === "true",
+          hasStoredUser: !!storedUser,
+          hasAccessToken: !!accessToken,
+          hasIdToken: !!idToken 
+        });
 
         if (
           storedLogin === "true" &&
@@ -135,8 +151,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUserBudget(parseFloat(storedBudget));
         }
       } catch (error) {
-        // Silent error handling for production
+        console.log('❌ [AuthContext] Error during auth state loading:', error);
+        // Clear any potentially corrupted data
+        try {
+          await AsyncStorage.multiRemove(['isLoggedIn', 'user', 'accessToken', 'idToken', 'refreshToken']);
+        } catch (clearError) {
+          console.log('❌ [AuthContext] Error clearing corrupted data:', clearError);
+        }
       } finally {
+        console.log('✅ [AuthContext] Auth state loading complete, setting loading to false');
         clearTimeout(authTimeout);
         setLoading(false);
         setHasLoadedAuthState(true);
