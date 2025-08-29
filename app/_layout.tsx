@@ -1,13 +1,13 @@
 import { Stack } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
 import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
 import { NotificationProvider } from "../contexts/NotificationContext";
 import { NetworkProvider } from "../contexts/NetworkContext";
 import SecurityLock from "../components/SecurityLock";
+import { AppLoadingScreen } from "../components/ui/AppLoadingScreen";
 
 function RootLayoutNav() {
   const auth = useAuth();
@@ -33,11 +33,7 @@ function RootLayoutNav() {
   }, []);
 
   if (isLoading || loading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#7C3AED" />
-      </View>
-    );
+    return <AppLoadingScreen message="Setting up your account..." />;
   }
 
   // Show security lock if app is locked

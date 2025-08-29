@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { TabLoadingScreen } from "../../components/ui";
 import {
   spacing,
   borderRadius,
@@ -618,28 +619,7 @@ export default function SpendingPage() {
   }
 
   if (loading) {
-    return (
-      <SafeAreaView
-        style={[
-          styles.container,
-          { backgroundColor: colors.background.secondary },
-        ]}
-      >
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <Text
-            style={{
-              color: colors.text.primary,
-              fontSize: 18,
-              marginBottom: 16,
-            }}
-          >
-            Loading spending data...
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <TabLoadingScreen message="Loading spending data..." />;
   }
 
   if (error) {

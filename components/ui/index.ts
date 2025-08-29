@@ -10,5 +10,6 @@ export { default as EmptyState } from "./EmptyState";
 export { default as Badge } from "./Badge";
 export { default as BankLogo } from "./BankLogo";
 export { default as LoadingScreen } from "./LoadingScreen";
+export { TabLoadingScreen } from "./TabLoadingScreen";
 export { default as MonthFilter } from "./MonthFilter";
 export { ThemeToggle } from "./ThemeToggle";
