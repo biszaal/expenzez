@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>expenzez</string>
+    <string>Expenzez</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -25,10 +25,11 @@
     <key>CFBundleURLTypes</key>
     <array>
       <dict>
+        <key>CFBundleURLName</key>
+        <string>expenzez-redirect</string>
         <key>CFBundleURLSchemes</key>
         <array>
           <string>expenzez</string>
-          <string>com.biszaal.expenzez</string>
         </array>
       </dict>
       <dict>
@@ -40,6 +41,8 @@
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSRequiresIPhoneOS</key>
@@ -47,40 +50,50 @@
     <key>NSAppTransportSecurity</key>
     <dict>
       <key>NSAllowsArbitraryLoads</key>
-      <true/>
+      <false/>
       <key>NSExceptionDomains</key>
       <dict>
-        <key>storage.googleapis.com</key>
+        <key>execute-api.eu-west-2.amazonaws.com</key>
         <dict>
           <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <true/>
+          <false/>
           <key>NSExceptionMinimumTLSVersion</key>
-          <string>1.0</string>
+          <string>1.2</string>
+          <key>NSExceptionRequiresForwardSecrecy</key>
+          <true/>
         </dict>
-        <key>cdn-logos.gocardless.com</key>
+        <key>cognito-idp.eu-west-2.amazonaws.com</key>
         <dict>
           <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <true/>
+          <false/>
           <key>NSExceptionMinimumTLSVersion</key>
-          <string>1.0</string>
+          <string>1.2</string>
+          <key>NSExceptionRequiresForwardSecrecy</key>
+          <true/>
         </dict>
-        <key>logo.clearbit.com</key>
+        <key>auth.truelayer.com</key>
         <dict>
           <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <true/>
+          <false/>
           <key>NSExceptionMinimumTLSVersion</key>
-          <string>1.0</string>
+          <string>1.2</string>
+          <key>NSExceptionRequiresForwardSecrecy</key>
+          <true/>
         </dict>
       </dict>
     </dict>
+    <key>NSCameraUsageDescription</key>
+    <string>This app uses the camera to scan receipts for expense tracking.</string>
     <key>NSFaceIDUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
+    <string>This app uses Face ID for secure authentication and app access.</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSLocationAlwaysUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <string>This app uses location data to categorize expenses and find nearby merchants.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>This app accesses your photo library to attach receipt images to expenses.</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>

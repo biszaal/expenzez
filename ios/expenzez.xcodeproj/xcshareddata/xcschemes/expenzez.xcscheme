@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "expenzez.app"
-               BlueprintName = "expenzez"
-               ReferencedContainer = "container:expenzez.xcodeproj">
+               BuildableName = "Expenzez.app"
+               BlueprintName = "Expenzez"
+               ReferencedContainer = "container:Expenzez.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "expenzezTests.xctest"
-               BlueprintName = "expenzezTests"
-               ReferencedContainer = "container:expenzez.xcodeproj">
+               BuildableName = "ExpenzezTests.xctest"
+               BlueprintName = "ExpenzezTests"
+               ReferencedContainer = "container:Expenzez.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "expenzez.app"
-            BlueprintName = "expenzez"
-            ReferencedContainer = "container:expenzez.xcodeproj">
+            BuildableName = "Expenzez.app"
+            BlueprintName = "Expenzez"
+            ReferencedContainer = "container:Expenzez.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "expenzez.app"
-            BlueprintName = "expenzez"
-            ReferencedContainer = "container:expenzez.xcodeproj">
+            BuildableName = "Expenzez.app"
+            BlueprintName = "Expenzez"
+            ReferencedContainer = "container:Expenzez.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
