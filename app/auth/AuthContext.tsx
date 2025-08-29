@@ -51,6 +51,7 @@ interface AuthContextType {
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   clearAllData: () => Promise<void>;
+  clearCorruptedCache: () => Promise<void>;
   loading: boolean;
 }
 
@@ -64,6 +65,7 @@ const AuthContext = createContext<AuthContextType>({
   register: async () => ({ success: false }),
   logout: async () => {},
   clearAllData: async () => {},
+  clearCorruptedCache: async () => {},
   loading: true,
 });
 
@@ -85,9 +87,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setLoading(false);
       }, 5000); // Reduced to 5 second timeout for better UX
 
-      // Uncomment the next line to force clear all data on app start (for testing)
-      // TEMPORARY: Clear auth data if stuck on login screen
-      // await clearAllData(); // DISABLED: Cache clearing completed, Apple Sign In fixed
+      // Smart cache management - clear cache if it's stale or version changed
+      try {
+        const CACHE_VERSION = '1.0.3'; // Update this when you want to force cache clear
+        const storedVersion = await AsyncStorage.getItem('app_cache_version');
+        const lastClearTime = await AsyncStorage.getItem('last_cache_clear');
+        const now = Date.now();
+        const ONE_HOUR = 60 * 60 * 1000;
+        
+        const shouldClearCache = (
+          storedVersion !== CACHE_VERSION || // Version changed
+          !lastClearTime || // Never cleared
+          (now - parseInt(lastClearTime || '0')) > (6 * ONE_HOUR) // More than 6 hours ago
+        );
+        
+        if (shouldClearCache) {
+          console.log('🧹 [AuthContext] Smart cache clearing triggered');
+          await clearAllData();
+          await AsyncStorage.setItem('app_cache_version', CACHE_VERSION);
+          await AsyncStorage.setItem('last_cache_clear', now.toString());
+        }
+      } catch (error) {
+        console.log('❌ [AuthContext] Smart cache management failed:', error);
+      }
       
       try {
         // Add timeout to AsyncStorage operations
@@ -437,6 +459,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Function to clear only problematic cache entries
+  const clearCorruptedCache = async () => {
+    try {
+      console.log('🔧 [AuthContext] Clearing potentially corrupted cache entries...');
+      
+      const keys = await AsyncStorage.getAllKeys();
+      const problematicKeys = keys.filter(key => 
+        key.startsWith('@expenzez_cache_') || // Network cache
+        key.includes('transactions') ||
+        key.includes('banking') ||
+        key.includes('spending')
+      );
+      
+      if (problematicKeys.length > 0) {
+        await AsyncStorage.multiRemove(problematicKeys);
+        console.log('✅ [AuthContext] Cleared', problematicKeys.length, 'potentially corrupted cache entries');
+      }
+    } catch (error) {
+      console.log('❌ [AuthContext] Error clearing corrupted cache:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -449,6 +493,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         register,
         logout,
         clearAllData,
+        clearCorruptedCache,
         loading,
       }}
     >

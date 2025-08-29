@@ -31,8 +31,8 @@ const NetworkContext = createContext<NetworkContextType | undefined>(undefined);
 
 const CACHE_PREFIX = '@expenzez_cache_';
 const QUEUE_PREFIX = '@expenzez_queue_';
-const DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
-const DEFAULT_MAX_AGE = 10 * 60 * 1000; // 10 minutes
+const DEFAULT_TTL = 2 * 60 * 1000; // 2 minutes (reduced from 5 to prevent corruption)
+const DEFAULT_MAX_AGE = 4 * 60 * 1000; // 4 minutes (reduced from 10 to prevent corruption)
 
 export const NetworkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isConnected, setIsConnected] = useState(true);
