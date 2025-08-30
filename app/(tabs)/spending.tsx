@@ -707,6 +707,51 @@ export default function SpendingPage() {
       : `▼ ${formatAmount(Math.abs(diff), currency)}`;
   const diffColor = diff >= 0 ? colors.error[500] : colors.success[500];
 
+  // Calculate average spend per day and predicted monthly spend
+  const calculateSpendingMetrics = useMemo(() => {
+    const selectedDate = dayjs(selectedMonth);
+    const currentDate = dayjs();
+    const isCurrentMonth = selectedDate.isSame(currentDate, 'month');
+    
+    if (isCurrentMonth) {
+      // For current month: calculate average based on days elapsed
+      const dayOfMonth = currentDate.date();
+      const averageSpendPerDay = dayOfMonth > 0 ? monthlyTotalSpent / dayOfMonth : 0;
+      
+      // Predict total spend for the month based on average
+      const daysInMonth = selectedDate.daysInMonth();
+      const predictedMonthlySpend = averageSpendPerDay * daysInMonth;
+      
+      return {
+        averageSpendPerDay,
+        predictedMonthlySpend,
+        dayOfMonth,
+        daysInMonth,
+        isCurrentMonth: true
+      };
+    } else {
+      // For past months: show actual average for the full month
+      const daysInMonth = selectedDate.daysInMonth();
+      const averageSpendPerDay = daysInMonth > 0 ? monthlyTotalSpent / daysInMonth : 0;
+      
+      return {
+        averageSpendPerDay,
+        predictedMonthlySpend: monthlyTotalSpent, // For past months, predicted = actual
+        dayOfMonth: daysInMonth,
+        daysInMonth,
+        isCurrentMonth: false
+      };
+    }
+  }, [selectedMonth, monthlyTotalSpent]);
+
+  const { 
+    averageSpendPerDay, 
+    predictedMonthlySpend, 
+    dayOfMonth, 
+    daysInMonth, 
+    isCurrentMonth 
+  } = calculateSpendingMetrics;
+
   // Update category data with monthly spending for display
   const monthlyCategoryData = categoryData.map((cat) => ({
     ...cat,
@@ -974,6 +1019,24 @@ export default function SpendingPage() {
                     Budget
                   </Text>
                 </View>
+                
+                <View style={styles.simpleBudgetStat}>
+                  <Text style={[styles.simpleBudgetAmount, { color: colors.primary[500] }]}>
+                    {formatAmount(averageSpendPerDay, currency)}
+                  </Text>
+                  <Text style={[styles.simpleBudgetLabel, { color: colors.text.secondary }]}>
+                    Avg/Day
+                  </Text>
+                </View>
+                
+                <View style={styles.simpleBudgetStat}>
+                  <Text style={[styles.simpleBudgetAmount, { color: isCurrentMonth ? colors.warning[500] : colors.text.primary }]}>
+                    {formatAmount(predictedMonthlySpend, currency)}
+                  </Text>
+                  <Text style={[styles.simpleBudgetLabel, { color: colors.text.secondary }]}>
+                    {isCurrentMonth ? 'Predicted' : 'Total'}
+                  </Text>
+                </View>
               </View>
               
               {/* Animated SVG Donut Chart */}
@@ -1116,6 +1179,44 @@ export default function SpendingPage() {
                     ]}
                   >
                     Total Spent
+                  </Text>
+                </View>
+                
+                <View style={styles.premiumSpendingStat}>
+                  <Text
+                    style={[
+                      styles.premiumSpendingStatValue,
+                      { color: colors.primary[500] },
+                    ]}
+                  >
+                    {formatAmount(averageSpendPerDay, currency)}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.premiumSpendingStatLabel,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
+                    Daily Avg
+                  </Text>
+                </View>
+                
+                <View style={styles.premiumSpendingStat}>
+                  <Text
+                    style={[
+                      styles.premiumSpendingStatValue,
+                      { color: isCurrentMonth ? colors.warning[500] : colors.text.primary },
+                    ]}
+                  >
+                    {formatAmount(predictedMonthlySpend, currency)}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.premiumSpendingStatLabel,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
+                    {isCurrentMonth ? 'Predicted' : 'Monthly Avg'}
                   </Text>
                 </View>
 
@@ -2156,19 +2257,23 @@ const styles = StyleSheet.create({
   },
   simpleBudgetStats: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     marginBottom: 20,
+    paddingHorizontal: 8,
   },
   simpleBudgetStat: {
     alignItems: "center",
+    flex: 1,
+    minWidth: 0, // Allow text to shrink if needed
   },
   simpleBudgetAmount: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "700",
     marginBottom: 4,
   },
   simpleBudgetLabel: {
-    fontSize: 14,
+    fontSize: 12,
+    textAlign: "center",
   },
   simpleProgressContainer: {
     marginTop: 8,
