@@ -623,6 +623,51 @@ export default function SpendingPage() {
     outputRange: [CIRCUMFERENCE, 0],
   });
 
+  // Calculate average spend per day and predicted monthly spend
+  const calculateSpendingMetrics = useMemo(() => {
+    const selectedDate = dayjs(selectedMonth);
+    const currentDate = dayjs();
+    const isCurrentMonth = selectedDate.isSame(currentDate, 'month');
+    
+    if (isCurrentMonth) {
+      // For current month: calculate average based on days elapsed
+      const dayOfMonth = currentDate.date();
+      const averageSpendPerDay = dayOfMonth > 0 ? monthlyTotalSpent / dayOfMonth : 0;
+      
+      // Predict total spend for the month based on average
+      const daysInMonth = selectedDate.daysInMonth();
+      const predictedMonthlySpend = averageSpendPerDay * daysInMonth;
+      
+      return {
+        averageSpendPerDay,
+        predictedMonthlySpend,
+        dayOfMonth,
+        daysInMonth,
+        isCurrentMonth: true
+      };
+    } else {
+      // For past months: show actual average for the full month
+      const daysInMonth = selectedDate.daysInMonth();
+      const averageSpendPerDay = daysInMonth > 0 ? monthlyTotalSpent / daysInMonth : 0;
+      
+      return {
+        averageSpendPerDay,
+        predictedMonthlySpend: monthlyTotalSpent, // For past months, predicted = actual
+        dayOfMonth: daysInMonth,
+        daysInMonth,
+        isCurrentMonth: false
+      };
+    }
+  }, [selectedMonth, monthlyTotalSpent]);
+
+  const { 
+    averageSpendPerDay, 
+    predictedMonthlySpend, 
+    dayOfMonth, 
+    daysInMonth, 
+    isCurrentMonth 
+  } = calculateSpendingMetrics;
+
   // All hooks above, then early return
   if (!isLoggedIn || checkingBank) {
     return null;
@@ -706,51 +751,6 @@ export default function SpendingPage() {
       ? `▲ ${formatAmount(Math.abs(diff), currency)}`
       : `▼ ${formatAmount(Math.abs(diff), currency)}`;
   const diffColor = diff >= 0 ? colors.error[500] : colors.success[500];
-
-  // Calculate average spend per day and predicted monthly spend
-  const calculateSpendingMetrics = useMemo(() => {
-    const selectedDate = dayjs(selectedMonth);
-    const currentDate = dayjs();
-    const isCurrentMonth = selectedDate.isSame(currentDate, 'month');
-    
-    if (isCurrentMonth) {
-      // For current month: calculate average based on days elapsed
-      const dayOfMonth = currentDate.date();
-      const averageSpendPerDay = dayOfMonth > 0 ? monthlyTotalSpent / dayOfMonth : 0;
-      
-      // Predict total spend for the month based on average
-      const daysInMonth = selectedDate.daysInMonth();
-      const predictedMonthlySpend = averageSpendPerDay * daysInMonth;
-      
-      return {
-        averageSpendPerDay,
-        predictedMonthlySpend,
-        dayOfMonth,
-        daysInMonth,
-        isCurrentMonth: true
-      };
-    } else {
-      // For past months: show actual average for the full month
-      const daysInMonth = selectedDate.daysInMonth();
-      const averageSpendPerDay = daysInMonth > 0 ? monthlyTotalSpent / daysInMonth : 0;
-      
-      return {
-        averageSpendPerDay,
-        predictedMonthlySpend: monthlyTotalSpent, // For past months, predicted = actual
-        dayOfMonth: daysInMonth,
-        daysInMonth,
-        isCurrentMonth: false
-      };
-    }
-  }, [selectedMonth, monthlyTotalSpent]);
-
-  const { 
-    averageSpendPerDay, 
-    predictedMonthlySpend, 
-    dayOfMonth, 
-    daysInMonth, 
-    isCurrentMonth 
-  } = calculateSpendingMetrics;
 
   // Update category data with monthly spending for display
   const monthlyCategoryData = categoryData.map((cat) => ({
