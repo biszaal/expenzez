@@ -96,7 +96,7 @@ export default function SpendingPage() {
   const [selectedTab, setSelectedTab] = useState<"summary" | "categories">(
     "summary"
   );
-  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [selectedMonth, setSelectedMonth] = useState<string>(dayjs().format("YYYY-MM"));
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [months, setMonths] = useState<any[]>([]);
   const [totalBudget, setTotalBudget] = useState<number>(0);
@@ -437,7 +437,7 @@ export default function SpendingPage() {
 
         // Add timeout protection to prevent hanging
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Data fetch timeout')), 10000); // 10 second timeout
+          setTimeout(() => reject(new Error('Data fetch timeout')), 15000); // 15 second timeout
         });
 
         // 🚀 PERFORMANCE: Fetch connection status and transactions in parallel with timeout
@@ -454,10 +454,18 @@ export default function SpendingPage() {
           }),
         ]);
 
-        const [connectionStatusData, transactionsData] = await Promise.race([
-          dataPromise,
-          timeoutPromise
-        ]);
+        let connectionStatusData, transactionsData;
+        try {
+          [connectionStatusData, transactionsData] = await Promise.race([
+            dataPromise,
+            timeoutPromise
+          ]);
+        } catch (timeoutError) {
+          console.error("⏰ API timeout, using fallback data...");
+          // Use fallback data instead of failing completely
+          connectionStatusData = { hasExpiredTokens: false };
+          transactionsData = { transactions: [] };
+        }
 
         if (connectionStatusData.hasExpiredTokens) {
           console.log("Expired tokens detected in spending tab");
@@ -625,13 +633,24 @@ export default function SpendingPage() {
 
   // Calculate average spend per day and predicted monthly spend
   const calculateSpendingMetrics = useMemo(() => {
+    // Defensive programming: ensure we have valid data
+    if (!selectedMonth || !monthlyTotalSpent) {
+      return {
+        averageSpendPerDay: 0,
+        predictedMonthlySpend: 0,
+        dayOfMonth: 1,
+        daysInMonth: 30,
+        isCurrentMonth: true
+      };
+    }
+
     const selectedDate = dayjs(selectedMonth);
     const currentDate = dayjs();
     const isCurrentMonth = selectedDate.isSame(currentDate, 'month');
     
     if (isCurrentMonth) {
       // For current month: calculate average based on days elapsed
-      const dayOfMonth = currentDate.date();
+      const dayOfMonth = Math.max(currentDate.date(), 1); // Ensure at least 1 day
       const averageSpendPerDay = dayOfMonth > 0 ? monthlyTotalSpent / dayOfMonth : 0;
       
       // Predict total spend for the month based on average
@@ -647,7 +666,7 @@ export default function SpendingPage() {
       };
     } else {
       // For past months: show actual average for the full month
-      const daysInMonth = selectedDate.daysInMonth();
+      const daysInMonth = Math.max(selectedDate.daysInMonth(), 1); // Ensure at least 1 day
       const averageSpendPerDay = daysInMonth > 0 ? monthlyTotalSpent / daysInMonth : 0;
       
       return {
