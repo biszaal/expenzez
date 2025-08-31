@@ -634,7 +634,7 @@ export default function SpendingPage() {
   // Calculate average spend per day and predicted monthly spend
   const calculateSpendingMetrics = useMemo(() => {
     // Defensive programming: ensure we have valid data
-    if (!selectedMonth || !monthlyTotalSpent) {
+    if (!selectedMonth || monthlyData.monthlyTotalSpent === null || monthlyData.monthlyTotalSpent === undefined) {
       return {
         averageSpendPerDay: 0,
         predictedMonthlySpend: 0,
@@ -648,14 +648,29 @@ export default function SpendingPage() {
     const currentDate = dayjs();
     const isCurrentMonth = selectedDate.isSame(currentDate, 'month');
     
+    console.log('🔍 [SpendingMetrics] Debug Data:', {
+      selectedMonth,
+      monthlyTotalSpent: monthlyData.monthlyTotalSpent,
+      isCurrentMonth,
+      currentDay: currentDate.date(),
+      daysInSelectedMonth: selectedDate.daysInMonth()
+    });
+    
     if (isCurrentMonth) {
       // For current month: calculate average based on days elapsed
       const dayOfMonth = Math.max(currentDate.date(), 1); // Ensure at least 1 day
-      const averageSpendPerDay = dayOfMonth > 0 ? monthlyTotalSpent / dayOfMonth : 0;
+      const averageSpendPerDay = dayOfMonth > 0 ? monthlyData.monthlyTotalSpent / dayOfMonth : 0;
       
       // Predict total spend for the month based on average
       const daysInMonth = selectedDate.daysInMonth();
       const predictedMonthlySpend = averageSpendPerDay * daysInMonth;
+      
+      console.log('📊 [SpendingMetrics] Current Month Calculation:', {
+        dayOfMonth,
+        averageSpendPerDay,
+        predictedMonthlySpend,
+        calculation: `${monthlyData.monthlyTotalSpent} ÷ ${dayOfMonth} = ${averageSpendPerDay}`
+      });
       
       return {
         averageSpendPerDay,
@@ -667,25 +682,57 @@ export default function SpendingPage() {
     } else {
       // For past months: show actual average for the full month
       const daysInMonth = Math.max(selectedDate.daysInMonth(), 1); // Ensure at least 1 day
-      const averageSpendPerDay = daysInMonth > 0 ? monthlyTotalSpent / daysInMonth : 0;
+      const averageSpendPerDay = daysInMonth > 0 ? monthlyData.monthlyTotalSpent / daysInMonth : 0;
       
       return {
         averageSpendPerDay,
-        predictedMonthlySpend: monthlyTotalSpent, // For past months, predicted = actual
+        predictedMonthlySpend: monthlyData.monthlyTotalSpent, // For past months, predicted = actual
         dayOfMonth: daysInMonth,
         daysInMonth,
         isCurrentMonth: false
       };
     }
-  }, [selectedMonth, monthlyTotalSpent]);
+  }, [selectedMonth, monthlyData.monthlyTotalSpent]);
 
-  const { 
-    averageSpendPerDay, 
-    predictedMonthlySpend, 
-    dayOfMonth, 
-    daysInMonth, 
-    isCurrentMonth 
-  } = calculateSpendingMetrics;
+  // Add additional debugging right after the hook
+  console.log('✅ [SpendingMetrics] Final values:', {
+    averageSpendPerDay,
+    predictedMonthlySpend,
+    currentMonth,
+    monthlyTotalSpent
+  });
+
+  // Debug when monthlyTotalSpent changes
+  useEffect(() => {
+    console.log('💰 [SpendingMetrics] monthlyTotalSpent changed:', monthlyData.monthlyTotalSpent);
+  }, [monthlyData.monthlyTotalSpent]);
+
+  // Skip destructuring and use direct calculation
+  const currentDate = dayjs();
+  const selectedDate = dayjs(selectedMonth);
+  const currentMonth = selectedDate.isSame(currentDate, 'month');
+  const dayOfMonth = Math.max(currentDate.date(), 1);
+  const daysInMonth = selectedDate.daysInMonth();
+  const monthlyTotalSpent = monthlyData.monthlyTotalSpent || 0;
+  
+  const averageSpendPerDay = monthlyTotalSpent > 0 ? (
+    currentMonth 
+      ? monthlyTotalSpent / dayOfMonth 
+      : monthlyTotalSpent / daysInMonth
+  ) : 0;
+  
+  const predictedMonthlySpend = currentMonth 
+    ? averageSpendPerDay * daysInMonth 
+    : monthlyTotalSpent;
+    
+  console.log('🎯 [Direct Calculation] Metrics:', {
+    monthlyTotalSpent,
+    dayOfMonth,
+    daysInMonth,
+    averageSpendPerDay,
+    predictedMonthlySpend,
+    currentMonth
+  });
 
   // All hooks above, then early return
   if (!isLoggedIn || checkingBank) {
@@ -744,8 +791,7 @@ export default function SpendingPage() {
   // Use calculated data from useMemo
   const { 
     filteredTransactions, 
-    monthlySpentByCategory, 
-    monthlyTotalSpent 
+    monthlySpentByCategory
   } = monthlyData;
 
   // Calculate previous month comparison
@@ -1020,41 +1066,58 @@ export default function SpendingPage() {
                 {dayjs(selectedMonth).format("MMMM YYYY")} Budget
               </Text>
               
-              <View style={styles.simpleBudgetStats}>
-                <View style={styles.simpleBudgetStat}>
-                  <Text style={[styles.simpleBudgetAmount, { color: colors.text.primary }]}>
-                    {formatAmount(monthlyTotalSpent, currency)}
-                  </Text>
-                  <Text style={[styles.simpleBudgetLabel, { color: colors.text.secondary }]}>
-                    Spent
-                  </Text>
+              {/* Spending Metrics 2x2 Grid Layout */}
+              <View style={styles.budgetGridContainer}>
+                {/* Top Row */}
+                <View style={styles.budgetRow}>
+                  <View style={[styles.budgetCard, styles.budgetCardPrimary]}>
+                    <Text style={[styles.budgetCardAmount, { color: colors.text.primary }]}>
+                      {formatAmount(monthlyTotalSpent, currency)}
+                    </Text>
+                    <Text style={[styles.budgetCardLabel, { color: colors.text.secondary }]}>
+                      This Month Spent
+                    </Text>
+                  </View>
+                  
+                  <View style={[styles.budgetCard, styles.budgetCardSecondary]}>
+                    <Text style={[styles.budgetCardAmount, { color: colors.text.primary }]}>
+                      {formatAmount(totalBudget, currency)}
+                    </Text>
+                    <Text style={[styles.budgetCardLabel, { color: colors.text.secondary }]}>
+                      Monthly Budget
+                    </Text>
+                  </View>
                 </View>
-                
-                <View style={styles.simpleBudgetStat}>
-                  <Text style={[styles.simpleBudgetAmount, { color: colors.text.primary }]}>
-                    {formatAmount(totalBudget, currency)}
-                  </Text>
-                  <Text style={[styles.simpleBudgetLabel, { color: colors.text.secondary }]}>
-                    Budget
-                  </Text>
-                </View>
-                
-                <View style={styles.simpleBudgetStat}>
-                  <Text style={[styles.simpleBudgetAmount, { color: colors.primary[500] }]}>
-                    {formatAmount(averageSpendPerDay, currency)}
-                  </Text>
-                  <Text style={[styles.simpleBudgetLabel, { color: colors.text.secondary }]}>
-                    Avg/Day
-                  </Text>
-                </View>
-                
-                <View style={styles.simpleBudgetStat}>
-                  <Text style={[styles.simpleBudgetAmount, { color: isCurrentMonth ? colors.warning[500] : colors.text.primary }]}>
-                    {formatAmount(predictedMonthlySpend, currency)}
-                  </Text>
-                  <Text style={[styles.simpleBudgetLabel, { color: colors.text.secondary }]}>
-                    {isCurrentMonth ? 'Predicted' : 'Total'}
-                  </Text>
+
+                {/* Bottom Row */}
+                <View style={styles.budgetRow}>
+                  <View style={[styles.budgetCard, styles.budgetCardAccent]}>
+                    <Text style={[styles.budgetCardAmount, { color: colors.primary[500] }]}>
+                      {formatAmount(averageSpendPerDay, currency)}
+                    </Text>
+                    <Text style={[styles.budgetCardLabel, { color: colors.text.secondary }]}>
+                      Average Per Day
+                    </Text>
+                  </View>
+                  
+                  <View style={[styles.budgetCard, styles.budgetCardWarning]}>
+                    <Text style={[styles.budgetCardAmount, { 
+                      color: (() => {
+                        if (!currentMonth) return colors.text.primary;
+                        if (totalBudget === 0) return colors.text.primary;
+                        
+                        const percentage = (predictedMonthlySpend / totalBudget) * 100;
+                        if (percentage > 100) return colors.error[500];    // Red: Over budget
+                        if (percentage > 80) return colors.warning[500];   // Orange: Warning zone (80-100%)
+                        return colors.success[500];                       // Green: Safe zone (<80%)
+                      })()
+                    }]}>
+                      {formatAmount(predictedMonthlySpend, currency)}
+                    </Text>
+                    <Text style={[styles.budgetCardLabel, { color: colors.text.secondary }]}>
+                      {currentMonth ? 'Predicted Monthly' : 'Monthly Total'}
+                    </Text>
+                  </View>
                 </View>
               </View>
               
@@ -1180,98 +1243,7 @@ export default function SpendingPage() {
                 </View>
               </View>
 
-              {/* Spending Stats */}
-              <View style={styles.premiumSpendingStatsRow}>
-                <View style={styles.premiumSpendingStat}>
-                  <Text
-                    style={[
-                      styles.premiumSpendingStatValue,
-                      { color: colors.text.primary },
-                    ]}
-                  >
-                    {formatAmount(monthlyTotalSpent, currency)}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.premiumSpendingStatLabel,
-                      { color: colors.text.secondary },
-                    ]}
-                  >
-                    Total Spent
-                  </Text>
-                </View>
-                
-                <View style={styles.premiumSpendingStat}>
-                  <Text
-                    style={[
-                      styles.premiumSpendingStatValue,
-                      { color: colors.primary[500] },
-                    ]}
-                  >
-                    {formatAmount(averageSpendPerDay, currency)}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.premiumSpendingStatLabel,
-                      { color: colors.text.secondary },
-                    ]}
-                  >
-                    Daily Avg
-                  </Text>
-                </View>
-                
-                <View style={styles.premiumSpendingStat}>
-                  <Text
-                    style={[
-                      styles.premiumSpendingStatValue,
-                      { color: isCurrentMonth ? colors.warning[500] : colors.text.primary },
-                    ]}
-                  >
-                    {formatAmount(predictedMonthlySpend, currency)}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.premiumSpendingStatLabel,
-                      { color: colors.text.secondary },
-                    ]}
-                  >
-                    {isCurrentMonth ? 'Predicted' : 'Monthly Avg'}
-                  </Text>
-                </View>
-
-                {prevMonth && (
-                  <View style={styles.premiumSpendingComparison}>
-                    <View
-                      style={[
-                        styles.premiumComparisonBadge,
-                        { backgroundColor: diff >= 0 ? "#FEF2F2" : "#F0FDF4" },
-                      ]}
-                    >
-                      <Ionicons
-                        name={diff >= 0 ? "trending-up" : "trending-down"}
-                        size={16}
-                        color={diff >= 0 ? "#EF4444" : "#10B981"}
-                      />
-                      <Text
-                        style={[
-                          styles.premiumComparisonText,
-                          { color: diff >= 0 ? "#EF4444" : "#10B981" },
-                        ]}
-                      >
-                        {Math.abs(diff).toFixed(0)}%
-                      </Text>
-                    </View>
-                    <Text
-                      style={[
-                        styles.premiumComparisonLabel,
-                        { color: colors.text.secondary },
-                      ]}
-                    >
-                      vs. {prevMonth.name}
-                    </Text>
-                  </View>
-                )}
-              </View>
+              
 
               {/* Premium Custom Chart Section */}
               <View style={styles.premiumChartSection}>
@@ -3305,5 +3277,46 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "400",
     opacity: 0.7,
+  },
+  
+  // Budget Grid Layout Styles (2x2 grid for improved spacing)
+  budgetGridContainer: {
+    gap: 12,
+  },
+  budgetRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 12,
+  },
+  budgetCard: {
+    flex: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    minHeight: 80,
+    ...shadows.sm,
+  },
+  budgetCardPrimary: {
+    backgroundColor: "rgba(99, 102, 241, 0.1)", // Primary color tint
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.2)",
+  },
+  budgetCardSecondary: {
+    backgroundColor: "rgba(34, 197, 94, 0.1)", // Success color tint
+    borderWidth: 1,
+    borderColor: "rgba(34, 197, 94, 0.2)",
+  },
+  budgetCardAmount: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  budgetCardLabel: {
+    fontSize: 12,
+    textAlign: "center",
+    opacity: 0.8,
+    fontWeight: "600",
   },
 });

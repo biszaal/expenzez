@@ -383,7 +383,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           message: item.message,
           time: formatTimestamp(item.timestamp),
           type: item.type,
-          read: readStates[item.id] !== undefined ? readStates[item.id] : item.isRead,
+          read: readStates[item.id] === true ? true : (item.isRead || false),
           data: {
             amount: item.amount,
             merchant: item.merchant,
