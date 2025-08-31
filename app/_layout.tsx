@@ -19,7 +19,9 @@ function RootLayoutNav() {
 
   useEffect(() => {
     // Wait for auth state to be loaded
+    console.log(`🔄 [Layout] Loading state changed: auth.loading=${loading}, isLoading=${isLoading}`);
     if (!loading) {
+      console.log('✅ [Layout] Auth loading complete, setting isLoading to false');
       setIsLoading(false);
     }
   }, [loading]);
@@ -52,6 +54,7 @@ function RootLayoutNav() {
   }, [auth]);
 
   if (isLoading || loading) {
+    console.log(`🔄 [Layout] Showing loading screen: isLoading=${isLoading}, loading=${loading}`);
     return <AppLoadingScreen message="Setting up your account..." />;
   }
 

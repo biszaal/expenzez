@@ -62,6 +62,10 @@ class TokenManager {
     const isExpired = expiresAt <= now;
     const shouldRefresh = expiresAt <= now + 5 * 60 * 1000; // 5 minutes before expiry
 
+    // Debug logging for token timing
+    const timeUntilExpiry = expiresAt - now;
+    console.log(`[TokenManager] Token info: expires in ${Math.round(timeUntilExpiry / 1000 / 60)} minutes, isExpired: ${isExpired}, shouldRefresh: ${shouldRefresh}`);
+
     return {
       token,
       expiresAt,
@@ -134,24 +138,42 @@ class TokenManager {
    */
   async getValidAccessToken(): Promise<string | null> {
     try {
-      const storedTokens = await this.getStoredTokens();
-      if (!storedTokens) {
-        return null;
-      }
-
-      const tokenInfo = await this.getTokenInfo(storedTokens.accessToken);
+      console.log('[TokenManager] Getting valid access token...');
       
-      // If token is not expired and doesn't need refresh, return it
-      if (!tokenInfo.isExpired && !tokenInfo.shouldRefresh) {
-        return storedTokens.accessToken;
-      }
+      // Add timeout protection to the entire token validation process
+      const tokenTimeout = new Promise<null>((_, reject) => {
+        setTimeout(() => {
+          console.log('[TokenManager] Token validation timeout after 8 seconds');
+          reject(new Error('Token validation timeout'));
+        }, 8000);
+      });
 
-      // If token is expired or needs refresh, refresh it
-      return await this.refreshTokenIfNeeded();
+      const tokenPromise = this.getValidAccessTokenInternal();
+      return await Promise.race([tokenPromise, tokenTimeout]);
     } catch (error) {
-      console.error('Failed to get valid access token:', error);
+      console.error('[TokenManager] Failed to get valid access token:', error);
       return null;
     }
+  }
+
+  private async getValidAccessTokenInternal(): Promise<string | null> {
+    const storedTokens = await this.getStoredTokens();
+    if (!storedTokens) {
+      console.log('[TokenManager] No stored tokens found');
+      return null;
+    }
+
+    const tokenInfo = await this.getTokenInfo(storedTokens.accessToken);
+    
+    // If token is not expired and doesn't need refresh, return it
+    if (!tokenInfo.isExpired && !tokenInfo.shouldRefresh) {
+      console.log('[TokenManager] Token is valid, returning existing token');
+      return storedTokens.accessToken;
+    }
+
+    // If token is expired or needs refresh, refresh it
+    console.log('[TokenManager] Token expired or needs refresh, attempting refresh...');
+    return await this.refreshTokenIfNeeded();
   }
 
   /**
@@ -178,15 +200,24 @@ class TokenManager {
    */
   private async performTokenRefresh(): Promise<string | null> {
     try {
+      console.log('[TokenManager] Starting token refresh...');
       const storedTokens = await this.getStoredTokens();
       if (!storedTokens) {
         throw new Error('No stored tokens found');
       }
 
-      // Import authAPI dynamically to avoid circular dependency
-      const { authAPI } = await import('./api');
+      // Add timeout protection to token refresh
+      const refreshTimeout = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Token refresh timeout after 10 seconds')), 10000);
+      });
+
+      console.log('[TokenManager] Making token refresh API call...');
+      // Use lazy import to avoid circular dependency issues
+      const apiModule = await import('./api');
+      const authAPI = apiModule.authAPI;
       
-      const response = await authAPI.refreshToken(storedTokens.refreshToken);
+      const refreshPromise = authAPI.refreshToken(storedTokens.refreshToken);
+      const response = await Promise.race([refreshPromise, refreshTimeout]);
       
       if (response.accessToken) {
         // Store new tokens

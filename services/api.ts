@@ -28,13 +28,22 @@ const aiAPI = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   async (config) => {
-    // Import tokenManager dynamically to avoid circular dependency
-    const { tokenManager } = await import('./tokenManager');
-    const token = await tokenManager.getValidAccessToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    console.log(`[API] Interceptor: Requesting token for ${config.url}`);
+    try {
+      // Import tokenManager dynamically to avoid circular dependency
+      const { tokenManager } = await import('./tokenManager');
+      const token = await tokenManager.getValidAccessToken();
+      if (token) {
+        console.log(`[API] Interceptor: Token obtained for ${config.url}`);
+        config.headers.Authorization = `Bearer ${token}`;
+      } else {
+        console.log(`[API] Interceptor: No token available for ${config.url}`);
+      }
+      return config;
+    } catch (error) {
+      console.error(`[API] Interceptor: Token error for ${config.url}:`, error);
+      return config; // Continue without token
     }
-    return config;
   },
   (error) => {
     return Promise.reject(error);
@@ -641,29 +650,125 @@ export const bankingAPI = {
   getAIInsight: async (message: string) => {
     try {
       const token = await AsyncStorage.getItem("accessToken");
-      const response = await aiAPI.post("/ai/insight", { message });
+      
+      // Gather user's financial context for AI analysis
+      let financialContext: any = {};
+      
+      try {
+        console.log('🤖 [AI Context] Starting to gather financial context...');
+        
+        // Get recent transactions (last 20 for context)
+        console.log('🤖 [AI Context] Fetching transactions...');
+        const transactionsResponse = await bankingAPI.getAllTransactions(20);
+        console.log('🤖 [AI Context] Raw transactions response:', JSON.stringify(transactionsResponse, null, 2));
+        financialContext.recentTransactions = transactionsResponse.transactions || [];
+        console.log('🤖 [AI Context] Transactions fetched:', transactionsResponse.transactions?.length || 0);
+        
+        // Get connected accounts and their balances
+        console.log('🤖 [AI Context] Fetching connected accounts...');
+        const accountsResponse = await bankingAPI.getConnectedBanks();
+        console.log('🤖 [AI Context] Raw accounts response:', JSON.stringify(accountsResponse, null, 2));
+        financialContext.accounts = accountsResponse.banks || [];
+        console.log('🤖 [AI Context] Connected accounts fetched:', accountsResponse.banks?.length || 0);
+        
+        // Calculate total balance
+        let totalBalance = 0;
+        if (financialContext.accounts) {
+          totalBalance = financialContext.accounts.reduce((sum: number, account: any) => {
+            return sum + (account.balance || 0);
+          }, 0);
+        }
+        financialContext.totalBalance = totalBalance;
+        
+        // Calculate monthly spending
+        const currentMonth = new Date().toISOString().substring(0, 7);
+        const monthlySpending = financialContext.recentTransactions
+          ?.filter((tx: any) => tx.date?.startsWith(currentMonth) && parseFloat(tx.amount) < 0)
+          ?.reduce((sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount)), 0) || 0;
+        financialContext.monthlySpending = monthlySpending;
+        
+        console.log('🤖 [AI Context] ===== FINANCIAL DATA GATHERED =====');
+        console.log('🤖 [AI Context] Transactions:', financialContext.recentTransactions?.length || 0);
+        console.log('🤖 [AI Context] Accounts:', financialContext.accounts?.length || 0);
+        console.log('🤖 [AI Context] Total Balance:', totalBalance);
+        console.log('🤖 [AI Context] Monthly Spending:', monthlySpending);
+        console.log('🤖 [AI Context] Has Financial Data:', financialContext.recentTransactions?.length > 0);
+        console.log('🤖 [AI Context] =====================================');
+        
+      } catch (contextError) {
+        console.warn('⚠️ [AI Context] Failed to gather financial context:', contextError);
+        // Continue without context - AI will use general responses
+      }
+      
+      const response = await aiAPI.post("/ai/insight", { 
+        message,
+        financialContext 
+      });
       return response.data;
     } catch (error: any) {
       console.error("[AI API] Failed to get AI insight:", error);
       
       // Enhanced fallback for TestFlight/Production when AI endpoints might not be available
       if (error.response?.status === 404 || error.response?.status === 502 || error.response?.status === 503) {
-        console.log("🤖 AI endpoint not available, using fallback response");
+        console.log("🤖 [AI Fallback] ===== AI ENDPOINT NOT AVAILABLE =====");
+        console.log("🤖 [AI Fallback] Status:", error.response?.status);
+        console.log("🤖 [AI Fallback] Using enhanced fallback with context");
+        console.log("🤖 [AI Fallback] =======================================");
         
-        // Generate contextual fallback responses based on message content
+        // Generate contextual fallback responses using the financial data we gathered
         const lowerMessage = message.toLowerCase();
-        let fallbackResponse = "I'm here to help with your finances! ";
+        let fallbackResponse = "";
         
-        if (lowerMessage.includes('spending') || lowerMessage.includes('spend')) {
-          fallbackResponse += "Your spending patterns show you've made several transactions recently. Try to categorize them to better track where your money goes.";
-        } else if (lowerMessage.includes('budget') || lowerMessage.includes('money')) {
-          fallbackResponse += "A good budget typically follows the 50/30/20 rule - 50% needs, 30% wants, 20% savings. Review your monthly expenses to see how you're tracking.";
-        } else if (lowerMessage.includes('save') || lowerMessage.includes('saving')) {
-          fallbackResponse += "Start with small, automated savings. Even £50 per month can add up over time. Look for subscriptions or expenses you can reduce.";
+        // Use gathered financial context to provide more personalized responses
+        const { totalBalance, monthlySpending, recentTransactions, accounts } = financialContext;
+        const hasFinancialData = totalBalance !== undefined && recentTransactions?.length > 0;
+        
+        console.log("🤖 [AI Fallback] Financial Context Check:");
+        console.log("🤖 [AI Fallback] - Total Balance:", totalBalance);
+        console.log("🤖 [AI Fallback] - Recent Transactions:", recentTransactions?.length || 0);
+        console.log("🤖 [AI Fallback] - Has Financial Data:", hasFinancialData);
+        console.log("🤖 [AI Fallback] - Message Type:", lowerMessage);
+        
+        if (lowerMessage.includes('balance') || lowerMessage.includes('money')) {
+          if (hasFinancialData) {
+            fallbackResponse = `Based on your connected accounts, you currently have £${totalBalance?.toFixed(2) || '0.00'} across ${accounts?.length || 0} account${accounts?.length === 1 ? '' : 's'}. `;
+            fallbackResponse += totalBalance > 1000 ? "Your balance looks healthy! Consider setting aside some money for savings." : "Keep track of your spending to help build up your balance over time.";
+          } else {
+            fallbackResponse = "I can see your account balances once your banks are connected. Try connecting a bank account to get personalized insights.";
+          }
+        } else if (lowerMessage.includes('spending') || lowerMessage.includes('spend')) {
+          if (hasFinancialData && monthlySpending > 0) {
+            fallbackResponse = `You've spent £${monthlySpending.toFixed(2)} this month based on your recent transactions. `;
+            if (monthlySpending > totalBalance * 0.5) {
+              fallbackResponse += "Your spending is quite high relative to your balance. Consider reviewing your expenses to identify areas where you can cut back.";
+            } else {
+              fallbackResponse += "Your spending appears to be manageable. Keep tracking your expenses to maintain good financial health.";
+            }
+          } else {
+            fallbackResponse = "I can analyze your spending patterns once you have some transaction data. Connect your bank accounts to get detailed spending insights.";
+          }
         } else if (lowerMessage.includes('transaction') || lowerMessage.includes('payment')) {
-          fallbackResponse += "I can see your recent transactions in your connected accounts. Check the transactions tab to review and categorize them.";
+          if (hasFinancialData) {
+            fallbackResponse = `I can see your last ${recentTransactions.length} transactions. Your most recent spending shows various categories. `;
+            fallbackResponse += "Check the transactions tab to review and categorize them for better budgeting insights.";
+          } else {
+            fallbackResponse = "Your transactions will appear here once your bank accounts are connected and synced.";
+          }
+        } else if (lowerMessage.includes('budget') || lowerMessage.includes('save')) {
+          if (hasFinancialData) {
+            const suggestedSavings = Math.max(totalBalance * 0.1, 50);
+            fallbackResponse = `Based on your current balance of £${totalBalance.toFixed(2)}, I'd suggest setting aside £${suggestedSavings.toFixed(0)} per month for savings. `;
+            fallbackResponse += "A good budget follows the 50/30/20 rule - 50% needs, 30% wants, 20% savings.";
+          } else {
+            fallbackResponse = "I can provide personalized budgeting advice once I have access to your financial data. Connect your bank accounts to get started.";
+          }
         } else {
-          fallbackResponse += "I can help you understand your spending, set budgets, and give financial advice. What specific area of your finances would you like help with?";
+          if (hasFinancialData) {
+            fallbackResponse = `I have access to your financial data: £${totalBalance.toFixed(2)} total balance, £${monthlySpending.toFixed(2)} spent this month across ${recentTransactions.length} recent transactions. `;
+            fallbackResponse += "I can help you understand your spending patterns, set budgets, and provide financial advice. What would you like to know?";
+          } else {
+            fallbackResponse = "I'm your AI financial assistant! Connect your bank accounts so I can provide personalized insights about your spending, balance, and budgeting goals.";
+          }
         }
         
         return { 
@@ -1169,14 +1274,18 @@ export const notificationAPI = {
   // Monthly AI Reports
   getMonthlyReport: async (reportMonth: string = 'latest') => {
     try {
-      const response = await api.get(`/ai/monthly-report/${reportMonth}`, {
+      const response = await aiAPI.get(`/ai/monthly-report/${reportMonth}`, {
         timeout: 30000, // 30 seconds timeout
       });
       return response.data;
     } catch (error: any) {
-      // Don't log 404 errors - this feature is optional
+      // Don't log 404 or 401 errors - this feature is optional and may not be deployed yet
       if (error.response?.status === 404) {
         return { hasReports: false, message: 'Monthly reports feature not available' };
+      }
+      if (error.response?.status === 401) {
+        // Silently return fallback for 401 errors (endpoint not deployed yet)
+        return { hasReports: false, message: 'Monthly reports feature not available yet' };
       }
       console.error('Error fetching monthly report:', error);
       throw error;

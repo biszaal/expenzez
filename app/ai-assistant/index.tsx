@@ -97,8 +97,8 @@ export default function AIAssistantScreen() {
           return;
         }
       } catch (error: any) {
-        // Only log unexpected errors (not 404s which are handled in API)
-        console.log('Monthly reports unavailable:', error?.message || error);
+        // Silently handle monthly reports unavailability (expected in development)
+        // The error is already handled gracefully in the API layer
       } finally {
         setReportLoading(false);
       }
