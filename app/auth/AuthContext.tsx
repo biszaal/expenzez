@@ -102,10 +102,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         );
         
         if (shouldClearCache) {
-          console.log('🧹 [AuthContext] Smart cache clearing triggered');
+          console.log('🧹 [AuthContext] Smart cache clearing triggered', {
+            versionChanged: storedVersion !== CACHE_VERSION,
+            neverCleared: !lastClearTime,
+            staleCache: lastClearTime && (now - parseInt(lastClearTime || '0')) > (6 * ONE_HOUR)
+          });
           await clearAllData();
           await AsyncStorage.setItem('app_cache_version', CACHE_VERSION);
           await AsyncStorage.setItem('last_cache_clear', now.toString());
+        } else {
+          console.log('ℹ️ [AuthContext] Smart cache clearing not needed');
         }
       } catch (error) {
         console.log('❌ [AuthContext] Smart cache management failed:', error);
@@ -126,6 +132,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setTimeout(() => reject(new Error('AsyncStorage timeout')), 3000);
         });
 
+        const result = await Promise.race([storagePromise, storageTimeout]) as [
+          string | null,
+          string | null,
+          string | null,
+          string | null,
+          string | null,
+          string | null
+        ];
+        
         const [
           storedLogin,
           storedUser,
@@ -133,7 +148,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           idToken,
           refreshToken,
           storedBudget,
-        ] = await Promise.race([storagePromise, storageTimeout]);
+        ] = result;
 
         console.log('📦 [AuthContext] Stored auth data:', { 
           hasStoredLogin: storedLogin === "true",
@@ -174,11 +189,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } catch (error) {
         console.log('❌ [AuthContext] Error during auth state loading:', error);
-        // Clear any potentially corrupted data
-        try {
-          await AsyncStorage.multiRemove(['isLoggedIn', 'user', 'accessToken', 'idToken', 'refreshToken']);
-        } catch (clearError) {
-          console.log('❌ [AuthContext] Error clearing corrupted data:', clearError);
+        // Don't aggressively clear auth data for minor errors - let user stay logged in
+        // Only clear if there's a specific corruption indicator
+        if (error instanceof Error && error.message.includes('JSON')) {
+          console.log('🧹 [AuthContext] JSON parsing error detected, clearing corrupted user data only');
+          try {
+            await AsyncStorage.removeItem('user'); // Only clear corrupted user data
+          } catch (clearError) {
+            console.log('❌ [AuthContext] Error clearing corrupted user data:', clearError);
+          }
+        } else {
+          console.log('ℹ️ [AuthContext] Preserving auth tokens despite loading error');
         }
       } finally {
         console.log('✅ [AuthContext] Auth state loading complete, setting loading to false');
@@ -439,20 +460,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Function to manually clear all stored data (for testing)
   const clearAllData = async () => {
     try {
-      console.log('🧹 [AuthContext] Clearing ALL cached data...');
+      console.log('🧹 [AuthContext] Clearing cached data (preserving auth tokens)...');
       
       // Get all keys first
       const keys = await AsyncStorage.getAllKeys();
       console.log('🔍 [AuthContext] Found', keys.length, 'cached keys');
 
-      // Remove all keys (including @expenzez_cache_ entries)
-      await AsyncStorage.multiRemove(keys);
-      console.log('✅ [AuthContext] Cleared all cached data');
+      // Preserve authentication and essential data
+      const authKeys = [
+        'accessToken',
+        'idToken', 
+        'refreshToken',
+        'isLoggedIn',
+        'user',
+        'userBudget',
+        'app_cache_version',
+        'last_cache_clear'
+      ];
 
-      // Update state
-      setIsLoggedIn(false);
-      setUser(null);
-      setUserBudget(null);
+      // Remove only cache keys, not auth keys
+      const cacheKeysToRemove = keys.filter(key => 
+        !authKeys.includes(key) && 
+        (key.startsWith('@expenzez_cache_') || key.includes('cache'))
+      );
+      
+      if (cacheKeysToRemove.length > 0) {
+        await AsyncStorage.multiRemove(cacheKeysToRemove);
+        console.log(`✅ [AuthContext] Cleared ${cacheKeysToRemove.length} cache keys, preserved ${authKeys.length} auth keys`);
+      } else {
+        console.log('ℹ️ [AuthContext] No cache keys to clear');
+      }
+
+      // Don't update auth state here - let loadAuthState handle it
 
     } catch (error) {
       console.log('❌ [AuthContext] Error clearing cached data:', error);

@@ -75,7 +75,7 @@ const preferencesSections: PreferenceSection[] = [
   {
     title: "Transaction Alerts",
     icon: "card-outline",
-    description: "Control when you're notified about spending",
+    description: "Control when you&apos;re notified about spending",
     preferences: [
       {
         key: "transactionAlerts",

@@ -321,7 +321,7 @@ export default function HelpSupportScreen() {
                     { color: colors.text.secondary },
                   ]}
                 >
-                  We're here to help you with any questions or issues
+                  We&apos;re here to help you with any questions or issues
                 </Text>
               </View>
               <TouchableOpacity

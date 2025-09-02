@@ -133,7 +133,7 @@ export default function ForgotPasswordScreen() {
                     style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])}
                     align="center"
                   >
-                    Enter your username and we'll send you a reset code
+                    Enter your username and we&apos;ll send you a reset code
                   </Typography>
                 </View>
               </View>

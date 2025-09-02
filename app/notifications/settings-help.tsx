@@ -197,7 +197,7 @@ export default function NotificationSettingsHelpScreen() {
               />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-              When You'll Get Notified
+              When You&apos;ll Get Notified
             </Text>
             <View style={{ width: 32 }} />
           </View>
@@ -224,7 +224,7 @@ export default function NotificationSettingsHelpScreen() {
               Smart Financial Notifications
             </Text>
             <Text style={[styles.introDescription, { color: colors.text.secondary }]}>
-              Expenzez uses intelligent algorithms to send you the right notifications at the right time. Here's exactly when and why you'll receive alerts.
+              Expenzez uses intelligent algorithms to send you the right notifications at the right time. Here&apos;s exactly when and why you&apos;ll receive alerts.
             </Text>
           </View>
         </View>
@@ -298,7 +298,7 @@ export default function NotificationSettingsHelpScreen() {
                       color={colors.text.tertiary}
                     />
                     <Text style={[styles.exampleText, { color: colors.text.secondary }]}>
-                      "{example}"
+                      &quot;{example}&quot;
                     </Text>
                   </View>
                 ))}

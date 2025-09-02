@@ -261,7 +261,7 @@ export default function EmailVerification() {
         {/* Resend Code */}
         <View style={styles.resendContainer}>
           <Typography variant="body" style={StyleSheet.flatten([styles.resendText, { color: colors.text.secondary }])}>
-            Didn't receive the code?
+            Didn&apos;t receive the code?
           </Typography>
           
           <TouchableOpacity
@@ -292,7 +292,7 @@ export default function EmailVerification() {
         <View style={StyleSheet.flatten([styles.helpContainer, { backgroundColor: colors.background.tertiary, borderColor: colors.border.light }])}>
           <Ionicons name="information-circle" size={20} color={colors.text.secondary} />
           <Typography variant="caption" style={StyleSheet.flatten([styles.helpText, { color: colors.text.secondary }])}>
-            Check your spam folder if you don't see the email. The code expires in 24 hours.
+            Check your spam folder if you don&apos;t see the email. The code expires in 24 hours.
           </Typography>
         </View>
       </View>

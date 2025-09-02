@@ -161,9 +161,9 @@ export default function AppleProfileCompletion() {
                           {
                             backgroundColor: colors.background.tertiary,
                             borderColor: colors.border.medium,
-                            color: colors.text.primary,
                           },
                         ]}
+                        inputStyle={{ color: colors.text.primary }}
                       />
                     </View>
 
@@ -177,6 +177,7 @@ export default function AppleProfileCompletion() {
                       </Typography>
                       <TextField
                         value={formData.email}
+                        onChangeText={() => {}} 
                         editable={false}
                         style={[
                           styles.input,
@@ -184,9 +185,9 @@ export default function AppleProfileCompletion() {
                           {
                             backgroundColor: colors.background.tertiary,
                             borderColor: colors.border.light,
-                            color: colors.text.secondary,
                           },
                         ]}
+                        inputStyle={{ color: colors.text.secondary }}
                       />
                     </View>
                   </View>
@@ -218,9 +219,9 @@ export default function AppleProfileCompletion() {
                           {
                             backgroundColor: colors.background.tertiary,
                             borderColor: colors.border.medium,
-                            color: colors.text.primary,
                           },
                         ]}
+                        inputStyle={{ color: colors.text.primary }}
                       />
                     </View>
 
@@ -242,9 +243,9 @@ export default function AppleProfileCompletion() {
                           {
                             backgroundColor: colors.background.tertiary,
                             borderColor: colors.border.medium,
-                            color: colors.text.primary,
                           },
                         ]}
+                        inputStyle={{ color: colors.text.primary }}
                       />
                     </View>
 
@@ -265,9 +266,9 @@ export default function AppleProfileCompletion() {
                           {
                             backgroundColor: colors.background.tertiary,
                             borderColor: colors.border.medium,
-                            color: colors.text.primary,
                           },
                         ]}
+                        inputStyle={{ color: colors.text.primary }}
                       />
                     </View>
 
@@ -289,9 +290,9 @@ export default function AppleProfileCompletion() {
                             {
                               backgroundColor: colors.background.tertiary,
                               borderColor: colors.border.medium,
-                              color: colors.text.primary,
                             },
                           ]}
+                          inputStyle={{ color: colors.text.primary }}
                         />
                       </View>
 
@@ -312,9 +313,9 @@ export default function AppleProfileCompletion() {
                             {
                               backgroundColor: colors.background.tertiary,
                               borderColor: colors.border.medium,
-                              color: colors.text.primary,
                             },
                           ]}
+                          inputStyle={{ color: colors.text.primary }}
                         />
                       </View>
                     </View>
@@ -336,9 +337,9 @@ export default function AppleProfileCompletion() {
                           {
                             backgroundColor: colors.background.tertiary,
                             borderColor: colors.border.medium,
-                            color: colors.text.primary,
                           },
                         ]}
+                        inputStyle={{ color: colors.text.primary }}
                       />
                     </View>
 
@@ -359,9 +360,9 @@ export default function AppleProfileCompletion() {
                           {
                             backgroundColor: colors.background.tertiary,
                             borderColor: colors.border.medium,
-                            color: colors.text.primary,
                           },
                         ]}
+                        inputStyle={{ color: colors.text.primary }}
                       />
                     </View>
                   </View>

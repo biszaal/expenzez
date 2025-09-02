@@ -188,7 +188,7 @@ export default function BiometricSecurityLock({ isVisible, onUnlock }: Biometric
         { 
           backgroundColor: colors.background.secondary,
           borderWidth: 1,
-          borderColor: colors.border.primary
+          borderColor: colors.border.medium
         }
       ]}
       onPress={() => onPress(digit)}
@@ -248,7 +248,7 @@ export default function BiometricSecurityLock({ isVisible, onUnlock }: Biometric
                   { 
                     backgroundColor: colors.background.secondary,
                     borderWidth: 1,
-                    borderColor: colors.border.primary,
+                    borderColor: colors.border.medium,
                     opacity: (hasBiometric && isBiometricEnabled) ? 1 : 0.5
                   }
                 ]}
@@ -267,7 +267,7 @@ export default function BiometricSecurityLock({ isVisible, onUnlock }: Biometric
                   { 
                     backgroundColor: colors.background.secondary,
                     borderWidth: 1,
-                    borderColor: colors.border.primary
+                    borderColor: colors.border.medium
                   }
                 ]}
                 onPress={() => handlePinPress('backspace')}

@@ -38,8 +38,13 @@ api.interceptors.request.use(
         console.log(`[API] Interceptor: No token available for ${config.url}`);
       }
       return config;
-    } catch (error) {
-      console.error(`[API] Interceptor: Token error for ${config.url}:`, error);
+    } catch (error: any) {
+      // If token refresh fails due to network issues, log but continue with request
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+        console.log(`[API] Interceptor: Network error during token refresh for ${config.url} - continuing without token`);
+      } else {
+        console.error(`[API] Interceptor: Token error for ${config.url}:`, error);
+      }
       return config; // Continue without token
     }
   },
@@ -62,7 +67,12 @@ aiAPI.interceptors.request.use(
         console.log(`[AI API] Interceptor: No token available for ${config.url}`);
       }
       return config;
-    } catch (error) {
+    } catch (error: any) {
+      // If token refresh fails due to network issues, don't proceed with the API call
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+        console.log(`[AI API] Interceptor: Network error during token refresh for ${config.url} - aborting request`);
+        return Promise.reject(new Error('Network error prevented token refresh - request aborted'));
+      }
       console.error(`[AI API] Interceptor: Token error for ${config.url}:`, error);
       return config;
     }
@@ -94,12 +104,16 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return api(originalRequest);
         } else {
-          console.log(`[API] Token refresh failed, redirecting to login`);
-          // Clear stored tokens and redirect to login
-          await tokenManager.clearAllTokens();
+          console.log(`[API] Token refresh failed - tokens may already be cleared by tokenManager`);
+          // Don't clear tokens here - let tokenManager handle token clearing decisions
           await AsyncStorage.setItem('isLoggedIn', 'false');
         }
-      } catch (refreshError) {
+      } catch (refreshError: any) {
+        // If token refresh fails due to network issues, don't mark user as logged out
+        if (refreshError.code === 'ERR_NETWORK' || refreshError.message?.includes('Network Error')) {
+          console.log(`[API] Token refresh failed due to network issues for ${originalRequest.url} - keeping user logged in`);
+          return Promise.reject(error); // Return original 401 error, don't set logged out
+        }
         console.error(`[API] Error during token refresh:`, refreshError);
         await AsyncStorage.setItem('isLoggedIn', 'false');
       }
@@ -136,11 +150,16 @@ aiAPI.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return aiAPI(originalRequest);
         } else {
-          console.log(`[AI API] Token refresh failed, redirecting to login`);
-          await tokenManager.clearAllTokens();
+          console.log(`[AI API] Token refresh failed - tokens may already be cleared by tokenManager`);
+          // Don't clear tokens here - let tokenManager handle token clearing decisions
           await AsyncStorage.setItem('isLoggedIn', 'false');
         }
-      } catch (refreshError) {
+      } catch (refreshError: any) {
+        // If token refresh fails due to network issues, don't mark user as logged out
+        if (refreshError.code === 'ERR_NETWORK' || refreshError.message?.includes('Network Error')) {
+          console.log(`[AI API] Token refresh failed due to network issues for ${originalRequest.url} - keeping user logged in`);
+          return Promise.reject(error); // Return original 401 error, don't set logged out
+        }
         console.error(`[AI API] Error during token refresh:`, refreshError);
         await AsyncStorage.setItem('isLoggedIn', 'false');
       }

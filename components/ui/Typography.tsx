@@ -16,7 +16,7 @@ interface TypographyProps {
     | "warning";
   weight?: "normal" | "medium" | "semibold" | "bold" | "extrabold" | "black";
   align?: "left" | "center" | "right";
-  style?: TextStyle;
+  style?: TextStyle | TextStyle[];
 }
 
 export default function Typography({

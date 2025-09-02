@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert, ViewStyle, TextStyle } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { bankingAPI } from '../../services/api';
@@ -53,11 +53,7 @@ const BankingCallback: React.FC = () => {
         
         try {
           // Call backend to exchange code for access token and connect account
-          const response = await bankingAPI.processCallback({
-            code: String(code),
-            environment: getEnvironmentName(),
-            isTestFlight: isTestFlight()
-          });
+          const response = await bankingAPI.handleCallback(String(code));
 
           console.log('✅ Banking connection successful:', response);
           setMessage('Successfully connected!');
@@ -139,35 +135,35 @@ const BankingCallback: React.FC = () => {
     }
   };
 
-  const styles = StyleSheet.create({
+  const styles = {
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: colors.background.primary,
       justifyContent: 'center',
       alignItems: 'center',
       padding: 20,
-    },
+    } as ViewStyle,
     content: {
       alignItems: 'center',
       maxWidth: 300,
-    },
+    } as ViewStyle,
     title: {
       fontSize: 24,
       fontWeight: 'bold',
       color: colors.text.primary,
       marginBottom: 20,
       textAlign: 'center',
-    },
+    } as TextStyle,
     message: {
       fontSize: 16,
       color: colors.text.secondary,
       textAlign: 'center',
       marginTop: 20,
       lineHeight: 24,
-    },
+    } as TextStyle,
     loader: {
       marginBottom: 20,
-    },
+    } as ViewStyle,
     environmentInfo: {
       position: 'absolute',
       top: 50,
@@ -177,13 +173,13 @@ const BankingCallback: React.FC = () => {
       borderRadius: 8,
       borderWidth: 1,
       borderColor: colors.gray[200],
-    },
+    } as ViewStyle,
     environmentText: {
       fontSize: 12,
       color: colors.text.tertiary,
       fontFamily: 'monospace',
-    },
-  });
+    } as TextStyle,
+  };
 
   return (
     <View style={styles.container}>

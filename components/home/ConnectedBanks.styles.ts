@@ -1,0 +1,146 @@
+import { StyleSheet } from 'react-native';
+import { SPACING, SHADOWS } from '../../constants/Colors';
+
+export const styles = StyleSheet.create({
+  monthlyCard: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    borderRadius: 16,
+    padding: SPACING.lg,
+  },
+  monthlyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
+  },
+  monthlyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  bankCount: {
+    fontSize: 13,
+    fontWeight: '500',
+    opacity: 0.7,
+  },
+  viewAllLink: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  errorBanner: {
+    borderLeftWidth: 4,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#D32F2F',
+    fontSize: 13,
+    marginLeft: 8,
+    flex: 1,
+  },
+  dismissText: {
+    color: '#FF6B6B',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  warningBanner: {
+    borderLeftWidth: 4,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  warningText: {
+    color: '#B8860B',
+    fontSize: 13,
+    marginLeft: 8,
+    flex: 1,
+  },
+  fixText: {
+    color: '#FF8C00',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  emptyState: {
+    width: 300,
+    alignItems: 'center',
+    paddingVertical: SPACING.lg,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: SPACING.md,
+  },
+  connectButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  connectButtonText: {
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  bankCard: {
+    alignItems: 'center',
+    marginHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+  },
+  bankLogoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.md,
+    position: 'relative',
+    ...SHADOWS.md,
+  },
+  statusIndicator: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 3,
+  },
+  balanceAmount: {
+    fontWeight: '800',
+    fontSize: 24,
+    textAlign: 'center',
+    marginBottom: 4,
+    letterSpacing: -0.5,
+  },
+  accountType: {
+    fontWeight: '500',
+    fontSize: 14,
+    textAlign: 'center',
+    opacity: 0.8,
+  },
+  expiredText: {
+    color: '#FF6B6B',
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  addAccountText: {
+    fontWeight: '600',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+});

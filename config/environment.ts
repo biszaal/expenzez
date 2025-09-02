@@ -17,7 +17,7 @@ export interface EnvironmentConfig {
 const detectTestFlight = (): boolean => {
   // Check if we're on iOS and in release channel but not App Store
   const isIOS = Constants.platform?.ios;
-  const releaseChannel = Constants.expoConfig?.releaseChannel;
+  const releaseChannel = (Constants.expoConfig as any)?.releaseChannel || 'default';
   const appOwnership = Constants.appOwnership;
   
   // TestFlight apps typically have:
@@ -128,7 +128,7 @@ export const logEnvironmentInfo = (): void => {
       isProduction: ENV_CONFIG.isProduction,
       apiBaseURL: ENV_CONFIG.apiBaseURL,
       truelayerRedirectURL: ENV_CONFIG.truelayerRedirectURL,
-      releaseChannel: Constants.expoConfig?.releaseChannel,
+      releaseChannel: (Constants.expoConfig as any)?.releaseChannel || 'default',
       appOwnership: Constants.appOwnership,
       bundleId: Constants.expoConfig?.ios?.bundleIdentifier,
     });

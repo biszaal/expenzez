@@ -51,7 +51,7 @@ export const SkeletonPlaceholder: React.FC<SkeletonProps> = ({
           width,
           height,
           borderRadius,
-          backgroundColor: colors.border.primary,
+          backgroundColor: colors.border.medium,
           opacity,
         },
         style,

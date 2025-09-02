@@ -125,7 +125,7 @@ export const PinSetupModal: React.FC<PinSetupModalProps> = ({
         {
           backgroundColor: colors.background.secondary,
           borderWidth: 1,
-          borderColor: colors.border.primary,
+          borderColor: colors.border.medium,
         },
       ]}
       onPress={() => onPress(digit)}
@@ -196,7 +196,7 @@ export const PinSetupModal: React.FC<PinSetupModalProps> = ({
                   {
                     backgroundColor: colors.background.secondary,
                     borderWidth: 1,
-                    borderColor: colors.border.primary,
+                    borderColor: colors.border.medium,
                   },
                 ]}
                 onPress={() => handlePinPress('backspace')}
