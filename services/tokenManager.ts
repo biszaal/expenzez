@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, AppStateStatus } from 'react-native';
+import { deviceManager } from './deviceManager';
 
 export interface TokenInfo {
   token: string;
@@ -64,9 +65,6 @@ class TokenManager {
     const isExpired = expiresAt <= now;
     const shouldRefresh = expiresAt <= now + 5 * 60 * 1000; // 5 minutes before expiry
 
-    // Debug logging for token timing
-    const timeUntilExpiry = expiresAt - now;
-    console.log(`[TokenManager] Token info: expires in ${Math.round(timeUntilExpiry / 1000 / 60)} minutes, isExpired: ${isExpired}, shouldRefresh: ${shouldRefresh}`);
 
     return {
       token,
@@ -140,12 +138,9 @@ class TokenManager {
    */
   async getValidAccessToken(): Promise<string | null> {
     try {
-      console.log('[TokenManager] Getting valid access token...');
-      
       // Add timeout protection to the entire token validation process
       const tokenTimeout = new Promise<null>((_, reject) => {
         setTimeout(() => {
-          console.log('[TokenManager] Token validation timeout after 35 seconds');
           reject(new Error('Token validation timeout'));
         }, 35000);
       });
@@ -156,9 +151,6 @@ class TokenManager {
       console.error('[TokenManager] Failed to get valid access token:', error);
       
       // Don't immediately clear tokens for network/timeout errors
-      if (error.message?.includes('timeout') || error.code === 'NETWORK_ERROR') {
-        console.log('[TokenManager] Token validation failed due to network/timeout - keeping stored tokens for retry');
-      }
       
       return null;
     }
@@ -167,7 +159,6 @@ class TokenManager {
   private async getValidAccessTokenInternal(): Promise<string | null> {
     const storedTokens = await this.getStoredTokens();
     if (!storedTokens) {
-      console.log('[TokenManager] No stored tokens found');
       return null;
     }
 
@@ -175,26 +166,93 @@ class TokenManager {
     
     // If token is not expired and doesn't need refresh, return it
     if (!tokenInfo.isExpired && !tokenInfo.shouldRefresh) {
-      console.log('[TokenManager] Token is valid, returning existing token');
       return storedTokens.accessToken;
     }
 
-    // If token is expired for more than 2 hours, clear tokens and force re-login
+    // Check for persistent session before clearing tokens
     const now = Date.now();
     const timeExpired = now - tokenInfo.expiresAt;
-    const maxExpiredTime = 2 * 60 * 60 * 1000; // 2 hours instead of 30 minutes
+    
+    // For trusted devices, extend the grace period significantly
+    const isTrustedDevice = await deviceManager.isDeviceTrusted();
+    const persistentSession = await deviceManager.getPersistentSession();
+    
+    // Longer grace periods for trusted devices with persistent sessions
+    const maxExpiredTime = isTrustedDevice && persistentSession ? 
+      (7 * 24 * 60 * 60 * 1000) : // 7 days for trusted devices
+      (2 * 60 * 60 * 1000); // 2 hours for non-trusted devices
     
     if (tokenInfo.isExpired && timeExpired > maxExpiredTime) {
-      console.log(`[TokenManager] Token expired ${Math.round(timeExpired / 1000 / 60)} minutes ago (max: ${maxExpiredTime / 1000 / 60} minutes), clearing tokens and forcing re-login`);
-      await this.clearAllTokens();
-      return null;
-    } else if (tokenInfo.isExpired) {
-      console.log(`[TokenManager] Token expired ${Math.round(timeExpired / 1000 / 60)} minutes ago, but within grace period - attempting refresh`);
+      // Try to restore from persistent session before clearing tokens
+      if (persistentSession && isTrustedDevice) {
+        return await this.restoreFromPersistentSession(persistentSession);
+      } else {
+        await this.clearAllTokens();
+        return null;
+      }
     }
 
     // If token is expired or needs refresh, attempt refresh
-    console.log('[TokenManager] Token expired or needs refresh, attempting refresh...');
     return await this.refreshTokenIfNeeded();
+  }
+
+  /**
+   * Restore authentication from persistent session
+   */
+  private async restoreFromPersistentSession(session: any): Promise<string | null> {
+    try {
+      // Use the stored refresh token from persistent session
+      const storedTokens = await this.getStoredTokens();
+      if (!storedTokens) {
+        return null;
+      }
+
+      // Try to refresh using the persistent session's refresh token
+      const refreshToken = session.refreshToken || storedTokens.refreshToken;
+      if (!refreshToken) {
+        return null;
+      }
+
+      // Perform refresh with persistent session token
+      return await this.performTokenRefreshWithToken(refreshToken);
+    } catch (error) {
+      console.error('[TokenManager] Failed to restore from persistent session:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Refresh token using specific refresh token
+   */
+  private async performTokenRefreshWithToken(refreshToken: string): Promise<string | null> {
+    try {
+      const axios = await import('axios').then(m => m.default);
+      
+      const response = await axios.post(
+        'https://yqxlmk05s5.execute-api.eu-west-2.amazonaws.com/api/auth/refresh',
+        { refreshToken },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 15000,
+        }
+      );
+
+      if (response.data?.accessToken) {
+        // Store new tokens
+        await this.storeTokens({
+          accessToken: response.data.accessToken,
+          idToken: response.data.idToken,
+          refreshToken: refreshToken, // Keep existing refresh token
+        });
+
+        return response.data.accessToken;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error('[TokenManager] Persistent session refresh failed:', error);
+      return null;
+    }
   }
 
   /**
@@ -205,7 +263,6 @@ class TokenManager {
     const now = Date.now();
     if (now - this.lastRefreshAttempt < 30000) { // 30 seconds
       if (this.refreshAttempts >= 3) {
-        console.log('[TokenManager] Too many refresh attempts, clearing tokens and forcing re-login');
         await this.clearAllTokens();
         return null;
       }
@@ -240,13 +297,8 @@ class TokenManager {
    */
   private async performTokenRefresh(): Promise<string | null> {
     try {
-      console.log('[TokenManager] Starting token refresh...');
       const storedTokens = await this.getStoredTokens();
       if (!storedTokens) {
-        console.log('[TokenManager] ⚠️ No stored tokens found during refresh - checking individual tokens:');
-        const accessToken = await AsyncStorage.getItem('accessToken');
-        const refreshToken = await AsyncStorage.getItem('refreshToken');
-        console.log(`[TokenManager] Debug - accessToken: ${accessToken ? 'exists' : 'missing'}, refreshToken: ${refreshToken ? 'exists' : 'missing'}`);
         return null; // Don't throw error, just return null
       }
 
@@ -255,8 +307,6 @@ class TokenManager {
         setTimeout(() => reject(new Error('Token refresh timeout after 35 seconds')), 35000);
       });
 
-      console.log('[TokenManager] Making token refresh API call...');
-      
       // Use direct axios call to avoid circular dependency with the main API client
       const axios = await import('axios').then(m => m.default);
       
@@ -266,10 +316,6 @@ class TokenManager {
       
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          // Only log first attempt to reduce spam
-          if (attempt === 1) {
-            console.log(`[TokenManager] Starting token refresh (will retry up to ${maxRetries} times if needed)`);
-          }
           
           const refreshPromise = axios.post(
             'https://yqxlmk05s5.execute-api.eu-west-2.amazonaws.com/api/auth/refresh',
@@ -286,7 +332,6 @@ class TokenManager {
           const response = await Promise.race([refreshPromise, refreshTimeout]);
           
           if (response.data?.accessToken) {
-            console.log(`✅ [TokenManager] Token refresh succeeded on attempt ${attempt}`);
             // Store new tokens and return early on success
             await this.storeTokens({
               accessToken: response.data.accessToken,
@@ -294,7 +339,6 @@ class TokenManager {
               refreshToken: storedTokens.refreshToken
             });
 
-            console.log('✅ Token refreshed successfully');
             return response.data.accessToken;
           } else {
             throw new Error('No access token in refresh response');
@@ -306,16 +350,6 @@ class TokenManager {
           const isTimeout = error.message?.includes('timeout') || error.code === 'ECONNABORTED';
           const isRetryable = isNetworkError || isTimeout || (error.response?.status >= 500);
           
-          // Only log detailed errors on the final attempt to reduce log spam
-          if (attempt === maxRetries || !isRetryable) {
-            console.log(`❌ [TokenManager] Token refresh attempt ${attempt} failed:`, {
-              code: error.code,
-              status: error.response?.status,
-              isRetryable,
-              willRetry: false
-            });
-          }
-          
           // Don't retry for 4xx errors (except 503) as they indicate auth issues
           if (!isRetryable || attempt === maxRetries) {
             break;
@@ -324,7 +358,6 @@ class TokenManager {
           // Exponential backoff: wait longer between retries
           const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
           if (attempt < maxRetries) {
-            console.log(`⏳ [TokenManager] Retrying in ${backoffDelay}ms... (${attempt}/${maxRetries})`);
             await new Promise(resolve => setTimeout(resolve, backoffDelay));
           }
         }
@@ -333,25 +366,9 @@ class TokenManager {
       // If we get here, all attempts failed
       throw lastError;
     } catch (error: any) {
-      // Provide more detailed but less alarming error information
-      if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error') || error.code === 'ECONNREFUSED') {
-        console.log('🌐 [TokenManager] Token refresh failed due to network connectivity - will keep existing tokens');
-      } else if (error.message?.includes('timeout') || error.code === 'ECONNABORTED') {
-        console.log('⏱️ [TokenManager] Token refresh timed out - server may be slow, will keep existing tokens');
-      } else if (error.response?.status === 401) {
-        console.error('❌ [TokenManager] Refresh token is invalid or expired');
-      } else if (error.response?.status >= 500) {
-        console.log('🔧 [TokenManager] Server error during token refresh - will keep existing tokens');
-      } else {
-        console.error('❌ [TokenManager] Token refresh failed:', error);
-      }
-      
       // Only clear tokens for definitive auth failures, not network issues
       if (error.response?.status === 401 && error.message?.includes('invalid_grant')) {
-        console.log('🔄 Clearing tokens due to invalid refresh token');
         await this.clearAllTokens();
-      } else {
-        console.log('🔄 [TokenManager] Keeping tokens - error may be temporary or network-related');
       }
       
       return null;
@@ -371,7 +388,6 @@ class TokenManager {
       const tokenInfo = await this.getTokenInfo(storedTokens.accessToken);
       
       if (tokenInfo.shouldRefresh || tokenInfo.isExpired) {
-        console.log('🔄 Token needs refresh, refreshing...');
         await this.refreshTokenIfNeeded();
       }
     } catch (error) {
@@ -384,9 +400,6 @@ class TokenManager {
    */
   async clearAllTokens(): Promise<void> {
     try {
-      console.log('🧹 [TokenManager] Clearing all tokens - this will log out the user');
-      console.trace('[TokenManager] Token clear stack trace:'); // This will show us where tokens are being cleared from
-      
       await AsyncStorage.multiRemove([
         'accessToken',
         'idToken',
@@ -395,8 +408,6 @@ class TokenManager {
         'isLoggedIn',
         'user'
       ]);
-      
-      console.log('✅ [TokenManager] All tokens cleared successfully');
     } catch (error) {
       console.error('❌ [TokenManager] Failed to clear tokens:', error);
     }
@@ -423,7 +434,6 @@ class TokenManager {
       const now = Date.now();
       const timeExpired = now - tokenInfo.expiresAt;
       const isWithinGracePeriod = timeExpired <= 2 * 60 * 60 * 1000; // Allow up to 2 hours of expiry
-      console.log(`[TokenManager] Token expired ${Math.round(timeExpired / 1000 / 60)} minutes ago, within grace period: ${isWithinGracePeriod}`);
       return isWithinGracePeriod;
     } catch (error) {
       console.error('Failed to check login status:', error);
