@@ -27,8 +27,9 @@ interface TextFieldProps {
   autoCorrect?: boolean;
   error?: string;
   disabled?: boolean;
+  editable?: boolean;
   required?: boolean;
-  style?: ViewStyle;
+  style?: ViewStyle | ViewStyle[];
   inputStyle?: TextStyle;
   labelStyle?: TextStyle;
   // iOS-specific password autofill props
@@ -74,6 +75,7 @@ export default function TextField({
   autoCorrect = false,
   error,
   disabled = false,
+  editable = true,
   required = false,
   style,
   inputStyle,
@@ -175,7 +177,7 @@ export default function TextField({
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
           autoCorrect={autoCorrect}
-          editable={!disabled}
+          editable={editable && !disabled}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           textContentType={textContentType}

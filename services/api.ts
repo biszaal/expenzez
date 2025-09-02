@@ -20,8 +20,8 @@ export {
   getCachedData,
   setCachedData,
   clearCachedData
-} from './api';
+} from './api/index';
 
 // For backward compatibility, also export as default
-import { api } from './api';
+import { api } from './api/index';
 export default api;

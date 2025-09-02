@@ -40,10 +40,10 @@ export const handleBankingCallback = (url: string): BankingCallbackParams | null
       // Navigate to banking callback handler
       if (callbackParams.code) {
         // Success - redirect to banking success page
-        router.push('/banking/callback?code=' + callbackParams.code);
+        router.push(('/banking/callback?code=' + callbackParams.code) as any);
       } else if (callbackParams.error) {
         // Error - redirect to banking error page
-        router.push('/banking/callback?error=' + callbackParams.error);
+        router.push(('/banking/callback?error=' + callbackParams.error) as any);
       }
 
       return callbackParams;

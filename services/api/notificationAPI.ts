@@ -121,7 +121,8 @@ export const notificationAPI = {
         return { hasReports: false, message: 'Monthly reports feature not available' };
       }
       if (error.response?.status === 401) {
-        // Silently return fallback for 401 errors (endpoint not deployed yet)
+        // Authentication error - feature requires backend deployment
+        console.log('[NotificationAPI] Monthly reports require authentication - feature not fully deployed');
         return { hasReports: false, message: 'Monthly reports feature not available yet' };
       }
       console.error('Error fetching monthly report:', error);

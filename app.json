@@ -24,10 +24,6 @@
       "config": {
         "usesNonExemptEncryption": false
       },
-      "associatedDomains": [
-        "applinks:expenzez.com",
-        "applinks:www.expenzez.com"
-      ],
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,

@@ -162,6 +162,51 @@ export const aiService = {
     }
   },
 
+  // Get AI chat history
+  getAIChatHistory: async () => {
+    try {
+      const response = await aiAPI.get("/ai/chat-history");
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching AI chat history:", error);
+      if (error.response?.status === 404 || error.response?.status === 401) {
+        return {
+          success: true,
+          messages: []
+        };
+      }
+      throw error;
+    }
+  },
+
+  // Save AI chat message
+  saveAIChatMessage: async (role: string, content: string) => {
+    try {
+      const response = await aiAPI.post("/ai/chat-message", { role, content });
+      return response.data;
+    } catch (error: any) {
+      console.error("Error saving AI chat message:", error);
+      if (error.response?.status === 404 || error.response?.status === 401) {
+        return { success: true };
+      }
+      throw error;
+    }
+  },
+
+  // Clear AI chat history
+  clearAIChatHistory: async () => {
+    try {
+      const response = await aiAPI.delete("/ai/chat-history");
+      return response.data;
+    } catch (error: any) {
+      console.error("Error clearing AI chat history:", error);
+      if (error.response?.status === 404 || error.response?.status === 401) {
+        return { success: true };
+      }
+      throw error;
+    }
+  },
+
   // Get monthly financial report
   getMonthlyReport: async (month?: string, year?: string) => {
     try {

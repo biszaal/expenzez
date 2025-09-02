@@ -11,7 +11,7 @@ import {
   Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { bankingAPI, notificationAPI } from "../../services/api";
+import { bankingAPI, notificationAPI, aiService } from "../../services/api";
 import { useTheme } from "../../contexts/ThemeContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { spacing, borderRadius, typography } from "../../constants/theme";
@@ -58,7 +58,7 @@ export default function AIAssistantScreen() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await bankingAPI.getAIChatHistory();
+        const res = await aiService.getAIChatHistory();
         if (res.history && res.history.length > 0) {
           setMessages(
             res.history.map((msg: any) => ({
@@ -88,6 +88,30 @@ export default function AIAssistantScreen() {
     
     const fetchMonthlyReport = async () => {
       try {
+        // Wait for authentication to be ready
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Check if we have valid tokens before making the request
+        const { tokenManager } = await import('../../services/tokenManager');
+        
+        // Try to get a valid token, but don't proceed if network issues prevent token refresh
+        let token: string | null = null;
+        try {
+          token = await tokenManager.getValidAccessToken();
+        } catch (tokenError: any) {
+          // If token refresh fails due to network issues, skip the API call
+          if (tokenError.code === 'ERR_NETWORK' || tokenError.message?.includes('Network Error')) {
+            console.log('[AI Assistant] Token refresh failed due to network issues - skipping monthly report fetch');
+            return;
+          }
+          throw tokenError; // Re-throw non-network errors
+        }
+        
+        if (!token) {
+          console.log('[AI Assistant] No valid token available for monthly report - skipping');
+          return;
+        }
+        
         setReportLoading(true);
         const reportData = await notificationAPI.getMonthlyReport('latest');
         if (reportData.report) {
@@ -99,6 +123,11 @@ export default function AIAssistantScreen() {
       } catch (error: any) {
         // Silently handle monthly reports unavailability (expected in development)
         // The error is already handled gracefully in the API layer
+        if (error.response?.status === 401) {
+          console.log('[AI Assistant] Monthly report authentication failed - likely due to network issues during token refresh');
+        } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+          console.log('[AI Assistant] Network error prevented monthly report fetch - will retry later');
+        }
       } finally {
         setReportLoading(false);
       }
@@ -123,13 +152,13 @@ export default function AIAssistantScreen() {
     
     try {
       // Save user message (don't block on failure)
-      const saveResult = await bankingAPI.saveAIChatMessage("user", userMessage.content);
+      const saveResult = await aiService.saveAIChatMessage("user", userMessage.content);
       if (saveResult.fallback && __DEV__) {
         console.log("💾 User message not saved to server:", saveResult.message);
       }
       
       // Get AI insight (with fallback support)
-      const res = await bankingAPI.getAIInsight(userMessage.content);
+      const res = await aiService.getAIInsight(userMessage.content);
       const aiMessage: Message = {
         role: "assistant",
         content: res.answer || "Sorry, I couldn't generate an answer.",
@@ -138,7 +167,7 @@ export default function AIAssistantScreen() {
       setMessages((prev) => [...prev, aiMessage]);
       
       // Save AI response (don't block on failure)
-      const saveAIResult = await bankingAPI.saveAIChatMessage("assistant", aiMessage.content);
+      const saveAIResult = await aiService.saveAIChatMessage("assistant", aiMessage.content);
       if (saveAIResult.fallback && __DEV__) {
         console.log("💾 AI message not saved to server:", saveAIResult.message);
       }
@@ -151,19 +180,49 @@ export default function AIAssistantScreen() {
     } catch (err: any) {
       console.error("❌ AI Assistant error:", err);
       
-      // Provide user-friendly error message
-      const errorMsg = "I'm experiencing some technical difficulties. Please try again in a moment, or check your internet connection.";
-      
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: errorMsg },
-      ]);
-      
-      // Try to save error message (don't throw if it fails)
+      // Try to get a fallback response instead of generic error
       try {
-        await bankingAPI.saveAIChatMessage("assistant", errorMsg);
-      } catch (saveError) {
-        console.log("Failed to save error message:", saveError);
+        console.log("🤖 Attempting fallback response for error...");
+        const fallbackRes = await aiService.getAIInsight(userMessage.content);
+        
+        if (fallbackRes.success && fallbackRes.answer) {
+          // Use the fallback response
+          const aiMessage: Message = {
+            role: "assistant",
+            content: fallbackRes.answer,
+          };
+          setMessages((prev) => [...prev, aiMessage]);
+          
+          if (fallbackRes.isFallback && __DEV__) {
+            console.log("🤖 Successfully used fallback response");
+          }
+          
+          // Try to save the fallback response
+          try {
+            await aiService.saveAIChatMessage("assistant", aiMessage.content);
+          } catch (saveError) {
+            console.log("Failed to save fallback message:", saveError);
+          }
+        } else {
+          throw new Error("Fallback also failed");
+        }
+      } catch (fallbackErr) {
+        console.error("❌ Fallback also failed:", fallbackErr);
+        
+        // Only show generic error if fallback completely fails
+        const errorMsg = "I'm experiencing some technical difficulties. Please try again in a moment, or check your internet connection.";
+        
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: errorMsg },
+        ]);
+        
+        // Try to save error message (don't throw if it fails)
+        try {
+          await aiService.saveAIChatMessage("assistant", errorMsg);
+        } catch (saveError) {
+          console.log("Failed to save error message:", saveError);
+        }
       }
     } finally {
       setLoading(false);
@@ -174,7 +233,7 @@ export default function AIAssistantScreen() {
     if (loading) return;
     
     try {
-      const clearResult = await bankingAPI.clearAIChatHistory();
+      const clearResult = await aiService.clearAIChatHistory();
       if (clearResult.fallback && __DEV__) {
         console.log("🗑️ Chat history not cleared on server:", clearResult.message);
       }
