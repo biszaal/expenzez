@@ -83,3 +83,16 @@ coverage/
 
 # Example app
 app-example
+
+# Backup and temporary files
+*.backup
+*.bak
+*.old
+*.copy
+*.disabled
+
+# Test files
+*apiTest*
+
+# Development logs
+*.log
