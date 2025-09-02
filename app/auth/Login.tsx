@@ -22,6 +22,7 @@ import { jwtDecode } from "jwt-decode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAlert } from "../../hooks/useAlert";
 import { AppleSignInButton, useAppleSignIn } from "../../components/auth/AppleSignInButton";
+import { RememberMeCheckbox } from "../../components/RememberMeCheckbox";
 
 export default function Login() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [messageShown, setMessageShown] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Handle incoming parameters from registration redirect
   useEffect(() => {
@@ -58,7 +60,7 @@ export default function Login() {
     }
     setIsLoading(true);
     try {
-      const result = await login(identifier, password);
+      const result = await login(identifier, password, rememberMe);
       if (result.success) {
         // Optionally, auto-redirect to main app
         const idToken = await AsyncStorage.getItem("idToken");
@@ -165,7 +167,8 @@ export default function Login() {
           credential.authorizationCode,
           credential.user,
           credential.email,
-          credential.fullName
+          credential.fullName,
+          rememberMe
         );
         
         if (result.success) {
@@ -400,6 +403,15 @@ export default function Login() {
                     />
                   </View>
 
+                  {/* Remember Me Checkbox */}
+                  <View style={styles.checkboxContainer}>
+                    <RememberMeCheckbox
+                      value={rememberMe}
+                      onValueChange={setRememberMe}
+                      label="Remember me on this device"
+                    />
+                  </View>
+
                   {/* Forgot Password */}
                   <TouchableOpacity
                     style={styles.forgotPassword}
@@ -560,6 +572,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 2,
     fontSize: 16,
     minHeight: layout.inputHeight,
+  },
+
+  // Remember Me Checkbox
+  checkboxContainer: {
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.xs,
   },
 
   // Clean Buttons

@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { authAPI } from "../../services/api";
 import { CURRENT_API_CONFIG } from "../../config/api";
+import { deviceManager } from "../../services/deviceManager";
 
 interface User {
   id: string;
@@ -33,18 +34,21 @@ interface AuthContextType {
   userBudget: number | null;
   login: (
     identifier: string,
-    password: string
+    password: string,
+    rememberMe?: boolean
   ) => Promise<{ success: boolean; error?: string }>;
   loginWithApple: (
     identityToken: string,
     authorizationCode: string,
     user?: string,
     email?: string | null,
-    fullName?: { givenName?: string | null; familyName?: string | null } | null
+    fullName?: { givenName?: string | null; familyName?: string | null } | null,
+    rememberMe?: boolean
   ) => Promise<{ success: boolean; error?: string; needsProfileCompletion?: boolean; user?: any }>;
   autoLoginAfterVerification: (
     email: string,
-    password: string
+    password: string,
+    rememberMe?: boolean
   ) => Promise<{ success: boolean; error?: string }>;
   register: (
     input: RegisterInput
@@ -53,6 +57,8 @@ interface AuthContextType {
   clearAllData: () => Promise<void>;
   clearCorruptedCache: () => Promise<void>;
   loading: boolean;
+  isDeviceTrusted: boolean;
+  setRememberMe: (rememberMe: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -67,6 +73,8 @@ const AuthContext = createContext<AuthContextType>({
   clearAllData: async () => {},
   clearCorruptedCache: async () => {},
   loading: true,
+  isDeviceTrusted: false,
+  setRememberMe: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -75,8 +83,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userBudget, setUserBudget] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasLoadedAuthState, setHasLoadedAuthState] = useState(false);
+  const [isDeviceTrusted, setIsDeviceTrusted] = useState(false);
 
-  // Removed aggressive token validation - let API interceptors handle token refresh
+  // Initialize device trust state
+  const initializeDeviceState = async () => {
+    try {
+      const trusted = await deviceManager.isDeviceTrusted();
+      setIsDeviceTrusted(trusted);
+      console.log('[AuthContext] Device trust state:', trusted);
+    } catch (error) {
+      console.error('[AuthContext] Error checking device trust:', error);
+    }
+  };
+
+  // Set remember me preference
+  const setRememberMe = async (rememberMe: boolean) => {
+    try {
+      if (rememberMe && user) {
+        // Create persistent session for current user
+        const refreshToken = await AsyncStorage.getItem('refreshToken');
+        if (refreshToken && user.id) {
+          await deviceManager.createPersistentSession(user.id, refreshToken, rememberMe);
+          await deviceManager.trustDevice(rememberMe);
+          setIsDeviceTrusted(true);
+        }
+      } else {
+        // Clear persistent session
+        await deviceManager.untrustDevice();
+        setIsDeviceTrusted(false);
+      }
+      console.log('[AuthContext] Remember me preference set:', rememberMe);
+    } catch (error) {
+      console.error('[AuthContext] Error setting remember me:', error);
+    }
+  };
 
   const loadAuthState = async () => {
       console.log('🔄 [AuthContext] Starting auth state loading...');
@@ -95,10 +135,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const now = Date.now();
         const ONE_HOUR = 60 * 60 * 1000;
         
+        // Check if device is trusted to adjust cache clearing strategy
+        const isTrustedDevice = await deviceManager.isDeviceTrusted();
+        const persistentSession = await deviceManager.getPersistentSession();
+        
+        // Less aggressive cache clearing for trusted devices with persistent sessions
+        const cacheExpiryTime = (isTrustedDevice && persistentSession) ? 
+          (24 * ONE_HOUR) : // 24 hours for trusted devices
+          (6 * ONE_HOUR); // 6 hours for non-trusted devices
+        
         const shouldClearCache = (
           storedVersion !== CACHE_VERSION || // Version changed
           !lastClearTime || // Never cleared
-          (now - parseInt(lastClearTime || '0')) > (6 * ONE_HOUR) // More than 6 hours ago
+          (now - parseInt(lastClearTime || '0')) > cacheExpiryTime
         );
         
         if (shouldClearCache) {
@@ -182,11 +231,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             ]);
           }
         } else {
+          // Check for persistent session if no stored login found
+          console.log('🔄 [AuthContext] No stored login found, checking for persistent session...');
+          const persistentSession = await deviceManager.getPersistentSession();
+          
+          if (persistentSession && await deviceManager.isDeviceTrusted()) {
+            console.log('✅ [AuthContext] Valid persistent session found, attempting automatic login');
+            // TODO: Implement automatic login from persistent session
+            // This would involve calling the refresh endpoint with the stored refresh token
+            // For now, just log that we found a session
+          }
         }
 
         if (storedBudget) {
           setUserBudget(parseFloat(storedBudget));
         }
+
+        // Initialize device state after loading auth
+        await initializeDeviceState();
+
       } catch (error) {
         console.log('❌ [AuthContext] Error during auth state loading:', error);
         // Don't aggressively clear auth data for minor errors - let user stay logged in
@@ -219,7 +282,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  const login = async (identifier: string, password: string) => {
+  const login = async (identifier: string, password: string, rememberMe: boolean = false) => {
     try {
       setLoading(true);
 
@@ -255,6 +318,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(response.user);
         setHasLoadedAuthState(true); // Mark that we've handled auth state
 
+        // Create persistent session if rememberMe is enabled
+        if (rememberMe && response.refreshToken && response.user?.id) {
+          await deviceManager.createPersistentSession(response.user.id, response.refreshToken, rememberMe);
+          await deviceManager.trustDevice(rememberMe);
+          setIsDeviceTrusted(true);
+          console.log('✅ [AuthContext] Persistent session created for remembered login');
+        }
+
+        // Initialize device state
+        await initializeDeviceState();
 
         // Verify tokens were stored
         const storedAccessToken = await AsyncStorage.getItem("accessToken");
@@ -281,7 +354,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     authorizationCode: string,
     user?: string,
     email?: string | null,
-    fullName?: { givenName?: string | null; familyName?: string | null } | null
+    fullName?: { givenName?: string | null; familyName?: string | null } | null,
+    rememberMe: boolean = false
   ) => {
     try {
       setLoading(true);
@@ -320,6 +394,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(response.user);
         setHasLoadedAuthState(true);
 
+        // Create persistent session if rememberMe is enabled
+        if (rememberMe && tokens.refreshToken && response.user?.id) {
+          await deviceManager.createPersistentSession(response.user.id, tokens.refreshToken, rememberMe);
+          await deviceManager.trustDevice(rememberMe);
+          setIsDeviceTrusted(true);
+          console.log('✅ [AuthContext] Persistent session created for Apple login');
+        }
+
+        // Initialize device state
+        await initializeDeviceState();
         
         // Check if profile completion is needed
         if (response.needsProfileCompletion) {
@@ -350,7 +434,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const autoLoginAfterVerification = async (email: string, password: string) => {
+  const autoLoginAfterVerification = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
 
       const loginPayload = { email, password };
@@ -374,6 +458,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Update state
         setIsLoggedIn(true);
         setUser(response.user);
+
+        // Create persistent session if rememberMe is enabled
+        if (rememberMe && response.refreshToken && response.user?.id) {
+          await deviceManager.createPersistentSession(response.user.id, response.refreshToken, rememberMe);
+          await deviceManager.trustDevice(rememberMe);
+          setIsDeviceTrusted(true);
+          console.log('✅ [AuthContext] Persistent session created for auto login');
+        }
+
+        // Initialize device state
+        await initializeDeviceState();
 
         return { success: true };
       } else {
@@ -414,6 +509,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
+      // Clear persistent session and device trust
+      await deviceManager.clearPersistentSession();
+      await deviceManager.untrustDevice();
+      setIsDeviceTrusted(false);
 
       // Clear all auth and user-specific data
       const itemsToRemove = [
@@ -442,7 +541,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Also try to remove all keys to be extra sure
       try {
         const allKeys = await AsyncStorage.getAllKeys();
-        await AsyncStorage.multiRemove(allKeys);
+        // Keep device-related keys for future logins
+        const keysToKeep = ['device_id', 'trusted_devices', 'device_registrations'];
+        const keysToRemove = allKeys.filter(key => !keysToKeep.includes(key));
+        await AsyncStorage.multiRemove(keysToRemove);
       } catch (error) {
         // Silent error handling
       }
@@ -534,6 +636,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         clearAllData,
         clearCorruptedCache,
         loading,
+        isDeviceTrusted,
+        setRememberMe,
       }}
     >
       {children}
