@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../contexts/ThemeContext";
-import { bankingAPI } from "../../services/api";
+import { bankingAPI, budgetAPI } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
@@ -68,12 +68,19 @@ export default function EditBudgetPage() {
   React.useEffect(() => {
     const loadData = async () => {
       try {
-        // Load existing budgets from storage
-        const storedMainBudget = await AsyncStorage.getItem('mainBudget');
-        const storedCategoryBudgets = await AsyncStorage.getItem('categoryBudgets');
-        
-        if (storedMainBudget) {
-          setMainBudget(storedMainBudget);
+        // Load existing budgets from database
+        let budgetPreferences;
+        try {
+          budgetPreferences = await budgetAPI.getBudgetPreferences();
+          setMainBudget(String(budgetPreferences.monthlyBudget));
+          console.log("✅ Budget preferences loaded from database:", budgetPreferences);
+        } catch (budgetError) {
+          console.error("❌ Error fetching budget preferences:", budgetError);
+          // Fallback to AsyncStorage if database fails
+          const storedMainBudget = await AsyncStorage.getItem('mainBudget');
+          if (storedMainBudget) {
+            setMainBudget(storedMainBudget);
+          }
         }
 
         // Fetch transactions to generate categories
@@ -94,11 +101,19 @@ export default function EditBudgetPage() {
 
         // Set up budget state
         const initialBudgets: Record<string, string> = {};
-        const parsedStoredBudgets = storedCategoryBudgets ? JSON.parse(storedCategoryBudgets) : {};
+        let categoryBudgets = {};
+        
+        // Use database category budgets if available, otherwise fallback to AsyncStorage
+        if (budgetPreferences && budgetPreferences.categoryBudgets) {
+          categoryBudgets = budgetPreferences.categoryBudgets;
+        } else {
+          const storedCategoryBudgets = await AsyncStorage.getItem('categoryBudgets');
+          categoryBudgets = storedCategoryBudgets ? JSON.parse(storedCategoryBudgets) : {};
+        }
         
         dynamicCategories.forEach(cat => {
           // Use stored budget if available, otherwise default to 0
-          initialBudgets[cat.id] = String(parsedStoredBudgets[cat.id] || 0);
+          initialBudgets[cat.id] = String(categoryBudgets[cat.name] || categoryBudgets[cat.id] || 0);
         });
         
         setBudgets(initialBudgets);
@@ -136,20 +151,44 @@ export default function EditBudgetPage() {
     }
     
     try {
-      // Save main budget
-      await AsyncStorage.setItem('mainBudget', mainBudget);
-      
-      // Convert string budgets to numbers and save
-      const numericBudgets: Record<string, number> = {};
-      Object.entries(budgets).forEach(([id, value]) => {
-        numericBudgets[id] = parseFloat(value) || 0;
+      // Convert category budgets by mapping category IDs back to names
+      const categoryBudgetsByName: Record<string, number> = {};
+      categories.forEach(cat => {
+        const budgetValue = parseFloat(budgets[cat.id]) || 0;
+        if (budgetValue > 0) {
+          categoryBudgetsByName[cat.name] = budgetValue;
+        }
       });
-      
-      await AsyncStorage.setItem('categoryBudgets', JSON.stringify(numericBudgets));
-      
-      Alert.alert("Success", "Budgets saved successfully!", [
-        { text: "OK", onPress: () => router.back() }
-      ]);
+
+      // Save to database
+      try {
+        await budgetAPI.updateBudgetPreferences({
+          monthlyBudget: parseFloat(mainBudget) || 0,
+          categoryBudgets: categoryBudgetsByName,
+          alertThreshold: 80, // Keep existing alert threshold
+          currency: "GBP"
+        });
+        console.log("✅ Budget preferences saved to database");
+        
+        Alert.alert("Success", "Budgets saved successfully!", [
+          { text: "OK", onPress: () => router.back() }
+        ]);
+      } catch (dbError) {
+        console.error("❌ Error saving to database:", dbError);
+        
+        // Fallback to AsyncStorage if database fails
+        await AsyncStorage.setItem('mainBudget', mainBudget);
+        
+        const numericBudgets: Record<string, number> = {};
+        Object.entries(budgets).forEach(([id, value]) => {
+          numericBudgets[id] = parseFloat(value) || 0;
+        });
+        await AsyncStorage.setItem('categoryBudgets', JSON.stringify(numericBudgets));
+        
+        Alert.alert("Success", "Budgets saved locally (database unavailable)!", [
+          { text: "OK", onPress: () => router.back() }
+        ]);
+      }
     } catch (error) {
       console.error("Error saving budgets:", error);
       Alert.alert("Error", "Failed to save budgets. Please try again.");

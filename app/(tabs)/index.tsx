@@ -8,7 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
-import { bankingAPI } from "../../services/api";
+import { bankingAPI, budgetAPI } from "../../services/api";
 import { SPACING } from "../../constants/Colors";
 import { APP_STRINGS } from "../../constants/strings";
 import { TabLoadingScreen } from "../../components/ui";
@@ -339,6 +339,16 @@ export default function HomePage() {
       }, 0);
       setThisMonthSpent(spent);
       console.log("This month spent:", spent);
+
+      // Fetch budget preferences from database
+      try {
+        const budgetPreferences = await budgetAPI.getBudgetPreferences();
+        setUserBudget(budgetPreferences.monthlyBudget);
+        console.log("✅ Budget preferences loaded:", budgetPreferences.monthlyBudget);
+      } catch (budgetError) {
+        console.error("❌ Error fetching budget preferences:", budgetError);
+        // Keep the current value if fetch fails
+      }
 
       console.log("=== DATA FETCH COMPLETE ===");
     } catch (error: any) {

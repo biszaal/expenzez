@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
 import { TabLoadingScreen } from "../../components/ui";
 import { spacing } from "../../constants/theme";
-import { bankingAPI } from "../../services/api";
+import { bankingAPI, budgetAPI } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
@@ -274,10 +274,18 @@ export default function SpendingPage() {
   // Generate categories from transactions
   const generateCategoriesFromTransactions = async () => {
     try {
-      const storedCategoryBudgets = await AsyncStorage.getItem("categoryBudgets");
-      const parsedStoredBudgets = storedCategoryBudgets
-        ? JSON.parse(storedCategoryBudgets)
-        : {};
+      // Fetch budget preferences from database
+      let categoryBudgets = {};
+      try {
+        const budgetPreferences = await budgetAPI.getBudgetPreferences();
+        categoryBudgets = budgetPreferences.categoryBudgets || {};
+        console.log("✅ Category budgets loaded from database:", categoryBudgets);
+      } catch (budgetError) {
+        console.error("❌ Error fetching budget preferences:", budgetError);
+        // Fallback to AsyncStorage if database fails
+        const storedCategoryBudgets = await AsyncStorage.getItem("categoryBudgets");
+        categoryBudgets = storedCategoryBudgets ? JSON.parse(storedCategoryBudgets) : {};
+      }
 
       const categoryMap = new Map();
 
@@ -297,7 +305,7 @@ export default function SpendingPage() {
           name: cat.name,
           icon: cat.icon,
           color: cat.color,
-          defaultBudget: parsedStoredBudgets[cat.name] || 500,
+          defaultBudget: categoryBudgets[cat.name] || 500,
         });
       });
 
@@ -307,7 +315,7 @@ export default function SpendingPage() {
         name: "Other",
         icon: "Other",
         color: "#95A5A6",
-        defaultBudget: parsedStoredBudgets["Other"] || 200,
+        defaultBudget: categoryBudgets["Other"] || 100,
       });
 
       return Array.from(categoryMap.values());
