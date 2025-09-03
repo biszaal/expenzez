@@ -104,9 +104,11 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return api(originalRequest);
         } else {
-          console.log(`[API] Token refresh failed - tokens may already be cleared by tokenManager`);
+          console.log(`[API] Token refresh failed - refresh token may have expired`);
           // Don't clear tokens here - let tokenManager handle token clearing decisions
           await AsyncStorage.setItem('isLoggedIn', 'false');
+          // Show a more user-friendly message about session expiration
+          console.log(`[API] Session expired - user will need to log in again`);
         }
       } catch (refreshError: any) {
         // If token refresh fails due to network issues, don't mark user as logged out
@@ -150,9 +152,11 @@ aiAPI.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return aiAPI(originalRequest);
         } else {
-          console.log(`[AI API] Token refresh failed - tokens may already be cleared by tokenManager`);
+          console.log(`[AI API] Token refresh failed - refresh token may have expired`);
           // Don't clear tokens here - let tokenManager handle token clearing decisions
           await AsyncStorage.setItem('isLoggedIn', 'false');
+          // Show a more user-friendly message about session expiration
+          console.log(`[AI API] Session expired - user will need to log in again`);
         }
       } catch (refreshError: any) {
         // If token refresh fails due to network issues, don't mark user as logged out

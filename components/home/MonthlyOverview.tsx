@@ -88,7 +88,7 @@ export const MonthlyOverview: React.FC<MonthlyOverviewProps> = ({
               )}
             </View>
             <Text style={[styles.professionalMonthlyStatValue, { color: colors.text.primary }]}>
-              £{(userBudget || 2000).toFixed(2)}
+              £{(userBudget || 0).toFixed(2)}
             </Text>
             <View style={[styles.professionalMonthlyStatProgress, { backgroundColor: colors.background.secondary }]}>
               <View style={[styles.professionalMonthlyStatProgressFill, { 

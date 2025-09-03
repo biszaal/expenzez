@@ -367,8 +367,15 @@ class TokenManager {
       throw lastError;
     } catch (error: any) {
       // Only clear tokens for definitive auth failures, not network issues
-      if (error.response?.status === 401 && error.message?.includes('invalid_grant')) {
-        await this.clearAllTokens();
+      if (error.response?.status === 401) {
+        console.log('[TokenManager] 401 error during token refresh - refresh token may have expired');
+        // Check if it's an explicit refresh token expiration
+        if (error.response?.data?.message?.includes('expired') || 
+            error.response?.data?.message?.includes('invalid_grant') ||
+            error.message?.includes('invalid_grant')) {
+          console.log('[TokenManager] Refresh token has expired - clearing all tokens');
+          await this.clearAllTokens();
+        }
       }
       
       return null;
