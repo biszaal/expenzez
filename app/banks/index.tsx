@@ -325,7 +325,7 @@ export default function BanksScreen() {
       );
 
       if (response.link) {
-        // Open TrueLayer auth page directly - no bank selection needed
+        // Open Nordigen/GoCardless auth page directly - no bank selection needed
         await WebBrowser.openAuthSessionAsync(
           response.link,
           DEEP_LINK_URLS.BANK_CALLBACK

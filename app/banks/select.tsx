@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,20 +6,33 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  TextInput,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
 import { bankingAPI } from "../../services/api";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
+import { 
+  categorizeBank, 
+  groupBanksByCategory, 
+  getSortedCategories,
+  BANK_CATEGORIES,
+  type BankCategory 
+} from "../../utils/bankCategories";
 
 interface Bank {
   id: string;
   name: string;
   logo: string;
-  isSupported: boolean;
+  bic?: string;
+  countries?: string[];
+  transaction_total_days?: string;
+  category?: BankCategory;
 }
 
 export default function BankSelectScreen() {
@@ -30,6 +43,8 @@ export default function BankSelectScreen() {
   const [banks, setBanks] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<BankCategory | 'all'>('all');
 
   useEffect(() => {
     fetchBanks();
@@ -39,40 +54,99 @@ export default function BankSelectScreen() {
     try {
       setLoading(true);
       const response = await bankingAPI.getInstitutions();
-      setBanks(response.institutions || []);
+      const institutions = response.data?.institutions || [];
+      
+      // Add categories to each bank
+      const categorizedBanks = institutions.map((bank: any) => ({
+        ...bank,
+        category: categorizeBank(bank.name, bank.id)
+      }));
+      
+      setBanks(categorizedBanks);
     } catch (error: any) {
       console.error("Error fetching banks:", error);
       showError("Failed to load available banks");
-      // Provide fallback banks
-      setBanks([
-        { id: "hsbc", name: "HSBC", logo: "", isSupported: true },
-        { id: "barclays", name: "Barclays", logo: "", isSupported: true },
-        { id: "lloyds", name: "Lloyds", logo: "", isSupported: true },
-        { id: "natwest", name: "NatWest", logo: "", isSupported: true },
-        { id: "santander", name: "Santander", logo: "", isSupported: true },
-      ]);
+      // Provide fallback banks with categories
+      const fallbackBanks = [
+        { id: "HSBC_HBUKGB4B", name: "HSBC Personal", logo: "" },
+        { id: "BARCLAYS_BUKBGB22", name: "Barclays Personal", logo: "" },
+        { id: "LLOYDS_LOYDGB2L", name: "Lloyds Bank Personal", logo: "" },
+        { id: "NATWEST_NWBKGB2L", name: "NatWest", logo: "" },
+        { id: "SANTANDER_ABBYGB2L", name: "Santander", logo: "" },
+      ].map(bank => ({
+        ...bank,
+        category: categorizeBank(bank.name, bank.id)
+      }));
+      
+      setBanks(fallbackBanks);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBankSelect = async (bank: Bank) => {
-    if (!bank.isSupported) {
-      showError(`${bank.name} is not supported yet`);
-      return;
+  // Filter banks based on search query and category
+  const filteredBanks = useMemo(() => {
+    let filtered = banks;
+    
+    // Filter by category if not 'all'
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(bank => bank.category === selectedCategory);
     }
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(bank => 
+        bank.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [banks, searchQuery, selectedCategory]);
+  
+  // Group banks by category for display
+  const groupedBanks = useMemo(() => {
+    return groupBanksByCategory(filteredBanks);
+  }, [filteredBanks]);
+  
+  // Get sorted categories that have banks
+  const availableCategories = useMemo(() => {
+    return getSortedCategories(groupedBanks);
+  }, [groupedBanks]);
 
+  const handleBankSelect = async (bank: Bank) => {
     try {
       setConnecting(bank.id);
       const response = await bankingAPI.connectBankDirect(bank.id);
       
-      if (response.authUrl) {
+      console.log("Bank connection response:", response);
+      
+      // Check the correct response structure from GoCardless/Nordigen
+      const authUrl = response.data?.authorizationUrl || response.authorizationUrl || response.authUrl;
+      const requisition = response.data?.requisition || response.requisition;
+      
+      if (authUrl && requisition) {
+        // Store the requisition ID with the reference for callback lookup
+        const reference = requisition.reference;
+        const requisitionId = requisition.id;
+        
+        if (reference && requisitionId) {
+          try {
+            await AsyncStorage.setItem(`requisition_${reference}`, requisitionId);
+            console.log(`✅ Stored requisition ID ${requisitionId} for reference ${reference}`);
+          } catch (storageError) {
+            console.error('❌ Failed to store requisition ID:', storageError);
+          }
+        }
+        
         showSuccess(`Connecting to ${bank.name}...`);
         // Navigate to bank connection flow
         router.push({
           pathname: "/banks/connect",
-          params: { bankId: bank.id, authUrl: response.authUrl }
+          params: { bankId: bank.id, authUrl }
         });
+      } else {
+        console.error("No authorization URL or requisition found in response:", response);
+        showError(`Failed to get authorization link for ${bank.name}`);
       }
     } catch (error: any) {
       console.error("Error connecting bank:", error);
@@ -111,53 +185,210 @@ export default function BankSelectScreen() {
         <View style={{ width: 24 }} />
       </View>
 
+      {/* Search Input */}
+      <View style={styles.searchContainer}>
+        <View style={[styles.searchInput, { backgroundColor: colors.background.primary, borderColor: colors.border.secondary }]}>
+          <Ionicons name="search" size={20} color={colors.text.secondary} style={styles.searchIcon} />
+          <TextInput
+            style={[styles.searchText, { color: colors.text.primary }]}
+            placeholder="Search banks..."
+            placeholderTextColor={colors.text.secondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearButton}>
+              <Ionicons name="close" size={18} color={colors.text.secondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Category Filter Chips */}
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryFilterContainer}
+        contentContainerStyle={styles.categoryFilterContent}
+      >
+        <TouchableOpacity
+          style={[
+            styles.categoryChip,
+            selectedCategory === 'all' && { 
+              backgroundColor: colors.primary[500],
+              borderColor: colors.primary[600] 
+            }
+          ]}
+          onPress={() => setSelectedCategory('all')}
+        >
+          <Text style={[
+            styles.categoryChipText,
+            { 
+              color: selectedCategory === 'all' ? '#FFFFFF' : colors.text.secondary,
+              marginLeft: 0 // No emoji for "All Banks"
+            }
+          ]}>
+            All Banks
+          </Text>
+        </TouchableOpacity>
+        
+        {Object.values(BANK_CATEGORIES)
+          .sort((a, b) => a.priority - b.priority)
+          .map((category) => (
+            <TouchableOpacity
+              key={category.id}
+              style={[
+                styles.categoryChip,
+                selectedCategory === category.id && { 
+                  backgroundColor: colors.primary[500],
+                  borderColor: colors.primary[600]
+                }
+              ]}
+              onPress={() => setSelectedCategory(category.id)}
+            >
+              <Text style={styles.categoryEmojiSmall}>{category.icon}</Text>
+              <Text style={[
+                styles.categoryChipText,
+                { color: selectedCategory === category.id ? '#FFFFFF' : colors.text.secondary }
+              ]}>
+                {category.name}
+              </Text>
+            </TouchableOpacity>
+          ))
+        }
+      </ScrollView>
+
       {/* Bank List */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}
+      >
         <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
           Choose your bank to connect your account securely
         </Text>
 
+        {/* Category Sections */}
         <View style={styles.bankList}>
-          {banks.map((bank) => (
-            <TouchableOpacity
-              key={bank.id}
-              style={[
-                styles.bankItem,
-                { 
-                  backgroundColor: colors.background.primary,
-                  opacity: bank.isSupported ? 1 : 0.6
-                }
-              ]}
-              onPress={() => handleBankSelect(bank)}
-              disabled={connecting === bank.id || !bank.isSupported}
-            >
-              <View style={styles.bankInfo}>
-                <View
-                  style={[
-                    styles.bankIcon,
-                    { backgroundColor: colors.primary[100] }
-                  ]}
-                >
-                  <Text style={[styles.bankInitial, { color: colors.primary[500] }]}>
-                    {bank.name.charAt(0)}
+          {selectedCategory === 'all' ? (
+            // Show banks grouped by categories
+            availableCategories.map((categoryInfo) => (
+              <View key={categoryInfo.id} style={styles.categorySection}>
+                <View style={styles.categoryHeader}>
+                  <Text style={styles.categoryEmoji}>{categoryInfo.icon}</Text>
+                  <View style={styles.categoryTextContainer}>
+                    <Text style={[styles.categoryTitle, { color: colors.text.primary }]}>
+                      {categoryInfo.name}
+                    </Text>
+                    <Text style={[styles.categoryDescription, { color: colors.text.secondary }]}>
+                      {categoryInfo.description}
+                    </Text>
+                  </View>
+                  <Text style={[styles.categoryCount, { color: colors.text.tertiary }]}>
+                    {groupedBanks[categoryInfo.id].length}
                   </Text>
                 </View>
-                <Text style={[styles.bankName, { color: colors.text.primary }]}>
-                  {bank.name}
-                </Text>
-              </View>
+                
+                {groupedBanks[categoryInfo.id]
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((bank) => (
+                  <TouchableOpacity
+                    key={bank.id}
+                    style={[
+                      styles.bankItem,
+                      { 
+                        backgroundColor: colors.background.primary,
+                        opacity: 1
+                      }
+                    ]}
+                    onPress={() => handleBankSelect(bank)}
+                    disabled={connecting === bank.id}
+                  >
+                    <View style={styles.bankInfo}>
+                      <View
+                        style={[
+                          styles.bankIcon,
+                          { backgroundColor: colors.background.secondary }
+                        ]}
+                      >
+                        {bank.logo ? (
+                          <Image 
+                            source={{ uri: bank.logo }}
+                            style={styles.bankLogo}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <Text style={[styles.bankInitial, { color: colors.primary[500] }]}>
+                            {bank.name.charAt(0)}
+                          </Text>
+                        )}
+                      </View>
+                      <Text style={[styles.bankName, { color: colors.text.primary }]}>
+                        {bank.name}
+                      </Text>
+                    </View>
 
-              {connecting === bank.id ? (
-                <ActivityIndicator size="small" color={colors.primary[500]} />
-              ) : bank.isSupported ? (
-                <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
-              ) : (
-                <Text style={[styles.comingSoonText, { color: colors.text.tertiary }]}>
-                  Coming Soon
-                </Text>
-              )}
-            </TouchableOpacity>
-          ))}
+                    {connecting === bank.id ? (
+                      <ActivityIndicator size="small" color={colors.primary[500]} />
+                    ) : (
+                      <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ))
+          ) : (
+            // Show filtered banks in a simple list when a specific category is selected
+            filteredBanks
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((bank) => (
+              <TouchableOpacity
+                key={bank.id}
+                style={[
+                  styles.bankItem,
+                  { 
+                    backgroundColor: colors.background.primary,
+                    opacity: 1
+                  }
+                ]}
+                onPress={() => handleBankSelect(bank)}
+                disabled={connecting === bank.id}
+              >
+                <View style={styles.bankInfo}>
+                  <View
+                    style={[
+                      styles.bankIcon,
+                      { backgroundColor: colors.background.secondary }
+                    ]}
+                  >
+                    {bank.logo ? (
+                      <Image 
+                        source={{ uri: bank.logo }}
+                        style={styles.bankLogo}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <Text style={[styles.bankInitial, { color: colors.primary[500] }]}>
+                        {bank.name.charAt(0)}
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={[styles.bankName, { color: colors.text.primary }]}>
+                    {bank.name}
+                  </Text>
+                </View>
+
+                {connecting === bank.id ? (
+                  <ActivityIndicator size="small" color={colors.primary[500]} />
+                ) : (
+                  <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+                )}
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
         {/* Help Section */}
@@ -204,20 +435,116 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing.lg,
+    paddingTop: 0,
+  },
+  searchContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  searchInput: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+  },
+  searchIcon: {
+    marginRight: spacing.sm,
+  },
+  searchText: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: spacing.xs,
+  },
+  clearButton: {
+    padding: spacing.xs,
+    marginLeft: spacing.sm,
+  },
+  categoryFilterContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs,
+    height: 44,
+    maxHeight: 44,
+  },
+  categoryFilterContent: {
+    paddingRight: spacing.lg,
+    alignItems: 'center',
+    height: 44,
+  },
+  categoryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginRight: 8,
+    borderRadius: 14,
+    backgroundColor: "#F3F4F6",
+    borderWidth: 1,
+    borderColor: "transparent",
+    height: 28,
+  },
+  categoryChipText: {
+    fontSize: 12,
+    fontWeight: "500",
+    marginLeft: 3,
   },
   subtitle: {
     fontSize: 16,
-    marginVertical: spacing.lg,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
   bankList: {
-    marginTop: spacing.md,
+    marginTop: 0,
+  },
+  categorySection: {
+    marginBottom: spacing.lg,
+  },
+  categoryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  categoryEmoji: {
+    fontSize: 16,
+    marginRight: spacing.xs,
+  },
+  categoryEmojiSmall: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  categoryTextContainer: {
+    flex: 1,
+  },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  categoryDescription: {
+    fontSize: 12,
+    opacity: 0.8,
+  },
+  categoryCount: {
+    fontSize: 10,
+    fontWeight: "600",
+    backgroundColor: "#E5E7EB",
+    color: "#6B7280",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    minWidth: 18,
+    textAlign: "center",
+    overflow: "hidden",
   },
   bankItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: spacing.lg,
+    padding: spacing.md,
     marginBottom: spacing.sm,
     borderRadius: borderRadius.lg,
     ...shadows.sm,
@@ -235,6 +562,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: spacing.md,
   },
+  bankLogo: {
+    width: 40,
+    height: 40,
+  },
   bankInitial: {
     fontSize: 20,
     fontWeight: "700",
@@ -250,8 +581,8 @@ const styles = StyleSheet.create({
   helpSection: {
     flexDirection: "row",
     alignItems: "flex-start",
-    padding: spacing.lg,
-    marginTop: spacing.xl,
+    padding: spacing.md,
+    marginTop: spacing.lg,
     borderRadius: borderRadius.lg,
     ...shadows.sm,
   },

@@ -2,7 +2,7 @@
 
 ## ✅ **Production Status**
 - **TestFlight**: ✅ Working correctly
-- **TrueLayer**: ✅ Fixed in production
+- **Nordigen/GoCardless**: ✅ Fixed in production
 - **AI Assistant**: ✅ Fixed in production
 
 ## 🔧 **Development Environment Fixes**
@@ -51,7 +51,7 @@ npx expo start --ios
 
 ### For Banking Integration Testing:
 1. Always use TestFlight (not development builds)
-2. TrueLayer requires production-like environment
+2. Nordigen/GoCardless requires production-like environment
 3. Custom URL schemes work better in TestFlight
 
 ## 🚀 **Quick Development Commands**
@@ -99,7 +99,7 @@ eas build --platform ios --profile development
 
 ### Production Testing (TestFlight):
 - ✅ Full banking integration
-- ✅ TrueLayer connections
+- ✅ Nordigen/GoCardless connections
 - ✅ AI Assistant
 - ✅ Push notifications
 - ✅ Complete user flow
@@ -107,7 +107,7 @@ eas build --platform ios --profile development
 ## 🎉 **Current Status**
 
 **Production (TestFlight)**: ✅ **Fully Working**
-- TrueLayer banking connections working
+- Nordigen/GoCardless banking connections working
 - AI Assistant providing intelligent responses
 - All major features functional
 

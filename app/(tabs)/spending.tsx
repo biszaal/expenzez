@@ -252,11 +252,11 @@ export default function SpendingPage() {
       setError(null);
 
       const [transactionsResponse, categoriesResponse] = await Promise.all([
-        bankingAPI.getAllTransactions(),
+        bankingAPI.getTransactionsUnified(),
         generateCategoriesFromTransactions(),
       ]);
 
-      if (transactionsResponse?.transactions) {
+      if (transactionsResponse && 'transactions' in transactionsResponse && transactionsResponse.transactions) {
         setTransactions(transactionsResponse.transactions);
       } else {
         setTransactions([]);
@@ -278,13 +278,18 @@ export default function SpendingPage() {
       let categoryBudgets = {};
       try {
         const budgetPreferences = await budgetAPI.getBudgetPreferences();
-        categoryBudgets = budgetPreferences.categoryBudgets || {};
+        categoryBudgets = budgetPreferences?.categoryBudgets || {};
         console.log("✅ Category budgets loaded from database:", categoryBudgets);
       } catch (budgetError) {
         console.error("❌ Error fetching budget preferences:", budgetError);
         // Fallback to AsyncStorage if database fails
-        const storedCategoryBudgets = await AsyncStorage.getItem("categoryBudgets");
-        categoryBudgets = storedCategoryBudgets ? JSON.parse(storedCategoryBudgets) : {};
+        try {
+          const storedCategoryBudgets = await AsyncStorage.getItem("categoryBudgets");
+          categoryBudgets = storedCategoryBudgets ? JSON.parse(storedCategoryBudgets) : {};
+        } catch (storageError) {
+          console.error("❌ Error reading from AsyncStorage:", storageError);
+          categoryBudgets = {};
+        }
       }
 
       const categoryMap = new Map();

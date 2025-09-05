@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Alert, ViewStyle, TextStyle } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../contexts/ThemeContext';
 import { bankingAPI } from '../../services/api';
 import { getEnvironmentName, isTestFlight } from '../../config/environment';
@@ -20,10 +21,10 @@ const BankingCallback: React.FC = () => {
       console.log('🏦 Processing banking callback in', getEnvironmentName());
       console.log('📋 Callback params:', params);
 
-      const { code, error, error_description } = params;
+      const { code, error, error_description, ref, requisition_id } = params;
 
       if (error) {
-        // Handle error from TrueLayer
+        // Handle error from Nordigen/GoCardless
         const errorMsg = error_description || error || 'Banking connection failed';
         console.error('❌ Banking callback error:', errorMsg);
         
@@ -47,13 +48,38 @@ const BankingCallback: React.FC = () => {
         return;
       }
 
-      if (code) {
-        // Success - process the authorization code
+      // For GoCardless/Nordigen, we might get 'requisition_id' or 'ref' parameter
+      // For other providers, we might get a 'code' parameter
+      let requisitionId = requisition_id || code;
+      
+      // If we only have a reference (ref), try to get the stored requisition ID
+      if (!requisitionId && ref) {
+        console.log('🔍 Got reference, trying to retrieve stored requisition ID:', ref);
+        try {
+          const storedRequisitionId = await AsyncStorage.getItem(`requisition_${ref}`);
+          if (storedRequisitionId) {
+            requisitionId = storedRequisitionId;
+            console.log('✅ Retrieved stored requisition ID:', requisitionId);
+          } else {
+            console.log('❌ No stored requisition ID found for reference:', ref);
+            // For now, try using the reference as the requisition ID (fallback)
+            requisitionId = ref;
+          }
+        } catch (storageError) {
+          console.error('❌ Error retrieving stored requisition ID:', storageError);
+          requisitionId = ref;
+        }
+      }
+      
+      console.log('🔍 Final requisition ID to use:', requisitionId);
+
+      if (requisitionId) {
+        // Success - process the requisition ID
         setMessage('Connecting to your bank account...');
         
         try {
-          // Call backend to exchange code for access token and connect account
-          const response = await bankingAPI.handleCallback(String(code));
+          // Call backend to process the requisition and connect account
+          const response = await bankingAPI.handleCallback(String(requisitionId));
 
           console.log('✅ Banking connection successful:', response);
           setMessage('Successfully connected!');
@@ -96,15 +122,15 @@ const BankingCallback: React.FC = () => {
           }, 1000);
         }
       } else {
-        // No code or error - invalid callback
-        console.error('❌ Invalid banking callback - no code or error');
-        setMessage('Invalid callback - no authorization code received');
+        // No requisition ID or code - invalid callback
+        console.error('❌ Invalid banking callback - no requisition ID or code');
+        setMessage('Invalid callback - no requisition ID received');
         setIsProcessing(false);
 
         setTimeout(() => {
           Alert.alert(
             'Invalid Callback',
-            'No authorization code received from bank',
+            'No requisition ID received from bank',
             [
               {
                 text: 'OK',

@@ -1,241 +1,288 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
-import { api, aiAPI } from "../config/apiClient";
+import { api } from "../config/apiClient";
 import { getCachedData, setCachedData } from "../config/apiCache";
-import { getTrueLayerRedirectURL, logEnvironmentInfo } from "../../config/environment";
+import { nordigenAPI } from "./nordigenAPI";
 
 export const bankingAPI = {
-  // Connect a bank account using TrueLayer
-  connectBank: async (data?: { redirectUrl?: string }) => {
-    const token = await AsyncStorage.getItem("accessToken");
+  // Connect a bank account using Nordigen
+  connectBank: async (institutionId?: string) => {
+    console.log('🏦 Connecting bank with Nordigen institution:', institutionId);
     
-    // Use environment-specific redirect URL if not provided
-    const redirectUrl = data?.redirectUrl || getTrueLayerRedirectURL();
-    
-    console.log('🏦 Connecting bank with redirect URL:', redirectUrl);
-    logEnvironmentInfo(); // Log environment info for debugging
-    
-    const response = await api.post("/banking/connect", {
-      ...data,
-      redirectUrl
-    });
-    return response.data;
+    if (institutionId) {
+      // Direct connection to specific institution
+      return await nordigenAPI.createRequisition(institutionId);
+    } else {
+      // Get institutions first
+      const institutions = await nordigenAPI.getInstitutions('GB');
+      return institutions;
+    }
   },
 
-  // Connect to specific bank directly (skip provider selection)
-  connectBankDirect: async (providerId: string, accountId?: string) => {
-    const token = await AsyncStorage.getItem("accessToken");
-    const redirectUrl = getTrueLayerRedirectURL();
-    
-    try {
-      const response = await api.post("/banking/connect-direct", { 
-        providerId,
-        redirectUrl,
-        ...(accountId && { accountId }) // Include accountId for reconnection
-      });
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 404 || error.response?.status === 401) {
-        // Fallback to regular connect bank - user will select bank on TrueLayer page
-        // This still provides a decent user experience
-        const fallbackResponse = await api.post("/banking/connect", {
-          redirectUrl
-        });
-        return fallbackResponse.data;
-      }
-      throw error;
-    }
+  // Connect to specific bank directly
+  connectBankDirect: async (institutionId: string) => {
+    console.log('🏦 Connecting directly to institution:', institutionId);
+    return await nordigenAPI.createRequisition(institutionId, `expenzez_${Date.now()}`);
   },
 
   // Get connected banks for the authenticated user
   getConnectedBanks: async () => {
-    const token = await AsyncStorage.getItem("accessToken");
-    const response = await api.get("/banking/connected");
-    return response.data;
+    console.log('🏦 Getting connected banks via Nordigen');
+    return await nordigenAPI.getAccounts();
   },
 
-  // Reconnect expired bank connection
-  reconnectBank: async (accountId: string, code: string) => {
-    const token = await AsyncStorage.getItem("accessToken");
-    
-    try {
-      const response = await api.post("/banking/reconnect", {
-        accountId,
-        code
-      });
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        // Use the newly deployed banking functions endpoint
-        const newApiResponse = await axios.post(
-          `https://djq0zgtbdd.execute-api.eu-west-2.amazonaws.com/banking/reconnect`,
-          {
-            accountId,
-            code
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-        return newApiResponse.data;
-      }
-      throw error;
-    }
+  // Handle bank callback after user consent
+  handleCallback: async (requisitionId: string) => {
+    console.log('🏦 Handling Nordigen callback for requisition:', requisitionId);
+    return await nordigenAPI.handleCallback(requisitionId);
   },
 
-  // Remove bank connection and all associated data
-  removeBank: async (accountId: string) => {
-    const token = await AsyncStorage.getItem("accessToken");
-    
-    try {
-      const response = await api.delete(`/banking/remove/${accountId}`);
-      return response.data;
-    } catch (error: any) {
-      console.error("[API] removeBank failed:", error);
-      // For now, we'll show a message to the user that the bank cannot be removed automatically
-      // but the connection is already expired/invalid, so it's functionally removed
-      throw new Error("Bank connection expired - please contact support to fully remove this connection.");
-    }
+  // Get available institutions (banks/providers)
+  getInstitutions: async (country: string = 'GB') => {
+    console.log('🏦 Getting institutions for country:', country);
+    return await nordigenAPI.getInstitutions(country);
   },
 
-  // Get connected accounts (legacy) with caching
+  // Get connected accounts (unified method)
   getAccounts: async () => {
-    const cacheKey = 'user_accounts';
+    const cacheKey = 'nordigen_accounts';
     const cached = getCachedData(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const token = await AsyncStorage.getItem("accessToken");
-    // Use the existing connected banks endpoint and transform the data
-    const response = await api.get("/banking/connected");
+    const response = await nordigenAPI.getAccounts();
     
-    // Transform connected banks to accounts format for backward compatibility
-    const accountsData = {
-      accounts: (response.data.banks || []).map((bank: any) => ({
-        id: bank.accountId,
-        name: bank.bankName || 'Unknown Bank',
-        institutionId: bank.provider?.provider_id || 'unknown',
-        currency: bank.currency || 'GBP',
-        type: bank.accountType || 'current',
-        status: bank.status || 'connected',
-        iban: `****${bank.accountNumber?.slice(-4) || '****'}`,
-        createdAt: bank.connectedAt
-      }))
-    };
+    if (response.success) {
+      // Transform to legacy format for backward compatibility
+      const accountsData = {
+        accounts: response.data.accounts.map((account: any) => ({
+          id: account.account_id,
+          name: account.name || account.official_name,
+          institutionId: 'nordigen',
+          currency: account.balances.iso_currency_code || 'EUR',
+          type: account.type || 'current',
+          status: account.status || 'connected',
+          iban: account.mask || '****',
+          createdAt: account.connectedAt
+        }))
+      };
+      
+      // Cache for 2 minutes
+      setCachedData(cacheKey, accountsData, 2 * 60 * 1000);
+      return accountsData;
+    }
     
-    // Cache for 2 minutes since account data changes frequently
-    setCachedData(cacheKey, accountsData, 2 * 60 * 1000);
-    return accountsData;
+    return { accounts: [] };
   },
 
-  // Get all user transactions with caching
+  // Get all user transactions
   getAllTransactions: async (limit?: number, startKey?: any) => {
-    const cacheKey = `all_transactions_${limit || 'all'}_${JSON.stringify(startKey || {})}`;
+    const cacheKey = `nordigen_transactions_${limit || 'all'}`;
     const cached = getCachedData(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const token = await AsyncStorage.getItem("accessToken");
-    const params = new URLSearchParams();
-    if (limit) params.append('limit', limit.toString());
-    if (startKey) params.append('startKey', JSON.stringify(startKey));
-    const response = await api.get(`/banking/transactions?${params.toString()}`);
+    const response = await nordigenAPI.getTransactions({ limit });
     
-    // Cache for 3 minutes since transaction data changes less frequently
-    setCachedData(cacheKey, response.data, 3 * 60 * 1000);
-    return response.data;
+    if (response.success) {
+      // Cache for 3 minutes
+      setCachedData(cacheKey, response.data, 3 * 60 * 1000);
+      return response.data;
+    }
+    
+    return { transactions: [] };
   },
 
   // Get account transactions
   getTransactions: async (accountId: string, limit?: number) => {
-    const token = await AsyncStorage.getItem("accessToken");
-    const params = limit ? `?limit=${limit}` : '';
-    const response = await api.get(`/banking/account/${accountId}/transactions${params}`);
+    console.log('🏦 Getting transactions for account:', accountId);
+    const response = await nordigenAPI.getTransactions({ 
+      account_id: accountId, 
+      limit 
+    });
     return response.data;
   },
 
-  // Get account balance
+  // Get account balance (from account data)
   getBalance: async (accountId: string) => {
-    const token = await AsyncStorage.getItem("accessToken");
-    const response = await api.post("/banking/account/balance", {
-      accountId,
-    });
-    return response.data;
-  },
-
-  // Handle bank callback after user consent (exchange code for token)
-  handleCallback: async (code: string) => {
-    const token = await AsyncStorage.getItem("accessToken");
-    const user = await AsyncStorage.getItem("user");
-    let userId = null;
-
-    try {
-      if (user) {
-        const userData = JSON.parse(user);
-        userId = userData.sub || userData.userId;
+    const accounts = await nordigenAPI.getAccounts();
+    if (accounts.success) {
+      const account = accounts.data.accounts.find((acc: any) => acc.account_id === accountId);
+      if (account) {
+        return {
+          balance: account.balances.current,
+          currency: account.balances.iso_currency_code
+        };
       }
-    } catch {
     }
-
-    const response = await api.post("/banking/callback", {
-      code,
-      userId, // Include userId as fallback
-    });
-    return response.data;
+    return { balance: 0, currency: 'EUR' };
   },
 
-  // Get available institutions (banks/providers)
-  getInstitutions: async () => {
-    const token = await AsyncStorage.getItem("accessToken");
-    const response = await api.get("/banking/institutions");
-    return response.data;
-  },
-
-  // Refresh transactions manually (trigger sync from TrueLayer)
+  // Refresh transactions manually
   refreshTransactions: async () => {
-    const token = await AsyncStorage.getItem("accessToken");
-    const response = await api.post("/banking/transactions/refresh", {});
-    return response.data;
+    console.log('🏦 Refreshing Nordigen transactions');
+    return await nordigenAPI.syncTransactions();
   },
 
-  // Get cached bank connections and balances when TrueLayer token is expired
+  // Get cached bank data (fallback)
   getCachedBankData: async () => {
     try {
-      const token = await AsyncStorage.getItem("accessToken");
-      const response = await api.get("/banking/cached-data");
-      return response.data;
+      // Just return connected banks as cached data
+      return await nordigenAPI.getAccounts();
     } catch (error: any) {
       console.error("[API] Failed to get cached bank data:", error);
-      throw error;
+      return { success: false, data: { accounts: [] } };
     }
   },
 
-  // Refresh account balances (placeholder function for compatibility)
+  // Refresh account balances
   refreshBalances: async () => {
     try {
-      const token = await AsyncStorage.getItem("accessToken");
-      // For now, just return success - in a real app this would trigger balance refresh
-      return { message: "Balance refresh initiated", success: true };
+      // Trigger a fresh fetch of accounts which includes balances
+      const response = await nordigenAPI.getAccounts();
+      return { 
+        message: "Balance refresh completed", 
+        success: response.success,
+        data: response.data 
+      };
     } catch (error: any) {
       console.error("[API] Failed to refresh balances:", error);
       throw error;
     }
   },
 
-  // Check if bank connections need to be refreshed (expired tokens)
+  // Check if bank connections need to be refreshed
   checkBankConnectionStatus: async () => {
     try {
-      const token = await AsyncStorage.getItem("accessToken");
-      const response = await api.get("/banking/connection-status");
-      return response.data;
+      const response = await nordigenAPI.getAccounts();
+      return {
+        success: response.success,
+        connectionsStatus: response.success ? 'active' : 'needs_refresh',
+        data: response.data
+      };
     } catch (error: any) {
       console.error("[API] Failed to check bank connection status:", error);
-      throw error;
+      return {
+        success: false,
+        connectionsStatus: 'error',
+        error: error.message
+      };
     }
   },
+
+  // Remove bank connection (placeholder - Nordigen handles this differently)
+  removeBank: async (accountId: string) => {
+    console.log("[API] Note: Nordigen bank removal should be done through their interface");
+    throw new Error("Bank removal should be done through the Nordigen/GoCardless interface. Please contact support.");
+  },
+
+  // Unified method to get accounts (Nordigen with fallback)
+  getAccountsUnified: async () => {
+    try {
+      console.log("🏦 [Banking] Trying Nordigen accounts...");
+      const response = await nordigenAPI.getAccounts();
+      
+      if (response.success && response.data.accounts.length > 0) {
+        console.log("✅ [Banking] Using Nordigen accounts:", response.data.accounts.length);
+        return {
+          success: true,
+          banks: response.data.accounts.map(account => ({
+            accountId: account.account_id,
+            bankName: account.official_name || account.name,
+            accountType: account.type,
+            accountNumber: account.account_id,
+            balance: account.balances.current || 0,
+            currency: account.balances.iso_currency_code || 'EUR',
+            connectedAt: account.connectedAt || Date.now(),
+            lastSyncAt: account.lastSyncAt || Date.now(),
+            isActive: true,
+            status: account.status || 'connected',
+            provider: 'nordigen'
+          }))
+        };
+      }
+    } catch (error) {
+      console.warn("⚠️ [Banking] Nordigen failed, falling back to existing banking endpoints:", error);
+    }
+    
+    // Fallback to existing banking endpoint
+    try {
+      console.log("🏦 [Banking] Falling back to existing banking endpoint...");
+      const fallbackResponse = await api.get("/banking/connected");
+      
+      if (fallbackResponse.data.success && fallbackResponse.data.banks?.length > 0) {
+        console.log("✅ [Banking] Using fallback banking data:", fallbackResponse.data.banks.length);
+        return {
+          success: true,
+          banks: fallbackResponse.data.banks
+        };
+      }
+    } catch (fallbackError) {
+      console.error("❌ [Banking] Fallback also failed:", fallbackError);
+    }
+    
+    return {
+      success: false,
+      banks: []
+    };
+  },
+
+  // Unified method to get transactions (Nordigen with fallback)
+  getTransactionsUnified: async (params?: {
+    start_date?: string;
+    end_date?: string;
+    account_id?: string;
+    limit?: number;
+  }) => {
+    try {
+      console.log("🏦 [Banking] Trying Nordigen transactions...");
+      const response = await nordigenAPI.getTransactions(params);
+      
+      if (response.success && response.data.transactions.length > 0) {
+        console.log("✅ [Banking] Using Nordigen transactions:", response.data.transactions.length);
+        return {
+          success: true,
+          transactions: response.data.transactions.map(tx => ({
+            transactionId: tx.transaction_id,
+            accountId: tx.account_id,
+            amount: Math.abs(tx.amount),
+            currency: tx.iso_currency_code,
+            description: tx.name,
+            category: tx.category?.[0] || 'Other',
+            date: tx.date,
+            type: tx.amount > 0 ? 'credit' : 'debit',
+            merchant: tx.merchant_name,
+            provider: 'nordigen'
+          }))
+        };
+      }
+    } catch (error) {
+      console.warn("⚠️ [Banking] Nordigen transactions failed, falling back to existing endpoint:", error);
+    }
+    
+    // Fallback to existing transactions endpoint
+    try {
+      console.log("🏦 [Banking] Falling back to existing transactions endpoint...");
+      const fallbackParams = new URLSearchParams();
+      if (params?.limit) fallbackParams.append('limit', params.limit.toString());
+      
+      const fallbackResponse = await api.get(`/banking/transactions?${fallbackParams.toString()}`);
+      
+      if (fallbackResponse.data.transactions?.length > 0) {
+        console.log("✅ [Banking] Using fallback transaction data:", fallbackResponse.data.transactions.length);
+        return {
+          success: true,
+          transactions: fallbackResponse.data.transactions
+        };
+      }
+    } catch (fallbackError) {
+      console.error("❌ [Banking] Transaction fallback also failed:", fallbackError);
+    }
+    
+    return {
+      success: false,
+      transactions: []
+    };
+  }
 };

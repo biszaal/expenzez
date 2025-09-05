@@ -45,7 +45,7 @@ export default function BankCallbackScreen() {
   const handleCallback = async () => {
     try {
       console.log(
-        "[CALLBACK] Starting TrueLayer callback with params:",
+        "[CALLBACK] Starting Nordigen/GoCardless callback with params:",
         params
       );
 

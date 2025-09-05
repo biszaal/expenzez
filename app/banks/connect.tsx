@@ -1,80 +1,81 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import * as WebBrowser from 'expo-web-browser';
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { useAlert } from "../../hooks/useAlert";
 import { useTheme } from "../../contexts/ThemeContext";
-import { bankingAPI } from "../../services/api";
-import { DEEP_LINK_URLS } from "../../constants/config";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
+import { bankingAPI } from "../../services/api/bankingAPI";
 
 /**
- * Connect Bank Screen - Direct TrueLayer Connection
+ * Connect Bank Screen - Nordigen/GoCardless Connection
  *
- * This page immediately initiates a TrueLayer OAuth flow without
- * showing a bank selection page. Users will select their bank
- * directly on TrueLayer's page.
+ * This page uses Nordigen/GoCardless to securely connect EU bank accounts.
+ * Users will go through Nordigen's secure authentication flow.
  */
 export default function ConnectBankScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { isLoggedIn } = useAuthGuard();
   const { showError, showSuccess } = useAlert();
   const { colors } = useTheme();
-  const [connecting, setConnecting] = useState(false);
-
-  // Auto-connect when the screen loads
+  const [isConnecting, setIsConnecting] = useState(false);
+  
+  const { bankId, authUrl } = params;
+  
   useEffect(() => {
-    if (isLoggedIn) {
-      handleConnectBank();
-    }
-  }, [isLoggedIn]);
+    console.log('Connect screen received params:', { bankId, authUrl });
+  }, [bankId, authUrl]);
 
-  const handleConnectBank = async () => {
+  const handleOpenAuthUrl = async () => {
+    if (isConnecting || !authUrl) return;
+    
+    setIsConnecting(true);
     try {
-      setConnecting(true);
-      console.log("[ConnectBank] Starting TrueLayer connection...");
-
-      // Get the TrueLayer auth link (this will show bank selection on TrueLayer's page)
-      const response = await bankingAPI.connectBank();
-
-      if (response.link) {
-        console.log(
-          "[ConnectBank] Opening TrueLayer auth page:",
-          response.link
-        );
-
-        // Open TrueLayer OAuth page - user selects bank there
-        const result = await WebBrowser.openAuthSessionAsync(
-          response.link,
-          DEEP_LINK_URLS.BANK_CALLBACK
-        );
-
-        console.log("[ConnectBank] OAuth result:", result);
-
-        if (result.type === "success") {
-          showSuccess("Bank connection initiated successfully!");
-          router.back();
-        } else if (result.type === "cancel") {
-          console.log("[ConnectBank] User cancelled the connection");
-        }
-      } else {
-        showError("Failed to generate connection link");
+      console.log("[ConnectBank] Opening authorization URL:", authUrl);
+      
+      showSuccess("Redirecting to bank authentication...");
+      
+      // Open the authorization URL in the device browser
+      const result = await WebBrowser.openBrowserAsync(authUrl as string, {
+        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FORM_SHEET,
+        controlsColor: colors.primary[500],
+      });
+      
+      console.log("[ConnectBank] Browser result:", result);
+      
+      // After user completes authentication, they'll be redirected back
+      // For now, just show a success message
+      if (result.type === 'dismiss') {
+        showSuccess("Bank authentication completed! You can now go back to the home screen.");
+        // Navigate back to banks screen
+        router.replace('/banks');
       }
-    } catch (error) {
-      console.error("[ConnectBank] Error connecting bank:", error);
-      showError("Failed to start bank connection process");
+      
+    } catch (error: any) {
+      console.error("[ConnectBank] Error opening authorization URL:", error);
+      showError("Failed to open bank authentication. Please try again.");
     } finally {
-      setConnecting(false);
+      setIsConnecting(false);
     }
+  };
+  
+  const handleNordigenConnect = async () => {
+    if (authUrl) {
+      // If we have an authUrl, open it directly
+      return handleOpenAuthUrl();
+    }
+    
+    // Fallback: redirect to bank selection
+    router.replace('/banks/select');
   };
 
   // If not logged in, don't render anything (auth guard will handle redirect)
@@ -116,7 +117,7 @@ export default function ConnectBankScreen() {
             <Text
               style={[styles.headerSubtitle, { color: colors.text.secondary }]}
             >
-              Secure connection via TrueLayer
+              Secure connection via Nordigen/GoCardless
             </Text>
           </View>
         </View>
@@ -124,96 +125,92 @@ export default function ConnectBankScreen() {
 
       {/* Content */}
       <View style={styles.content}>
-        {connecting ? (
-          <View style={styles.connectingContainer}>
-            <ActivityIndicator size="large" color={colors.primary[500]} />
-            <Text
-              style={[styles.connectingTitle, { color: colors.text.primary }]}
-            >
-              Opening TrueLayer...
+        <View style={styles.manualContainer}>
+          <View
+            style={[
+              styles.infoCard,
+              { backgroundColor: colors.background.primary },
+            ]}
+          >
+            <Ionicons
+              name="shield-checkmark"
+              size={48}
+              color={colors.primary[500]}
+              style={styles.infoIcon}
+            />
+            <Text style={[styles.infoTitle, { color: colors.text.primary }]}>
+              {authUrl ? 'Ready to Connect' : 'Secure Bank Connection'}
             </Text>
-            <Text
-              style={[styles.connectingText, { color: colors.text.secondary }]}
-            >
-              You&apos;ll be redirected to select your bank and authorize the
-              connection.
+            <Text style={[styles.infoText, { color: colors.text.secondary }]}>
+              {authUrl 
+                ? 'Click below to open your bank\'s secure authentication page. You\'ll be redirected back to the app after completing the process.'
+                : 'Connect your European bank account securely through Nordigen/GoCardless, a regulated Open Banking provider trusted by financial institutions.'
+              }
             </Text>
           </View>
-        ) : (
-          <View style={styles.manualContainer}>
-            <View
-              style={[
-                styles.infoCard,
-                { backgroundColor: colors.background.primary },
-              ]}
-            >
+
+          {/* Nordigen Connect Button */}
+          <TouchableOpacity
+            style={[
+              styles.connectButton,
+              { backgroundColor: colors.primary[500] },
+              isConnecting && { opacity: 0.7 }
+            ]}
+            onPress={handleNordigenConnect}
+            disabled={isConnecting}
+          >
+            <Text style={[styles.connectButtonText, { color: colors.text.primary }]}>
+              {isConnecting ? "Opening..." : (authUrl ? "Open Bank Authentication" : "Select Bank")}
+            </Text>
+            {!isConnecting && (
               <Ionicons
-                name="shield-checkmark"
-                size={48}
-                color={colors.primary[500]}
-                style={styles.infoIcon}
+                name="arrow-forward"
+                size={20}
+                color={colors.text.primary}
+                style={{ marginLeft: 8 }}
               />
-              <Text style={[styles.infoTitle, { color: colors.text.primary }]}>
-                Secure Bank Connection
-              </Text>
-              <Text style={[styles.infoText, { color: colors.text.secondary }]}>
-                Connect your bank account securely through TrueLayer, a
-                regulated Open Banking provider.
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.features}>
+            <View style={styles.feature}>
+              <Ionicons
+                name="lock-closed"
+                size={20}
+                color={colors.primary[500]}
+              />
+              <Text
+                style={[styles.featureText, { color: colors.text.secondary }]}
+              >
+                Bank-grade security
               </Text>
             </View>
-
-            <TouchableOpacity
-              style={[
-                styles.connectButton,
-                { backgroundColor: colors.primary[500] },
-              ]}
-              onPress={handleConnectBank}
-              disabled={connecting}
-            >
-              <Ionicons name="link" size={24} color="white" />
-              <Text style={styles.connectButtonText}>Connect Bank Account</Text>
-            </TouchableOpacity>
-
-            <View style={styles.features}>
-              <View style={styles.feature}>
-                <Ionicons
-                  name="lock-closed"
-                  size={20}
-                  color={colors.primary[500]}
-                />
-                <Text
-                  style={[styles.featureText, { color: colors.text.secondary }]}
-                >
-                  Bank-grade security
-                </Text>
-              </View>
-              <View style={styles.feature}>
-                <Ionicons
-                  name="eye-off"
-                  size={20}
-                  color={colors.primary[500]}
-                />
-                <Text
-                  style={[styles.featureText, { color: colors.text.secondary }]}
-                >
-                  Read-only access
-                </Text>
-              </View>
-              <View style={styles.feature}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color={colors.primary[500]}
-                />
-                <Text
-                  style={[styles.featureText, { color: colors.text.secondary }]}
-                >
-                  FCA regulated
-                </Text>
-              </View>
+            <View style={styles.feature}>
+              <Ionicons
+                name="eye-off"
+                size={20}
+                color={colors.primary[500]}
+              />
+              <Text
+                style={[styles.featureText, { color: colors.text.secondary }]}
+              >
+                Read-only access
+              </Text>
+            </View>
+            <View style={styles.feature}>
+              <Ionicons
+                name="checkmark-circle"
+                size={20}
+                color={colors.primary[500]}
+              />
+              <Text
+                style={[styles.featureText, { color: colors.text.secondary }]}
+              >
+                PSD2 regulated & trusted
+              </Text>
             </View>
           </View>
-        )}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -259,21 +256,6 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: "center",
   },
-  connectingContainer: {
-    alignItems: "center",
-    padding: 40,
-  },
-  connectingTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginTop: 20,
-    marginBottom: 12,
-  },
-  connectingText: {
-    fontSize: 16,
-    textAlign: "center",
-    lineHeight: 24,
-  },
   manualContainer: {
     alignItems: "center",
   },
@@ -304,15 +286,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 16,
     paddingHorizontal: 32,
-    borderRadius: 25,
+    borderRadius: 12,
     marginBottom: 40,
+    minWidth: 200,
     ...shadows.md,
   },
   connectButtonText: {
-    color: "white",
     fontSize: 18,
-    fontWeight: "700",
-    marginLeft: 12,
+    fontWeight: "600",
   },
   features: {
     width: "100%",

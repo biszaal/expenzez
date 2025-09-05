@@ -26,6 +26,28 @@ export const aiAPI = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   async (config) => {
+    // Check if user is logged out to prevent unnecessary API calls
+    // Exception: Allow banking callbacks and auth endpoints even when logged out
+    const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+    const allowedWhenLoggedOut = [
+      '/nordigen/callback',
+      '/banking/callback', 
+      '/auth/login',
+      '/auth/register',
+      '/auth/refresh',
+      '/auth/confirm-signup',
+      '/auth/resend-verification',
+      '/auth/forgot-password',
+      '/auth/confirm-forgot-password'
+    ];
+    
+    const isAllowedEndpoint = allowedWhenLoggedOut.some(endpoint => config.url?.includes(endpoint));
+    
+    if (isLoggedIn === 'false' && !isAllowedEndpoint) {
+      console.log(`[API] Interceptor: User logged out, cancelling request to ${config.url}`);
+      return Promise.reject(new Error('User is logged out'));
+    }
+
     console.log(`[API] Interceptor: Requesting token for ${config.url}`);
     try {
       // Import tokenManager dynamically to avoid circular dependency
@@ -56,6 +78,13 @@ api.interceptors.request.use(
 // Request interceptor for AI API
 aiAPI.interceptors.request.use(
   async (config) => {
+    // Check if user is logged out to prevent unnecessary API calls
+    const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+    if (isLoggedIn === 'false') {
+      console.log(`[AI API] Interceptor: User logged out, cancelling request to ${config.url}`);
+      return Promise.reject(new Error('User is logged out'));
+    }
+
     console.log(`[AI API] Interceptor: Requesting token for ${config.url}`);
     try {
       const { tokenManager } = await import('../tokenManager');
@@ -104,11 +133,10 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return api(originalRequest);
         } else {
-          console.log(`[API] Token refresh failed - refresh token may have expired`);
-          // Don't clear tokens here - let tokenManager handle token clearing decisions
-          await AsyncStorage.setItem('isLoggedIn', 'false');
-          // Show a more user-friendly message about session expiration
-          console.log(`[API] Session expired - user will need to log in again`);
+          console.log(`[API] Token refresh failed - user logged out`);
+          // TokenManager has already cleared tokens and set isLoggedIn to false
+          // Don't make any more API requests - just reject immediately
+          return Promise.reject(new Error('Session expired - please log in again'));
         }
       } catch (refreshError: any) {
         // If token refresh fails due to network issues, don't mark user as logged out
@@ -116,9 +144,16 @@ api.interceptors.response.use(
           console.log(`[API] Token refresh failed due to network issues for ${originalRequest.url} - keeping user logged in`);
           return Promise.reject(error); // Return original 401 error, don't set logged out
         }
-        console.error(`[API] Error during token refresh:`, refreshError);
-        await AsyncStorage.setItem('isLoggedIn', 'false');
+        console.error(`[API] Error during token refresh - user logged out:`, refreshError);
+        // TokenManager has already handled logout
+        return Promise.reject(new Error('Session expired - please log in again'));
       }
+    }
+
+    // Don't spam console with errors if user is already logged out
+    const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+    if (isLoggedIn === 'false') {
+      return Promise.reject(error);
     }
 
     console.error(`[API] Request failed: ${originalRequest.url}`, {
@@ -152,11 +187,9 @@ aiAPI.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return aiAPI(originalRequest);
         } else {
-          console.log(`[AI API] Token refresh failed - refresh token may have expired`);
-          // Don't clear tokens here - let tokenManager handle token clearing decisions
-          await AsyncStorage.setItem('isLoggedIn', 'false');
-          // Show a more user-friendly message about session expiration
-          console.log(`[AI API] Session expired - user will need to log in again`);
+          console.log(`[AI API] Token refresh failed - user logged out`);
+          // TokenManager has already cleared tokens and set isLoggedIn to false
+          return Promise.reject(new Error('Session expired - please log in again'));
         }
       } catch (refreshError: any) {
         // If token refresh fails due to network issues, don't mark user as logged out
@@ -164,9 +197,16 @@ aiAPI.interceptors.response.use(
           console.log(`[AI API] Token refresh failed due to network issues for ${originalRequest.url} - keeping user logged in`);
           return Promise.reject(error); // Return original 401 error, don't set logged out
         }
-        console.error(`[AI API] Error during token refresh:`, refreshError);
-        await AsyncStorage.setItem('isLoggedIn', 'false');
+        console.error(`[AI API] Error during token refresh - user logged out:`, refreshError);
+        // TokenManager has already handled logout
+        return Promise.reject(new Error('Session expired - please log in again'));
       }
+    }
+
+    // Don't spam console with errors if user is already logged out
+    const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+    if (isLoggedIn === 'false') {
+      return Promise.reject(error);
     }
 
     console.error(`[AI API] Request failed: ${originalRequest.url}`, {

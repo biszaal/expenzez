@@ -52,7 +52,7 @@ export const SupportSystem: React.FC<SupportSystemProps> = ({ isVisible, onClose
     {
       id: '1',
       question: 'How do I connect my bank account?',
-      answer: 'To connect your bank account, go to the Banking tab and tap "Connect Account". Select your bank from the list and follow the secure authentication process through TrueLayer.',
+      answer: 'To connect your bank account, go to the Banking tab and tap "Connect Account". Select your bank from the list and follow the secure authentication process through Nordigen/GoCardless.',
       category: 'banking',
     },
     {
