@@ -10,7 +10,7 @@ export interface BankingCallbackParams {
 }
 
 /**
- * Handle incoming URLs from TrueLayer redirect
+ * Handle incoming URLs from Nordigen/GoCardless redirect
  */
 export const handleBankingCallback = (url: string): BankingCallbackParams | null => {
   console.log('🔗 Handling URL:', url);
@@ -57,7 +57,7 @@ export const handleBankingCallback = (url: string): BankingCallbackParams | null
 };
 
 /**
- * Setup URL listeners for TrueLayer redirects
+ * Setup URL listeners for Nordigen/GoCardless redirects
  */
 export const setupURLHandling = () => {
   console.log('🔗 Setting up URL handling for environment:', getEnvironmentName());

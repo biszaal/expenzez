@@ -345,6 +345,15 @@ class TokenManager {
           }
         } catch (error: any) {
           lastError = error;
+          
+          // Immediately handle 401/403 errors as expired refresh tokens
+          if (error.response?.status === 401 || error.response?.status === 403) {
+            console.log('[TokenManager] Refresh token expired (401/403) - immediately logging out user');
+            await this.clearAllTokens();
+            await AsyncStorage.setItem('isLoggedIn', 'false');
+            return null;
+          }
+          
           const isNetworkError = error.code === 'NETWORK_ERROR' || error.code === 'ERR_NETWORK' || 
                                  error.message?.includes('Network Error') || error.code === 'ECONNREFUSED';
           const isTimeout = error.message?.includes('timeout') || error.code === 'ECONNABORTED';
@@ -363,21 +372,16 @@ class TokenManager {
         }
       }
       
-      // If we get here, all attempts failed
-      throw lastError;
+      // If we get here, all attempts failed - treat as expired refresh token
+      console.log('[TokenManager] All token refresh attempts failed - logging out user');
+      await this.clearAllTokens();
+      await AsyncStorage.setItem('isLoggedIn', 'false');
+      return null;
     } catch (error: any) {
-      // Only clear tokens for definitive auth failures, not network issues
-      if (error.response?.status === 401) {
-        console.log('[TokenManager] 401 error during token refresh - refresh token may have expired');
-        // Check if it's an explicit refresh token expiration
-        if (error.response?.data?.message?.includes('expired') || 
-            error.response?.data?.message?.includes('invalid_grant') ||
-            error.message?.includes('invalid_grant')) {
-          console.log('[TokenManager] Refresh token has expired - clearing all tokens');
-          await this.clearAllTokens();
-        }
-      }
-      
+      // Any other error during token refresh - assume expired and log out
+      console.log('[TokenManager] Token refresh error - logging out user:', error.message);
+      await this.clearAllTokens();
+      await AsyncStorage.setItem('isLoggedIn', 'false');
       return null;
     }
   }

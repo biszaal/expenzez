@@ -74,19 +74,8 @@ export const ConnectedBanks: React.FC<ConnectedBanksProps> = ({
       : undefined;
 
   const handleConnectBank = async () => {
-    try {
-      const response = await bankingAPI.connectBank();
-      if (response.link) {
-        await WebBrowser.openAuthSessionAsync(
-          response.link,
-          DEEP_LINK_URLS.BANK_CALLBACK
-        );
-      } else {
-        alert("Failed to get bank authentication link");
-      }
-    } catch (error) {
-      alert("Failed to start bank connection. Please try again.");
-    }
+    // Navigate to bank selection screen instead of direct connection
+    router.push('/banks/select');
   };
 
   return (

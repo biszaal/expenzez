@@ -5,7 +5,7 @@ export interface EnvironmentConfig {
   isTestFlight: boolean;
   isDevelopment: boolean;
   apiBaseURL: string;
-  truelayerRedirectURL: string;
+  nordigenRedirectURL: string;
   websiteURL: string;
   environment: 'development' | 'testflight' | 'production';
 }
@@ -67,8 +67,8 @@ export const ENV_CONFIG: EnvironmentConfig = {
     ? 'https://a95uq2n8k7.execute-api.eu-west-2.amazonaws.com' // Use production API for development too
     : 'https://a95uq2n8k7.execute-api.eu-west-2.amazonaws.com',
   
-  // TrueLayer Redirect URLs
-  truelayerRedirectURL: environment === 'production'
+  // Nordigen/GoCardless Redirect URLs
+  nordigenRedirectURL: environment === 'production'
     ? 'https://expenzez.com/banking/callback'
     : environment === 'testflight'
     ? 'expenzez://banking/callback'  // Use custom URL scheme for TestFlight
@@ -81,10 +81,10 @@ export const ENV_CONFIG: EnvironmentConfig = {
 };
 
 /**
- * Get environment-specific redirect URL for TrueLayer
+ * Get environment-specific redirect URL for Nordigen/GoCardless
  */
-export const getTrueLayerRedirectURL = (): string => {
-  return ENV_CONFIG.truelayerRedirectURL;
+export const getNordigenRedirectURL = (): string => {
+  return ENV_CONFIG.nordigenRedirectURL;
 };
 
 /**
@@ -127,7 +127,7 @@ export const logEnvironmentInfo = (): void => {
       isTestFlight: ENV_CONFIG.isTestFlight,
       isProduction: ENV_CONFIG.isProduction,
       apiBaseURL: ENV_CONFIG.apiBaseURL,
-      truelayerRedirectURL: ENV_CONFIG.truelayerRedirectURL,
+      nordigenRedirectURL: ENV_CONFIG.nordigenRedirectURL,
       releaseChannel: (Constants.expoConfig as any)?.releaseChannel || 'default',
       appOwnership: Constants.appOwnership,
       bundleId: Constants.expoConfig?.ios?.bundleIdentifier,

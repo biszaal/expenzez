@@ -173,7 +173,7 @@ export default function HomePage() {
       console.log("🚀 PERFORMANCE: Fetching connected banks, accounts and transactions in parallel...");
       
       const [connectedBanksData, transactionsData] = await Promise.all([
-        bankingAPI.getConnectedBanks().catch(err => {
+        bankingAPI.getAccountsUnified().catch(err => {
           console.error("❌ Error fetching connected banks:", err);
           // Try fallback to cached data
           return bankingAPI.getCachedBankData().catch(fallbackErr => {
@@ -181,7 +181,7 @@ export default function HomePage() {
             return { banks: [] };
           });
         }),
-        bankingAPI.getAllTransactions(100).catch(err => {
+        bankingAPI.getTransactionsUnified({ limit: 100 }).catch(err => {
           console.error("❌ Error fetching transactions:", err);
           return { transactions: [] };
         })
@@ -415,7 +415,7 @@ export default function HomePage() {
     try {
       console.log("🔄 [HomePage] Starting fresh bank data sync via backend...");
       
-      // Step 1: Trigger backend refresh that calls TrueLayer and saves to DynamoDB
+      // Step 1: Trigger backend refresh that calls Nordigen/GoCardless and saves to DynamoDB
       console.log("🔄 [HomePage] Calling backend refresh API...");
       const refreshResponse = await bankingAPI.refreshTransactions();
       console.log("✅ [HomePage] Backend refresh successful:", refreshResponse);
@@ -455,7 +455,7 @@ export default function HomePage() {
           setWarning("All bank connections have expired. Please reconnect your banks to get fresh transaction data.");
           setHasExpiredBanks(true);
         } else if (successfulAccounts > 0) {
-          console.log(`✅ [HomePage] Successfully synced ${totalTransactionsSynced} transactions from ${successfulAccounts} accounts via TrueLayer`);
+          console.log(`✅ [HomePage] Successfully synced ${totalTransactionsSynced} transactions from ${successfulAccounts} accounts via Nordigen/GoCardless`);
           
           if (failedAccounts > 0) {
             setWarning(`Some bank connections have expired (${failedAccounts} failed, ${successfulAccounts} successful). Consider reconnecting failed banks.`);
@@ -472,7 +472,7 @@ export default function HomePage() {
       console.error("❌ [HomePage] Bank refresh failed:", error);
       
       if (error.response?.status === 401 || error.message?.includes('expired') || error.message?.includes('token')) {
-        setError("Bank connections have expired. Please reconnect your banks to get fresh data from TrueLayer.");
+        setError("Bank connections have expired. Please reconnect your banks to get fresh data from Nordigen/GoCardless.");
         setHasExpiredBanks(true);
       } else if (error.response?.status === 429) {
         setError("Rate limit reached. Please try again in a few minutes.");
