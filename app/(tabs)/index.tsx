@@ -181,7 +181,7 @@ export default function HomePage() {
             return { banks: [] };
           });
         }),
-        bankingAPI.getTransactionsUnified({ limit: 100 }).catch(err => {
+        bankingAPI.getAllTransactions(100).catch(err => {
           console.error("❌ Error fetching transactions:", err);
           return { transactions: [] };
         })
@@ -190,7 +190,7 @@ export default function HomePage() {
       console.log("✅ Parallel fetch completed:", { connectedBanksData, transactionsData });
 
       // Handle connected banks
-      const banks = connectedBanksData.banks || connectedBanksData.connections || [];
+      const banks = (connectedBanksData as any).banks || (connectedBanksData as any).connections || (connectedBanksData as any).data?.accounts || [];
       console.log("🏦 Connected banks data:", banks);
       
       // Transform banks to BankAccount format if needed
@@ -290,12 +290,14 @@ export default function HomePage() {
       // Handle transactions
       let allTransactions: Transaction[] = [];
       if (transactionsData.transactions && transactionsData.transactions.length > 0) {
+        console.log("[Home] Sample transaction data:", transactionsData.transactions.slice(0, 2));
         allTransactions = transactionsData.transactions.map((tx: any) => ({
-          id: tx.id || tx.transactionId,
-          amount: parseFloat(tx.amount) || 0,
+          id: tx.transactionId || tx.id,
+          // Apply correct sign based on transaction type
+          amount: tx.type === 'debit' ? -(Math.abs(parseFloat(tx.amount) || 0)) : Math.abs(parseFloat(tx.amount) || 0),
           currency: tx.currency || APP_STRINGS.COMMON.GBP,
-          description: tx.description || APP_STRINGS.COMMON.TRANSACTION,
-          date: tx.date || new Date().toISOString(),
+          description: tx.description || tx.merchant || APP_STRINGS.COMMON.TRANSACTION,
+          date: tx.date || tx.timestamp || new Date().toISOString(),
           category: tx.category || APP_STRINGS.COMMON.OTHER,
         }));
         
@@ -426,8 +428,8 @@ export default function HomePage() {
         const statusResponse = await bankingAPI.checkBankConnectionStatus();
         console.log("✅ [HomePage] Connection status:", statusResponse);
         
-        if (statusResponse.expiredConnections && statusResponse.expiredConnections.length > 0) {
-          const expiredBankNames = statusResponse.expiredConnections.map(conn => conn.bankName).join(', ');
+        if ((statusResponse as any).expiredConnections && (statusResponse as any).expiredConnections.length > 0) {
+          const expiredBankNames = (statusResponse as any).expiredConnections.map((conn: any) => conn.bankName).join(', ');
           setWarning(`Bank connections expired: ${expiredBankNames}. Please reconnect to continue syncing.`);
           setHasExpiredBanks(true);
         } else {

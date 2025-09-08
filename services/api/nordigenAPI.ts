@@ -1,6 +1,7 @@
 import { api } from '../config/apiClient';
 import axios from 'axios';
 import { CURRENT_API_CONFIG } from '../../config/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Create a separate API instance without auth interceptors for callback
 const noAuthAPI = axios.create({
@@ -75,6 +76,15 @@ export interface NordigenAPIResponse<T> {
   data: T;
   error?: string;
   message?: string;
+  // Legacy compatibility properties
+  banks?: any[];
+  connections?: any[];
+  stats?: any;
+  expiredConnections?: any[];
+  link?: string;
+  authUrl?: string;
+  authorizationUrl?: string;
+  requisition?: any;
 }
 
 export const nordigenAPI = {
@@ -95,11 +105,25 @@ export const nordigenAPI = {
     return response.data;
   },
 
-  // Handle callback after user consent (uses non-authenticated API since backend doesn't require auth)
+  // Handle callback after user consent (uses authenticated API to ensure correct user ID)
   handleCallback: async (requisitionId: string): Promise<NordigenAPIResponse<{ requisition: NordigenRequisition; connectedAccounts: number; banks: any[] }>> => {
     console.log(`🏦 [NordigenAPI] Processing callback for requisition: ${requisitionId}`);
-    const response = await noAuthAPI.post('/nordigen/callback', {
-      requisitionId
+    
+    // Get current user ID to include in request
+    let userId;
+    try {
+      const user = await AsyncStorage.getItem('user');
+      if (user) {
+        const userData = JSON.parse(user);
+        userId = userData.id;
+      }
+    } catch (error) {
+      console.warn('Could not get user ID from storage:', error);
+    }
+    
+    const response = await api.post('/nordigen/callback', {
+      requisitionId,
+      userId // Include user ID to ensure data is saved under correct user
     });
     return response.data;
   },

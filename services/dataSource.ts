@@ -77,8 +77,9 @@ export const getAccountDetails = async (accountId: string) => {
     }
 
     // Try to find institution logo
+    const institutionsData = (institutions as any).data?.institutions || (institutions as any).institutions || [];
     const institution =
-      institutions.find((inst: any) => inst.id === account.institutionId) || {};
+      institutionsData.find((inst: any) => inst.id === account.institutionId) || {};
 
     return {
       id: account.id,
@@ -135,10 +136,9 @@ export const getAccountBalance = async (accountId: string) => {
 export const getAccountTransactions = async (accountId: string) => {
   try {
     const transactionsRes = await bankingAPI.getTransactions(accountId);
-    const transactions =
-      transactionsRes.transactions?.booked ||
-      transactionsRes.transactions ||
-      [];
+    const transactions = Array.isArray(transactionsRes.transactions) 
+      ? transactionsRes.transactions 
+      : ((transactionsRes.transactions as any)?.booked || []);
 
     return {
       transactions: transactions.map((tx: any) => ({
@@ -547,21 +547,27 @@ const getCategoryColor = (index: number): string => {
 
 export const getTransactions = async () => {
   try {
+    console.log("[DataSource] getTransactions called");
     
     // Use the EXACT same call as the homepage - direct API call without transformation
     const response = await bankingAPI.getAllTransactions(100);
     
+    console.log("[DataSource] Raw API response:", response);
 
     if (!response || !response.transactions) {
+      console.log("[DataSource] No transactions in response");
       return [];
     }
 
+    console.log("[DataSource] Found transactions:", response.transactions.length);
     
     // Return the transactions exactly as they come from the API (same as homepage)
-    // Just add the fields that the UI expects
-    return response.transactions.map((tx: any, index: number) => ({
+    // Just add the fields that the UI expects, with correct amount signs
+    const formattedTransactions = response.transactions.map((tx: any, index: number) => ({
       // Keep all original fields from DynamoDB
       ...tx,
+      // Correct the amount sign based on transaction type
+      amount: tx.type === "debit" ? -(Math.abs(tx.amount || 0)) : Math.abs(tx.amount || 0),
       // Add UI-expected fields
       id: tx.transactionId || tx.id || `tx_${index}`,
       transaction_id: tx.transactionId || tx.id,
@@ -570,6 +576,9 @@ export const getTransactions = async () => {
       transaction_type: tx.type || (parseFloat(tx.amount || '0') < 0 ? 'debit' : 'credit'),
       bank_name: tx.bankName || 'Unknown Bank',
     }));
+    
+    console.log("[DataSource] Returning formatted transactions:", formattedTransactions.length);
+    return formattedTransactions;
     
   } catch (error: any) {
     console.error("[DataSource] Error with direct API call:", error);

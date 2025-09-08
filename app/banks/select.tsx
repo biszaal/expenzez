@@ -66,8 +66,9 @@ export default function BankSelectScreen() {
     } catch (error: any) {
       console.error("Error fetching banks:", error);
       showError("Failed to load available banks");
-      // Provide fallback banks with categories
+      // Provide fallback banks with categories including Sandbox Finance
       const fallbackBanks = [
+        { id: "SANDBOXFINANCE_SFIN0000", name: "Sandbox Finance", logo: "" },
         { id: "HSBC_HBUKGB4B", name: "HSBC Personal", logo: "" },
         { id: "BARCLAYS_BUKBGB22", name: "Barclays Personal", logo: "" },
         { id: "LLOYDS_LOYDGB2L", name: "Lloyds Bank Personal", logo: "" },
@@ -187,7 +188,7 @@ export default function BankSelectScreen() {
 
       {/* Search Input */}
       <View style={styles.searchContainer}>
-        <View style={[styles.searchInput, { backgroundColor: colors.background.primary, borderColor: colors.border.secondary }]}>
+        <View style={[styles.searchInput, { backgroundColor: colors.background.primary, borderColor: colors.gray[200] }]}>
           <Ionicons name="search" size={20} color={colors.text.secondary} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchText, { color: colors.text.primary }]}
@@ -421,16 +422,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    paddingVertical: spacing.lg,
+    borderBottomWidth: 0,
   },
   backButton: {
-    padding: spacing.sm,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F3F4F6",
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 24,
+    fontWeight: "800",
   },
   content: {
     flex: 1,
@@ -439,15 +444,16 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
   },
   searchInput: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+    paddingVertical: 12,
+    borderRadius: 12,
     borderWidth: 1,
+    ...shadows.sm,
   },
   searchIcon: {
     marginRight: spacing.sm,
@@ -475,14 +481,15 @@ const styles = StyleSheet.create({
   categoryChip: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginRight: 8,
-    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 10,
+    borderRadius: 20,
     backgroundColor: "#F3F4F6",
     borderWidth: 1,
     borderColor: "transparent",
-    height: 28,
+    height: 36,
+    ...shadows.sm,
   },
   categoryChipText: {
     fontSize: 12,
@@ -544,10 +551,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    borderRadius: borderRadius.lg,
-    ...shadows.sm,
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+    ...shadows.md,
   },
   bankInfo: {
     flexDirection: "row",
@@ -555,12 +564,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bankIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: spacing.md,
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
   },
   bankLogo: {
     width: 40,

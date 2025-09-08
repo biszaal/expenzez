@@ -26,6 +26,7 @@ interface Transaction {
   amount: number;
   description: string;
   date: string;
+  timestamp?: string;
   merchant: string;
   category?: string;
   accountId: string;
@@ -57,7 +58,7 @@ export default function TransactionsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState(dayjs().format("YYYY-MM"));
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState(dayjs().format("HH:mm"));
 
   const fetchTransactions = async (showRefresh = false) => {
@@ -78,18 +79,18 @@ export default function TransactionsScreen() {
             });
             return {
               id: tx.id || tx.transaction_id,
-              amount: Math.abs(tx.amount || 0),
+              amount: tx.type === "debit" ? -(Math.abs(tx.amount || 0)) : Math.abs(tx.amount || 0),
               description: tx.description || tx.merchant_name || "Unknown",
               date: tx.date || tx.timestamp,
               merchant: tx.merchant_name || tx.description || "Unknown Merchant",
               category: tx.category,
               accountId: tx.account_id || "unknown",
               bankName: tx.bank_name || "Unknown Bank",
-              type: (tx.amount || 0) < 0 ? "debit" : "credit",
+              type: tx.type || ((tx.amount || 0) < 0 ? "debit" : "credit"),
               originalAmount: tx.amount || 0,
               accountType:
                 tx.account_type ||
-                (tx.amount < 0 ? "Credit Card" : "Current Account"),
+                (tx.type === "debit" ? "Current Account" : "Current Account"),
               isPending: tx.status === "pending" || tx.pending,
             };
           }
@@ -140,6 +141,30 @@ export default function TransactionsScreen() {
     }
   }, [merchant]);
 
+  // Auto-select the most recent month when transactions are loaded
+  useEffect(() => {
+    console.log(`[Transactions] useEffect triggered - selectedMonth: ${selectedMonth}, transactions: ${transactions.length}`);
+    if (!selectedMonth && transactions.length > 0) {
+      const monthsSet = new Set<string>();
+      transactions.forEach((tx, index) => {
+        console.log(`[Transactions] Processing tx ${index}:`, {
+          date: tx.date,
+          timestamp: tx.timestamp,
+          amount: tx.amount,
+          description: tx.description
+        });
+        const month = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
+        console.log(`[Transactions] Month for tx ${index}: ${month} from date: ${tx.date || tx.timestamp}`);
+        monthsSet.add(month);
+      });
+      const sortedMonths = Array.from(monthsSet).sort().reverse();
+      if (sortedMonths.length > 0) {
+        setSelectedMonth(sortedMonths[0]);
+        console.log(`[Transactions] Auto-selected month: ${sortedMonths[0]} from available months:`, sortedMonths);
+      }
+    }
+  }, [transactions, selectedMonth]);
+
   // Generate available months from transactions
   const availableMonths = useMemo(() => {
     const monthsSet = new Set<string>();
@@ -159,11 +184,21 @@ export default function TransactionsScreen() {
   // Filter and group transactions
   const { filteredTransactions, pendingTransactions } = useMemo(() => {
     let filtered = transactions;
+    console.log(`[Transactions] Starting filter with ${transactions.length} transactions, selectedMonth: ${selectedMonth}`);
 
     // Month filter
     filtered = filtered.filter(
-      (tx) => dayjs(tx.date).format("YYYY-MM") === selectedMonth
+      (tx) => {
+        const txMonth = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
+        const matches = txMonth === selectedMonth;
+        if (!matches) {
+          console.log(`[Transactions] Filtering out tx: ${tx.description}, month: ${txMonth}, selected: ${selectedMonth}`);
+        }
+        return matches;
+      }
     );
+    
+    console.log(`[Transactions] After month filter: ${filtered.length} transactions`);
 
     // Search filter
     if (searchQuery.trim()) {
@@ -219,10 +254,6 @@ export default function TransactionsScreen() {
     return dayjs(date).format("ddd DD MMM");
   };
 
-  const formatTransactionTime = (date: string) => {
-    console.log("[TransactionTime] Raw date:", date, "Formatted:", dayjs(date).format("HH:mm"));
-    return dayjs(date).format("HH:mm");
-  };
 
   const getMerchantLogo = (description: string) => {
     const merchantInfo = getMerchantInfo(description);
@@ -500,14 +531,6 @@ export default function TransactionsScreen() {
                       >
                         {getMerchantInfo(transaction.description).name}
                       </Text>
-                      <Text
-                        style={[
-                          styles.transactionTime,
-                          { color: colors.text.secondary },
-                        ]}
-                      >
-                        {formatTransactionTime(transaction.date)}
-                      </Text>
                       <View style={styles.accountInfo}>
                         <Text
                           style={[
@@ -715,10 +738,6 @@ const styles = StyleSheet.create({
   merchantName: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 2,
-  },
-  transactionTime: {
-    fontSize: 14,
     marginBottom: 2,
   },
   accountInfo: {

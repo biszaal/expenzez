@@ -1,4 +1,5 @@
 export type BankCategory = 
+  | 'sandbox'
   | 'personal' 
   | 'business' 
   | 'commercial' 
@@ -16,6 +17,13 @@ export interface BankCategoryInfo {
 }
 
 export const BANK_CATEGORIES: Record<BankCategory, BankCategoryInfo> = {
+  sandbox: {
+    id: 'sandbox',
+    name: 'Sandbox/Testing',
+    icon: '🧪',
+    description: 'Test banks for development',
+    priority: 0
+  },
   personal: {
     id: 'personal',
     name: 'Personal Banking',
@@ -85,7 +93,12 @@ export function categorizeBank(bankName: string, bankId?: string): BankCategory 
   const name = bankName.toLowerCase();
   const id = (bankId || '').toLowerCase();
   
-  // Check for digital banks first (highest priority)
+  // Check for sandbox/test banks first (highest priority)
+  if (name.includes('sandbox') || id.includes('sandboxfinance') || name.includes('test')) {
+    return 'sandbox';
+  }
+  
+  // Check for digital banks
   if (DIGITAL_BANKS.some(digital => name.includes(digital) || id.includes(digital))) {
     return 'digital';
   }
@@ -130,6 +143,7 @@ export function groupBanksByCategory<T extends { name: string; id?: string }>(
   banks: T[]
 ): Record<BankCategory, T[]> {
   const grouped: Record<BankCategory, T[]> = {
+    sandbox: [],
     personal: [],
     business: [],
     commercial: [],

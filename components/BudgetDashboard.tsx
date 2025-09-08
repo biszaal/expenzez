@@ -77,7 +77,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
       else setLoading(true);
 
       const [budgetResponse, alertResponse] = await Promise.all([
-        budgetAPI.getBudgets(true),
+        budgetAPI.getBudgets(),
         budgetAPI.getBudgetAlerts(),
       ]);
 

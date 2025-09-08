@@ -12,27 +12,20 @@ export const aiService = {
       let financialContext: any = {};
       
       try {
-        console.log('🤖 [AI Context] Starting to gather financial context...');
-        
         // Get recent transactions (last 20 for context)
-        console.log('🤖 [AI Context] Fetching transactions...');
         const transactionsResponse = await bankingAPI.getAllTransactions(20);
-        console.log('🤖 [AI Context] Raw transactions response:', JSON.stringify(transactionsResponse, null, 2));
         financialContext.recentTransactions = transactionsResponse.transactions || [];
-        console.log('🤖 [AI Context] Transactions fetched:', transactionsResponse.transactions?.length || 0);
         
         // Get connected accounts and their balances
-        console.log('🤖 [AI Context] Fetching connected accounts...');
         const accountsResponse = await bankingAPI.getConnectedBanks();
-        console.log('🤖 [AI Context] Raw accounts response:', JSON.stringify(accountsResponse, null, 2));
-        financialContext.accounts = accountsResponse.banks || [];
-        console.log('🤖 [AI Context] Connected accounts fetched:', accountsResponse.banks?.length || 0);
+        financialContext.accounts = accountsResponse.data?.accounts || accountsResponse.banks || [];
         
         // Calculate total balance
         let totalBalance = 0;
         if (financialContext.accounts) {
           totalBalance = financialContext.accounts.reduce((sum: number, account: any) => {
-            return sum + (account.balance || 0);
+            const balance = account.balances?.current || account.balance || 0;
+            return sum + balance;
           }, 0);
         }
         financialContext.totalBalance = totalBalance;
@@ -40,20 +33,11 @@ export const aiService = {
         // Calculate monthly spending
         const currentMonth = new Date().toISOString().substring(0, 7);
         const monthlySpending = financialContext.recentTransactions
-          ?.filter((tx: any) => tx.date?.startsWith(currentMonth) && parseFloat(tx.amount) < 0)
-          ?.reduce((sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount)), 0) || 0;
+          ?.filter((tx: any) => tx.date?.startsWith(currentMonth) && tx.type === 'debit')
+          ?.reduce((sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount) || 0), 0) || 0;
         financialContext.monthlySpending = monthlySpending;
         
-        console.log('🤖 [AI Context] ===== FINANCIAL DATA GATHERED =====');
-        console.log('🤖 [AI Context] Transactions:', financialContext.recentTransactions?.length || 0);
-        console.log('🤖 [AI Context] Accounts:', financialContext.accounts?.length || 0);
-        console.log('🤖 [AI Context] Total Balance:', totalBalance);
-        console.log('🤖 [AI Context] Monthly Spending:', monthlySpending);
-        console.log('🤖 [AI Context] Has Financial Data:', financialContext.recentTransactions?.length > 0);
-        console.log('🤖 [AI Context] =====================================');
-        
       } catch (contextError) {
-        console.warn('⚠️ [AI Context] Failed to gather financial context:', contextError);
         // Continue without context - AI will use general responses
       }
       
@@ -63,14 +47,8 @@ export const aiService = {
       });
       return response.data;
     } catch (error: any) {
-      console.error("[AI API] Failed to get AI insight:", error);
-      
       // Enhanced fallback for TestFlight/Production when AI endpoints might not be available
       if (error.response?.status === 404 || error.response?.status === 502 || error.response?.status === 503) {
-        console.log("🤖 [AI Fallback] ===== AI ENDPOINT NOT AVAILABLE =====");
-        console.log("🤖 [AI Fallback] Status:", error.response?.status);
-        console.log("🤖 [AI Fallback] Using enhanced fallback with context");
-        console.log("🤖 [AI Fallback] =======================================");
         
         // Generate contextual fallback responses using the financial data we gathered
         const lowerMessage = message.toLowerCase();
@@ -83,20 +61,22 @@ export const aiService = {
           const accountsResponse = await bankingAPI.getConnectedBanks();
           
           financialContext.recentTransactions = transactionsResponse.transactions || [];
-          financialContext.accounts = accountsResponse.banks || [];
+          financialContext.accounts = accountsResponse.data?.accounts || accountsResponse.banks || [];
           
           let totalBalance = 0;
           if (financialContext.accounts) {
             totalBalance = financialContext.accounts.reduce((sum: number, account: any) => {
-              return sum + (account.balance || 0);
+              // Use the correct balance property from Nordigen API response
+              const balance = account.balances?.current || account.balance || 0;
+              return sum + balance;
             }, 0);
           }
           financialContext.totalBalance = totalBalance;
           
           const currentMonth = new Date().toISOString().substring(0, 7);
           const monthlySpending = financialContext.recentTransactions
-            ?.filter((tx: any) => tx.date?.startsWith(currentMonth) && parseFloat(tx.amount) < 0)
-            ?.reduce((sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount)), 0) || 0;
+            ?.filter((tx: any) => tx.date?.startsWith(currentMonth) && tx.type === 'debit')
+            ?.reduce((sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount) || 0), 0) || 0;
           financialContext.monthlySpending = monthlySpending;
         } catch {
           // If we can't get context, use empty context
@@ -104,12 +84,6 @@ export const aiService = {
         
         const { totalBalance, monthlySpending, recentTransactions, accounts } = financialContext;
         const hasFinancialData = totalBalance !== undefined && recentTransactions?.length > 0;
-        
-        console.log("🤖 [AI Fallback] Financial Context Check:");
-        console.log("🤖 [AI Fallback] - Total Balance:", totalBalance);
-        console.log("🤖 [AI Fallback] - Recent Transactions:", recentTransactions?.length || 0);
-        console.log("🤖 [AI Fallback] - Has Financial Data:", hasFinancialData);
-        console.log("🤖 [AI Fallback] - Message Type:", lowerMessage);
         
         if (lowerMessage.includes('balance') || lowerMessage.includes('money')) {
           if (hasFinancialData) {
@@ -168,7 +142,6 @@ export const aiService = {
       const response = await aiAPI.get("/ai/chat-history");
       return response.data;
     } catch (error: any) {
-      console.error("Error fetching AI chat history:", error);
       if (error.response?.status === 404 || error.response?.status === 401) {
         return {
           success: true,
@@ -185,7 +158,6 @@ export const aiService = {
       const response = await aiAPI.post("/ai/chat-message", { role, content });
       return response.data;
     } catch (error: any) {
-      console.error("Error saving AI chat message:", error);
       if (error.response?.status === 404 || error.response?.status === 401) {
         return { success: true };
       }
@@ -199,7 +171,6 @@ export const aiService = {
       const response = await aiAPI.delete("/ai/chat-history");
       return response.data;
     } catch (error: any) {
-      console.error("Error clearing AI chat history:", error);
       if (error.response?.status === 404 || error.response?.status === 401) {
         return { success: true };
       }
@@ -215,8 +186,6 @@ export const aiService = {
       });
       return response.data;
     } catch (error: any) {
-      console.error("ERROR Error fetching monthly report:", error);
-      
       // Handle both 404 and 401 errors gracefully
       if (error.response?.status === 404 || error.response?.status === 401) {
         return {

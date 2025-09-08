@@ -67,7 +67,6 @@ export default function Login() {
         if (idToken) {
           jwtDecode(idToken);
         }
-        showSuccess("Login successful!");
         setIsNavigating(true);
         
         // Immediate navigation without delay
@@ -181,7 +180,6 @@ export default function Login() {
               },
             });
           } else {
-            showSuccess("Apple Sign In successful!");
             setIsNavigating(true);
             
             // Immediate navigation without delay

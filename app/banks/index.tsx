@@ -33,6 +33,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { bankingAPI } from "../../services/api";
 import * as WebBrowser from "expo-web-browser";
 import { DEEP_LINK_URLS } from "../../constants/config";
+import dayjs from "dayjs";
 
 /**
  * Bank Account Interface
@@ -48,12 +49,48 @@ interface BankAccount {
   currency: string;
   connectedAt: number;
   lastSyncAt: number;
+  tokenExpiresAt: number;
   isActive: boolean;
   status: "connected" | "expired" | "disconnected";
   isExpired: boolean;
   errorMessage?: string;
   lastErrorAt?: number;
 }
+
+/**
+ * Helper function to format token expiry information
+ */
+const formatExpiryInfo = (tokenExpiresAt: number) => {
+  const expiryDate = dayjs(tokenExpiresAt);
+  const now = dayjs();
+  const daysUntilExpiry = expiryDate.diff(now, 'days');
+  
+  if (daysUntilExpiry < 0) {
+    return {
+      text: "Expired",
+      color: "#F44336",
+      isExpired: true
+    };
+  } else if (daysUntilExpiry === 0) {
+    return {
+      text: "Expires today",
+      color: "#FF9800",
+      isExpired: false
+    };
+  } else if (daysUntilExpiry === 1) {
+    return {
+      text: "Expires in 1 day",
+      color: "#FF9800",
+      isExpired: false
+    };
+  } else {
+    return {
+      text: `Expires in ${daysUntilExpiry} days`,
+      color: daysUntilExpiry <= 7 ? "#FF9800" : "#4CAF50",
+      isExpired: false
+    };
+  }
+};
 
 /**
  * Banks Screen - Manage connected bank accounts
@@ -128,27 +165,31 @@ export default function BanksScreen() {
           });
         }
 
-        if (banksData.banks && Array.isArray(banksData.banks)) {
+        // Handle both data.accounts (from nordigen API) and banks array format
+        const accountsArray = banksData.data?.accounts || banksData.banks || [];
+        
+        if (accountsArray && Array.isArray(accountsArray)) {
           console.log(
-            "[Banks] Banks array received, length:",
-            banksData.banks.length
+            "[Banks] Accounts array received, length:",
+            accountsArray.length
           );
 
           // Transform to BankAccount format and check for expired tokens
-          const transformedAccounts = banksData.banks.map((bank: any) => ({
-            accountId: bank.accountId,
-            bankName: bank.bankName,
+          const transformedAccounts = accountsArray.map((bank: any) => ({
+            accountId: bank.account_id || bank.accountId,
+            bankName: bank.name || bank.bankName,
             bankLogo: bank.bankLogo,
-            accountType: bank.accountType,
-            accountNumber: bank.accountNumber,
+            accountType: bank.type || bank.accountType,
+            accountNumber: bank.mask || bank.accountNumber || '****',
             sortCode: bank.sortCode,
-            balance: bank.balance,
-            currency: bank.currency,
+            balance: bank.balances?.available || bank.balance || 0,
+            currency: bank.balances?.iso_currency_code || bank.currency || 'GBP',
             connectedAt: bank.connectedAt,
             lastSyncAt: bank.lastSyncAt,
-            isActive: bank.isActive,
-            status: bank.status,
-            isExpired: bank.status === "expired" || bank.isExpired,
+            tokenExpiresAt: bank.tokenExpiresAt,
+            isActive: bank.isActive !== false,
+            status: (bank.status as "connected" | "expired" | "disconnected") || "connected",
+            isExpired: bank.status === "expired" || bank.isExpired || (bank.tokenExpiresAt && Date.now() > bank.tokenExpiresAt),
             errorMessage: bank.errorMessage,
             lastErrorAt: bank.lastErrorAt,
           }));
@@ -219,7 +260,7 @@ export default function BanksScreen() {
               "[Banks] Using cached expired connections:",
               transformedAccounts
             );
-            setAccounts(transformedAccounts);
+            setAccounts(transformedAccounts as BankAccount[]);
             setHasExpiredTokens(true);
             setShowingCachedData(true);
             return;
@@ -259,6 +300,7 @@ export default function BanksScreen() {
               currency: conn.currency || "GBP",
               connectedAt: conn.connectedAt || Date.now(),
               lastSyncAt: conn.lastSyncAt || Date.now(),
+              tokenExpiresAt: conn.tokenExpiresAt || Date.now(),
               isActive: false,
               status: "expired" as const,
               isExpired: true,
@@ -319,10 +361,7 @@ export default function BanksScreen() {
       });
 
       // Generate direct auth link for this specific bank (with accountId for reconnection)
-      const response = await bankingAPI.connectBankDirect(
-        providerId,
-        accountId
-      );
+      const response = await bankingAPI.connectBankDirect(providerId);
 
       if (response.link) {
         // Open Nordigen/GoCardless auth page directly - no bank selection needed
@@ -548,6 +587,16 @@ export default function BanksScreen() {
                       >
                         ••••{account.accountNumber.slice(-4)}
                       </Text>
+                      {account.tokenExpiresAt && (
+                        <Text
+                          style={[
+                            styles.expiryDetails,
+                            { color: formatExpiryInfo(account.tokenExpiresAt).color },
+                          ]}
+                        >
+                          {formatExpiryInfo(account.tokenExpiresAt).text}
+                        </Text>
+                      )}
                     </View>
                     <View style={styles.statusBadge}>
                       <Text style={[
@@ -797,6 +846,11 @@ const styles = StyleSheet.create({
   },
   accountDetails: {
     fontSize: 12,
+  },
+  expiryDetails: {
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: "500",
   },
   statusBadge: {
     paddingHorizontal: 8,

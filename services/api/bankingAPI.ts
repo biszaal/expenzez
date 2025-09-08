@@ -24,6 +24,12 @@ export const bankingAPI = {
     return await nordigenAPI.createRequisition(institutionId, `expenzez_${Date.now()}`);
   },
 
+  // Reconnect bank (same as connect)
+  reconnectBank: async (institutionId: string) => {
+    console.log('🏦 Reconnecting bank with institution:', institutionId);
+    return await nordigenAPI.createRequisition(institutionId, `expenzez_reconnect_${Date.now()}`);
+  },
+
   // Get connected banks for the authenticated user
   getConnectedBanks: async () => {
     console.log('🏦 Getting connected banks via Nordigen');
