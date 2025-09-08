@@ -158,7 +158,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({ isVisible, onClose }
         case 'budgets':
           setExportProgress('Fetching budgets...');
           try {
-            const budgetsResponse = await budgetAPI.getBudgets(false);
+            const budgetsResponse = await budgetAPI.getBudgets();
             data.budgets = budgetsResponse.budgets || [];
             data.budgetSummary = budgetsResponse.summary || {};
           } catch (error) {
@@ -190,7 +190,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({ isVisible, onClose }
             const [transactionsResponse, expensesResponse, budgetsResponse, profileResponse, goalsResponse] = await Promise.allSettled([
               bankingAPI.getAllTransactions(5000),
               expenseAPI.getExpenses({ startDate, endDate, limit: 5000 }),
-              budgetAPI.getBudgets(false),
+              budgetAPI.getBudgets(),
               profileAPI.getProfile(),
               profileAPI.getGoals(),
             ]);

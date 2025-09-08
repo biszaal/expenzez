@@ -93,9 +93,21 @@ class DeviceManager {
       Constants.installationId || '',
     ];
 
-    // Create fingerprint hash
+    // Create fingerprint hash - use btoa for React Native compatibility
     const fingerprint = components.join('|');
-    return Buffer.from(fingerprint).toString('base64');
+    try {
+      // Use btoa for base64 encoding in React Native
+      return btoa(fingerprint);
+    } catch (error) {
+      // Fallback: simple hash if btoa is not available
+      let hash = 0;
+      for (let i = 0; i < fingerprint.length; i++) {
+        const char = fingerprint.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+      }
+      return Math.abs(hash).toString(36);
+    }
   }
 
   /**
@@ -187,6 +199,13 @@ class DeviceManager {
    * Create persistent session for trusted device
    */
   async createPersistentSession(userId: string, refreshToken: string, rememberMe: boolean = true): Promise<void> {
+    console.log('[DeviceManager] createPersistentSession called with:', {
+      hasUserId: !!userId,
+      hasRefreshToken: !!refreshToken,
+      refreshTokenLength: refreshToken?.length,
+      rememberMe
+    });
+    
     try {
       const deviceInfo = await this.getDeviceInfo();
       const now = Date.now();
@@ -206,6 +225,12 @@ class DeviceManager {
       };
 
       await AsyncStorage.setItem('persistent_session', JSON.stringify(session));
+      console.log('[DeviceManager] Persistent session created:', {
+        userId: session.userId,
+        duration: rememberMe ? '30 days' : '7 days',
+        expiresAt: new Date(session.expiresAt).toISOString(),
+        rememberMe: session.rememberMe
+      });
       
       // Trust this device if remember me is enabled
       if (rememberMe) {
@@ -223,20 +248,42 @@ class DeviceManager {
   async getPersistentSession(): Promise<PersistentSession | null> {
     try {
       const sessionData = await AsyncStorage.getItem('persistent_session');
+      console.log('[DeviceManager] Persistent session lookup:', {
+        hasData: !!sessionData,
+        dataLength: sessionData?.length
+      });
+      
       if (!sessionData) return null;
 
       const session: PersistentSession = JSON.parse(sessionData);
       const now = Date.now();
+      
+      console.log('[DeviceManager] Persistent session details:', {
+        userId: session.userId,
+        hasRefreshToken: !!session.refreshToken,
+        expiresAt: session.expiresAt,
+        now,
+        isExpired: session.expiresAt < now,
+        rememberMe: session.rememberMe
+      });
 
       // Check if session has expired
       if (session.expiresAt < now) {
+        console.log('[DeviceManager] Session expired, removing');
         await AsyncStorage.removeItem('persistent_session');
         return null;
       }
 
       // Verify device fingerprint for security
       const currentFingerprint = await this.generateDeviceFingerprint();
+      console.log('[DeviceManager] Fingerprint check:', {
+        stored: session.deviceFingerprint?.substring(0, 10) + '...',
+        current: currentFingerprint?.substring(0, 10) + '...',
+        match: session.deviceFingerprint === currentFingerprint
+      });
+      
       if (session.deviceFingerprint !== currentFingerprint) {
+        console.log('[DeviceManager] Fingerprint mismatch, removing session');
         await AsyncStorage.removeItem('persistent_session');
         return null;
       }

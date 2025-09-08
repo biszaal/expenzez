@@ -22,7 +22,8 @@
     "production": {
       "ios": {
         "appleId": "biszaal@icloud.com",
-        "appleTeamId": "HG4G2ZMGV8"
+        "appleTeamId": "HG4G2ZMGV8",
+        "ascAppId": "6670379264"
       }
     }
   }

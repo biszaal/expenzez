@@ -45,7 +45,27 @@ api.interceptors.request.use(
     
     if (isLoggedIn === 'false' && !isAllowedEndpoint) {
       console.log(`[API] Interceptor: User logged out, cancelling request to ${config.url}`);
-      return Promise.reject(new Error('User is logged out'));
+      const error = new Error('User is logged out');
+      (error as any).config = config;
+      (error as any).isUserLoggedOut = true;
+      return Promise.reject(error);
+    }
+
+    // Don't add tokens to auth endpoints (they don't need/want them)
+    const authEndpoints = [
+      '/auth/login',
+      '/auth/register', 
+      '/auth/confirm-signup',
+      '/auth/resend-verification',
+      '/auth/forgot-password',
+      '/auth/confirm-forgot-password'
+    ];
+    
+    const isAuthEndpoint = authEndpoints.some(endpoint => config.url?.includes(endpoint));
+    
+    if (isAuthEndpoint) {
+      console.log(`[API] Interceptor: Auth endpoint ${config.url} - skipping token`);
+      return config;
     }
 
     console.log(`[API] Interceptor: Requesting token for ${config.url}`);
@@ -82,7 +102,10 @@ aiAPI.interceptors.request.use(
     const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
     if (isLoggedIn === 'false') {
       console.log(`[AI API] Interceptor: User logged out, cancelling request to ${config.url}`);
-      return Promise.reject(new Error('User is logged out'));
+      const error = new Error('User is logged out');
+      (error as any).config = config;
+      (error as any).isUserLoggedOut = true;
+      return Promise.reject(error);
     }
 
     console.log(`[AI API] Interceptor: Requesting token for ${config.url}`);
@@ -120,7 +143,19 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Don't attempt token refresh for auth endpoints - they're supposed to return 401 sometimes
+    const authEndpoints = [
+      '/auth/login',
+      '/auth/register', 
+      '/auth/confirm-signup',
+      '/auth/resend-verification',
+      '/auth/forgot-password',
+      '/auth/confirm-forgot-password'
+    ];
+    
+    const isAuthEndpoint = authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
+    
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       console.log(`[API] 401 Unauthorized: ${originalRequest.url} - Attempting token refresh`);
       originalRequest._retry = true;
 
@@ -133,10 +168,59 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return api(originalRequest);
         } else {
-          console.log(`[API] Token refresh failed - user logged out`);
-          // TokenManager has already cleared tokens and set isLoggedIn to false
-          // Don't make any more API requests - just reject immediately
-          return Promise.reject(new Error('Session expired - please log in again'));
+          console.log(`[API] Token refresh failed - checking if this is a critical endpoint`);
+          console.log(`[API] Request URL: ${originalRequest.url}`);
+          
+          // For critical endpoints like banking callbacks, allow the request to proceed without token
+          const criticalEndpoints = ['/nordigen/callback', '/banking/callback', '/banks/callback'];
+          const isCriticalEndpoint = criticalEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
+          
+          // Also check if we're in a banking callback context (even for auth/refresh)
+          let isBankingCallbackContext = false;
+          try {
+            // Check if there are recent banking requisitions (within 15 minutes - same as TokenManager)
+            const keys = await import('@react-native-async-storage/async-storage').then(m => 
+              m.default.getAllKeys().then(keys => keys.filter(key => key.startsWith('requisition_expenzez_')))
+            );
+            
+            console.log(`[API] Banking callback detection - found keys:`, keys);
+            
+            isBankingCallbackContext = keys.some(key => {
+              const match = key.match(/requisition_expenzez_(\d+)/);
+              if (match) {
+                const timestamp = parseInt(match[1]);
+                const age = Date.now() - timestamp;
+                const isRecent = age < 15 * 60 * 1000; // 15 minutes - same as TokenManager
+                console.log(`[API] Key ${key}: timestamp=${timestamp}, age=${age}ms (${Math.round(age/1000)}s), isRecent=${isRecent}`);
+                return isRecent;
+              }
+              return false;
+            });
+            
+            console.log(`[API] Banking callback context detection result:`, isBankingCallbackContext);
+          } catch (error) {
+            console.log(`[API] Error checking banking callback context:`, error);
+          }
+          
+          const shouldAllowWithoutAuth = isCriticalEndpoint || (isBankingCallbackContext && originalRequest.url?.includes('/auth/refresh'));
+          console.log(`[API] Critical endpoint check: ${isCriticalEndpoint}, Banking context: ${isBankingCallbackContext}, Should allow: ${shouldAllowWithoutAuth} for URL ${originalRequest.url}`);
+          
+          if (shouldAllowWithoutAuth) {
+            console.log(`[API] Allowing ${isCriticalEndpoint ? 'critical endpoint' : 'auth/refresh during banking callback'} ${originalRequest.url} to proceed without authentication`);
+            delete originalRequest.headers.Authorization; // Remove auth header
+            return api(originalRequest);
+          } else {
+            // Session has truly expired, clear auth state and redirect to login
+            await AsyncStorage.setItem('isLoggedIn', 'false');
+            await AsyncStorage.removeItem('accessToken');
+            await AsyncStorage.removeItem('idToken');
+            await AsyncStorage.removeItem('refreshToken');
+            await AsyncStorage.removeItem('tokenExpiresAt');
+            await AsyncStorage.removeItem('user');
+            await AsyncStorage.removeItem('userBudget');
+            
+            return Promise.reject(new Error('Session expired - please log in again'));
+          }
         }
       } catch (refreshError: any) {
         // If token refresh fails due to network issues, don't mark user as logged out
@@ -144,10 +228,23 @@ api.interceptors.response.use(
           console.log(`[API] Token refresh failed due to network issues for ${originalRequest.url} - keeping user logged in`);
           return Promise.reject(error); // Return original 401 error, don't set logged out
         }
-        console.error(`[API] Error during token refresh - user logged out:`, refreshError);
-        // TokenManager has already handled logout
+        
+        // Session has truly expired, clear auth state
+        await AsyncStorage.setItem('isLoggedIn', 'false');
+        await AsyncStorage.removeItem('accessToken');
+        await AsyncStorage.removeItem('idToken');
+        await AsyncStorage.removeItem('refreshToken');
+        await AsyncStorage.removeItem('tokenExpiresAt');
+        await AsyncStorage.removeItem('user');
+        await AsyncStorage.removeItem('userBudget');
+        
         return Promise.reject(new Error('Session expired - please log in again'));
       }
+    }
+    
+    // For auth endpoints with 401, just pass through the error without token refresh
+    if (isAuthEndpoint && error.response?.status === 401) {
+      console.log(`[API] Auth endpoint ${originalRequest.url} returned 401 - this is expected, not attempting token refresh`);
     }
 
     // Don't spam console with errors if user is already logged out
@@ -174,7 +271,19 @@ aiAPI.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Don't attempt token refresh for auth endpoints - they're supposed to return 401 sometimes
+    const authEndpoints = [
+      '/auth/login',
+      '/auth/register', 
+      '/auth/confirm-signup',
+      '/auth/resend-verification',
+      '/auth/forgot-password',
+      '/auth/confirm-forgot-password'
+    ];
+    
+    const isAuthEndpoint = authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
+    
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       console.log(`[AI API] 401 Unauthorized: ${originalRequest.url} - Attempting token refresh`);
       originalRequest._retry = true;
 
@@ -187,8 +296,15 @@ aiAPI.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return aiAPI(originalRequest);
         } else {
-          console.log(`[AI API] Token refresh failed - user logged out`);
-          // TokenManager has already cleared tokens and set isLoggedIn to false
+          // Session has truly expired, clear auth state and redirect to login
+          await AsyncStorage.setItem('isLoggedIn', 'false');
+          await AsyncStorage.removeItem('accessToken');
+          await AsyncStorage.removeItem('idToken');
+          await AsyncStorage.removeItem('refreshToken');
+          await AsyncStorage.removeItem('tokenExpiresAt');
+          await AsyncStorage.removeItem('user');
+          await AsyncStorage.removeItem('userBudget');
+          
           return Promise.reject(new Error('Session expired - please log in again'));
         }
       } catch (refreshError: any) {
@@ -197,10 +313,23 @@ aiAPI.interceptors.response.use(
           console.log(`[AI API] Token refresh failed due to network issues for ${originalRequest.url} - keeping user logged in`);
           return Promise.reject(error); // Return original 401 error, don't set logged out
         }
-        console.error(`[AI API] Error during token refresh - user logged out:`, refreshError);
-        // TokenManager has already handled logout
+        
+        // Session has truly expired, clear auth state
+        await AsyncStorage.setItem('isLoggedIn', 'false');
+        await AsyncStorage.removeItem('accessToken');
+        await AsyncStorage.removeItem('idToken');
+        await AsyncStorage.removeItem('refreshToken');
+        await AsyncStorage.removeItem('tokenExpiresAt');
+        await AsyncStorage.removeItem('user');
+        await AsyncStorage.removeItem('userBudget');
+        
         return Promise.reject(new Error('Session expired - please log in again'));
       }
+    }
+    
+    // For auth endpoints with 401, just pass through the error without token refresh
+    if (isAuthEndpoint && error.response?.status === 401) {
+      console.log(`[AI API] Auth endpoint ${originalRequest.url} returned 401 - this is expected, not attempting token refresh`);
     }
 
     // Don't spam console with errors if user is already logged out

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,8 +19,8 @@ export default function BankCallbackScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { showAlert, showError } = useAlert();
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
+  const [status, setStatus] = useState<"loading" | "success" | "error" | "redirecting">(
+    "redirecting" // Start with redirecting to prevent flash
   );
   const [message, setMessage] = useState("Processing bank connection...");
 
@@ -33,6 +34,32 @@ export default function BankCallbackScreen() {
   useEffect(() => {
     // Complete the auth session to close the in-app browser
     WebBrowser.maybeCompleteAuthSession();
+
+    // IMMEDIATE CHECK: If no valid params, redirect immediately without delay
+    if (!params.ref && !params.code && !params.error && !params.reconnect) {
+      console.log('[CALLBACK] No valid parameters detected on useEffect - redirecting immediately');
+      setStatus("redirecting");
+      router.replace("/(tabs)");
+      return;
+    }
+    
+    // ADDITIONAL CHECK: If we have a ref parameter, verify it's valid
+    if (params.ref && typeof params.ref === 'string') {
+      // Check if the ref looks like it might be stale (older than 15 minutes)
+      const match = params.ref.match(/expenzez_(\d+)/);
+      if (match) {
+        const timestamp = parseInt(match[1]);
+        const age = Date.now() - timestamp;
+        const FIFTEEN_MINUTES = 15 * 60 * 1000;
+        
+        if (age > FIFTEEN_MINUTES) {
+          console.log(`[CALLBACK] Stale reference detected: ${params.ref} (${Math.round(age/1000)}s old) - redirecting immediately`);
+          setStatus("redirecting");
+          router.replace("/(tabs)");
+          return;
+        }
+      }
+    }
 
     // Add a small delay to ensure the screen is fully loaded
     const timer = setTimeout(() => {
@@ -48,6 +75,59 @@ export default function BankCallbackScreen() {
         "[CALLBACK] Starting Nordigen/GoCardless callback with params:",
         params
       );
+      
+      // For GoCardless/Nordigen, success callbacks may only have 'ref' parameter
+      // The 'ref' parameter indicates a successful callback from GoCardless
+      const hasCallbackParams = params.code || params.error || params.reconnect || params.ref;
+      
+      // AGGRESSIVE CHECK: If no valid callback params, immediately redirect without showing UI
+      if (!hasCallbackParams || Object.keys(params).length === 0) {
+        console.log('[CALLBACK] No banking callback parameters found, redirecting immediately');
+        setStatus("redirecting");
+        router.replace("/(tabs)");
+        return;
+      }
+      
+      // ADDITIONAL CHECK: If params exist but look stale (old reference without current banking flow)
+      if (params.ref && !params.code && !params.error && !params.reconnect) {
+        console.log('[CALLBACK] Checking if banking reference is stale...');
+        
+        // If reference exists but no associated stored requisition, it's stale
+        const storedRequisitionId = await AsyncStorage.getItem(`requisition_${params.ref}`);
+        if (!storedRequisitionId) {
+          console.log('[CALLBACK] Stale banking reference - no stored requisition, redirecting immediately');
+          setStatus("redirecting");
+          router.replace("/(tabs)");
+          return;
+        }
+      }
+      
+      // Additional check: if we only have a ref but it looks old/invalid, redirect
+      if (params.ref && !params.code && !params.error) {
+        try {
+          const storedRequisitionId = await AsyncStorage.getItem(`requisition_${params.ref}`);
+          if (!storedRequisitionId) {
+            console.log('[CALLBACK] Stale reference detected, no stored requisition found, cleaning up and redirecting home');
+            // Set status to redirecting to hide UI
+            setStatus("redirecting");
+            // Clean up any stale AsyncStorage keys related to this reference
+            try {
+              await AsyncStorage.removeItem(`requisition_${params.ref}`);
+            } catch (cleanupError) {
+              console.log('[CALLBACK] Error during cleanup:', cleanupError);
+            }
+            // Force immediate redirect without showing UI
+            setTimeout(() => router.replace("/(tabs)"), 100);
+            return;
+          }
+        } catch (error) {
+          console.log('[CALLBACK] Error checking stored requisition, redirecting home');
+          setTimeout(() => router.replace("/(tabs)"), 100);
+          return;
+        }
+      }
+      
+      console.log('[CALLBACK] Processing GoCardless callback with ref:', params.ref);
 
       // Check if there's an error from the bank
       if (oauthError) {
@@ -64,25 +144,17 @@ export default function BankCallbackScreen() {
         return;
       }
 
-      if (code) {
+      if (code || params.ref) {
         setStatus("loading");
         setMessage("Finalizing bank connection...");
 
-        // Check if user is authenticated before making API call
+        // Banking callback can proceed without authentication 
+        // Backend is configured to handle this as a critical endpoint
+        console.log("[CALLBACK] Creating new bank connection");
         const accessToken = await AsyncStorage.getItem("accessToken");
         if (!accessToken) {
-          console.error("[CALLBACK] No access token found");
-          setStatus("error");
-          setMessage("Authentication required. Please log in again.");
-          showError("Please log in to complete bank connection.");
-          setTimeout(() => {
-            try {
-              router.push("/auth/Login");
-            } catch (navError) {
-              router.back();
-            }
-          }, 2000);
-          return;
+          console.log("[CALLBACK] No access token found - this is normal during banking callbacks");
+          // Don't return here - allow the request to proceed
         }
 
         // Try to refresh the token before making the API call
@@ -110,8 +182,7 @@ export default function BankCallbackScreen() {
             console.log("[CALLBACK] Reconnecting bank:", reconnectAccountId);
             setMessage("Reconnecting your bank account...");
             response = await bankingAPI.reconnectBank(
-              reconnectAccountId,
-              code as string
+              reconnectAccountId
             );
             console.log(
               "[BankCallbackScreen] reconnectBank response:",
@@ -125,7 +196,51 @@ export default function BankCallbackScreen() {
             );
           } else {
             console.log("[CALLBACK] Creating new bank connection");
-            response = await bankingAPI.handleCallback(code as string);
+            let callbackParam = code as string;
+            
+            // For GoCardless callbacks, we need to get the requisition ID from the stored reference
+            if (!code && params.ref) {
+              console.log("[CALLBACK] GoCardless callback - looking up requisition ID for ref:", params.ref);
+              try {
+                const storedRequisitionId = await AsyncStorage.getItem(`requisition_${params.ref}`);
+                if (storedRequisitionId) {
+                  callbackParam = storedRequisitionId;
+                  console.log("[CALLBACK] Found stored requisition ID:", storedRequisitionId);
+                } else {
+                  console.error("[CALLBACK] No stored requisition ID found for ref:", params.ref);
+                  
+                  // Fallback: Check if the reference itself looks like a UUID (direct requisition ID)
+                  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                  if (uuidRegex.test(params.ref as string)) {
+                    console.log("[CALLBACK] Reference looks like a UUID, using directly as requisition ID:", params.ref);
+                    callbackParam = params.ref as string;
+                  } else {
+                    // Try to find any stored requisition that might match
+                    console.log("[CALLBACK] Searching for any stored requisition references...");
+                    const allKeys = await AsyncStorage.getAllKeys();
+                    const requisitionKeys = allKeys.filter(key => key.startsWith('requisition_'));
+                    
+                    if (requisitionKeys.length > 0) {
+                      const latestKey = requisitionKeys[requisitionKeys.length - 1]; // Get most recent
+                      const latestRequisitionId = await AsyncStorage.getItem(latestKey);
+                      if (latestRequisitionId) {
+                        console.log("[CALLBACK] Using latest stored requisition ID as fallback:", latestRequisitionId);
+                        callbackParam = latestRequisitionId;
+                      } else {
+                        throw new Error(`No requisition ID found for reference: ${params.ref}`);
+                      }
+                    } else {
+                      throw new Error(`No requisition ID found for reference: ${params.ref}`);
+                    }
+                  }
+                }
+              } catch (lookupError) {
+                console.error("[CALLBACK] Error looking up requisition ID:", lookupError);
+                throw lookupError;
+              }
+            }
+            
+            response = await bankingAPI.handleCallback(callbackParam);
             console.log(
               "[BankCallbackScreen] handleCallback response:",
               response
@@ -171,6 +286,28 @@ export default function BankCallbackScreen() {
                 router.back();
               }
             }, 2000);
+          } else if (apiError.response?.status === 429 && apiError.response?.data?.error === 'DAILY_LIMIT_REACHED') {
+            // Handle GoCardless daily limit error
+            setStatus("error");
+            setMessage("Daily API limit reached. Try again tomorrow.");
+            Alert.alert(
+              "API Limit Reached",
+              "GoCardless daily API limit has been reached. This is common during development. Please try connecting your bank again tomorrow.\n\nNote: This limit resets every 24 hours.",
+              [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    setTimeout(() => {
+                      try {
+                        router.push("/(tabs)");
+                      } catch (navError) {
+                        router.back();
+                      }
+                    }, 500);
+                  }
+                }
+              ]
+            );
           } else {
             setStatus("error");
             setMessage("Failed to complete bank connection.");
@@ -216,6 +353,11 @@ export default function BankCallbackScreen() {
       }, 2000);
     }
   };
+
+  // Don't render anything if we're redirecting immediately
+  if (status === "redirecting") {
+    return null;
+  }
 
   return (
     <SafeAreaView

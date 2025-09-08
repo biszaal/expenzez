@@ -125,6 +125,9 @@ export const authAPI = {
   }) => {
     try {
       const response = await api.post("/auth/login", credentials);
+      console.log('🔍 [authAPI] Raw login response:', JSON.stringify(response.data, null, 2));
+      console.log('🔍 [authAPI] Response.data.user:', response.data.user);
+      console.log('🔍 [authAPI] Response.data.user?.username:', response.data.user?.username);
       return response.data;
     } catch (error: any) {
       console.error("❌ Login request failed:", {

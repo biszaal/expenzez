@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Alert, ViewStyle, TextStyle } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as WebBrowser from 'expo-web-browser';
 import { useTheme } from '../../contexts/ThemeContext';
 import { bankingAPI } from '../../services/api';
 import { getEnvironmentName, isTestFlight } from '../../config/environment';
@@ -13,13 +14,55 @@ const BankingCallback: React.FC = () => {
   const [message, setMessage] = useState('Processing bank connection...');
 
   useEffect(() => {
-    processBankingCallback();
+    // Add a small delay to prevent automatic processing during app initialization
+    const timer = setTimeout(() => {
+      processBankingCallback();
+    }, 100); // Small delay to allow proper app initialization
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const processBankingCallback = async () => {
     try {
       console.log('🏦 Processing banking callback in', getEnvironmentName());
       console.log('📋 Callback params:', params);
+      
+      // Check if this is a legitimate banking callback with proper parameters
+      // A valid callback should have either 'code' (success) or 'error' (failure) from GoCardless
+      const hasValidCallbackParams = params.code || params.error || params.error_description;
+      
+      // If only 'ref' or 'requisition_id' parameter exists without callback status, this is NOT a valid callback
+      const hasOnlyIdentifiers = (params.ref || params.requisition_id) && 
+                                 !params.code && !params.error && !params.error_description;
+      
+      if (!hasValidCallbackParams || hasOnlyIdentifiers || Object.keys(params).length === 0) {
+        console.log('⚠️ No valid banking callback parameters found (or stale ref), redirecting to home');
+        console.log('⚠️ Detected parameters:', params);
+        setMessage('No active banking connection to process, returning to home...');
+        
+        // Clear any stale AsyncStorage references
+        if (params.ref) {
+          try {
+            await AsyncStorage.removeItem(`requisition_${params.ref}`);
+            console.log('🗑️ Cleared stale requisition reference:', params.ref);
+          } catch (error) {
+            console.error('Error clearing stale reference:', error);
+          }
+        }
+        
+        setTimeout(() => {
+          router.replace('/(tabs)');
+        }, 1000);
+        return;
+      }
+
+      // Dismiss the web browser immediately when callback is processed
+      try {
+        await WebBrowser.dismissBrowser();
+        console.log('✅ WebBrowser dismissed successfully');
+      } catch (dismissError) {
+        console.log('⚠️ WebBrowser dismiss error (this is normal):', dismissError);
+      }
 
       const { code, error, error_description, ref, requisition_id } = params;
 

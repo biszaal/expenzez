@@ -64,7 +64,7 @@ export const ENV_CONFIG: EnvironmentConfig = {
   
   // API Configuration
   apiBaseURL: environment === 'development' 
-    ? 'https://a95uq2n8k7.execute-api.eu-west-2.amazonaws.com' // Use production API for development too
+    ? 'https://a95uq2n8k7.execute-api.eu-west-2.amazonaws.com' // Use AWS for development too
     : 'https://a95uq2n8k7.execute-api.eu-west-2.amazonaws.com',
   
   // Nordigen/GoCardless Redirect URLs
@@ -72,7 +72,7 @@ export const ENV_CONFIG: EnvironmentConfig = {
     ? 'https://expenzez.com/banking/callback'
     : environment === 'testflight'
     ? 'expenzez://banking/callback'  // Use custom URL scheme for TestFlight
-    : 'expenzez://banking/callback', // Use custom URL scheme for development
+    : 'exp://192.168.1.67:8081/--/banks/callback', // Use Expo dev server URL for development
   
   // Website URLs
   websiteURL: environment === 'development'

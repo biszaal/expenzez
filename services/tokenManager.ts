@@ -51,7 +51,6 @@ class TokenManager {
       const decoded = JSON.parse(atob(payload));
       return decoded.exp ? decoded.exp * 1000 : null; // Convert to milliseconds
     } catch (error) {
-      console.error('Failed to parse JWT expiration:', error);
       return null;
     }
   }
@@ -97,7 +96,6 @@ class TokenManager {
         tokenExpiresAt: tokenExpiresAt ? parseInt(tokenExpiresAt) : undefined
       };
     } catch (error) {
-      console.error('Failed to get stored tokens:', error);
       return null;
     }
   }
@@ -128,7 +126,6 @@ class TokenManager {
 
       await Promise.all(storagePromises);
     } catch (error) {
-      console.error('Failed to store tokens:', error);
       throw error;
     }
   }
@@ -148,10 +145,6 @@ class TokenManager {
       const tokenPromise = this.getValidAccessTokenInternal();
       return await Promise.race([tokenPromise, tokenTimeout]);
     } catch (error: any) {
-      console.error('[TokenManager] Failed to get valid access token:', error);
-      
-      // Don't immediately clear tokens for network/timeout errors
-      
       return null;
     }
   }
@@ -216,7 +209,6 @@ class TokenManager {
       // Perform refresh with persistent session token
       return await this.performTokenRefreshWithToken(refreshToken);
     } catch (error) {
-      console.error('[TokenManager] Failed to restore from persistent session:', error);
       return null;
     }
   }
@@ -228,12 +220,15 @@ class TokenManager {
     try {
       const axios = await import('axios').then(m => m.default);
       
+      // Import API config to use correct base URL
+      const { CURRENT_API_CONFIG } = await import('../config/api');
+      
       const response = await axios.post(
-        'https://yqxlmk05s5.execute-api.eu-west-2.amazonaws.com/api/auth/refresh',
+        `${CURRENT_API_CONFIG.baseURL}/auth/refresh`,
         { refreshToken },
         {
           headers: { 'Content-Type': 'application/json' },
-          timeout: 15000,
+          timeout: CURRENT_API_CONFIG.timeout,
         }
       );
 
@@ -249,8 +244,12 @@ class TokenManager {
       } else {
         return null;
       }
-    } catch (error) {
-      console.error('[TokenManager] Persistent session refresh failed:', error);
+    } catch (error: any) {
+      // If the refresh token used for restore is also invalid, clear persistent session
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        await deviceManager.clearPersistentSession();
+      }
+      
       return null;
     }
   }
@@ -261,13 +260,13 @@ class TokenManager {
   async refreshTokenIfNeeded(): Promise<string | null> {
     // Check if we've tried too many times recently
     const now = Date.now();
-    if (now - this.lastRefreshAttempt < 30000) { // 30 seconds
-      if (this.refreshAttempts >= 3) {
-        await this.clearAllTokens();
+    if (now - this.lastRefreshAttempt < 60000) { // 1 minute
+      if (this.refreshAttempts >= 5) { // Allow more attempts
+        // Don't clear tokens immediately - just return null and let app continue
         return null;
       }
     } else {
-      // Reset attempts if it's been more than 30 seconds
+      // Reset attempts if it's been more than 1 minute
       this.refreshAttempts = 0;
     }
 
@@ -302,6 +301,15 @@ class TokenManager {
         return null; // Don't throw error, just return null
       }
 
+      // CRITICAL: Check for banking callback FIRST, before any token refresh attempts
+      const isBankingCallbackActive = await this.checkForActiveBankingCallback();
+      
+      if (isBankingCallbackActive) {
+        // Return null to signal that the request should proceed without authentication
+        // The API interceptor will handle this scenario for banking callback endpoints
+        return null;
+      }
+
       // Add timeout protection to token refresh
       const refreshTimeout = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('Token refresh timeout after 35 seconds')), 35000);
@@ -317,8 +325,11 @@ class TokenManager {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           
+          // Import API config to use correct base URL
+          const { CURRENT_API_CONFIG } = await import('../config/api');
+          
           const refreshPromise = axios.post(
-            'https://yqxlmk05s5.execute-api.eu-west-2.amazonaws.com/api/auth/refresh',
+            `${CURRENT_API_CONFIG.baseURL}/auth/refresh`,
             { refreshToken: storedTokens.refreshToken },
             {
               headers: {
@@ -348,9 +359,37 @@ class TokenManager {
           
           // Immediately handle 401/403 errors as expired refresh tokens
           if (error.response?.status === 401 || error.response?.status === 403) {
-            console.log('[TokenManager] Refresh token expired (401/403) - immediately logging out user');
-            await this.clearAllTokens();
-            await AsyncStorage.setItem('isLoggedIn', 'false');
+            // Check if there's a persistent session we can use
+            const persistentSession = await deviceManager.getPersistentSession();
+            if (persistentSession && persistentSession.refreshToken !== storedTokens.refreshToken) {
+              try {
+                // Try refresh with persistent token
+                const freshToken = await this.performTokenRefreshWithToken(persistentSession.refreshToken);
+                if (freshToken) {
+                  // Save the persistent refresh token for future use
+                  await AsyncStorage.setItem('refreshToken', persistentSession.refreshToken);
+                  return freshToken;
+                }
+              } catch (restoreError) {
+                // If persistent session also fails with 401, clear it
+                if (restoreError?.response?.status === 401 || restoreError?.response?.status === 403) {
+                  await deviceManager.clearPersistentSession();
+                }
+              }
+            } else if (persistentSession && persistentSession.refreshToken === storedTokens.refreshToken) {
+              // Same refresh token in persistent session is also expired, clear it
+              await deviceManager.clearPersistentSession();
+            }
+            
+            // CRITICAL: Check if this is happening during a banking callback - MUST prevent logout
+            const isBankingCallbackActive = await this.checkForActiveBankingCallback();
+            
+            if (isBankingCallbackActive) {
+              return null; // Allow banking callback to complete without logout
+            }
+            
+            // For other 401/403 errors when not in banking callback, just return null
+            // Don't automatically log out - let the app handle it
             return null;
           }
           
@@ -372,16 +411,52 @@ class TokenManager {
         }
       }
       
-      // If we get here, all attempts failed - treat as expired refresh token
-      console.log('[TokenManager] All token refresh attempts failed - logging out user');
-      await this.clearAllTokens();
-      await AsyncStorage.setItem('isLoggedIn', 'false');
+      // If we get here, all attempts failed - check persistent session before logging out
+      // Check if there's a persistent session we can use
+      const persistentSession = await deviceManager.getPersistentSession();
+      
+      if (persistentSession && persistentSession.refreshToken) {
+        // Try to use the persistent refresh token
+        try {
+          // Save the persistent refresh token
+          await AsyncStorage.setItem('refreshToken', persistentSession.refreshToken);
+          
+          // Try refresh again with persistent token (only one attempt)
+          const freshToken = await this.performTokenRefreshWithToken(persistentSession.refreshToken);
+          if (freshToken) {
+            return freshToken;
+          }
+        } catch (restoreError: any) {
+          // If it's a network error or 401 during banking callback, don't log out immediately
+          if (restoreError.code === 'ERR_NETWORK' || restoreError.message?.includes('Network Error')) {
+            return null;
+          }
+        }
+      }
+      
       return null;
     } catch (error: any) {
-      // Any other error during token refresh - assume expired and log out
-      console.log('[TokenManager] Token refresh error - logging out user:', error.message);
-      await this.clearAllTokens();
-      await AsyncStorage.setItem('isLoggedIn', 'false');
+      // Any other error during token refresh - check persistent session first
+      // Check if there's a persistent session we can use
+      const persistentSession = await deviceManager.getPersistentSession();
+      if (persistentSession && persistentSession.refreshToken) {
+        try {
+          // Save the persistent refresh token
+          await AsyncStorage.setItem('refreshToken', persistentSession.refreshToken);
+          
+          // Try refresh with persistent token
+          const freshToken = await this.performTokenRefreshWithToken(persistentSession.refreshToken);
+          if (freshToken) {
+            return freshToken;
+          }
+        } catch (restoreError: any) {
+          // If it's a network error or 401 during banking callback, don't log out immediately
+          if (restoreError.code === 'ERR_NETWORK' || restoreError.message?.includes('Network Error')) {
+            return null;
+          }
+        }
+      }
+      
       return null;
     }
   }
@@ -402,7 +477,7 @@ class TokenManager {
         await this.refreshTokenIfNeeded();
       }
     } catch (error) {
-      console.error('Failed to check and refresh token:', error);
+      // Silently handle errors during token refresh check
     }
   }
 
@@ -420,7 +495,7 @@ class TokenManager {
         'user'
       ]);
     } catch (error) {
-      console.error('❌ [TokenManager] Failed to clear tokens:', error);
+      // Silently handle errors during token clearing
     }
   }
 
@@ -447,8 +522,43 @@ class TokenManager {
       const isWithinGracePeriod = timeExpired <= 2 * 60 * 60 * 1000; // Allow up to 2 hours of expiry
       return isWithinGracePeriod;
     } catch (error) {
-      console.error('Failed to check login status:', error);
       return false;
+    }
+  }
+
+  /**
+   * Check if there's an active banking callback in progress
+   */
+  private async checkForActiveBankingCallback(): Promise<boolean> {
+    try {
+      // Get all AsyncStorage keys
+      const allKeys = await AsyncStorage.getAllKeys();
+      
+      // Filter for requisition keys
+      const requisitionKeys = allKeys.filter(key => key.startsWith('requisition_expenzez_'));
+      
+      if (requisitionKeys.length === 0) {
+        return false;
+      }
+      
+      // Check if any are recent - extended time window for banking callbacks
+      const currentTime = Date.now();
+      
+      for (const key of requisitionKeys) {
+        const match = key.match(/requisition_expenzez_(\d+)/);
+        if (match) {
+          const timestamp = parseInt(match[1]);
+          const age = currentTime - timestamp;
+          const isRecent = age < 15 * 60 * 1000; // Extended to 15 minutes for banking callbacks
+          if (isRecent) {
+            return true;
+          }
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      return false; // Fail safe - assume no banking callback
     }
   }
 

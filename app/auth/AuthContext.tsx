@@ -1,6 +1,7 @@
 // app/auth/AuthContext.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { AppState } from "react-native";
 import { authAPI } from "../../services/api";
 import { CURRENT_API_CONFIG } from "../../config/api";
 import { deviceManager } from "../../services/deviceManager";
@@ -102,8 +103,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (rememberMe && user) {
         // Create persistent session for current user
         const refreshToken = await AsyncStorage.getItem('refreshToken');
-        if (refreshToken && user.id) {
-          await deviceManager.createPersistentSession(user.id, refreshToken, rememberMe);
+        if (refreshToken && user.username) {
+          await deviceManager.createPersistentSession(user.username, refreshToken, rememberMe);
           await deviceManager.trustDevice(rememberMe);
           setIsDeviceTrusted(true);
         }
@@ -235,11 +236,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log('🔄 [AuthContext] No stored login found, checking for persistent session...');
           const persistentSession = await deviceManager.getPersistentSession();
           
-          if (persistentSession && await deviceManager.isDeviceTrusted()) {
+          if (persistentSession) {
             console.log('✅ [AuthContext] Valid persistent session found, attempting automatic login');
-            // TODO: Implement automatic login from persistent session
-            // This would involve calling the refresh endpoint with the stored refresh token
-            // For now, just log that we found a session
+            
+            try {
+              // Restore the refresh token and try to get fresh tokens
+              await AsyncStorage.setItem('refreshToken', persistentSession.refreshToken);
+              
+              // Try to refresh the token to get fresh access tokens
+              const authAPI = require('../../services/api').authAPI;
+              const refreshResponse = await authAPI.refreshToken(persistentSession.refreshToken);
+              
+              if (refreshResponse && refreshResponse.accessToken) {
+                // Store the new tokens
+                const storagePromises = [
+                  AsyncStorage.setItem("isLoggedIn", "true"),
+                  AsyncStorage.setItem("accessToken", refreshResponse.accessToken),
+                  AsyncStorage.setItem("idToken", refreshResponse.idToken || ""),
+                  AsyncStorage.setItem("refreshToken", refreshResponse.refreshToken || persistentSession.refreshToken)
+                ];
+                
+                if (refreshResponse.user) {
+                  storagePromises.push(AsyncStorage.setItem("user", JSON.stringify(refreshResponse.user)));
+                  setUser(refreshResponse.user);
+                } else {
+                  // Create basic user object with username from persistent session
+                  const basicUser = { username: persistentSession.userId, email: '', id: persistentSession.userId };
+                  storagePromises.push(AsyncStorage.setItem("user", JSON.stringify(basicUser)));
+                  setUser(basicUser);
+                }
+                
+                await Promise.all(storagePromises);
+                
+                setIsLoggedIn(true);
+                setIsDeviceTrusted(persistentSession.rememberMe);
+                
+                console.log('✅ [AuthContext] Successfully restored session from persistent data');
+              } else {
+                console.log('❌ [AuthContext] Token refresh failed, clearing persistent session');
+                await deviceManager.clearPersistentSession();
+              }
+            } catch (restoreError) {
+              console.log('❌ [AuthContext] Error restoring from persistent session:', restoreError);
+              await deviceManager.clearPersistentSession();
+            }
           }
         }
 
@@ -282,6 +322,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
+  // Listen for session expiration (when API client sets isLoggedIn to false)
+  useEffect(() => {
+    const checkAuthState = async () => {
+      try {
+        const currentStoredLogin = await AsyncStorage.getItem('isLoggedIn');
+        
+        // If storage says logged out but context says logged in, update context
+        if (currentStoredLogin === 'false' && isLoggedIn) {
+          setIsLoggedIn(false);
+          setUser(null);
+          setUserBudget(null);
+        }
+        // If storage says logged in but context says logged out, update context
+        else if (currentStoredLogin === 'true' && !isLoggedIn && hasLoadedAuthState) {
+          const storedUser = await AsyncStorage.getItem('user');
+          if (storedUser) {
+            setIsLoggedIn(true);
+            setUser(JSON.parse(storedUser));
+          }
+        }
+      } catch (error) {
+        // Ignore errors during auth state check
+      }
+    };
+
+    // Check auth state periodically
+    const interval = setInterval(checkAuthState, 1000); // Check every second
+    
+    // Also check when app becomes active
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        checkAuthState();
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      subscription?.remove();
+    };
+  }, [isLoggedIn, hasLoadedAuthState]);
+
   const login = async (identifier: string, password: string, rememberMe: boolean = false) => {
     try {
       setLoading(true);
@@ -318,12 +399,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(response.user);
         setHasLoadedAuthState(true); // Mark that we've handled auth state
 
-        // Create persistent session if rememberMe is enabled
-        if (rememberMe && response.refreshToken && response.user?.id) {
-          await deviceManager.createPersistentSession(response.user.id, response.refreshToken, rememberMe);
-          await deviceManager.trustDevice(rememberMe);
-          setIsDeviceTrusted(true);
-          console.log('✅ [AuthContext] Persistent session created for remembered login');
+        // Always create persistent session for device remembering
+        // Long duration (30 days) for rememberMe, shorter duration (7 days) for regular login
+        console.log('🔍 [AuthContext] Full login response structure:', JSON.stringify(response, null, 2));
+        console.log('🔄 [AuthContext] Attempting to create persistent session:', {
+          hasRefreshToken: !!response.refreshToken,
+          hasUserId: !!response.user?.username,
+          userId: response.user?.username,
+          userObject: response.user,
+          rememberMe
+        });
+        
+        if (response.refreshToken && response.user?.username) {
+          await deviceManager.createPersistentSession(response.user.username, response.refreshToken, rememberMe);
+          if (rememberMe) {
+            await deviceManager.trustDevice(true);
+            setIsDeviceTrusted(true);
+            console.log('✅ [AuthContext] Long-term persistent session created (30 days)');
+          } else {
+            console.log('✅ [AuthContext] Short-term persistent session created (7 days)');
+          }
+        } else {
+          console.log('❌ [AuthContext] Cannot create persistent session - missing data:', {
+            missingRefreshToken: !response.refreshToken,
+            missingUserId: !response.user?.username
+          });
         }
 
         // Initialize device state
@@ -394,12 +494,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(response.user);
         setHasLoadedAuthState(true);
 
-        // Create persistent session if rememberMe is enabled
-        if (rememberMe && tokens.refreshToken && response.user?.id) {
-          await deviceManager.createPersistentSession(response.user.id, tokens.refreshToken, rememberMe);
-          await deviceManager.trustDevice(rememberMe);
-          setIsDeviceTrusted(true);
-          console.log('✅ [AuthContext] Persistent session created for Apple login');
+        // Always create persistent session for device remembering  
+        // Long duration (30 days) for rememberMe, shorter duration (7 days) for regular login
+        console.log('🔄 [AuthContext] Attempting to create Apple persistent session:', {
+          hasRefreshToken: !!tokens.refreshToken,
+          hasUserId: !!response.user?.username,
+          userId: response.user?.username,
+          rememberMe
+        });
+        
+        if (tokens.refreshToken && response.user?.username) {
+          await deviceManager.createPersistentSession(response.user.username, tokens.refreshToken, rememberMe);
+          if (rememberMe) {
+            await deviceManager.trustDevice(true);
+            setIsDeviceTrusted(true);
+            console.log('✅ [AuthContext] Long-term persistent session created for Apple login (30 days)');
+          } else {
+            console.log('✅ [AuthContext] Short-term persistent session created for Apple login (7 days)');
+          }
+        } else {
+          console.log('❌ [AuthContext] Cannot create Apple persistent session - missing data:', {
+            missingRefreshToken: !tokens.refreshToken,
+            missingUserId: !response.user?.username
+          });
         }
 
         // Initialize device state
@@ -460,8 +577,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(response.user);
 
         // Create persistent session if rememberMe is enabled
-        if (rememberMe && response.refreshToken && response.user?.id) {
-          await deviceManager.createPersistentSession(response.user.id, response.refreshToken, rememberMe);
+        if (rememberMe && response.refreshToken && response.user?.username) {
+          await deviceManager.createPersistentSession(response.user.username, response.refreshToken, rememberMe);
           await deviceManager.trustDevice(rememberMe);
           setIsDeviceTrusted(true);
           console.log('✅ [AuthContext] Persistent session created for auto login');
@@ -542,7 +659,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const allKeys = await AsyncStorage.getAllKeys();
         // Keep device-related keys for future logins
-        const keysToKeep = ['device_id', 'trusted_devices', 'device_registrations'];
+        const keysToKeep = ['device_id', 'trusted_devices', 'device_registrations', 'persistent_session', 'remember_me'];
         const keysToRemove = allKeys.filter(key => !keysToKeep.includes(key));
         await AsyncStorage.multiRemove(keysToRemove);
       } catch (error) {
@@ -577,7 +694,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         'user',
         'userBudget',
         'app_cache_version',
-        'last_cache_clear'
+        'last_cache_clear',
+        // Device manager keys for persistent sessions
+        'device_id',
+        'persistent_session',
+        'trusted_devices',
+        'remember_me'
       ];
 
       // Remove only cache keys, not auth keys
@@ -610,12 +732,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         key.startsWith('@expenzez_cache_') || // Network cache
         key.includes('transactions') ||
         key.includes('banking') ||
-        key.includes('spending')
+        key.includes('spending') ||
+        key.startsWith('requisition_') // Stale banking requisition data
       );
       
       if (problematicKeys.length > 0) {
         await AsyncStorage.multiRemove(problematicKeys);
         console.log('✅ [AuthContext] Cleared', problematicKeys.length, 'potentially corrupted cache entries');
+      }
+      
+      // Also clean up any stale banking callback references
+      const staleBankingKeys = keys.filter(key => key.startsWith('requisition_'));
+      if (staleBankingKeys.length > 0) {
+        await AsyncStorage.multiRemove(staleBankingKeys);
+        console.log('🏦 [AuthContext] Cleared', staleBankingKeys.length, 'stale banking requisition references');
       }
     } catch (error) {
       console.log('❌ [AuthContext] Error clearing corrupted cache:', error);

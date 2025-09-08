@@ -28,13 +28,6 @@ export const HomeHeader: React.FC = () => {
             activeOpacity={0.7}
           >
             <Ionicons name="notifications-outline" size={22} color={colors.primary[500]} />
-            {unreadCount > 0 && (
-              <View style={[styles.professionalNotificationBadge, { backgroundColor: '#EF4444' }]}>
-                <Text style={styles.professionalNotificationBadgeText}>
-                  {unreadCount > 9 ? '9+' : unreadCount.toString()}
-                </Text>
-              </View>
-            )}
           </TouchableOpacity>
         </View>
       </View>

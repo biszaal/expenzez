@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Alert,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -47,6 +48,8 @@ export default function AccountScreen() {
     completed: number;
     total: number;
   }>({ completed: 0, total: 0 });
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
   const [showSavingsGoals, setShowSavingsGoals] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
@@ -101,23 +104,19 @@ export default function AccountScreen() {
     }
   }, [isLoggedIn]);
 
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await logout();
-            showSuccess("Logged out successfully");
-            router.replace("/auth/Login");
-          } catch (error) {
-            showError("Failed to logout");
-          }
-        },
-      },
-    ]);
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    setLogoutError(null);
+    
+    try {
+      await logout();
+      router.replace("/auth/Login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      setLogoutError("Failed to logout. Please try again.");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   // Get user display name
@@ -754,28 +753,42 @@ export default function AccountScreen() {
         </View>
 
 
+        {/* Logout Error Display */}
+        {logoutError && (
+          <View style={styles.errorContainer}>
+            <Text style={[styles.errorText, { color: colors.error[500] }]}>
+              {logoutError}
+            </Text>
+          </View>
+        )}
+
         {/* Premium Logout Button */}
         <View style={styles.premiumLogoutSection}>
           <TouchableOpacity
             onPress={handleLogout}
-            style={styles.premiumLogoutButton}
+            style={[styles.premiumLogoutButton, { opacity: isLoggingOut ? 0.7 : 1 }]}
+            disabled={isLoggingOut}
           >
             <LinearGradient
               colors={isDark ? ["#7F1D1D", "#991B1B"] : ["#FEF2F2", "#FECACA"]}
               style={[styles.premiumLogoutGradient, shadows.sm]}
             >
-              <Ionicons
-                name="log-out-outline"
-                size={20}
-                color={isDark ? "#FCA5A5" : "#DC2626"}
-              />
+              {isLoggingOut ? (
+                <ActivityIndicator size="small" color={isDark ? "#FCA5A5" : "#DC2626"} />
+              ) : (
+                <Ionicons
+                  name="log-out-outline"
+                  size={20}
+                  color={isDark ? "#FCA5A5" : "#DC2626"}
+                />
+              )}
               <Text
                 style={[
                   styles.premiumLogoutText,
                   { color: isDark ? "#FCA5A5" : "#DC2626" },
                 ]}
               >
-                Sign Out
+                {isLoggingOut ? "Signing Out..." : "Sign Out"}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -1655,5 +1668,20 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: typography.fontSizes.lg,
     fontWeight: "600",
+  },
+  // Error container styles
+  errorContainer: {
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.md,
+    padding: spacing.md,
+    borderRadius: 8,
+    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(220, 38, 38, 0.3)',
+  },
+  errorText: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });

@@ -26,10 +26,12 @@ import {
   CategoryMerchantSwitch,
   SpendingCategoryList
 } from "../../components/spending";
+import { useRouter } from "expo-router";
 
 export default function SpendingPage() {
   const { isLoggedIn, hasBank, checkingBank } = useAuthGuard(undefined, true);
   const { colors } = useTheme();
+  const router = useRouter();
 
   // State Management
   const [loading, setLoading] = useState(true);
@@ -53,13 +55,20 @@ export default function SpendingPage() {
     });
 
     const monthlySpentByCategory: Record<string, number> = {};
-    monthlyTransactions.forEach((txn) => {
+    console.log(`[Spending] Processing ${monthlyTransactions.length} monthly transactions`);
+    monthlyTransactions.forEach((txn, index) => {
       const category = txn.category || "Other";
-      if (txn.amount < 0) {
+      if (index < 3) { // Log first 3 transactions for debugging
+        console.log(`[Spending] Transaction ${index}: amount=${txn.amount}, type=${txn.type}, category=${category}, isExpense=${txn.type === 'debit'}`);
+      }
+      // Only count debit transactions (money going out) as expenses
+      if (txn.type === 'debit') {
         monthlySpentByCategory[category] =
           (monthlySpentByCategory[category] || 0) + Math.abs(txn.amount);
       }
     });
+    
+    console.log(`[Spending] Monthly spending by category:`, monthlySpentByCategory);
 
     const monthlyTotalSpent = Object.values(monthlySpentByCategory).reduce(
       (sum, amount) => sum + amount,
@@ -95,19 +104,58 @@ export default function SpendingPage() {
 
   const displayLeftToSpend = totalBudget - monthlyData.monthlyTotalSpent;
 
-  // Month selection options
+  // Month selection options - only show months that have data
   const months = useMemo(() => {
     const monthsArray = [];
-    for (let i = 11; i >= 0; i--) {
-      const month = dayjs().subtract(i, 'month');
+    
+    if (transactions.length === 0) {
+      // No transactions - only show current month
+      const currentMonth = dayjs();
       monthsArray.push({
-        id: i,
-        name: month.format('MMM YYYY'),
-        value: month.format('YYYY-MM')
+        id: 0,
+        name: currentMonth.format('MMM YYYY'),
+        value: currentMonth.format('YYYY-MM')
       });
+    } else {
+      // Get unique months from transactions
+      const monthsWithData = new Set<string>();
+      
+      transactions.forEach(transaction => {
+        if (transaction.date) {
+          const txMonth = dayjs(transaction.date).format('YYYY-MM');
+          monthsWithData.add(txMonth);
+        }
+      });
+      
+      // Convert to array and sort (newest first)
+      const sortedMonths = Array.from(monthsWithData).sort((a, b) => b.localeCompare(a));
+      
+      // Create month objects
+      sortedMonths.forEach((monthValue, index) => {
+        const month = dayjs(monthValue);
+        monthsArray.push({
+          id: index,
+          name: month.format('MMM YYYY'),
+          value: monthValue
+        });
+      });
+      
+      // Always ensure current month is included (in case no transactions this month)
+      const currentMonthValue = dayjs().format('YYYY-MM');
+      const hasCurrentMonth = monthsArray.some(m => m.value === currentMonthValue);
+      
+      if (!hasCurrentMonth) {
+        const currentMonth = dayjs();
+        monthsArray.unshift({
+          id: monthsArray.length,
+          name: currentMonth.format('MMM YYYY'),
+          value: currentMonthValue
+        });
+      }
     }
+    
     return monthsArray;
-  }, []);
+  }, [transactions]);
 
   // Calculate cumulative daily spending for chart (original implementation)
   const dailySpendingData = useMemo(() => {
@@ -133,7 +181,8 @@ export default function SpendingPage() {
 
     // Process current month spending by day
     currentTransactions.forEach((tx) => {
-      if (tx.amount < 0 && tx.date) {
+      // Only count debit transactions (money going out) as expenses
+      if (tx.type === 'debit' && tx.date) {
         const day = dayjs(tx.date).format("DD");
         currentMonthSpending[day] =
           (currentMonthSpending[day] || 0) + Math.abs(tx.amount);
@@ -142,7 +191,8 @@ export default function SpendingPage() {
 
     // Process previous month spending by day
     previousTransactions.forEach((tx) => {
-      if (tx.amount < 0 && tx.date) {
+      // Only count debit transactions (money going out) as expenses
+      if (tx.type === 'debit' && tx.date) {
         const day = dayjs(tx.date).format("DD");
         previousMonthSpending[day] =
           (previousMonthSpending[day] || 0) + Math.abs(tx.amount);
@@ -251,21 +301,32 @@ export default function SpendingPage() {
       setLoading(true);
       setError(null);
 
-      const [transactionsResponse, categoriesResponse] = await Promise.all([
-        bankingAPI.getTransactionsUnified(),
-        generateCategoriesFromTransactions(),
-      ]);
-
-      if (transactionsResponse && 'transactions' in transactionsResponse && transactionsResponse.transactions) {
-        setTransactions(transactionsResponse.transactions);
-      } else {
-        setTransactions([]);
-      }
+      // Always load categories first (works without bank connections)
+      const categoriesResponse = await generateCategoriesFromTransactions();
       setCategoryData(categoriesResponse);
 
+      // Try to fetch transactions (may fail if no bank connections)
+      try {
+        const transactionsResponse = await bankingAPI.getAllTransactions();
+        
+        if (transactionsResponse && transactionsResponse.transactions) {
+          setTransactions(transactionsResponse.transactions);
+          console.log("✅ [Spending] Loaded transactions:", transactionsResponse.transactions.length);
+        } else {
+          setTransactions([]);
+          console.log("ℹ️ [Spending] No transactions available");
+        }
+      } catch (transactionError) {
+        // Don't treat missing transactions as an error - user might have no bank connections
+        console.warn("⚠️ [Spending] Could not fetch transactions:", transactionError);
+        setTransactions([]);
+      }
+
     } catch (err: any) {
-      console.error("Error fetching spending data:", err);
-      setError(err.message || "Failed to load spending data");
+      console.error("❌ [Spending] Error fetching spending data:", err);
+      // Only set error for critical failures (like categories not loading)
+      const errorMessage = err?.message || "Unable to load spending data";
+      setError(`${errorMessage}. Please check your connection and try again.`);
     } finally {
       setLoading(false);
     }
@@ -347,7 +408,7 @@ export default function SpendingPage() {
   useEffect(() => {
     Animated.parallel([
       Animated.timing(animatedProgress, {
-        toValue: monthlySpentPercentage / 100,
+        toValue: Math.min(monthlySpentPercentage / 100, 1), // Cap at 1 (100%) to prevent double rotation
         duration: 1500,
         easing: Easing.bezier(0.4, 0, 0.2, 1),
         useNativeDriver: false,
@@ -363,13 +424,14 @@ export default function SpendingPage() {
 
   // Initial data fetch
   useEffect(() => {
-    if (isLoggedIn && hasBank) {
+    if (isLoggedIn) {
+      // Always fetch data when logged in, regardless of bank connection status
       fetchData();
     }
-  }, [isLoggedIn, hasBank]);
+  }, [isLoggedIn]);
 
-  // Loading state
-  if (loading || checkingBank) {
+  // Loading state - only show loading during actual data fetch, not during bank check
+  if (loading && checkingBank) {
     return <TabLoadingScreen message="Loading spending data..." />;
   }
 
@@ -378,14 +440,19 @@ export default function SpendingPage() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
         <View style={styles.errorContainer}>
-          <Text style={[styles.errorText, { color: colors.error[500] }]}>
+          <Ionicons name="warning-outline" size={64} color={colors.error[500]} style={styles.errorIcon} />
+          <Text style={[styles.errorTitle, { color: colors.text.primary }]}>
+            Something went wrong
+          </Text>
+          <Text style={[styles.errorText, { color: colors.text.secondary }]}>
             {error}
           </Text>
           <TouchableOpacity
             style={[styles.retryButton, { backgroundColor: colors.primary[500] }]}
             onPress={fetchData}
           >
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Ionicons name="refresh" size={20} color="white" style={styles.retryButtonIcon} />
+            <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -435,8 +502,64 @@ export default function SpendingPage() {
           months={months}
         />
 
+        {/* Empty State - No Transactions */}
+        {transactions.length === 0 && !hasBank && (
+          <View style={[styles.emptyStateContainer, { backgroundColor: colors.background.primary }]}>
+            <View style={styles.emptyStateContent}>
+              <Ionicons 
+                name="card-outline" 
+                size={64} 
+                color={colors.text.secondary} 
+                style={styles.emptyStateIcon}
+              />
+              <Text style={[styles.emptyStateTitle, { color: colors.text.primary }]}>
+                Connect Your Bank Account
+              </Text>
+              <Text style={[styles.emptyStateDescription, { color: colors.text.secondary }]}>
+                Connect your bank account to start tracking your spending and see detailed insights about your financial habits.
+              </Text>
+              <TouchableOpacity
+                style={[styles.emptyStateButton, { backgroundColor: colors.primary[500] }]}
+                onPress={() => router.push('/banks/connect' as any)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="add" size={20} color="white" style={styles.emptyStateButtonIcon} />
+                <Text style={styles.emptyStateButtonText}>Connect Bank Account</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Empty State - No Transactions for This Month */}
+        {transactions.length === 0 && hasBank && (
+          <View style={[styles.emptyStateContainer, { backgroundColor: colors.background.primary }]}>
+            <View style={styles.emptyStateContent}>
+              <Ionicons 
+                name="receipt-outline" 
+                size={64} 
+                color={colors.text.secondary} 
+                style={styles.emptyStateIcon}
+              />
+              <Text style={[styles.emptyStateTitle, { color: colors.text.primary }]}>
+                No Spending Data
+              </Text>
+              <Text style={[styles.emptyStateDescription, { color: colors.text.secondary }]}>
+                You don&apos;t have any transactions for {selectedMonth}. Try selecting a different month or wait for new transactions to sync.
+              </Text>
+              <TouchableOpacity
+                style={[styles.emptyStateButton, { backgroundColor: colors.primary[500] }]}
+                onPress={fetchData}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="refresh" size={20} color="white" style={styles.emptyStateButtonIcon} />
+                <Text style={styles.emptyStateButtonText}>Refresh Data</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Budget Summary Card */}
-        {selectedTab === "summary" && (
+        {selectedTab === "summary" && transactions.length > 0 && (
           <BudgetSummaryCard
             selectedMonth={selectedMonth}
             monthlyTotalSpent={monthlyData.monthlyTotalSpent}
@@ -455,7 +578,7 @@ export default function SpendingPage() {
         )}
 
         {/* Analytics Section */}
-        {selectedTab === "categories" && (
+        {selectedTab === "categories" && transactions.length > 0 && (
           <>
             <SpendingAnalyticsSection
               selectedMonth={selectedMonth}
@@ -548,22 +671,93 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
+  // Empty State Styles
+  emptyStateContainer: {
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.lg,
+    borderRadius: 16,
+    padding: spacing.xl,
+    alignItems: 'center',
+  },
+  emptyStateContent: {
+    alignItems: 'center',
+    maxWidth: 280,
+  },
+  emptyStateIcon: {
+    marginBottom: spacing.lg,
+    opacity: 0.6,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  emptyStateDescription: {
+    fontSize: 16,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+  emptyStateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  emptyStateButtonIcon: {
+    marginRight: spacing.sm,
+  },
+  emptyStateButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+  },
+
   // Error Styles
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    padding: spacing.xl,
+  },
+  errorIcon: {
+    marginBottom: spacing.lg,
+    opacity: 0.8,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: spacing.sm,
   },
   errorText: {
-    fontSize: 18,
-    marginBottom: 16,
+    fontSize: 16,
     textAlign: 'center',
+    marginBottom: spacing.xl,
+    lineHeight: 22,
+    maxWidth: 280,
   },
   retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  retryButtonIcon: {
+    marginRight: spacing.sm,
   },
   retryButtonText: {
     color: 'white',

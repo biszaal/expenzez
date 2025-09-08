@@ -19,12 +19,15 @@ import Svg, {
   Stop,
   G,
   Text as SvgText,
+  Mask,
+  Rect,
 } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { LineChartProps, ChartDimensions, ChartDataPoint, GestureState } from './types';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 export const LineChart: React.FC<LineChartProps> = ({
   data,
@@ -222,13 +225,31 @@ export const LineChart: React.FC<LineChartProps> = ({
     },
   });
 
-  // Animated styles
-  const animatedPathStyle = useAnimatedStyle(() => {
+  // Calculate path length for smooth animation
+  const pathLength = useMemo(() => {
+    if (processedData.length < 2) return 0;
+    
+    let totalLength = 0;
+    for (let i = 0; i < processedData.length - 1; i++) {
+      const dx = processedData[i + 1].x - processedData[i].x;
+      const dy = processedData[i + 1].y - processedData[i].y;
+      totalLength += Math.sqrt(dx * dx + dy * dy);
+    }
+    return totalLength;
+  }, [processedData]);
+
+  // Animated mask width for revealing line from left to right
+  const animatedMaskStyle = useAnimatedStyle(() => {
+    const revealWidth = interpolate(
+      pathAnimationProgress.value,
+      [0, 1],
+      [0, dimensions.width],
+      Extrapolate.CLAMP
+    );
+    
     return {
-      strokeDasharray: animated ? [1000, 1000] : undefined,
-      strokeDashoffset: animated ? 
-        interpolate(pathAnimationProgress.value, [0, 1], [1000, 0], Extrapolate.CLAMP) : 0,
-    } as any;
+      width: revealWidth,
+    };
   });
 
   const animatedPointStyle = useAnimatedStyle(() => {
@@ -245,10 +266,17 @@ export const LineChart: React.FC<LineChartProps> = ({
     };
   });
 
-  // Animation on mount
+  // Animation on mount - faster and smoother
   useEffect(() => {
     if (animated && processedData.length > 0) {
-      pathAnimationProgress.value = withTiming(1, { duration: 2000 });
+      // Reset animation
+      pathAnimationProgress.value = 0;
+      // Start animation with a slight delay and smooth easing
+      setTimeout(() => {
+        pathAnimationProgress.value = withTiming(1, { 
+          duration: 1500, // Smooth duration
+        });
+      }, 300); // Small delay for better visual effect
     }
   }, [processedData, animated, pathAnimationProgress]);
 
@@ -279,11 +307,22 @@ export const LineChart: React.FC<LineChartProps> = ({
                   />
                 ))}
               </LinearGradient>
+              
+              {/* Mask for line animation */}
+              <Mask id="lineMask">
+                <AnimatedRect
+                  x={0}
+                  y={0}
+                  height={dimensions.height}
+                  fill="white"
+                  animatedProps={animatedMaskStyle}
+                />
+              </Mask>
             </Defs>
 
             {/* Grid lines - removed for cleaner look */}
 
-            {/* Main line path */}
+            {/* Main line path with mask animation */}
             <Path
               d={svgPath}
               stroke={lineColor}
@@ -291,6 +330,7 @@ export const LineChart: React.FC<LineChartProps> = ({
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
+              mask={animated ? "url(#lineMask)" : undefined}
             />
 
             {/* Data points - disabled to reduce clutter */}
