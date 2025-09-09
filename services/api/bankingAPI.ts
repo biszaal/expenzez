@@ -177,10 +177,38 @@ export const bankingAPI = {
     }
   },
 
-  // Remove bank connection (placeholder - Nordigen handles this differently)
+  // Remove bank connection (Nordigen-specific implementation)
   removeBank: async (accountId: string) => {
-    console.log("[API] Note: Nordigen bank removal should be done through their interface");
-    throw new Error("Bank removal should be done through the Nordigen/GoCardless interface. Please contact support.");
+    console.log("[API] Attempting to remove Nordigen bank connection:", accountId);
+    
+    try {
+      // First, try to call a backend endpoint to mark this connection as removed
+      // This doesn't revoke the actual Nordigen connection, but removes it from our system
+      const response = await api.delete(`/nordigen/accounts/${accountId}`);
+      return {
+        success: true,
+        message: "Bank connection removed from your account. The connection will remain active in your bank until you revoke it directly."
+      };
+    } catch (error: any) {
+      console.log("[API] Backend removal failed, providing user instructions:", error);
+      
+      // If backend doesn't support removal, provide helpful instructions
+      // This is better UX than throwing an error
+      return {
+        success: false,
+        requiresManualRemoval: true,
+        message: "To completely remove this bank connection, please:\n\n1. Log into your online banking\n2. Go to 'Connected Apps' or 'Third-party Access'\n3. Remove 'GoCardless' or 'Expenzez' access\n\nAlternatively, contact support for assistance.",
+        supportInfo: {
+          email: "support@expenzez.com",
+          instructions: [
+            "Log into your online banking",
+            "Find 'Connected Apps' or 'Third-party Access' section", 
+            "Remove 'GoCardless' or 'Expenzez' access",
+            "The connection will be automatically removed from the app"
+          ]
+        }
+      };
+    }
   },
 
   // Unified method to get accounts (Nordigen with fallback)
@@ -247,20 +275,27 @@ export const bankingAPI = {
       
       if (response.success && response.data.transactions.length > 0) {
         console.log("✅ [Banking] Using Nordigen transactions:", response.data.transactions.length);
+        
+        // Map transactions with comprehensive field mapping
+        const mappedTransactions = response.data.transactions.map((tx: any, index: number) => ({
+          // Map to format that frontend expects
+          id: tx.transactionId || tx.internalTransactionId || `nordigen_${index}`,
+          transactionId: tx.transactionId || tx.internalTransactionId || `nordigen_${index}`,
+          accountId: tx.accountId || 'nordigen',
+          amount: parseFloat(tx.transactionAmount?.amount || tx.amount || 0),
+          currency: tx.transactionAmount?.currency || tx.currency || 'GBP',
+          description: tx.remittanceInformationUnstructured || tx.description || 'Transaction',
+          category: tx.category || 'Other',
+          date: tx.date || tx.bookingDate || tx.valueDate || new Date().toISOString(),
+          timestamp: tx.timestamp || tx.date || tx.bookingDate || tx.valueDate || new Date().toISOString(),
+          type: tx.type || (parseFloat(tx.transactionAmount?.amount || tx.amount || 0) < 0 ? 'debit' : 'credit'),
+          merchant: tx.creditorName || tx.debtorName || tx.remittanceInformationUnstructured || 'Unknown',
+          provider: 'nordigen'
+        }));
+        
         return {
           success: true,
-          transactions: response.data.transactions.map(tx => ({
-            transactionId: tx.transaction_id,
-            accountId: tx.account_id,
-            amount: Math.abs(tx.amount),
-            currency: tx.iso_currency_code,
-            description: tx.name,
-            category: tx.category?.[0] || 'Other',
-            date: tx.date,
-            type: tx.amount > 0 ? 'credit' : 'debit',
-            merchant: tx.merchant_name,
-            provider: 'nordigen'
-          }))
+          transactions: mappedTransactions
         };
       }
     } catch (error) {
@@ -283,7 +318,11 @@ export const bankingAPI = {
         };
       }
     } catch (fallbackError) {
-      console.error("❌ [Banking] Transaction fallback also failed:", fallbackError);
+      console.error("❌ [Banking] Transaction fallback failed:", {
+        error: fallbackError.message,
+        status: fallbackError.response?.status,
+        data: fallbackError.response?.data
+      });
     }
     
     return {

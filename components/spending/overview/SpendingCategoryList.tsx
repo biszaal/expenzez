@@ -78,16 +78,30 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
         const budget = category.defaultBudget || 0;
         const spent = category.monthlySpent || 0;
         const left = Math.max(0, budget - spent);
-        const percent =
-          budget > 0
-            ? Math.min(100, Math.round((spent / budget) * 100))
-            : 0;
+        
+        // Fix percentage calculation to handle edge cases and cap at reasonable maximum
+        let percent = 0;
+        if (budget > 0) {
+          const rawPercent = (spent / budget) * 100;
+          // Cap display percentage at 999% to prevent UI overflow, but still calculate properly
+          percent = Math.min(999, Math.round(rawPercent));
+        }
+        
         const overBudget = spent > budget;
         
         // Count transactions for this category in selected month
-        const txnCount = filteredTransactions.filter(
+        const categoryTransactions = filteredTransactions.filter(
           (tx) => tx.category === category.name
-        ).length;
+        );
+        
+        const txnCount = categoryTransactions.length;
+        
+        // Get top merchants for this category (first 3)
+        const merchants = categoryTransactions
+          .filter(tx => tx.merchant) // Only transactions with merchant info
+          .map(tx => tx.merchant)
+          .filter((merchant, index, arr) => arr.indexOf(merchant) === index) // Remove duplicates
+          .slice(0, 3); // Take first 3
 
         return (
           <Pressable
@@ -163,7 +177,10 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
                           { color: colors.text.secondary },
                         ]}
                       >
-                        {txnCount} transaction{txnCount !== 1 ? 's' : ''}
+                        {merchants.length > 0 
+                          ? merchants.join(', ') 
+                          : `${txnCount} transaction${txnCount !== 1 ? 's' : ''}`
+                        }
                       </Text>
                       <Text
                         style={[

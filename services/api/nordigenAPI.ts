@@ -151,8 +151,20 @@ export const nordigenAPI = {
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     
     const url = `/nordigen/transactions${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-    const response = await api.get(url);
-    return response.data;
+    console.log('🏦 [NordigenAPI] Making request to:', url);
+    
+    try {
+      const response = await api.get(url);
+      console.log('🏦 [NordigenAPI] Transaction response:', response.data);
+      console.log('🏦 [NordigenAPI] Response status:', response.status);
+      console.log('🏦 [NordigenAPI] Raw response structure:', Object.keys(response.data || {}));
+      return response.data;
+    } catch (error: any) {
+      console.error('🏦 [NordigenAPI] Transaction fetch error:', error);
+      console.error('🏦 [NordigenAPI] Error response:', error?.response?.data);
+      console.error('🏦 [NordigenAPI] Error status:', error?.response?.status);
+      throw error;
+    }
   },
 
   // Sync transactions (refresh data)

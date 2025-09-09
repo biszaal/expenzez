@@ -381,16 +381,34 @@ export default function BanksScreen() {
   const handleRemoveBank = async (accountId: string, bankName: string) => {
     showConfirmation(
       "Remove Bank Connection",
-      `Are you sure you want to remove ${bankName}? This will permanently delete all transactions and data associated with this bank account.`,
+      `Are you sure you want to remove ${bankName}?`,
       async () => {
         try {
-          await bankingAPI.removeBank(accountId);
-          showSuccess("Bank connection removed successfully");
-          // Refresh the accounts list
-          await fetchAccounts();
-        } catch (error) {
+          const result = await bankingAPI.removeBank(accountId);
+          
+          if (result.success) {
+            showSuccess(result.message || "Bank connection removed successfully");
+            // Refresh the accounts list
+            await fetchAccounts();
+          } else if (result.requiresManualRemoval) {
+            // Show detailed instructions for manual removal
+            showConfirmation(
+              "Manual Removal Required",
+              result.message,
+              () => {}, // No action needed, just informational
+              () => {
+                // Could open email client or support page
+                console.log("User chose to contact support for bank removal");
+              },
+              "Got it",
+              "Contact Support"
+            );
+          } else {
+            showError(result.message || "Failed to remove bank connection");
+          }
+        } catch (error: any) {
           console.error("Error removing bank:", error);
-          showError("Failed to remove bank connection");
+          showError(error.message || "Failed to remove bank connection");
         }
       }
     );

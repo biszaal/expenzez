@@ -66,7 +66,7 @@
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
     "use-latest-callback": "^0.2.4",
-    "victory-native": "35.3.1",
+    "victory-native": "^41.20.1",
     "zustand": "^5.0.6"
   },
   "devDependencies": {

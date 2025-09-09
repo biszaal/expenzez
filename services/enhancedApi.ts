@@ -31,7 +31,7 @@ export const useProgressiveData = () => {
   const loadSecondaryData = async () => {
     // Load less critical data in background
     const secondaryCalls = [
-      () => bankingAPI.getAllTransactions(20), // Recent transactions only
+      () => bankingAPI.getTransactionsUnified({ limit: 20 }), // Recent transactions only
       () => bankingAPI.getCachedBankData(),
     ];
 
@@ -52,7 +52,7 @@ export const useProgressiveData = () => {
   const loadDetailedData = async () => {
     // Load comprehensive data last
     const detailedCalls = [
-      () => bankingAPI.getAllTransactions(), // All transactions
+      () => bankingAPI.getTransactionsUnified({ limit: 1000 }), // All transactions
       () => bankingAPI.getCachedBankData(),
     ];
 
@@ -93,7 +93,7 @@ export const useTransactionsData = (options: { limit?: number; offset?: number }
   const { limit = 50, offset = 0 } = options;
   
   return useApiCache(
-    () => bankingAPI.getAllTransactions(limit),
+    () => bankingAPI.getTransactionsUnified({ limit }),
     {
       cacheKey: `transactions_${limit}_${offset}`,
       cacheTTL: 1 * 60 * 1000, // 1 minute for transactions

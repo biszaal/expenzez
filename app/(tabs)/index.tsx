@@ -181,9 +181,9 @@ export default function HomePage() {
             return { banks: [] };
           });
         }),
-        bankingAPI.getAllTransactions(100).catch(err => {
+        bankingAPI.getTransactionsUnified({ limit: 100 }).catch(err => {
           console.error("❌ Error fetching transactions:", err);
-          return { transactions: [] };
+          return { success: false, transactions: [] };
         })
       ]);
       
@@ -289,7 +289,7 @@ export default function HomePage() {
 
       // Handle transactions
       let allTransactions: Transaction[] = [];
-      if (transactionsData.transactions && transactionsData.transactions.length > 0) {
+      if (transactionsData.success && transactionsData.transactions && transactionsData.transactions.length > 0) {
         console.log("[Home] Sample transaction data:", transactionsData.transactions.slice(0, 2));
         allTransactions = transactionsData.transactions.map((tx: any) => ({
           id: tx.transactionId || tx.id,
