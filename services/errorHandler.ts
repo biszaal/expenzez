@@ -243,6 +243,35 @@ class ErrorHandlerService {
         );
       }
       
+      if (status === 404) {
+        // Check if this is a bank removal 404 (expected behavior)
+        const isBankRemoval = context?.endpoint?.includes('/nordigen/accounts/') && 
+                              context?.additionalData?.method === 'DELETE';
+        
+        if (isBankRemoval) {
+          // This is expected - don't log as error, handle gracefully
+          return new ExpenzezFrontendError(
+            'BANK_REMOVAL_NOT_SUPPORTED',
+            'Bank removal requires manual action',
+            404,
+            { originalError: error.message, expectedBehavior: true },
+            context,
+            false,
+            false
+          );
+        }
+        
+        return new ExpenzezFrontendError(
+          'RESOURCE_NOT_FOUND',
+          'The requested resource was not found',
+          404,
+          { originalError: error.message },
+          context,
+          false,
+          false
+        );
+      }
+      
       if (status === 429) {
         return new ExpenzezFrontendError(
           FrontendErrorCodes.RATE_LIMITED,
@@ -445,8 +474,12 @@ class ErrorHandlerService {
 
   // Log error with structured format
   private logError(error: ExpenzezFrontendError, context?: ErrorContext): void {
+    // Don't log expected behaviors as errors
+    const isExpectedBehavior = error.details?.expectedBehavior === true;
+    const logLevel = isExpectedBehavior ? 'INFO' : 'ERROR';
+    
     const logEntry = {
-      level: 'ERROR',
+      level: logLevel,
       timestamp: new Date().toISOString(),
       correlationId: error.correlationId,
       error: {
@@ -464,17 +497,30 @@ class ErrorHandlerService {
       userAgent: context?.userAgent || 'unknown'
     };
 
-    // Use structured logging
-    console.error('[STRUCTURED_ERROR]', JSON.stringify(logEntry));
+    // Use structured logging with appropriate level
+    if (isExpectedBehavior) {
+      console.info('[STRUCTURED_INFO]', JSON.stringify(logEntry));
+    } else {
+      console.error('[STRUCTURED_ERROR]', JSON.stringify(logEntry));
+    }
     
     // Also log human-readable version for development
     if (__DEV__) {
-      console.error(`🚨 [${error.code}] ${error.message}`, {
-        statusCode: error.statusCode,
-        context: error.context,
-        details: error.details,
-        correlationId: error.correlationId
-      });
+      if (isExpectedBehavior) {
+        console.info(`ℹ️ [${error.code}] ${error.message} (Expected behavior)`, {
+          statusCode: error.statusCode,
+          context: error.context,
+          details: error.details,
+          correlationId: error.correlationId
+        });
+      } else {
+        console.error(`🚨 [${error.code}] ${error.message}`, {
+          statusCode: error.statusCode,
+          context: error.context,
+          details: error.details,
+          correlationId: error.correlationId
+        });
+      }
     }
   }
 

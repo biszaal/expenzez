@@ -192,8 +192,17 @@ export const bankingAPI = {
     } catch (error: any) {
       console.log("[API] Backend removal failed, providing user instructions:", error);
       
-      // If backend doesn't support removal, provide helpful instructions
-      // This is better UX than throwing an error
+      // Check if it's a 404 (endpoint doesn't exist) - this is expected for Nordigen connections
+      const is404 = error.response?.status === 404 || error.message?.includes('404');
+      
+      if (is404) {
+        console.log("[API] 404 expected - Nordigen connections require manual removal");
+      } else {
+        console.error("[API] Unexpected error during removal:", error);
+      }
+      
+      // For Nordigen/GoCardless, manual removal is the standard approach
+      // Provide helpful instructions regardless of the error type
       return {
         success: false,
         requiresManualRemoval: true,
