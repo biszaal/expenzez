@@ -144,14 +144,14 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({ isVisible, onClose }
             data.expenses = expensesResponse.expenses || [];
             console.log(`✅ Successfully fetched ${data.expenses.length} expenses`);
             
-            // If no expenses found, provide sample data for demonstration
+            // If no expenses found, keep empty array
             if (data.expenses.length === 0) {
-              console.log('📝 No expenses found, providing sample data for demonstration');
-              data.expenses = getSampleExpenses();
+              console.log('📝 No expenses found');
+              data.expenses = [];
             }
           } catch (error) {
-            console.log('❌ Failed to fetch expenses, using sample data:', error);
-            data.expenses = getSampleExpenses();
+            console.log('❌ Failed to fetch expenses:', error);
+            data.expenses = [];
           }
           break;
 
@@ -206,23 +206,23 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({ isVisible, onClose }
               dateRange: { startDate, endDate },
             };
 
-            // Add sample data if nothing is available for demonstration
+            // Keep empty arrays if no data is available
             if (data.expenses.length === 0) {
-              console.log('📝 Adding sample expenses for full backup demonstration');
-              data.expenses = getSampleExpenses();
+              console.log('📝 No expenses available for export');
+              data.expenses = [];
             }
           } catch (error) {
-            console.log('Failed to create full backup, using sample data for demonstration');
+            console.log('Failed to create full backup');
             data = {
               transactions: [],
-              expenses: getSampleExpenses(),
+              expenses: [],
               budgets: [],
               budgetSummary: {},
               profile: {},
               savingsGoals: [],
               exportedAt: new Date().toISOString(),
               dateRange: { startDate, endDate },
-              error: 'Some data could not be fetched - showing sample data',
+              error: 'Some data could not be fetched',
             };
           }
           break;
@@ -503,63 +503,6 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({ isVisible, onClose }
     }
   };
 
-  const getSampleExpenses = () => {
-    const now = new Date();
-    const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM format
-    
-    return [
-      {
-        id: 'sample-1',
-        date: `${currentMonth}-15`,
-        amount: 45.50,
-        category: 'groceries',
-        description: 'Weekly grocery shopping - Tesco',
-        tags: ['essentials', 'weekly'],
-        isRecurring: false,
-        createdAt: `${currentMonth}-15T10:30:00Z`
-      },
-      {
-        id: 'sample-2',
-        date: `${currentMonth}-12`,
-        amount: 25.00,
-        category: 'transport',
-        description: 'Bus pass top-up',
-        tags: ['transport', 'monthly'],
-        isRecurring: true,
-        createdAt: `${currentMonth}-12T08:45:00Z`
-      },
-      {
-        id: 'sample-3',
-        date: `${currentMonth}-08`,
-        amount: 12.75,
-        category: 'dining',
-        description: 'Lunch at local café',
-        tags: ['food', 'casual'],
-        isRecurring: false,
-        createdAt: `${currentMonth}-08T12:15:00Z`
-      },
-      {
-        id: 'sample-4',
-        date: `${currentMonth}-05`,
-        amount: 89.99,
-        category: 'shopping',
-        description: 'New shoes from online store',
-        tags: ['clothing', 'personal'],
-        isRecurring: false,
-        createdAt: `${currentMonth}-05T14:20:00Z`
-      },
-      {
-        id: 'sample-5',
-        date: `${currentMonth}-03`,
-        amount: 15.00,
-        category: 'entertainment',
-        description: 'Cinema ticket - weekend movie',
-        tags: ['entertainment', 'leisure'],
-        isRecurring: false,
-        createdAt: `${currentMonth}-03T19:30:00Z`
-      }
-    ];
-  };
 
   return (
     <Modal visible={isVisible} animationType="slide" presentationStyle="pageSheet">

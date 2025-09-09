@@ -16,7 +16,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
-import { getTransactions } from "../../services/dataSource";
+import { bankingAPI } from "../../services/api";
 import { getMerchantInfo } from "../../services/merchantService";
 import MonthFilter from "../../components/ui/MonthFilter";
 import dayjs from "dayjs";
@@ -66,32 +66,32 @@ export default function TransactionsScreen() {
       if (showRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const transactionsData = await getTransactions();
+      const transactionsResponse = await bankingAPI.getTransactionsUnified();
 
-      if (transactionsData && transactionsData.length > 0) {
-        const formattedTransactions: Transaction[] = transactionsData.map(
+      if (transactionsResponse?.success && transactionsResponse.transactions && transactionsResponse.transactions.length > 0) {
+        const formattedTransactions: Transaction[] = transactionsResponse.transactions.map(
           (tx: any) => {
-            console.log("[Transaction] Raw tx data:", {
-              id: tx.id || tx.transaction_id,
-              date: tx.date,
-              timestamp: tx.timestamp,
-              description: tx.description
-            });
+
+            // Determine transaction type from amount if not provided
+            const rawAmount = tx.amount || 0;
+            let transactionType = tx.type;
+            if (!transactionType) {
+              transactionType = rawAmount < 0 ? "debit" : "credit";
+            }
+
             return {
               id: tx.id || tx.transaction_id,
-              amount: tx.type === "debit" ? -(Math.abs(tx.amount || 0)) : Math.abs(tx.amount || 0),
-              description: tx.description || tx.merchant_name || "Unknown",
+              amount: transactionType === "debit" ? -(Math.abs(rawAmount)) : Math.abs(rawAmount),
+              description: tx.description || tx.merchant_name || "Unknown Transaction",
               date: tx.date || tx.timestamp,
               merchant: tx.merchant_name || tx.description || "Unknown Merchant",
-              category: tx.category,
+              category: tx.category || "General",
               accountId: tx.account_id || "unknown",
               bankName: tx.bank_name || "Unknown Bank",
-              type: tx.type || ((tx.amount || 0) < 0 ? "debit" : "credit"),
-              originalAmount: tx.amount || 0,
-              accountType:
-                tx.account_type ||
-                (tx.type === "debit" ? "Current Account" : "Current Account"),
-              isPending: tx.status === "pending" || tx.pending,
+              type: transactionType,
+              originalAmount: Math.abs(rawAmount),
+              accountType: tx.account_type || "Current Account",
+              isPending: tx.status === "pending" || tx.pending || false,
             };
           }
         );
@@ -144,6 +144,20 @@ export default function TransactionsScreen() {
   // Auto-select the most recent month when transactions are loaded
   useEffect(() => {
     console.log(`[Transactions] useEffect triggered - selectedMonth: ${selectedMonth}, transactions: ${transactions.length}`);
+    console.log(`[Transactions] All transactions:`, transactions.map(tx => ({ 
+      date: tx.date, 
+      timestamp: tx.timestamp, 
+      description: tx.description 
+    })));
+    
+    // Test date parsing for specific dates like the ones in DynamoDB
+    if (transactions.length > 0) {
+      console.log(`[Transactions] Testing date parsing:`);
+      console.log(`  2025-08-22 → ${dayjs("2025-08-22").format("YYYY-MM")}`);
+      console.log(`  2025-08-23T10:30:14.816Z → ${dayjs("2025-08-23T10:30:14.816Z").format("YYYY-MM")}`);
+      console.log(`  Current date → ${dayjs().format("YYYY-MM")}`);
+    }
+    
     if (!selectedMonth && transactions.length > 0) {
       const monthsSet = new Set<string>();
       transactions.forEach((tx, index) => {
@@ -158,9 +172,15 @@ export default function TransactionsScreen() {
         monthsSet.add(month);
       });
       const sortedMonths = Array.from(monthsSet).sort().reverse();
+      console.log(`[Transactions] Available months found:`, sortedMonths);
+      
       if (sortedMonths.length > 0) {
-        setSelectedMonth(sortedMonths[0]);
-        console.log(`[Transactions] Auto-selected month: ${sortedMonths[0]} from available months:`, sortedMonths);
+        // Check if current month has transactions, if not use the latest available month
+        const currentMonth = dayjs().format("YYYY-MM");
+        const monthToSelect = sortedMonths.includes(currentMonth) ? currentMonth : sortedMonths[0];
+        
+        setSelectedMonth(monthToSelect);
+        console.log(`[Transactions] Auto-selected month: ${monthToSelect} (current: ${currentMonth}, available: ${sortedMonths.join(', ')})`);
       }
     }
   }, [transactions, selectedMonth]);
@@ -169,7 +189,7 @@ export default function TransactionsScreen() {
   const availableMonths = useMemo(() => {
     const monthsSet = new Set<string>();
     transactions.forEach((tx) => {
-      const month = dayjs(tx.date).format("YYYY-MM");
+      const month = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
       monthsSet.add(month);
     });
 
@@ -185,20 +205,30 @@ export default function TransactionsScreen() {
   const { filteredTransactions, pendingTransactions } = useMemo(() => {
     let filtered = transactions;
     console.log(`[Transactions] Starting filter with ${transactions.length} transactions, selectedMonth: ${selectedMonth}`);
+    console.log(`[Transactions] Sample transaction dates:`, transactions.slice(0, 3).map(tx => ({
+      description: tx.description,
+      date: tx.date,
+      timestamp: tx.timestamp,
+      parsedMonth: dayjs(tx.date || tx.timestamp).format("YYYY-MM")
+    })));
 
-    // Month filter
-    filtered = filtered.filter(
-      (tx) => {
-        const txMonth = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
-        const matches = txMonth === selectedMonth;
-        if (!matches) {
-          console.log(`[Transactions] Filtering out tx: ${tx.description}, month: ${txMonth}, selected: ${selectedMonth}`);
+    // Month filter - only apply if selectedMonth is set
+    if (selectedMonth) {
+      filtered = filtered.filter(
+        (tx) => {
+          const txMonth = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
+          const matches = txMonth === selectedMonth;
+          if (!matches) {
+            console.log(`[Transactions] Filtering out tx: ${tx.description}, month: ${txMonth}, selected: ${selectedMonth}`);
+          }
+          return matches;
         }
-        return matches;
-      }
-    );
+      );
+    } else {
+      console.log(`[Transactions] No selectedMonth set, showing all ${transactions.length} transactions`);
+    }
     
-    console.log(`[Transactions] After month filter: ${filtered.length} transactions`);
+    console.log(`[Transactions] After month filter: ${filtered.length} transactions (selectedMonth: ${selectedMonth})`);
 
     // Search filter
     if (searchQuery.trim()) {

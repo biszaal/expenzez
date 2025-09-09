@@ -1,6 +1,7 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CURRENT_API_CONFIG } from "../../config/api";
+import { errorHandler, FrontendErrorCodes } from "../errorHandler";
 
 // API Configuration
 const API_BASE_URL = CURRENT_API_CONFIG.baseURL;
@@ -143,6 +144,16 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
+    // Create error context for better logging
+    const errorContext = {
+      endpoint: originalRequest.url,
+      timestamp: Date.now(),
+      additionalData: {
+        method: originalRequest.method?.toUpperCase(),
+        headers: originalRequest.headers
+      }
+    };
+    
     // Don't attempt token refresh for auth endpoints - they're supposed to return 401 sometimes
     const authEndpoints = [
       '/auth/login',
@@ -210,35 +221,37 @@ api.interceptors.response.use(
             delete originalRequest.headers.Authorization; // Remove auth header
             return api(originalRequest);
           } else {
-            // Session has truly expired, clear auth state and redirect to login
-            await AsyncStorage.setItem('isLoggedIn', 'false');
-            await AsyncStorage.removeItem('accessToken');
-            await AsyncStorage.removeItem('idToken');
-            await AsyncStorage.removeItem('refreshToken');
-            await AsyncStorage.removeItem('tokenExpiresAt');
-            await AsyncStorage.removeItem('user');
-            await AsyncStorage.removeItem('userBudget');
+            // Use error handler for session expiration
+            const sessionError = await errorHandler.handleError(
+              { 
+                response: { status: 401, data: { error: { code: 'AUTH_SESSION_EXPIRED' } } },
+                message: 'Session expired - please log in again'
+              },
+              errorContext
+            );
             
-            return Promise.reject(new Error('Session expired - please log in again'));
+            return Promise.reject(sessionError.transformedError);
           }
         }
       } catch (refreshError: any) {
         // If token refresh fails due to network issues, don't mark user as logged out
         if (refreshError.code === 'ERR_NETWORK' || refreshError.message?.includes('Network Error')) {
           console.log(`[API] Token refresh failed due to network issues for ${originalRequest.url} - keeping user logged in`);
-          return Promise.reject(error); // Return original 401 error, don't set logged out
+          // Transform network error using error handler
+          const networkError = await errorHandler.handleError(refreshError, errorContext);
+          return Promise.reject(networkError.transformedError);
         }
         
-        // Session has truly expired, clear auth state
-        await AsyncStorage.setItem('isLoggedIn', 'false');
-        await AsyncStorage.removeItem('accessToken');
-        await AsyncStorage.removeItem('idToken');
-        await AsyncStorage.removeItem('refreshToken');
-        await AsyncStorage.removeItem('tokenExpiresAt');
-        await AsyncStorage.removeItem('user');
-        await AsyncStorage.removeItem('userBudget');
+        // Handle token refresh failure
+        const refreshFailureError = await errorHandler.handleError(
+          {
+            response: { status: 401, data: { error: { code: 'AUTH_REFRESH_FAILED' } } },
+            message: 'Token refresh failed - session expired'
+          },
+          errorContext
+        );
         
-        return Promise.reject(new Error('Session expired - please log in again'));
+        return Promise.reject(refreshFailureError.transformedError);
       }
     }
     
@@ -250,15 +263,14 @@ api.interceptors.response.use(
     // Don't spam console with errors if user is already logged out
     const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
     if (isLoggedIn === 'false') {
-      return Promise.reject(error);
+      // Still transform the error for consistency
+      const transformedError = await errorHandler.handleError(error, errorContext);
+      return Promise.reject(transformedError.transformedError);
     }
 
-    console.error(`[API] Request failed: ${originalRequest.url}`, {
-      status: error.response?.status,
-      message: error.response?.data?.message || error.message,
-    });
-    
-    return Promise.reject(error);
+    // Use centralized error handler for all other errors
+    const handledError = await errorHandler.handleError(error, errorContext);
+    return Promise.reject(handledError.transformedError);
   }
 );
 
@@ -270,6 +282,16 @@ aiAPI.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    
+    // Create error context for better logging
+    const errorContext = {
+      endpoint: originalRequest.url,
+      timestamp: Date.now(),
+      additionalData: {
+        method: originalRequest.method?.toUpperCase(),
+        apiType: 'AI'
+      }
+    };
     
     // Don't attempt token refresh for auth endpoints - they're supposed to return 401 sometimes
     const authEndpoints = [
@@ -296,34 +318,36 @@ aiAPI.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return aiAPI(originalRequest);
         } else {
-          // Session has truly expired, clear auth state and redirect to login
-          await AsyncStorage.setItem('isLoggedIn', 'false');
-          await AsyncStorage.removeItem('accessToken');
-          await AsyncStorage.removeItem('idToken');
-          await AsyncStorage.removeItem('refreshToken');
-          await AsyncStorage.removeItem('tokenExpiresAt');
-          await AsyncStorage.removeItem('user');
-          await AsyncStorage.removeItem('userBudget');
+          // Use error handler for session expiration
+          const sessionError = await errorHandler.handleError(
+            { 
+              response: { status: 401, data: { error: { code: 'AUTH_SESSION_EXPIRED' } } },
+              message: 'AI API session expired - please log in again'
+            },
+            errorContext
+          );
           
-          return Promise.reject(new Error('Session expired - please log in again'));
+          return Promise.reject(sessionError.transformedError);
         }
       } catch (refreshError: any) {
         // If token refresh fails due to network issues, don't mark user as logged out
         if (refreshError.code === 'ERR_NETWORK' || refreshError.message?.includes('Network Error')) {
           console.log(`[AI API] Token refresh failed due to network issues for ${originalRequest.url} - keeping user logged in`);
-          return Promise.reject(error); // Return original 401 error, don't set logged out
+          // Transform network error using error handler
+          const networkError = await errorHandler.handleError(refreshError, errorContext);
+          return Promise.reject(networkError.transformedError);
         }
         
-        // Session has truly expired, clear auth state
-        await AsyncStorage.setItem('isLoggedIn', 'false');
-        await AsyncStorage.removeItem('accessToken');
-        await AsyncStorage.removeItem('idToken');
-        await AsyncStorage.removeItem('refreshToken');
-        await AsyncStorage.removeItem('tokenExpiresAt');
-        await AsyncStorage.removeItem('user');
-        await AsyncStorage.removeItem('userBudget');
+        // Handle token refresh failure
+        const refreshFailureError = await errorHandler.handleError(
+          {
+            response: { status: 401, data: { error: { code: 'AUTH_REFRESH_FAILED' } } },
+            message: 'AI API token refresh failed - session expired'
+          },
+          errorContext
+        );
         
-        return Promise.reject(new Error('Session expired - please log in again'));
+        return Promise.reject(refreshFailureError.transformedError);
       }
     }
     
@@ -335,14 +359,13 @@ aiAPI.interceptors.response.use(
     // Don't spam console with errors if user is already logged out
     const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
     if (isLoggedIn === 'false') {
-      return Promise.reject(error);
+      // Still transform the error for consistency
+      const transformedError = await errorHandler.handleError(error, errorContext);
+      return Promise.reject(transformedError.transformedError);
     }
 
-    console.error(`[AI API] Request failed: ${originalRequest.url}`, {
-      status: error.response?.status,
-      message: error.response?.data?.message || error.message,
-    });
-    
-    return Promise.reject(error);
+    // Use centralized error handler for all other errors
+    const handledError = await errorHandler.handleError(error, errorContext);
+    return Promise.reject(handledError.transformedError);
   }
 );

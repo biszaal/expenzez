@@ -84,10 +84,10 @@ export default function EditBudgetPage() {
         }
 
         // Fetch transactions to generate categories
-        const transactionsData = await bankingAPI.getAllTransactions();
+        const transactionsData = await bankingAPI.getTransactionsUnified({ limit: 1000 });
         let allTransactions: any[] = [];
         
-        if (transactionsData.transactions && Array.isArray(transactionsData.transactions)) {
+        if (transactionsData.success && transactionsData.transactions && Array.isArray(transactionsData.transactions)) {
           allTransactions = transactionsData.transactions.map((tx: any, idx: number) => ({
             id: tx.transactionId || tx.id || `tx-${idx}`,
             amount: tx.type === 'debit' ? -Math.abs(Number(tx.amount || 0)) : Math.abs(Number(tx.amount || 0)),

@@ -91,7 +91,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                 <Text style={[styles.premiumTransactionAmount, {
                   color: tx.amount >= 0 ? colors.success[600] : colors.error[600]
                 }]}>
-                  {tx.amount >= 0 ? "+" : ""}£{tx.amount.toFixed(2)}
+                  £{Math.abs(tx.amount).toFixed(2)}
                 </Text>
               </View>
             </View>

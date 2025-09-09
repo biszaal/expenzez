@@ -174,7 +174,8 @@ export const getAccountTransactions = async (accountId: string) => {
 export const getAllAccountIds = async () => {
   try {
     const accountsRes = await bankingAPI.getAccounts();
-    return (accountsRes.accounts || []).map((a: any) => a.id);
+    const accounts = accountsRes.accounts || accountsRes.banks || [];
+    return accounts.map((a: any) => a.id || a.accountId);
   } catch (error: any) {
     console.error("Error loading accounts:", error);
 
@@ -272,45 +273,33 @@ export const getLegalSections = async () => {
 
 export const getNotificationSettings = async () => {
   try {
-    // Hardcoded notification preferences for production demo
-    return {
-      pushEnabled: true,
-      emailEnabled: false,
-      smsEnabled: false,
-      transactionAlerts: true,
-      budgetAlerts: true,
-      accountAlerts: true,
-      securityAlerts: true,
-      insightAlerts: true,
-      minimumTransactionAmount: 50.0,
-      budgetThresholds: [75, 85, 95, 100],
-      quietHours: {
-        enabled: true,
-        startTime: "22:00",
-        endTime: "07:00",
-      },
-    };
+    // Try to get real notification preferences from API
+    const { notificationAPI } = await import("./api");
+    const response = await notificationAPI.getPreferences();
+    return response.preferences || getDefaultNotificationSettings();
   } catch (error) {
     console.error("Error loading notification settings:", error);
-    return {
-      pushEnabled: true,
-      emailEnabled: false,
-      smsEnabled: false,
-      transactionAlerts: true,
-      budgetAlerts: true,
-      accountAlerts: true,
-      securityAlerts: true,
-      insightAlerts: true,
-      minimumTransactionAmount: 50.0,
-      budgetThresholds: [75, 85, 95, 100],
-      quietHours: {
-        enabled: false,
-        startTime: "22:00",
-        endTime: "07:00",
-      },
-    };
+    return getDefaultNotificationSettings();
   }
 };
+
+const getDefaultNotificationSettings = () => ({
+  pushEnabled: true,
+  emailEnabled: false,
+  smsEnabled: false,
+  transactionAlerts: true,
+  budgetAlerts: true,
+  accountAlerts: true,
+  securityAlerts: true,
+  insightAlerts: true,
+  minimumTransactionAmount: 50.0,
+  budgetThresholds: [75, 85, 95, 100],
+  quietHours: {
+    enabled: true,
+    startTime: "22:00",
+    endTime: "07:00",
+  },
+});
 
 export const getRecentNotifications = async () => {
   try {
@@ -338,32 +327,10 @@ export const getRecentNotifications = async () => {
       return [];
     }
     
-    // Temporary fallback: Return sample notifications until backend is deployed
+    // API not available, return empty array
     if ((error as any).response?.status === 404) {
-      // These fallback notifications should only show once, on first login
-      // Check if user has seen the welcome notification before
-      const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
-      const welcomeShownKey = "welcome_notification_shown";
-      const hasShownWelcome = await AsyncStorage.getItem(welcomeShownKey);
-      
-      if (hasShownWelcome) {
-        // User has already seen the welcome notification, don't show it again
-        return [];
-      } else {
-        // Mark welcome as shown for future logins
-        await AsyncStorage.setItem(welcomeShownKey, "true");
-        
-        return [
-          {
-            id: "temp-1",
-            title: "Welcome to Expenzez!",
-            message: "Your notification system is being set up. You'll receive real-time alerts once your bank accounts sync.",
-            timestamp: Date.now() - 30 * 60 * 1000, // 30 minutes ago
-            type: "account",
-            isRead: false,
-          }
-        ];
-      }
+      console.log('Notifications API not available');
+      return [];
     }
     
     // Return empty array for other errors
@@ -549,22 +516,22 @@ export const getTransactions = async () => {
   try {
     console.log("[DataSource] getTransactions called");
     
-    // Use the EXACT same call as the homepage - direct API call without transformation
-    const response = await bankingAPI.getAllTransactions(100);
+    // Use the unified API call with fallback logic (same as spending page)
+    const response = await bankingAPI.getTransactionsUnified({ limit: 100 });
     
     console.log("[DataSource] Raw API response:", response);
 
-    if (!response || !response.transactions) {
+    if (!response || !response.success || !response.transactions) {
       console.log("[DataSource] No transactions in response");
       return [];
     }
 
     console.log("[DataSource] Found transactions:", response.transactions.length);
     
-    // Return the transactions exactly as they come from the API (same as homepage)
+    // Return the transactions exactly as they come from the unified API
     // Just add the fields that the UI expects, with correct amount signs
     const formattedTransactions = response.transactions.map((tx: any, index: number) => ({
-      // Keep all original fields from DynamoDB
+      // Keep all original fields from API
       ...tx,
       // Correct the amount sign based on transaction type
       amount: tx.type === "debit" ? -(Math.abs(tx.amount || 0)) : Math.abs(tx.amount || 0),
@@ -581,7 +548,7 @@ export const getTransactions = async () => {
     return formattedTransactions;
     
   } catch (error: any) {
-    console.error("[DataSource] Error with direct API call:", error);
+    console.error("[DataSource] Error with unified API call:", error);
     console.error("[DataSource] Error details:", {
       message: error.message,
       status: error.response?.status,

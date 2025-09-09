@@ -307,18 +307,27 @@ export default function SpendingPage() {
 
       // Try to fetch transactions (may fail if no bank connections)
       try {
-        const transactionsResponse = await bankingAPI.getAllTransactions();
+        console.log("🔄 [Spending] Fetching transactions...");
+        const transactionsResponse = await bankingAPI.getTransactionsUnified();
         
         if (transactionsResponse && transactionsResponse.transactions) {
-          setTransactions(transactionsResponse.transactions);
           console.log("✅ [Spending] Loaded transactions:", transactionsResponse.transactions.length);
+          console.log("📝 [Spending] Sample transactions:", transactionsResponse.transactions.slice(0, 2));
+          setTransactions(transactionsResponse.transactions);
         } else {
+          console.log("ℹ️ [Spending] No transactions available - response:", transactionsResponse);
           setTransactions([]);
-          console.log("ℹ️ [Spending] No transactions available");
         }
-      } catch (transactionError) {
+      } catch (transactionError: any) {
         // Don't treat missing transactions as an error - user might have no bank connections
         console.warn("⚠️ [Spending] Could not fetch transactions:", transactionError);
+        console.warn("⚠️ [Spending] Error details:", transactionError?.response?.data || transactionError?.message);
+        
+        // Don't set UI errors for transaction fetch failures in development
+        // if (__DEV__) {
+        //   setError(`Transaction fetch failed: ${transactionError?.response?.data?.message || transactionError?.message}`);
+        // }
+        
         setTransactions([]);
       }
 
@@ -375,13 +384,13 @@ export default function SpendingPage() {
         });
       });
 
-      // Add "Other" category
+      // Add "Other" category with consistent budget amount
       categoryMap.set("Other", {
         id: "category-other",
         name: "Other",
         icon: "Other",
         color: "#95A5A6",
-        defaultBudget: categoryBudgets["Other"] || 100,
+        defaultBudget: categoryBudgets["Other"] || 500, // Changed from 100 to 500 for consistency
       });
 
       return Array.from(categoryMap.values());
@@ -422,6 +431,32 @@ export default function SpendingPage() {
     ]).start();
   }, [monthlySpentPercentage]);
 
+  // Auto-select most recent month with data when transactions are loaded
+  useEffect(() => {
+    if (transactions.length > 0) {
+      // Get the most recent month with transaction data
+      const monthsWithData = new Set<string>();
+      transactions.forEach(transaction => {
+        if (transaction.date) {
+          const txMonth = dayjs(transaction.date).format('YYYY-MM');
+          monthsWithData.add(txMonth);
+        }
+      });
+      
+      if (monthsWithData.size > 0) {
+        // Sort months (newest first) and select the most recent one
+        const sortedMonths = Array.from(monthsWithData).sort((a, b) => b.localeCompare(a));
+        const mostRecentMonth = sortedMonths[0];
+        
+        // Only change selected month if current selection has no data
+        const currentMonthHasData = monthsWithData.has(selectedMonth);
+        if (!currentMonthHasData) {
+          setSelectedMonth(mostRecentMonth);
+        }
+      }
+    }
+  }, [transactions, selectedMonth]);
+
   // Initial data fetch
   useEffect(() => {
     if (isLoggedIn) {
@@ -430,8 +465,8 @@ export default function SpendingPage() {
     }
   }, [isLoggedIn]);
 
-  // Loading state - only show loading during actual data fetch, not during bank check
-  if (loading && checkingBank) {
+  // Loading state - show loading during data fetch or bank check
+  if (loading || checkingBank) {
     return <TabLoadingScreen message="Loading spending data..." />;
   }
 
@@ -501,6 +536,7 @@ export default function SpendingPage() {
           setSelectedMonth={setSelectedMonth}
           months={months}
         />
+
 
         {/* Empty State - No Transactions */}
         {transactions.length === 0 && !hasBank && (
