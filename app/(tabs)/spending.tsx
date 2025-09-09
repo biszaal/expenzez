@@ -281,6 +281,21 @@ export default function SpendingPage() {
         x: 0, // Will be calculated by the chart component
         y: 0, // Will be calculated by the chart component
       })),
+      // Add comparison data for previous month
+      comparisonData: {
+        values: dailySpendingData.prevMonthData,
+        dataPoints: dailySpendingData.prevMonthData.map((value, index) => ({
+          value,
+          label: dailySpendingData.labels[index] || `${index + 1}`,
+          date: dayjs(selectedMonth).subtract(1, 'month').add(index, 'day').format('YYYY-MM-DD'),
+          x: 0, // Will be calculated by the chart component
+          y: 0, // Will be calculated by the chart component
+        })),
+        lineColor: 'rgba(156, 163, 175, 0.6)',
+        strokeWidth: 2,
+        opacity: 0.8,
+        label: dayjs(selectedMonth).subtract(1, 'month').format('MMM')
+      }
     };
   }, [dailySpendingData, selectedMonth]);
 
