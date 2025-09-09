@@ -102,9 +102,33 @@ export const SpendingAnalyticsSection: React.FC<SpendingAnalyticsSectionProps> =
                           { color: colors.text.secondary },
                         ]}
                       >
-                        Spending
+                        This Month
                       </Text>
                     </View>
+                    {/* Previous month legend */}
+                    {dailySpendingData?.prevMonthData && dailySpendingData.prevMonthData.some(value => value > 0) && (
+                      <View style={styles.premiumChartLegendItem}>
+                        <View
+                          style={[
+                            styles.premiumChartLegendDot,
+                            { 
+                              backgroundColor: 'rgba(156, 163, 175, 0.6)',
+                              borderStyle: 'dashed',
+                              borderWidth: 1,
+                              borderColor: 'rgba(156, 163, 175, 0.8)'
+                            },
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.premiumChartLegendText,
+                            { color: colors.text.secondary },
+                          ]}
+                        >
+                          {dayjs(selectedMonth).subtract(1, 'month').format('MMM')}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 </View>
 

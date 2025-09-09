@@ -6,10 +6,26 @@ export interface ChartDataPoint {
   y: number;
 }
 
+export interface ChartDataset {
+  values: number[];
+  dataPoints: ChartDataPoint[];
+  color?: string;
+  lineColor?: string;
+  pointColor?: string;
+  gradientColors?: string[];
+  strokeWidth?: number;
+  opacity?: number;
+  label?: string;
+}
+
 export interface ChartData {
   labels: string[];
   values: number[];
   dataPoints: ChartDataPoint[];
+  // New: Support for multiple datasets
+  datasets?: ChartDataset[];
+  // Backward compatibility
+  comparisonData?: ChartDataset;
 }
 
 export interface ChartDimensions {

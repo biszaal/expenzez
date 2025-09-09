@@ -9,6 +9,7 @@ import Animated, {
   interpolate,
   Extrapolate,
   runOnJS,
+  Easing,
 } from 'react-native-reanimated';
 import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
 import Svg, {
@@ -64,19 +65,25 @@ export const LineChart: React.FC<LineChartProps> = ({
     chartHeight: height - 60,
   }), [width, height]);
 
-  // Calculate min/max values for scaling
+  // Calculate min/max values for scaling (including comparison data)
   const { minValue, maxValue, valueRange } = useMemo(() => {
     if (!data.values.length) {
       return { minValue: 0, maxValue: 1, valueRange: 1 };
     }
     
-    const max = Math.max(...data.values);
-    const min = Math.min(...data.values);
+    let allValues = [...data.values];
+    
+    // Include comparison data in min/max calculation
+    if (data.comparisonData?.values) {
+      allValues = [...allValues, ...data.comparisonData.values];
+    }
+    
+    const max = Math.max(...allValues);
+    const min = Math.min(...allValues);
     const range = max - min || 1;
     
-    
     return { minValue: min, maxValue: max, valueRange: range };
-  }, [data.values]);
+  }, [data.values, data.comparisonData]);
 
   // Process data points with coordinates
   const processedData = useMemo(() => {
@@ -101,6 +108,30 @@ export const LineChart: React.FC<LineChartProps> = ({
       } as ChartDataPoint;
     });
   }, [data, dimensions, minValue, maxValue, valueRange]);
+
+  // Process comparison data points with coordinates
+  const comparisonProcessedData = useMemo(() => {
+    if (!data.comparisonData?.values || !data.comparisonData.values.length) {
+      return [];
+    }
+
+    return data.comparisonData.values.map((value, index) => {
+      // X coordinate: spread points evenly across chart width
+      const x = dimensions.paddingHorizontal + (index / Math.max(1, data.comparisonData!.values.length - 1)) * dimensions.chartWidth;
+      
+      // Y coordinate: map value to chart height using same scale as main data
+      const normalizedValue = valueRange === 0 ? 0.5 : (value - minValue) / valueRange;
+      const y = dimensions.height - dimensions.paddingVertical - (normalizedValue * dimensions.chartHeight);
+      
+      return {
+        value,
+        label: data.labels[index] || `${index}`,
+        date: data.labels[index] || '',
+        x,
+        y,
+      } as ChartDataPoint;
+    });
+  }, [data.comparisonData, data.labels, dimensions, minValue, maxValue, valueRange]);
 
   // Generate SVG path
   const generatePath = (points: ChartDataPoint[], type: 'linear' | 'bezier' = 'bezier'): string => {
@@ -128,6 +159,10 @@ export const LineChart: React.FC<LineChartProps> = ({
 
     return path;
   };
+
+  // Generate SVG paths
+  const svgPath = useMemo(() => generatePath(processedData, curveType), [processedData, curveType]);
+  const comparisonSvgPath = useMemo(() => generatePath(comparisonProcessedData, curveType), [comparisonProcessedData, curveType]);
 
   // Find closest point to gesture
   const findClosestPoint = (x: number): number => {
@@ -240,15 +275,56 @@ export const LineChart: React.FC<LineChartProps> = ({
 
   // Animated mask width for revealing line from left to right
   const animatedMaskStyle = useAnimatedStyle(() => {
+    // Calculate the actual line width based on data points for more precise masking
+    const lineWidth = processedData.length > 0 
+      ? processedData[processedData.length - 1].x - processedData[0].x + dimensions.paddingHorizontal
+      : dimensions.width;
+    
     const revealWidth = interpolate(
       pathAnimationProgress.value,
       [0, 1],
-      [0, dimensions.width],
+      [processedData[0]?.x || dimensions.paddingHorizontal, processedData[processedData.length - 1]?.x || dimensions.width],
       Extrapolate.CLAMP
     );
     
     return {
       width: revealWidth,
+    };
+  });
+
+  // Animated end dot position that follows the line animation
+  const animatedEndDotStyle = useAnimatedStyle(() => {
+    if (processedData.length === 0) {
+      return { opacity: 0 };
+    }
+
+    const progress = pathAnimationProgress.value;
+    
+    // Calculate which point index we should be at based on progress
+    const targetIndex = Math.floor(progress * (processedData.length - 1));
+    const nextIndex = Math.min(targetIndex + 1, processedData.length - 1);
+    
+    // Get the current and next points
+    const currentPoint = processedData[targetIndex];
+    const nextPoint = processedData[nextIndex];
+    
+    if (!currentPoint) {
+      return { opacity: 0 };
+    }
+    
+    // Calculate interpolation within the current segment
+    const segmentProgress = (progress * (processedData.length - 1)) - targetIndex;
+    
+    // Interpolate position between current and next point
+    const animatedX = currentPoint.x + (nextPoint.x - currentPoint.x) * segmentProgress;
+    const animatedY = currentPoint.y + (nextPoint.y - currentPoint.y) * segmentProgress;
+
+    return {
+      transform: [
+        { translateX: animatedX - processedData[processedData.length - 1].x },
+        { translateY: animatedY - processedData[processedData.length - 1].y }
+      ],
+      opacity: progress > 0.05 ? 1 : 0, // Show dot early in animation
     };
   });
 
@@ -266,21 +342,21 @@ export const LineChart: React.FC<LineChartProps> = ({
     };
   });
 
-  // Animation on mount - faster and smoother
+  // Animation on mount - linear timing
   useEffect(() => {
     if (animated && processedData.length > 0) {
       // Reset animation
       pathAnimationProgress.value = 0;
-      // Start animation with a slight delay and smooth easing
+      // Start animation with linear easing
       setTimeout(() => {
         pathAnimationProgress.value = withTiming(1, { 
-          duration: 1500, // Smooth duration
+          duration: 1500,
+          easing: Easing.linear, // Linear animation
         });
-      }, 300); // Small delay for better visual effect
+      }, 300);
     }
   }, [processedData, animated, pathAnimationProgress]);
 
-  const svgPath = generatePath(processedData, curveType);
 
 
   return (
@@ -333,7 +409,36 @@ export const LineChart: React.FC<LineChartProps> = ({
               mask={animated ? "url(#lineMask)" : undefined}
             />
 
+            {/* Comparison line (previous month) */}
+            {comparisonSvgPath && (
+              <Path
+                d={comparisonSvgPath}
+                stroke="rgba(156, 163, 175, 0.6)"  // Faded gray color
+                strokeWidth={2}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray="6,4"  // Dashed line to differentiate
+                opacity={0.8}
+              />
+            )}
+
             {/* Data points - disabled to reduce clutter */}
+
+            {/* Today's date dot at end of line - animated */}
+            {processedData.length > 0 && (
+              <G>
+                <AnimatedCircle
+                  cx={processedData[processedData.length - 1].x}
+                  cy={processedData[processedData.length - 1].y}
+                  r={6}
+                  fill={lineColor}
+                  stroke="white"
+                  strokeWidth={2}
+                  animatedProps={animatedEndDotStyle}
+                />
+              </G>
+            )}
 
             {/* Y-axis labels - simplified and better spaced */}
             <G>
