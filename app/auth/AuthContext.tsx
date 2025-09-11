@@ -378,15 +378,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const response = await authAPI.login(loginPayload);
 
       // Check if we have a successful response with tokens
-      if (response && response.idToken && response.accessToken) {
+      // Handle both direct response and nested response.data structure
+      const responseData = response.data || response;
+      if (responseData && responseData.idToken && responseData.accessToken) {
 
         // Store Cognito tokens and user data
         const storagePromises = [
           AsyncStorage.setItem("isLoggedIn", "true"),
-          AsyncStorage.setItem("accessToken", response.accessToken),
-          AsyncStorage.setItem("idToken", response.idToken),
-          AsyncStorage.setItem("refreshToken", response.refreshToken || ""),
-          AsyncStorage.setItem("user", JSON.stringify(response.user)),
+          AsyncStorage.setItem("accessToken", responseData.accessToken),
+          AsyncStorage.setItem("idToken", responseData.idToken),
+          AsyncStorage.setItem("refreshToken", responseData.refreshToken || ""),
+          AsyncStorage.setItem("user", JSON.stringify(responseData.user)),
         ];
 
         await Promise.all(storagePromises);
@@ -396,22 +398,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         // Update state
         setIsLoggedIn(true);
-        setUser(response.user);
+        setUser(responseData.user);
         setHasLoadedAuthState(true); // Mark that we've handled auth state
 
         // Always create persistent session for device remembering
         // Long duration (30 days) for rememberMe, shorter duration (7 days) for regular login
-        console.log('🔍 [AuthContext] Full login response structure:', JSON.stringify(response, null, 2));
+        console.log('🔍 [AuthContext] Full login response structure:', JSON.stringify(responseData, null, 2));
         console.log('🔄 [AuthContext] Attempting to create persistent session:', {
-          hasRefreshToken: !!response.refreshToken,
-          hasUserId: !!response.user?.username,
-          userId: response.user?.username,
-          userObject: response.user,
+          hasRefreshToken: !!responseData.refreshToken,
+          hasUserId: !!responseData.user?.username,
+          userId: responseData.user?.username,
+          userObject: responseData.user,
           rememberMe
         });
         
-        if (response.refreshToken && response.user?.username) {
-          await deviceManager.createPersistentSession(response.user.username, response.refreshToken, rememberMe);
+        if (responseData.refreshToken && responseData.user?.username) {
+          await deviceManager.createPersistentSession(responseData.user.username, responseData.refreshToken, rememberMe);
           if (rememberMe) {
             await deviceManager.trustDevice(true);
             setIsDeviceTrusted(true);
@@ -421,13 +423,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         } else {
           console.log('❌ [AuthContext] Cannot create persistent session - missing data:', {
-            missingRefreshToken: !response.refreshToken,
-            missingUserId: !response.user?.username
+            missingRefreshToken: !responseData.refreshToken,
+            missingUserId: !responseData.user?.username
           });
         }
 
         // Initialize device state
         await initializeDeviceState();
+
+        // Note: Security/PIN setup will be handled by SecurityContext after login
+        console.log('🔐 [AuthContext] Login complete - SecurityContext will handle PIN setup if needed');
 
         // Verify tokens were stored
         const storedAccessToken = await AsyncStorage.getItem("accessToken");
@@ -559,26 +564,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
 
       // Check if we have a successful response with tokens
-      if (response && response.idToken && response.accessToken) {
+      // Handle both direct response and nested response.data structure
+      const responseData = response.data || response;
+      if (responseData && responseData.idToken && responseData.accessToken) {
 
         // Store Cognito tokens and user data
         const storagePromises = [
           AsyncStorage.setItem("isLoggedIn", "true"),
-          AsyncStorage.setItem("accessToken", response.accessToken),
-          AsyncStorage.setItem("idToken", response.idToken),
-          AsyncStorage.setItem("refreshToken", response.refreshToken || ""),
-          AsyncStorage.setItem("user", JSON.stringify(response.user)),
+          AsyncStorage.setItem("accessToken", responseData.accessToken),
+          AsyncStorage.setItem("idToken", responseData.idToken),
+          AsyncStorage.setItem("refreshToken", responseData.refreshToken || ""),
+          AsyncStorage.setItem("user", JSON.stringify(responseData.user)),
         ];
 
         await Promise.all(storagePromises);
 
         // Update state
         setIsLoggedIn(true);
-        setUser(response.user);
+        setUser(responseData.user);
 
         // Create persistent session if rememberMe is enabled
-        if (rememberMe && response.refreshToken && response.user?.username) {
-          await deviceManager.createPersistentSession(response.user.username, response.refreshToken, rememberMe);
+        if (rememberMe && responseData.refreshToken && responseData.user?.username) {
+          await deviceManager.createPersistentSession(responseData.user.username, responseData.refreshToken, rememberMe);
           await deviceManager.trustDevice(rememberMe);
           setIsDeviceTrusted(true);
           console.log('✅ [AuthContext] Persistent session created for auto login');
@@ -728,12 +735,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('🔧 [AuthContext] Clearing potentially corrupted cache entries...');
       
       const keys = await AsyncStorage.getAllKeys();
+      
+      // First, identify recent banking keys to preserve
+      const recentBankingKeysSet = new Set();
+      keys.filter(key => key.startsWith('requisition_expenzez_')).forEach(key => {
+        const match = key.match(/requisition_expenzez_(\d+)/);
+        if (match) {
+          const timestamp = parseInt(match[1]);
+          const age = Date.now() - timestamp;
+          const isRecent = age < 15 * 60 * 1000; // 15 minutes
+          if (isRecent) {
+            recentBankingKeysSet.add(key);
+          }
+        }
+      });
+      
       const problematicKeys = keys.filter(key => 
         key.startsWith('@expenzez_cache_') || // Network cache
         key.includes('transactions') ||
         key.includes('banking') ||
         key.includes('spending') ||
-        key.startsWith('requisition_') // Stale banking requisition data
+        (key.startsWith('requisition_') && !recentBankingKeysSet.has(key)) // Only stale banking requisition data
       );
       
       if (problematicKeys.length > 0) {
@@ -741,11 +763,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('✅ [AuthContext] Cleared', problematicKeys.length, 'potentially corrupted cache entries');
       }
       
-      // Also clean up any stale banking callback references
-      const staleBankingKeys = keys.filter(key => key.startsWith('requisition_'));
+      // Clean up banking references, but preserve recent ones ONLY if user has valid session
+      // Check for valid session before preserving banking references
+      const storedLogin = await AsyncStorage.getItem('isLoggedIn');
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      const hasValidSession = storedLogin === 'true' && accessToken && accessToken !== 'null';
+      
+      console.log('🏦 [AuthContext] Session validity for banking reference preservation:', hasValidSession);
+      
+      const recentBankingKeys = [];
+      const staleBankingKeys = [];
+      
+      const bankingKeys = keys.filter(key => key.startsWith('requisition_'));
+      for (const key of bankingKeys) {
+        if (key.startsWith('requisition_expenzez_')) {
+          const match = key.match(/requisition_expenzez_(\d+)/);
+          if (match) {
+            const timestamp = parseInt(match[1]);
+            const age = Date.now() - timestamp;
+            const isRecent = age < 15 * 60 * 1000; // 15 minutes - matches TokenManager and Layout
+            
+            // Only preserve recent banking keys if user has valid session
+            if (isRecent && hasValidSession) {
+              recentBankingKeys.push(key);
+            } else {
+              staleBankingKeys.push(key);
+              if (isRecent && !hasValidSession) {
+                console.log(`🏦 [AuthContext] Recent banking key ${key} marked for removal - no valid session`);
+              }
+            }
+          }
+        } else {
+          // Other banking keys without timestamps - consider stale
+          staleBankingKeys.push(key);
+        }
+      }
+      
+      if (recentBankingKeys.length > 0) {
+        console.log('🏦 [AuthContext] Preserving recent banking references with valid session:', recentBankingKeys);
+      }
+      
       if (staleBankingKeys.length > 0) {
         await AsyncStorage.multiRemove(staleBankingKeys);
-        console.log('🏦 [AuthContext] Cleared', staleBankingKeys.length, 'stale banking requisition references');
+        console.log('🏦 [AuthContext] Cleared', staleBankingKeys.length, 'banking references (stale or no valid session)');
       }
     } catch (error) {
       console.log('❌ [AuthContext] Error clearing corrupted cache:', error);

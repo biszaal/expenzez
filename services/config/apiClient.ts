@@ -189,7 +189,8 @@ api.interceptors.response.use(
           // Also check if we're in a banking callback context (even for auth/refresh)
           let isBankingCallbackContext = false;
           try {
-            // Check if there are recent banking requisitions (within 15 minutes - same as TokenManager)
+            // Check if there are recent banking requisitions (within 3 minutes for active contexts)
+            // Note: This is different from session preservation (15 minutes) - this is for active banking flows
             const keys = await import('@react-native-async-storage/async-storage').then(m => 
               m.default.getAllKeys().then(keys => keys.filter(key => key.startsWith('requisition_expenzez_')))
             );
@@ -201,9 +202,9 @@ api.interceptors.response.use(
               if (match) {
                 const timestamp = parseInt(match[1]);
                 const age = Date.now() - timestamp;
-                const isRecent = age < 15 * 60 * 1000; // 15 minutes - same as TokenManager
-                console.log(`[API] Key ${key}: timestamp=${timestamp}, age=${age}ms (${Math.round(age/1000)}s), isRecent=${isRecent}`);
-                return isRecent;
+                const isActive = age < 3 * 60 * 1000; // 3 minutes for active banking flows
+                console.log(`[API] Key ${key}: timestamp=${timestamp}, age=${age}ms (${Math.round(age/1000)}s), isActive=${isActive}`);
+                return isActive;
               }
               return false;
             });

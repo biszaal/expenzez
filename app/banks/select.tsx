@@ -65,7 +65,23 @@ export default function BankSelectScreen() {
       setBanks(categorizedBanks);
     } catch (error: any) {
       console.error("Error fetching banks:", error);
-      showError("Failed to load available banks");
+      console.log("Banks fetch error details:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+
+      // Handle daily API limit errors specifically
+      if (error.response?.status === 429 || 
+          error.response?.data?.error === 'DAILY_LIMIT_REACHED' ||
+          error.message?.includes('429') ||
+          error.message?.includes('daily limit') ||
+          error.message?.includes('rate limit')) {
+        
+        showError("Daily API limit reached for banking services. Showing available banks from cache.");
+      } else {
+        showError("Failed to load available banks. Showing cached banks.");
+      }
       // Provide fallback banks with categories including Sandbox Finance
       const fallbackBanks = [
         { id: "SANDBOXFINANCE_SFIN0000", name: "Sandbox Finance", logo: "" },
@@ -151,7 +167,23 @@ export default function BankSelectScreen() {
       }
     } catch (error: any) {
       console.error("Error connecting bank:", error);
-      showError(error.response?.data?.message || `Failed to connect to ${bank.name}`);
+      console.log("Bank connection error details:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+
+      // Handle daily API limit errors specifically
+      if (error.response?.status === 429 || 
+          error.response?.data?.error === 'DAILY_LIMIT_REACHED' ||
+          error.message?.includes('429') ||
+          error.message?.includes('daily limit') ||
+          error.message?.includes('rate limit')) {
+        
+        showError("Daily API limit reached. Bank connections are temporarily unavailable. Please try again tomorrow.");
+      } else {
+        showError(error.response?.data?.message || `Failed to connect to ${bank.name}. Please try again.`);
+      }
     } finally {
       setConnecting(null);
     }

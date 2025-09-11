@@ -205,7 +205,7 @@ export default function BiometricSecurityLock({ isVisible, onUnlock }: Biometric
   return (
     <Modal
       visible={isVisible}
-      animationType="fade"
+      animationType="slide"
       presentationStyle="fullScreen"
     >
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
