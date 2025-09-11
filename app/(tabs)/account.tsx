@@ -1,4 +1,4 @@
-import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -40,14 +40,9 @@ export default function AccountScreen() {
   const router = useRouter();
   const { isLoggedIn, user, logout } = useAuth();
   const { colors, isDark } = useTheme();
-  const { showSuccess, showError } = useAlert();
+  const { showError } = useAlert();
 
   const [profile, setProfile] = useState<any>(null);
-  const [creditScore, setCreditScore] = useState<number | null>(null);
-  const [goalsMet, setGoalsMet] = useState<{
-    completed: number;
-    total: number;
-  }>({ completed: 0, total: 0 });
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
@@ -102,7 +97,7 @@ export default function AccountScreen() {
     if (isLoggedIn) {
       fetchUserData();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, showError]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -298,7 +293,6 @@ export default function AccountScreen() {
     },
   ];
 
-  const statColors = getStatColors();
 
   if (!isLoggedIn) {
     return null;

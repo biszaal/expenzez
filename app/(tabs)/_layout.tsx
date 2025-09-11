@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, Redirect } from "expo-router";
-import React, { useEffect } from "react";
+import React from "react";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../auth/AuthContext";
 import { LoadingScreen } from "../../components/ui";

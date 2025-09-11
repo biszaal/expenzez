@@ -6,6 +6,9 @@
 // =====================================================
 
 // Re-export all APIs from the new modular structure
+// For backward compatibility, also export as default
+import { api } from './api/index';
+
 export {
   authAPI,
   bankingAPI,
@@ -22,7 +25,4 @@ export {
   setCachedData,
   clearCachedData
 } from './api/index';
-
-// For backward compatibility, also export as default
-import { api } from './api/index';
 export default api;

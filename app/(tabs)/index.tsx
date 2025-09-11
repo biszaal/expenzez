@@ -6,7 +6,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { bankingAPI, budgetAPI } from "../../services/api";
 import { SPACING } from "../../constants/Colors";
@@ -17,7 +16,6 @@ import {
   loadBalanceFromCache, 
   shouldUseCachedBalance,
   formatCacheAge,
-  clearBalanceCache,
   CachedBalanceData 
 } from "../../utils/balanceCache";
 import {
@@ -101,33 +99,6 @@ const getDisplayAccountType = (accountType: string | undefined): string => {
   }
 };
 
-// Helper function to format update timestamp for display
-const formatUpdateTimestamp = (timestamp: string | null): string => {
-  if (!timestamp) return 'Never updated';
-  
-  try {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffMinutes < 1) {
-      return 'Just updated';
-    } else if (diffMinutes < 60) {
-      return `Updated ${diffMinutes}m ago`;
-    } else if (diffHours < 24) {
-      return `Updated ${diffHours}h ago`;
-    } else if (diffDays < 7) {
-      return `Updated ${diffDays}d ago`;
-    } else {
-      return `Updated ${date.toLocaleDateString()}`;
-    }
-  } catch (error) {
-    return 'Update time unknown';
-  }
-};
 
 export default function HomePage() {
   const { colors } = useTheme();

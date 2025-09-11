@@ -444,7 +444,7 @@ export default function SpendingPage() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [monthlySpentPercentage]);
+  }, [monthlySpentPercentage, animatedProgress, animatedScale]);
 
   // Auto-select most recent month with data when transactions are loaded
   useEffect(() => {
@@ -478,7 +478,7 @@ export default function SpendingPage() {
       // Always fetch data when logged in, regardless of bank connection status
       fetchData();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, fetchData]);
 
   // Loading state - show loading during data fetch or bank check
   if (loading || checkingBank) {
