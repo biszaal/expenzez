@@ -6,6 +6,7 @@ export { expenseAPI } from './expenseAPI';
 export { budgetAPI } from './budgetAPI';
 export { profileAPI } from './profileAPI';
 export { notificationAPI } from './notificationAPI';
+export { securityAPI } from './securityAPI';
 
 // Export configuration and utilities
 export { api, aiAPI } from '../config/apiClient';

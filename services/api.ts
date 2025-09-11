@@ -14,6 +14,7 @@ export {
   budgetAPI,
   profileAPI,
   notificationAPI,
+  securityAPI,
   api,
   aiAPI,
   healthCheck,

@@ -16,6 +16,8 @@ import * as LocalAuthentication from "expo-local-authentication";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../contexts/ThemeContext";
 import { spacing, borderRadius, shadows, typography } from "../constants/theme";
+import { securityAPI } from "../services/api/securityAPI";
+import { deviceManager } from "../services/deviceManager";
 
 interface SecurityLockProps {
   onUnlock: () => void;
@@ -111,57 +113,79 @@ export default function SecurityLock({
         return;
       }
 
-      if (password === storedPassword) {
+      // Use securityAPI for validation
+      const deviceId = await deviceManager.getDeviceId();
+      const result = await securityAPI.validatePin({
+        pin: password,
+        deviceId,
+      });
+
+      if (result.success) {
         onUnlock();
         setPassword("");
       } else {
-        Alert.alert("Incorrect Password", "Please try again.");
+        Alert.alert("Incorrect PIN", result.error || "Please try again.");
         setPassword("");
       }
     } catch (error) {
-      console.error("Password authentication error:", error);
+      console.error("PIN authentication error:", error);
       Alert.alert("Error", "An error occurred during authentication.");
     }
   };
 
   const setupPassword = async () => {
-    if (password.length < 4) {
+    if (password.length !== 5) {
       Alert.alert(
-        "Password Too Short",
-        "Password must be at least 4 characters long."
+        "Invalid PIN",
+        "PIN must be exactly 5 digits long."
+      );
+      return;
+    }
+
+    // Validate that PIN contains only digits
+    if (!/^\d{5}$/.test(password)) {
+      Alert.alert(
+        "Invalid PIN",
+        "PIN must contain only digits (0-9)."
       );
       return;
     }
 
     if (password !== confirmPassword) {
       Alert.alert(
-        "Passwords Don&apos;t Match",
-        "Please make sure both passwords are the same."
+        "PINs Don't Match",
+        "Please make sure both PINs are the same."
       );
       return;
     }
 
     try {
-      await AsyncStorage.setItem("@expenzez_app_password", password);
-      await AsyncStorage.setItem("@expenzez_security_enabled", "true");
+      const deviceId = await deviceManager.getDeviceId();
+      
+      // Use securityAPI to set up PIN with encryption and server storage
+      const result = await securityAPI.setupPin({
+        pin: password,
+        deviceId,
+        biometricEnabled: isBiometricEnabled,
+      });
 
-      if (isBiometricEnabled) {
-        await AsyncStorage.setItem("@expenzez_biometric_enabled", "true");
+      if (result.success) {
+        setShowPasswordModal(false);
+        setPassword("");
+        setConfirmPassword("");
+        setIsSettingUp(false);
+
+        Alert.alert(
+          "Security Setup Complete",
+          "Your app is now protected with a 5-digit PIN and can be accessed across all your trusted devices."
+        );
+        onUnlock();
+      } else {
+        Alert.alert("Setup Failed", result.error || "Failed to set up PIN. Please try again.");
       }
-
-      setShowPasswordModal(false);
-      setPassword("");
-      setConfirmPassword("");
-      setIsSettingUp(false);
-
-      Alert.alert(
-        "Security Setup Complete",
-        "Your app is now protected with a password."
-      );
-      onUnlock();
     } catch (error) {
       console.error("Error setting up password:", error);
-      Alert.alert("Error", "Failed to set up password. Please try again.");
+      Alert.alert("Error", "Failed to set up PIN. Please try again.");
     }
   };
 
@@ -340,12 +364,18 @@ export default function SecurityLock({
                     color: colors.text.primary,
                   },
                 ]}
-                placeholder="Enter password"
+                placeholder="Enter 5-digit PIN"
                 placeholderTextColor={colors.text.tertiary}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  // Only allow digits and limit to 5 characters
+                  const numericText = text.replace(/[^0-9]/g, '').slice(0, 5);
+                  setPassword(numericText);
+                }}
                 secureTextEntry
                 autoFocus
+                keyboardType="numeric"
+                maxLength={5}
                 onSubmitEditing={isSettingUp ? undefined : handlePasswordAuth}
               />
 
@@ -359,11 +389,17 @@ export default function SecurityLock({
                       color: colors.text.primary,
                     },
                   ]}
-                  placeholder="Confirm password"
+                  placeholder="Confirm 5-digit PIN"
                   placeholderTextColor={colors.text.tertiary}
                   value={confirmPassword}
-                  onChangeText={setConfirmPassword}
+                  onChangeText={(text) => {
+                    // Only allow digits and limit to 5 characters
+                    const numericText = text.replace(/[^0-9]/g, '').slice(0, 5);
+                    setConfirmPassword(numericText);
+                  }}
                   secureTextEntry
+                  keyboardType="numeric"
+                  maxLength={5}
                   onSubmitEditing={setupPassword}
                 />
               )}

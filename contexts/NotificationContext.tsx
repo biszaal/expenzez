@@ -338,7 +338,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         setPreferences(defaultPreferences);
       }
     } catch (error: any) {
-      console.error("[NotificationContext] Error loading preferences:", error);
+      // Reduce error noise in development - fallback to defaults works fine
+      if (error.response?.status !== 404 && !error.message?.includes('Network Error') && !error.message?.includes('timeout')) {
+        console.error("[NotificationContext] Error loading preferences:", error);
+      } else {
+        console.log("[NotificationContext] Server unavailable, using default preferences");
+      }
       setPreferences(defaultPreferences);
     }
   };
