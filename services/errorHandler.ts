@@ -248,11 +248,27 @@ class ErrorHandlerService {
         const isBankRemoval = context?.endpoint?.includes('/nordigen/accounts/') && 
                               context?.additionalData?.method === 'DELETE';
         
+        // Check if this is a security endpoint 404 (expected during development)
+        const isSecurityEndpoint = context?.endpoint?.includes('/security/');
+        
         if (isBankRemoval) {
           // This is expected - don't log as error, handle gracefully
           return new ExpenzezFrontendError(
             'BANK_REMOVAL_NOT_SUPPORTED',
             'Bank removal requires manual action',
+            404,
+            { originalError: error.message, expectedBehavior: true },
+            context,
+            false,
+            false
+          );
+        }
+        
+        if (isSecurityEndpoint) {
+          // Security endpoints may not be available during development - this is expected
+          return new ExpenzezFrontendError(
+            'SECURITY_ENDPOINT_UNAVAILABLE',
+            'Security service temporarily unavailable',
             404,
             { originalError: error.message, expectedBehavior: true },
             context,
@@ -350,21 +366,39 @@ class ErrorHandlerService {
     // Perform automatic recovery actions
     let handled = false;
     
-    // Automatically handle session expiration by logging out immediately
+    // Check for active banking flows before automatically logging out
     if (transformedError.requiresLogout) {
-      console.log(`[ErrorHandler] Session expired - automatically logging out user`);
-      try {
-        await this.performLogout();
-        this.redirectToLogin();
-        handled = true;
-      } catch (logoutError) {
-        console.error(`[ErrorHandler] Failed to perform automatic logout:`, logoutError);
+      const hasActiveBankingContext = await this.checkActiveBankingContext();
+      
+      if (hasActiveBankingContext) {
+        console.log(`[ErrorHandler] Session expired during active banking flow - delaying logout to preserve banking context`);
+        // Don't logout immediately - let the banking flow complete
+        // The API interceptor will handle the session expiration gracefully
+        handled = false; // Allow error to propagate but don't logout
+      } else {
+        console.log(`[ErrorHandler] Session expired - automatically logging out user`);
+        try {
+          await this.performLogout();
+          this.redirectToLogin();
+          handled = true;
+        } catch (logoutError) {
+          console.error(`[ErrorHandler] Failed to perform automatic logout:`, logoutError);
+        }
       }
     }
     
     // Perform other automatic recovery actions
     for (const action of recoveryActions) {
       try {
+        // Skip logout recovery actions during active banking flows
+        if (action === 'logout') {
+          const hasActiveBankingContext = await this.checkActiveBankingContext();
+          if (hasActiveBankingContext) {
+            console.log(`[ErrorHandler] Skipping logout recovery action - active banking flow detected`);
+            continue; // Skip this recovery action
+          }
+        }
+        
         handled = await this.performRecoveryAction(action, transformedError) || handled;
       } catch (recoveryError) {
         console.error(`Failed to perform recovery action ${action}:`, recoveryError);
@@ -441,7 +475,9 @@ class ErrorHandlerService {
   // Redirect to login screen
   private redirectToLogin(): boolean {
     try {
-      router.replace('/(auth)/login' as any);
+      console.log('[ErrorHandler] Redirecting to login screen...');
+      router.replace('/auth/Login' as any);
+      console.log('[ErrorHandler] Successfully initiated redirect to login');
       return true;
     } catch (error) {
       console.error('[ErrorHandler] Failed to redirect to login:', error);
@@ -476,6 +512,17 @@ class ErrorHandlerService {
   private logError(error: ExpenzezFrontendError, context?: ErrorContext): void {
     // Don't log expected behaviors as errors
     const isExpectedBehavior = error.details?.expectedBehavior === true;
+    
+    // Check if this is a development endpoint that's expected to fail
+    const isSecurityEndpoint = context?.endpoint?.includes('/security/');
+    const isNotificationEndpoint = context?.endpoint?.includes('/notifications/');
+    const isDevelopmentEndpoint = isSecurityEndpoint || isNotificationEndpoint;
+    
+    // Skip logging development endpoint errors in development (404s, timeouts)
+    if (isDevelopmentEndpoint && (error.statusCode === 404 || error.code === 'REQUEST_TIMEOUT')) {
+      return; // Completely silent for expected development errors
+    }
+    
     const logLevel = isExpectedBehavior ? 'INFO' : 'ERROR';
     
     const logEntry = {
@@ -521,6 +568,33 @@ class ErrorHandlerService {
           correlationId: error.correlationId
         });
       }
+    }
+  }
+
+  // Check for active banking context to prevent premature logout
+  private async checkActiveBankingContext(): Promise<boolean> {
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const recentBankingKeys = keys.filter(key => {
+        if (key.startsWith('requisition_expenzez_')) {
+          const match = key.match(/requisition_expenzez_(\d+)/);
+          if (match) {
+            const timestamp = parseInt(match[1]);
+            const age = Date.now() - timestamp;
+            const isActive = age < 3 * 60 * 1000; // 3 minutes for active banking flows - matches API interceptor
+            return isActive;
+          }
+        }
+        return false;
+      });
+
+      const hasActiveBankingContext = recentBankingKeys.length > 0;
+      console.log(`[ErrorHandler] Active banking context check: ${hasActiveBankingContext ? 'ACTIVE' : 'INACTIVE'}, recent keys: ${recentBankingKeys.length}`);
+      
+      return hasActiveBankingContext;
+    } catch (error) {
+      console.error('[ErrorHandler] Error checking banking context:', error);
+      return false; // Default to allowing logout if we can't check
     }
   }
 

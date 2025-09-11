@@ -15,6 +15,60 @@ import { bankingAPI, authAPI } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as WebBrowser from "expo-web-browser";
 
+/**
+ * Clean up stale banking references from AsyncStorage to prevent false callback triggers
+ * Removes references older than 1 minute to keep only active banking flows
+ */
+const cleanupStaleBankingReferences = async () => {
+  try {
+    console.log("[CALLBACK] Starting cleanup of stale banking references");
+    const allKeys = await AsyncStorage.getAllKeys();
+    const requisitionKeys = allKeys.filter(key => key.startsWith('requisition_'));
+    
+    const ONE_MINUTE = 60 * 1000; // 1 minute in milliseconds
+    const cutoffTime = Date.now() - ONE_MINUTE;
+    
+    const keysToRemove = [];
+    
+    for (const key of requisitionKeys) {
+      // Extract timestamp from reference (format: requisition_expenzez_timestamp)
+      const match = key.match(/requisition_expenzez_(\d+)/);
+      if (match) {
+        const timestamp = parseInt(match[1]);
+        if (timestamp < cutoffTime) {
+          keysToRemove.push(key);
+        }
+      } else {
+        // If key doesn't match expected format, it might be old - remove it
+        keysToRemove.push(key);
+      }
+    }
+    
+    if (keysToRemove.length > 0) {
+      await AsyncStorage.multiRemove(keysToRemove);
+      console.log(`[CALLBACK] Cleaned up ${keysToRemove.length} stale banking references:`, keysToRemove);
+    } else {
+      console.log("[CALLBACK] No stale banking references found to clean up");
+    }
+  } catch (error) {
+    console.error("[CALLBACK] Error during stale banking reference cleanup:", error);
+  }
+};
+
+/**
+ * Clean up a specific stale reference and run general cleanup
+ */
+const cleanupStaleReference = async (ref: string) => {
+  try {
+    await AsyncStorage.removeItem(`requisition_${ref}`);
+    console.log(`[CALLBACK] Removed stale banking reference: requisition_${ref}`);
+    // Also clean up any other stale references
+    await cleanupStaleBankingReferences();
+  } catch (error) {
+    console.error("[CALLBACK] Error during stale reference cleanup:", error);
+  }
+};
+
 export default function BankCallbackScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -53,8 +107,14 @@ export default function BankCallbackScreen() {
         const FIFTEEN_MINUTES = 15 * 60 * 1000;
         
         if (age > FIFTEEN_MINUTES) {
-          console.log(`[CALLBACK] Stale reference detected: ${params.ref} (${Math.round(age/1000)}s old) - redirecting immediately`);
+          console.log(`[CALLBACK] Stale reference detected: ${params.ref} (${Math.round(age/1000)}s old) - cleaning up and redirecting immediately`);
           setStatus("redirecting");
+          
+          // Clean up this stale reference immediately (non-blocking)
+          cleanupStaleReference(params.ref as string).catch(cleanupError => {
+            console.error("[CALLBACK] Error during stale reference cleanup:", cleanupError);
+          });
+          
           router.replace("/(tabs)");
           return;
         }
@@ -265,6 +325,11 @@ export default function BankCallbackScreen() {
           }, 2000);
         } catch (apiError: any) {
           console.error("[CALLBACK] API Error:", apiError);
+          console.log("[CALLBACK] API Error details:", {
+            status: apiError.response?.status,
+            data: apiError.response?.data,
+            message: apiError.message
+          });
 
           // Handle authentication errors specifically
           if (apiError.response?.status === 401) {
@@ -286,16 +351,34 @@ export default function BankCallbackScreen() {
                 router.back();
               }
             }, 2000);
-          } else if (apiError.response?.status === 429 && apiError.response?.data?.error === 'DAILY_LIMIT_REACHED') {
+          } else if (apiError.response?.status === 429 || 
+                     apiError.response?.data?.error === 'DAILY_LIMIT_REACHED' ||
+                     apiError.message?.includes('429') ||
+                     apiError.message?.includes('daily limit') ||
+                     apiError.message?.includes('rate limit')) {
             // Handle GoCardless daily limit error
             setStatus("error");
             setMessage("Daily API limit reached. Try again tomorrow.");
+            
+            // Clean up stale banking references after 429 error to prevent false triggers on app refresh
+            console.log("[CALLBACK] Cleaning up banking references after 429 error");
+            try {
+              if (params.ref) {
+                await AsyncStorage.removeItem(`requisition_${params.ref}`);
+                console.log(`[CALLBACK] Removed banking reference: requisition_${params.ref}`);
+              }
+              // Also clean up any other stale banking references older than 1 minute
+              await cleanupStaleBankingReferences();
+            } catch (cleanupError) {
+              console.error("[CALLBACK] Error during banking reference cleanup:", cleanupError);
+            }
+            
             Alert.alert(
-              "API Limit Reached",
-              "GoCardless daily API limit has been reached. This is common during development. Please try connecting your bank again tomorrow.\n\nNote: This limit resets every 24 hours.",
+              "Daily API Limit Reached",
+              "We've reached the daily limit for bank connection requests. This is a temporary restriction from our banking partner GoCardless.\n\n• The limit resets every 24 hours\n• This affects both sandbox and real bank connections\n• Please try again tomorrow\n\nWe apologize for the inconvenience!",
               [
                 {
-                  text: "OK",
+                  text: "Understood",
                   onPress: () => {
                     setTimeout(() => {
                       try {
@@ -311,6 +394,20 @@ export default function BankCallbackScreen() {
           } else {
             setStatus("error");
             setMessage("Failed to complete bank connection.");
+            
+            // Clean up stale banking references after any API error to prevent false triggers on app refresh
+            console.log("[CALLBACK] Cleaning up banking references after API error");
+            try {
+              if (params.ref) {
+                await AsyncStorage.removeItem(`requisition_${params.ref}`);
+                console.log(`[CALLBACK] Removed banking reference: requisition_${params.ref}`);
+              }
+              // Also clean up any other stale banking references older than 1 minute
+              await cleanupStaleBankingReferences();
+            } catch (cleanupError) {
+              console.error("[CALLBACK] Error during banking reference cleanup:", cleanupError);
+            }
+            
             showError(
               apiError.response?.data?.message ||
                 "Failed to complete bank connection. Please try again."
@@ -342,6 +439,20 @@ export default function BankCallbackScreen() {
       console.error("[CALLBACK] General Error:", error);
       setStatus("error");
       setMessage("An error occurred while processing the connection.");
+      
+      // Clean up stale banking references after any general error to prevent false triggers on app refresh
+      console.log("[CALLBACK] Cleaning up banking references after general error");
+      try {
+        if (params.ref) {
+          await AsyncStorage.removeItem(`requisition_${params.ref}`);
+          console.log(`[CALLBACK] Removed banking reference: requisition_${params.ref}`);
+        }
+        // Also clean up any other stale banking references older than 1 minute
+        await cleanupStaleBankingReferences();
+      } catch (cleanupError) {
+        console.error("[CALLBACK] Error during banking reference cleanup:", cleanupError);
+      }
+      
       showError("Connection processing failed. Please try again.");
       WebBrowser.maybeCompleteAuthSession(); // Ensure browser closes on general error
       setTimeout(() => {

@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import { useEffect, useState } from "react";
-import { AppState } from "react-native";
+import React, { useEffect, useState } from "react";
+import { AppState, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
@@ -9,14 +9,43 @@ import { ThemeProvider } from "../contexts/ThemeContext";
 import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
 import { NotificationProvider } from "../contexts/NotificationContext";
 import { NetworkProvider } from "../contexts/NetworkContext";
-import SecurityLock from "../components/SecurityLock";
+import BiometricSecurityLock from "../components/BiometricSecurityLock";
 import { AppLoadingScreen } from "../components/ui/AppLoadingScreen";
+
+// Simple Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Error Boundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ fontSize: 18, marginBottom: 10 }}>Something went wrong</Text>
+          <Text style={{ textAlign: 'center' }}>Please restart the app</Text>
+        </View>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 function RootLayoutNav() {
   const auth = useAuth();
   const isLoggedIn = auth?.isLoggedIn ?? false;
   const loading = auth?.loading ?? true;
-  const { isLocked, unlockApp } = useSecurity();
+  const { isLocked, isSecurityEnabled, unlockApp } = useSecurity();
   const [isLoading, setIsLoading] = useState(true);
   const [hasValidSession, setHasValidSession] = useState(false);
 
@@ -59,6 +88,7 @@ function RootLayoutNav() {
       setIsLoading(false);
     }
   }, [loading]);
+
 
   useEffect(() => {
     // Ensure in-app browser closes and returns to app after OAuth redirect
@@ -109,14 +139,55 @@ function RootLayoutNav() {
         console.log(`[Layout] Found banking keys:`, requisitionKeys);
         
         if (!isBankingCallback) {
-          // Normal app startup - remove ALL banking references to prevent false callbacks
-          console.log('[Layout] Normal app startup - removing ALL banking references');
-          if (requisitionKeys.length > 0) {
-            await AsyncStorage.multiRemove(requisitionKeys);
-            console.log('[Layout] Cleared all banking references:', requisitionKeys);
+          // Check for recent banking activity and valid session before preserving references
+          // Banking references should only be preserved if user is still logged in
+          const storedLogin = await AsyncStorage.getItem('isLoggedIn');
+          const accessToken = await AsyncStorage.getItem('accessToken');
+          const hasValidSession = storedLogin === 'true' && accessToken && accessToken !== 'null';
+          
+          console.log(`[Layout] Session validity check: hasValidSession=${hasValidSession}, storedLogin=${storedLogin}, hasToken=${!!accessToken}`);
+          
+          const recentBankingKeys = [];
+          const staleBankingKeys = [];
+          
+          for (const key of requisitionKeys) {
+            if (key.startsWith('requisition_expenzez_')) {
+              const match = key.match(/requisition_expenzez_(\d+)/);
+              if (match) {
+                const timestamp = parseInt(match[1]);
+                const age = Date.now() - timestamp;
+                const isRecent = age < 15 * 60 * 1000; // 15 minutes - matches TokenManager
+                
+                // Only preserve recent banking keys if user has valid session
+                if (isRecent && hasValidSession) {
+                  recentBankingKeys.push(key);
+                } else {
+                  staleBankingKeys.push(key);
+                  if (isRecent && !hasValidSession) {
+                    console.log(`[Layout] Recent banking key ${key} marked for removal - no valid session`);
+                  }
+                }
+              }
+            } else {
+              // Other banking keys without timestamps - consider stale after startup
+              staleBankingKeys.push(key);
+            }
+          }
+          
+          console.log(`[Layout] Banking reference analysis: recent=${recentBankingKeys.length}, stale=${staleBankingKeys.length}`);
+          
+          if (recentBankingKeys.length > 0) {
+            console.log('[Layout] Preserving recent banking references with valid session:', recentBankingKeys);
+          }
+          
+          // Remove all stale references (including recent ones without valid session)
+          if (staleBankingKeys.length > 0) {
+            console.log('[Layout] Removing banking references without valid session:', staleBankingKeys);
+            await AsyncStorage.multiRemove(staleBankingKeys);
+            console.log('[Layout] Cleared banking references:', staleBankingKeys);
           }
         } else {
-          console.log('[Layout] Banking callback detected - keeping references');
+          console.log('[Layout] Banking callback detected - keeping all references');
         }
         
         console.log('[Layout] Cleared stale navigation state');
@@ -152,7 +223,7 @@ function RootLayoutNav() {
 
   // Show security lock if app is locked
   if (isLoggedIn && isLocked) {
-    return <SecurityLock isVisible={true} onUnlock={unlockApp} />;
+    return <BiometricSecurityLock isVisible={true} onUnlock={unlockApp} />;
   }
 
   // Determine if user should be treated as logged in
@@ -188,16 +259,18 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <NetworkProvider>
-        <AuthProvider>
-          <SecurityProvider>
-            <NotificationProvider>
-              <RootLayoutNav />
-            </NotificationProvider>
-          </SecurityProvider>
-        </AuthProvider>
-      </NetworkProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <NetworkProvider>
+          <AuthProvider>
+            <SecurityProvider>
+              <NotificationProvider>
+                <RootLayoutNav />
+              </NotificationProvider>
+            </SecurityProvider>
+          </AuthProvider>
+        </NetworkProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
