@@ -308,7 +308,7 @@ const CATEGORY_FALLBACKS: Record<string, string> = {
 };
 
 // Smart fallback logos based on description analysis
-const SMART_FALLBACKS: Array<{ pattern: RegExp; logo: string; category: string }> = [
+const SMART_FALLBACKS: { pattern: RegExp; logo: string; category: string }[] = [
   // ATM and Cash
   { pattern: /atm|cash.*withdraw|cash.*machine/i, logo: '🏧', category: 'finance' },
   { pattern: /cash.*deposit|deposit.*cash/i, logo: '💰', category: 'finance' },

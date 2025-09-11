@@ -119,7 +119,7 @@ export class BatchDataFetcher {
     return this.instance;
   }
 
-  async batchFetch<T>(requests: Array<{ key: string; fetcher: () => Promise<T> }>) {
+  async batchFetch<T>(requests: { key: string; fetcher: () => Promise<T> }[]) {
     console.log(`[BatchDataFetcher] 🚀 Batch fetching ${requests.length} requests`);
     
     const promises = requests.map(async ({ key, fetcher }) => {

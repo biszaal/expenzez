@@ -1,4 +1,4 @@
-import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -24,7 +24,6 @@ import {
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { getProfile } from "../../services/dataSource";
 
-const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const getCreditOptions = (colors: any) => [
   {
@@ -132,7 +131,7 @@ export default function CreditScreen() {
     if (!authLoggedIn) {
       router.replace("/auth/Login");
     }
-  }, [authLoggedIn, hasBank, checkingBank]);
+  }, [authLoggedIn, hasBank, checkingBank, router]);
 
   if (!authLoggedIn || checkingBank) {
     return null;

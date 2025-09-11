@@ -152,7 +152,7 @@ export class DataTransformers {
   /**
    * Transform merchant data from transactions
    */
-  static transformMerchantData(transactions: Transaction[]): Array<{merchant: string; count: number; total: number}> {
+  static transformMerchantData(transactions: Transaction[]): {merchant: string; count: number; total: number}[] {
     const merchantMap = new Map<string, { count: number; total: number }>();
     
     transactions.forEach(tx => {

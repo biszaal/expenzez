@@ -50,7 +50,7 @@ class TokenManager {
       const payload = token.split('.')[1];
       const decoded = JSON.parse(atob(payload));
       return decoded.exp ? decoded.exp * 1000 : null; // Convert to milliseconds
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
@@ -95,7 +95,7 @@ class TokenManager {
         refreshToken,
         tokenExpiresAt: tokenExpiresAt ? parseInt(tokenExpiresAt) : undefined
       };
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
@@ -125,7 +125,7 @@ class TokenManager {
       }
 
       await Promise.all(storagePromises);
-    } catch (error) {
+    } catch (_error) {
       throw error;
     }
   }
@@ -208,7 +208,7 @@ class TokenManager {
 
       // Perform refresh with persistent session token
       return await this.performTokenRefreshWithToken(refreshToken);
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
@@ -355,7 +355,7 @@ class TokenManager {
             throw new Error('No access token in refresh response');
           }
         } catch (error: any) {
-          lastError = error;
+          const _lastError = error;
           
           // Immediately handle 401/403 errors as expired refresh tokens
           if (error.response?.status === 401 || error.response?.status === 403) {
@@ -476,7 +476,7 @@ class TokenManager {
       if (tokenInfo.shouldRefresh || tokenInfo.isExpired) {
         await this.refreshTokenIfNeeded();
       }
-    } catch (error) {
+    } catch (_error) {
       // Silently handle errors during token refresh check
     }
   }
@@ -494,7 +494,7 @@ class TokenManager {
         'isLoggedIn',
         'user'
       ]);
-    } catch (error) {
+    } catch (_error) {
       // Silently handle errors during token clearing
     }
   }
@@ -521,7 +521,7 @@ class TokenManager {
       const timeExpired = now - tokenInfo.expiresAt;
       const isWithinGracePeriod = timeExpired <= 2 * 60 * 60 * 1000; // Allow up to 2 hours of expiry
       return isWithinGracePeriod;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -557,7 +557,7 @@ class TokenManager {
       }
       
       return false;
-    } catch (error) {
+    } catch (_error) {
       return false; // Fail safe - assume no banking callback
     }
   }

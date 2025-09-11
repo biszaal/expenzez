@@ -5,13 +5,13 @@ const BALANCE_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 export interface CachedBalanceData {
   totalBalance: number;
-  bankBalances: Array<{
+  bankBalances: {
     accountId: string;
     bankName: string;
     balance: number;
     currency: string;
     lastSyncAt: number;
-  }>;
+  }[];
   cachedAt: number;
   currency: string;
 }
@@ -21,13 +21,13 @@ export interface CachedBalanceData {
  */
 export const saveBalanceToCache = async (
   totalBalance: number,
-  bankBalances: Array<{
+  bankBalances: {
     accountId: string;
     bankName: string;
     balance: number;
     currency: string;
     lastSyncAt: number;
-  }>,
+  }[],
   currency: string = 'GBP'
 ): Promise<void> => {
   try {
