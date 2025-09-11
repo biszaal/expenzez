@@ -40,13 +40,13 @@ const getEncryptionKey = async (): Promise<string> => {
         const user = JSON.parse(userId);
         userInfo = user.username || user.id || '';
       }
-    } catch (error) {
+    } catch (_error) {
       // Fallback to stored user ID
     }
     
     // Create a unique key combining device ID and user info
     return CryptoJS.SHA256(`${deviceId}_${userInfo}_expenzez_security`).toString();
-  } catch (error) {
+  } catch (_error) {
     console.warn('Error generating encryption key, using fallback:', error);
     // Fallback to a simpler key for Expo Go
     return 'expenzez_fallback_key_12345';
@@ -58,7 +58,7 @@ const encryptPin = async (pin: string): Promise<string> => {
   try {
     const key = await getEncryptionKey();
     return CryptoJS.AES.encrypt(pin, key).toString();
-  } catch (error) {
+  } catch (_error) {
     // Silently fallback for Expo Go - this is expected behavior
     const key = await getEncryptionKey();
     const combined = `${pin}_${key.substring(0, 10)}`;
@@ -67,7 +67,7 @@ const encryptPin = async (pin: string): Promise<string> => {
 };
 
 // Decrypt PIN for validation
-const decryptPin = async (encryptedPin: string): Promise<string> => {
+const _decryptPin = async (encryptedPin: string): Promise<string> => {
   try {
     const key = await getEncryptionKey();
     const bytes = CryptoJS.AES.decrypt(encryptedPin, key);
@@ -78,7 +78,7 @@ const decryptPin = async (encryptedPin: string): Promise<string> => {
     } else {
       throw new Error('Decryption produced empty result');
     }
-  } catch (error) {
+  } catch (_error) {
     // Silently try fallback for Expo Go
     try {
       const decoded = atob(encryptedPin);
@@ -86,7 +86,7 @@ const decryptPin = async (encryptedPin: string): Promise<string> => {
       if (pin && /^\d{5}$/.test(pin)) {
         return pin;
       }
-    } catch (fallbackError) {
+    } catch (_fallbackError) {
       // Silent fallback failure
     }
     throw new Error('Failed to decrypt PIN');
@@ -166,7 +166,7 @@ export const securityAPI = {
             encryptedPin,
             deviceId: request.deviceId,
           });
-        } catch (serverError) {
+        } catch (_serverError) {
           console.log('Server validation failed, but local validation succeeded');
         }
         

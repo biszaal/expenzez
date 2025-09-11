@@ -73,7 +73,7 @@ class DeviceManager {
     let installationId = '';
     try {
       installationId = Constants.installationId || '';
-    } catch (error) {
+    } catch (_error) {
       // Silently handle installation ID error
     }
 
@@ -98,7 +98,7 @@ class DeviceManager {
     try {
       // Use btoa for base64 encoding in React Native
       return btoa(fingerprint);
-    } catch (error) {
+    } catch (_error) {
       // Fallback: simple hash if btoa is not available
       let hash = 0;
       for (let i = 0; i < fingerprint.length; i++) {
@@ -116,7 +116,7 @@ class DeviceManager {
   private async getDeviceName(): Promise<string> {
     try {
       return Constants.deviceName || `${Platform.OS} Device`;
-    } catch (error) {
+    } catch (_error) {
       return `${Platform.OS} Device`;
     }
   }
@@ -133,7 +133,7 @@ class DeviceManager {
       const deviceId = await this.getDeviceId();
       
       return devices.includes(deviceId);
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -158,7 +158,7 @@ class DeviceManager {
 
       // Store remember me preference
       await AsyncStorage.setItem('remember_me', rememberMe.toString());
-    } catch (error) {
+    } catch (_error) {
       console.error('[DeviceManager] Error trusting device:', error);
     }
   }
@@ -179,7 +179,7 @@ class DeviceManager {
 
       await AsyncStorage.removeItem('remember_me');
       await AsyncStorage.removeItem('persistent_session');
-    } catch (error) {
+    } catch (_error) {
       console.error('[DeviceManager] Error untrusting device:', error);
     }
   }
@@ -237,7 +237,7 @@ class DeviceManager {
         await this.trustDevice(true);
       }
 
-    } catch (error) {
+    } catch (_error) {
       console.error('[DeviceManager] Error creating persistent session:', error);
     }
   }
@@ -293,7 +293,7 @@ class DeviceManager {
       await AsyncStorage.setItem('persistent_session', JSON.stringify(session));
 
       return session;
-    } catch (error) {
+    } catch (_error) {
       console.error('[DeviceManager] Error getting persistent session:', error);
       return null;
     }
@@ -305,7 +305,7 @@ class DeviceManager {
   async clearPersistentSession(): Promise<void> {
     try {
       await AsyncStorage.removeItem('persistent_session');
-    } catch (error) {
+    } catch (_error) {
       console.error('[DeviceManager] Error clearing persistent session:', error);
     }
   }
@@ -317,7 +317,7 @@ class DeviceManager {
     try {
       const rememberMe = await AsyncStorage.getItem('remember_me');
       return rememberMe === 'true';
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -346,7 +346,7 @@ class DeviceManager {
 
         await AsyncStorage.setItem('device_registrations', JSON.stringify(activeRegistrations));
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('[DeviceManager] Error during cleanup:', error);
     }
   }

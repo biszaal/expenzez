@@ -176,7 +176,7 @@ export default function BillsScreen() {
     if (!authLoggedIn) {
       router.replace("/auth/Login");
     }
-  }, [authLoggedIn, hasBank, checkingBank]);
+  }, [authLoggedIn, hasBank, checkingBank, router]);
 
   useEffect(() => {
     // Always try to fetch bills if user is logged in
@@ -184,7 +184,7 @@ export default function BillsScreen() {
     if (isLoggedIn) {
       fetchBills();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, fetchBills]);
 
   // Filter bills by selected category
   const filteredBills = useMemo(() => {

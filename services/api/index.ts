@@ -1,4 +1,7 @@
 // Export all API modules
+// Health check function
+import { api } from '../config/apiClient';
+
 export { authAPI } from './authAPI';
 export { bankingAPI } from './bankingAPI';
 export { aiService } from './aiAPI';
@@ -11,9 +14,6 @@ export { securityAPI } from './securityAPI';
 // Export configuration and utilities
 export { api, aiAPI } from '../config/apiClient';
 export { getCachedData, setCachedData, clearCachedData } from '../config/apiCache';
-
-// Health check function
-import { api } from '../config/apiClient';
 
 export const healthCheck = async () => {
   const response = await api.get("/health");

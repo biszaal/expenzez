@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApiCache } from '../hooks/useApiCache';
 import { useNetwork } from '../contexts/NetworkContext';
-import { bankingAPI, authAPI } from './api';
+import { bankingAPI } from './api';
 
 // Progressive loading wrapper for API calls
 export const useProgressiveData = () => {

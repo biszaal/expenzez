@@ -106,12 +106,14 @@ declare module 'react-native-chart-kit' {
 declare global {
   interface Window {
     // Add any global properties if needed
+    [key: string]: any;
   }
   
   // Extended style interfaces to allow more flexible style arrays
   namespace JSX {
     interface IntrinsicElements {
       // Allow any style arrays for common React Native components
+      [elemName: string]: any;
     }
   }
 }

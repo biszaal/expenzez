@@ -96,7 +96,7 @@ function RootLayoutNav() {
       console.log('✅ [Layout] Auth loading complete, setting isLoading to false');
       setIsLoading(false);
     }
-  }, [loading]);
+  }, [loading, isLoading]);
 
 
   useEffect(() => {
