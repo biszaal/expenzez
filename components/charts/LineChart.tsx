@@ -323,7 +323,7 @@ export const LineChart: React.FC<LineChartProps> = ({
       transform: [
         { translateX: animatedX - processedData[processedData.length - 1].x },
         { translateY: animatedY - processedData[processedData.length - 1].y }
-      ],
+      ] as any,
       opacity: progress > 0.05 ? 1 : 0, // Show dot early in animation
     };
   });
@@ -435,7 +435,7 @@ export const LineChart: React.FC<LineChartProps> = ({
                   fill={lineColor}
                   stroke="white"
                   strokeWidth={2}
-                  animatedProps={animatedEndDotStyle}
+                  animatedProps={animatedEndDotStyle as any}
                 />
               </G>
             )}

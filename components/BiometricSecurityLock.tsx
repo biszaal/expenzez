@@ -140,9 +140,28 @@ export default function BiometricSecurityLock({ isVisible, onUnlock }: Biometric
 
   const handlePinSubmit = async (pinToCheck: string) => {
     try {
-      const storedPassword = await AsyncStorage.getItem("@expenzez_app_password");
+      // Import security API dynamically to avoid circular imports
+      const { securityAPI } = await import('../services/api/securityAPI');
+      const { deviceManager } = await import('../services/deviceManager');
       
-      if (!storedPassword) {
+      const deviceId = await deviceManager.getDeviceId();
+      
+      // Use server-side validation first (secure, encrypted DynamoDB storage)
+      const result = await securityAPI.validatePin({
+        pin: pinToCheck,
+        deviceId
+      });
+      
+      if (result.success) {
+        await onUnlock();
+        setPin("");
+      } else {
+        Alert.alert("Incorrect PIN", "Please try again.");
+        setPin("");
+      }
+    } catch (error: any) {
+      // If server validation fails, show appropriate error
+      if (error.response?.status === 404) {
         Alert.alert(
           "No PIN Set Up", 
           "You need to set up a PIN first. Please go to Settings > Security to set up your PIN.",
@@ -155,18 +174,9 @@ export default function BiometricSecurityLock({ isVisible, onUnlock }: Biometric
             }
           ]
         );
-        return;
-      }
-
-      if (pinToCheck === storedPassword) {
-        await onUnlock();
-        setPin("");
       } else {
-        Alert.alert("Incorrect PIN", "Please try again.");
-        setPin("");
+        Alert.alert("Error", "Authentication failed. Please try again.");
       }
-    } catch (error) {
-      Alert.alert("Error", "Authentication failed. Please try again.");
       setPin("");
     }
   };
