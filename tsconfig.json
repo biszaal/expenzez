@@ -9,6 +9,8 @@
     "noFallthroughCasesInSwitch": false,
     "noUncheckedIndexedAccess": false,
     "exactOptionalPropertyTypes": false,
+    "noImplicitOverride": false,
+    "noImplicitThis": false,
     "paths": {
       "@/*": [
         "./*"

@@ -13,17 +13,26 @@ import BiometricSecurityLock from "../components/BiometricSecurityLock";
 import { AppLoadingScreen } from "../components/ui/AppLoadingScreen";
 
 // Simple Error Boundary Component
-class ErrorBoundary extends React.Component {
-  constructor(props) {
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('Error Boundary caught an error:', error, errorInfo);
   }
 
@@ -45,7 +54,7 @@ function RootLayoutNav() {
   const auth = useAuth();
   const isLoggedIn = auth?.isLoggedIn ?? false;
   const loading = auth?.loading ?? true;
-  const { isLocked, isSecurityEnabled, unlockApp } = useSecurity();
+  const { isLocked, isSecurityEnabled, needsPinSetup, unlockApp } = useSecurity();
   const [isLoading, setIsLoading] = useState(true);
   const [hasValidSession, setHasValidSession] = useState(false);
 
@@ -223,16 +232,22 @@ function RootLayoutNav() {
 
   // Show security lock if app is locked
   if (isLoggedIn && isLocked) {
-    return <BiometricSecurityLock isVisible={true} onUnlock={unlockApp} />;
+    return <BiometricSecurityLock isVisible={true} onUnlock={async () => unlockApp()} />;
   }
 
   // Determine if user should be treated as logged in
   const shouldTreatAsLoggedIn = isLoggedIn || hasValidSession;
   
+  // Determine initial route based on PIN setup status
+  let initialRoute = shouldTreatAsLoggedIn ? "(tabs)" : "auth/Login";
+  if (shouldTreatAsLoggedIn && needsPinSetup) {
+    initialRoute = "security/index"; // Redirect to security settings to set up PIN
+  }
+  
   return (
     <Stack 
       screenOptions={{ headerShown: false }}
-      initialRouteName={shouldTreatAsLoggedIn ? "(tabs)" : "auth/Login"}
+      initialRouteName={initialRoute}
     >
       <Stack.Screen name="auth/Login" />
       <Stack.Screen name="auth/Register" />
