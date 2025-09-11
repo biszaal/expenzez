@@ -8,6 +8,7 @@ import { useAuth } from "../app/auth/AuthContext";
 interface SecurityContextType {
   isLocked: boolean;
   isSecurityEnabled: boolean;
+  needsPinSetup: boolean;
   lockApp: () => void;
   unlockApp: () => void;
   enableSecurity: () => Promise<void>;
@@ -27,6 +28,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [isLocked, setIsLocked] = useState(false);
   const [isSecurityEnabled, setIsSecurityEnabled] = useState(false);
+  const [needsPinSetup, setNeedsPinSetup] = useState(false);
   const { isLoggedIn } = useAuth();
 
   useEffect(() => {
@@ -73,9 +75,10 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
         console.log('🔐 [SecurityContext] User not logged in, skipping server PIN check');
       }
 
-      // Fallback to local storage
+      // For production app, prioritize server-side PIN storage
+      // Only use local storage as fallback when not logged in or server unavailable
       const hasLocalPin = await AsyncStorage.getItem("@expenzez_app_password");
-      const hasPin = hasPinOnServer || !!hasLocalPin;
+      const hasPin = isLoggedIn ? hasPinOnServer : (hasPinOnServer || !!hasLocalPin);
 
       console.log('🔐 [SecurityContext] PIN status:', { hasPinOnServer, hasLocalPin: !!hasLocalPin, hasPin });
 
@@ -85,16 +88,18 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
           console.log('🔐 [SecurityContext] PIN found - enabling security and locking app for PIN entry');
           setIsSecurityEnabled(true);
           setIsLocked(true);
+          setNeedsPinSetup(false);
           // Update stored values
           await AsyncStorage.setItem(SECURITY_ENABLED_KEY, "true");
           await AsyncStorage.setItem(APP_LOCKED_KEY, "true");
         } else {
-          console.log('🔐 [SecurityContext] No PIN found but user is logged in - mandatory PIN setup required');
+          console.log('🔐 [SecurityContext] No PIN found but user is logged in - PIN setup required');
           setIsSecurityEnabled(true); // Enable security to trigger setup
-          setIsLocked(true); // Lock app to show PIN setup screen
+          setIsLocked(false); // Don't lock - show PIN setup instead
+          setNeedsPinSetup(true); // Flag that PIN setup is needed
           // Update stored values
           await AsyncStorage.setItem(SECURITY_ENABLED_KEY, "true");
-          await AsyncStorage.setItem(APP_LOCKED_KEY, "true");
+          await AsyncStorage.setItem(APP_LOCKED_KEY, "false");
         }
       } else {
         console.log('🔐 [SecurityContext] User not logged in - using stored security settings');
@@ -102,6 +107,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
         const appLocked = await AsyncStorage.getItem(APP_LOCKED_KEY);
         setIsSecurityEnabled(securityEnabled === "true");
         setIsLocked(appLocked === "true");
+        setNeedsPinSetup(false); // No PIN setup needed when not logged in
       }
     } catch (error) {
       // Silently handle errors and use safe defaults
@@ -165,6 +171,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
   const value: SecurityContextType = {
     isLocked,
     isSecurityEnabled,
+    needsPinSetup,
     lockApp,
     unlockApp,
     enableSecurity,
