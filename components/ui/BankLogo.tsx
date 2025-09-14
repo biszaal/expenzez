@@ -41,11 +41,11 @@ export default function BankLogo({
 
   // Use the provided logoUrl prop if available, otherwise fallback to BANK_LOGOS or default
   const logoToUse =
-    !imageError && logoUrl
+    !imageError && logoUrl && logoUrl !== null
       ? logoUrl
-      : !imageError && logoFromProp
+      : !imageError && logoFromProp && logoFromProp !== null
         ? logoFromProp
-        : !imageError && bankInfo?.logoUrl
+        : !imageError && bankInfo?.logoUrl && bankInfo.logoUrl !== null
           ? bankInfo.logoUrl
           : fallbackInfo.logoUrl;
 
@@ -143,7 +143,7 @@ export default function BankLogo({
   const variantConfig = getVariantConfig();
 
   // Helper: check if logoToUse is SVG
-  const isSvg = logoToUse && logoToUse.endsWith(".svg");
+  const isSvg = logoToUse && typeof logoToUse === 'string' && logoToUse.endsWith(".svg");
 
   // Fetch SVG XML if needed
   useEffect(() => {
@@ -201,7 +201,7 @@ export default function BankLogo({
             ) : (
               <Text style={styles.emoji}>🏦</Text>
             )
-          ) : (
+          ) : logoToUse && typeof logoToUse === 'string' ? (
             <Image
               source={{ uri: logoToUse, cache: "force-cache" }}
               style={[
@@ -219,6 +219,17 @@ export default function BankLogo({
               onLoad={() => {
               }}
             />
+          ) : (
+            <Text
+              style={[
+                styles.emoji,
+                {
+                  fontSize: sizeConfig.imageSize * 0.8,
+                },
+              ]}
+            >
+              🏦
+            </Text>
           )
         ) : (
           // Fallback to emoji if image fails to load

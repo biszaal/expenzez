@@ -6,15 +6,39 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "development",
+      "env": {
+        "EXPO_PUBLIC_ENV": "development"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_ENV": "preview"
+      },
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "autoIncrement": true,
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_ENV": "production"
+      },
       "ios": {
-        "enterpriseProvisioning": "universal"
+        "enterpriseProvisioning": "universal",
+        "resourceClass": "m-large",
+        "simulator": false
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "resourceClass": "medium"
       }
     }
   },
@@ -23,7 +47,13 @@
       "ios": {
         "appleId": "biszaal@icloud.com",
         "appleTeamId": "HG4G2ZMGV8",
-        "ascAppId": "6670379264"
+        "ascAppId": "6670379264",
+        "sku": "expenzez-ios",
+        "language": "en-US"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./android-service-account.json",
+        "track": "internal"
       }
     }
   }

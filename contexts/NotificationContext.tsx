@@ -4,6 +4,7 @@ import * as Device from "expo-device";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../app/auth/AuthContext";
+import { useSecurity } from "./SecurityContext";
 import { notificationAPI } from "../services/api";
 
 // Configure notification behavior
@@ -18,60 +19,17 @@ Notifications.setNotificationHandler({
 });
 
 export interface NotificationPreferences {
-  // Delivery channels
-  pushEnabled: boolean;
-  emailEnabled: boolean;
-  smsEnabled: boolean;
-  
-  // Alert types
-  transactionAlerts: boolean;
-  budgetAlerts: boolean;
-  accountAlerts: boolean;
-  securityAlerts: boolean;
-  insightAlerts: boolean;
-  
-  // Transaction alert settings
-  minimumTransactionAmount: number;
-  largeTransactionThreshold: number; // Amount considered "large"
-  unusualSpendingAlerts: boolean; // Spending pattern analysis
-  newMerchantAlerts: boolean;
-  
-  // Budget alert settings
-  budgetThresholds: number[]; // [75, 85, 95, 100]
-  categoryBudgetAlerts: boolean;
-  monthlyBudgetSummary: boolean;
-  
-  // Security alert settings
-  loginAlerts: boolean;
-  newDeviceAlerts: boolean;
-  failedLoginAlerts: boolean;
-  locationChangeAlerts: boolean;
-  
-  // Account & Banking alerts
-  bankConnectionAlerts: boolean;
-  lowBalanceAlerts: boolean;
-  lowBalanceThreshold: number;
-  recurringPaymentAlerts: boolean;
-  
-  // AI & Insights
-  dailyReminders: boolean;
-  weeklyInsights: boolean;
-  monthlyReports: boolean;
-  savingsTips: boolean;
-  creditScoreUpdates: boolean;
-  
-  // Timing preferences
-  quietHours: {
-    enabled: boolean;
-    startTime: string;
-    endTime: string;
-  };
-  maxNotificationsPerDay: number;
-  batchNotifications: boolean; // Group similar notifications
-  
-  // Priority levels
-  immediateAlerts: ('security' | 'large_transaction' | 'low_balance')[];
-  dailyDigestAlerts: ('budget' | 'insights' | 'account')[];
+  // Core settings - reduced from 42 to 8 essential settings
+  pushEnabled: boolean;                    // Master switch
+  transactionAlerts: boolean;              // All transactions
+  largeTransactionThreshold: number;       // Large transaction alerts (£500 default)
+  budgetAlerts: boolean;                   // Budget warnings
+  lowBalanceThreshold: number;             // Low balance alerts (£50 default)
+  weeklyInsights: boolean;                 // Weekly summary instead of complex AI settings
+  maxNotificationsPerDay: number;          // Simple daily limit (5/15/30)
+
+  // Always-enabled security settings (not user-configurable)
+  securityAlerts: boolean;                 // Always true - login/security issues
 }
 
 export interface NotificationHistoryItem {
@@ -113,66 +71,24 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 const defaultPreferences: NotificationPreferences = {
-  // Delivery channels
+  // Core simplified settings
   pushEnabled: true,
-  emailEnabled: false,
-  smsEnabled: false,
-  
-  // Alert types
   transactionAlerts: true,
+  largeTransactionThreshold: 500.0,          // Default £500 for large transactions
   budgetAlerts: true,
-  accountAlerts: true,
-  securityAlerts: true,
-  insightAlerts: true,
-  
-  // Transaction alert settings
-  minimumTransactionAmount: 1.0,
-  largeTransactionThreshold: 500.0,
-  unusualSpendingAlerts: true,
-  newMerchantAlerts: false,
-  
-  // Budget alert settings
-  budgetThresholds: [75, 85, 95, 100],
-  categoryBudgetAlerts: true,
-  monthlyBudgetSummary: true,
-  
-  // Security alert settings
-  loginAlerts: true,
-  newDeviceAlerts: true,
-  failedLoginAlerts: true,
-  locationChangeAlerts: true,
-  
-  // Account & Banking alerts
-  bankConnectionAlerts: true,
-  lowBalanceAlerts: true,
-  lowBalanceThreshold: 100.0,
-  recurringPaymentAlerts: true,
-  
-  // AI & Insights
-  dailyReminders: true,
+  lowBalanceThreshold: 50.0,                 // Default £50 for low balance
   weeklyInsights: true,
-  monthlyReports: true,
-  savingsTips: true,
-  creditScoreUpdates: true,
-  
-  // Timing preferences
-  quietHours: {
-    enabled: false,
-    startTime: "22:00",
-    endTime: "07:00",
-  },
-  maxNotificationsPerDay: 10,
-  batchNotifications: true,
-  
-  // Priority levels
-  immediateAlerts: ['security', 'large_transaction', 'low_balance'],
-  dailyDigestAlerts: ['budget', 'insights', 'account'],
+  maxNotificationsPerDay: 15,                // Default "Normal" (6-15 per day)
+
+  // Always-enabled security (not user-configurable)
+  securityAlerts: true,
 };
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { isLoggedIn, user } = useAuth();
+  const { isLocked } = useSecurity();
   
   // State
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
@@ -184,8 +100,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Initialize notification system when user logs in
   useEffect(() => {
-    if (isLoggedIn && user) {
+    if (isLoggedIn && user && !isLocked) {
+      console.log("🔔 [NotificationContext] User logged in and app unlocked, initializing notifications");
       initializeNotifications();
+    } else if (isLoggedIn && user && isLocked) {
+      console.log("🔒 [NotificationContext] App is locked, skipping notification initialization");
     } else {
       // Clear data when user logs out
       setExpoPushToken(null);
@@ -193,7 +112,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       setPreferences(null);
       setNotifications([]);
     }
-  }, [isLoggedIn, user]);
+  }, [isLoggedIn, user, isLocked]);
 
   // Set up notification listeners
   useEffect(() => {
@@ -210,10 +129,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return () => {
       if (notificationListener) {
-        Notifications.removeNotificationSubscription(notificationListener);
+        notificationListener.remove();
       }
       if (responseListener) {
-        Notifications.removeNotificationSubscription(responseListener);
+        responseListener.remove();
       }
     };
   }, [isLoggedIn]);
@@ -329,6 +248,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const loadPreferences = async () => {
     try {
+      // Check if app is locked first
+      if (isLocked) {
+        console.log("🔒 [NotificationContext] App is locked, skipping preferences load");
+        setPreferences(defaultPreferences);
+        return;
+      }
+
       const response = await notificationAPI.getPreferences();
       
       if (response.preferences) {
@@ -371,6 +297,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshNotifications = async () => {
     try {
+      // Check if app is locked first
+      if (isLocked) {
+        console.log("🔒 [NotificationContext] App is locked, skipping notifications refresh");
+        return;
+      }
+
       // Import and use real data from dataSource API
       const { getRecentNotifications } = await import("../services/dataSource");
       const notificationData = await getRecentNotifications();

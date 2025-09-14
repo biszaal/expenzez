@@ -83,7 +83,7 @@ class DeviceManager {
   /**
    * Generate device fingerprint for security
    */
-  private async generateDeviceFingerprint(): Promise<string> {
+  async generateDeviceFingerprint(): Promise<string> {
     const components = [
       Platform.OS,
       Platform.Version.toString(),
@@ -159,7 +159,7 @@ class DeviceManager {
       // Store remember me preference
       await AsyncStorage.setItem('remember_me', rememberMe.toString());
     } catch (_error) {
-      console.error('[DeviceManager] Error trusting device:', error);
+      console.error('[DeviceManager] Error trusting device:', _error);
     }
   }
 
@@ -180,7 +180,7 @@ class DeviceManager {
       await AsyncStorage.removeItem('remember_me');
       await AsyncStorage.removeItem('persistent_session');
     } catch (_error) {
-      console.error('[DeviceManager] Error untrusting device:', error);
+      console.error('[DeviceManager] Error untrusting device:', _error);
     }
   }
 
@@ -238,7 +238,7 @@ class DeviceManager {
       }
 
     } catch (_error) {
-      console.error('[DeviceManager] Error creating persistent session:', error);
+      console.error('[DeviceManager] Error creating persistent session:', _error);
     }
   }
 
@@ -294,7 +294,7 @@ class DeviceManager {
 
       return session;
     } catch (_error) {
-      console.error('[DeviceManager] Error getting persistent session:', error);
+      console.error('[DeviceManager] Error getting persistent session:', _error);
       return null;
     }
   }
@@ -306,7 +306,7 @@ class DeviceManager {
     try {
       await AsyncStorage.removeItem('persistent_session');
     } catch (_error) {
-      console.error('[DeviceManager] Error clearing persistent session:', error);
+      console.error('[DeviceManager] Error clearing persistent session:', _error);
     }
   }
 
@@ -347,7 +347,7 @@ class DeviceManager {
         await AsyncStorage.setItem('device_registrations', JSON.stringify(activeRegistrations));
       }
     } catch (_error) {
-      console.error('[DeviceManager] Error during cleanup:', error);
+      console.error('[DeviceManager] Error during cleanup:', _error);
     }
   }
 }

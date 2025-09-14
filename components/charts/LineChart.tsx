@@ -3,7 +3,6 @@ import { View, StyleSheet, Text } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  useAnimatedGestureHandler,
   withSpring,
   withTiming,
   interpolate,
@@ -11,7 +10,7 @@ import Animated, {
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
-import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Svg, {
   Path,
   Circle,
@@ -182,13 +181,14 @@ export const LineChart: React.FC<LineChartProps> = ({
 
 
   // Gesture handler
-  const gestureHandler = useAnimatedGestureHandler<PanGestureHandlerGestureEvent, Record<string, unknown>>({
-    onStart: (event, context) => {
-      context.isActive = true;
+  const gestureHandler = Gesture.Pan()
+    .onStart(() => {
+      'worklet';
       isGestureActive.value = true;
       runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
-    },
-    onActive: (event, context) => {
+    })
+    .onUpdate((event) => {
+      'worklet';
       // Try using absoluteX/Y to get screen coordinates, then convert to SVG coordinates
       const gestureXCoord = event.x;
       const gestureYCoord = event.y;
@@ -252,13 +252,13 @@ export const LineChart: React.FC<LineChartProps> = ({
           }
         }
       }
-    },
-    onEnd: () => {
+    })
+    .onEnd(() => {
+      'worklet';
       isGestureActive.value = false;
       selectedPointIndex.value = -1;
       runOnJS(setSelectedValue)(null);
-    },
-  });
+    });
 
   // Calculate path length for smooth animation
   const pathLength = useMemo(() => {
@@ -369,7 +369,7 @@ export const LineChart: React.FC<LineChartProps> = ({
         </Animated.View>
       )}
       
-      <PanGestureHandler enabled={interactive} onGestureEvent={gestureHandler}>
+      <GestureDetector gesture={gestureHandler}>
         <Animated.View style={{ width, height }}>
           <Svg width={width} height={height}>
             
@@ -487,7 +487,7 @@ export const LineChart: React.FC<LineChartProps> = ({
 
           </Svg>
         </Animated.View>
-      </PanGestureHandler>
+      </GestureDetector>
     </View>
   );
 };

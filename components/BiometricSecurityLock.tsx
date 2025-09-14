@@ -8,13 +8,18 @@ import {
   Modal,
   Dimensions,
   Animated,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as LocalAuthentication from "expo-local-authentication";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../contexts/ThemeContext";
+import { useAuth } from "../app/auth/AuthContext";
+import { nativeSecurityAPI } from "../services/api/nativeSecurityAPI";
+import { deviceManager } from "../services/deviceManager";
 import { spacing, borderRadius, shadows, typography } from "../constants/theme";
+import PinInput from "./PinInput";
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,6 +30,7 @@ interface BiometricSecurityLockProps {
 
 export default function BiometricSecurityLock({ isVisible, onUnlock }: BiometricSecurityLockProps) {
   const { colors } = useTheme();
+  const { isLoggedIn, user } = useAuth();
   const [pin, setPin] = useState("");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [hasBiometric, setHasBiometric] = useState(false);
@@ -32,87 +38,180 @@ export default function BiometricSecurityLock({ isVisible, onUnlock }: Biometric
   const [showPinInput, setShowPinInput] = useState(false);
   const [biometricType, setBiometricType] = useState<string>("finger-print");
   const [scaleAnim] = useState(new Animated.Value(1));
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState("");
+  const [pinAttempts, setPinAttempts] = useState(0);
+  const [maxAttempts] = useState(5);
+  const [showAttemptsWarning, setShowAttemptsWarning] = useState(false);
 
   useEffect(() => {
     if (isVisible) {
       checkBiometricAvailability();
       loadBiometricSettings();
+      // Reset attempts when PIN screen becomes visible (new session)
+      setPinAttempts(0);
+      setShowAttemptsWarning(false);
     }
   }, [isVisible]);
 
   useEffect(() => {
-    if (isVisible && hasBiometric && isBiometricEnabled) {
+    if (isVisible && hasBiometric && isBiometricEnabled && isLoggedIn) {
       // Auto-trigger biometric authentication when screen becomes visible
+      // Only if user is still logged in
       setTimeout(() => {
         handleBiometricAuth();
       }, 500);
     }
-  }, [isVisible, hasBiometric, isBiometricEnabled]);
+  }, [isVisible, hasBiometric, isBiometricEnabled, isLoggedIn]);
+
+  // Animate loading spinner
+  useEffect(() => {
+    if (isAuthenticating) {
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(scaleAnim, {
+            toValue: 1.2,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      animation.start();
+      return () => animation.stop();
+    } else {
+      scaleAnim.setValue(1);
+    }
+  }, [isAuthenticating]);
 
   const checkBiometricAvailability = async () => {
     try {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
-      
-      const biometricAvailable = hasHardware && isEnrolled;
+
+      // Check if actual biometrics are available (not just device passcode)
+      const hasFaceID = supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
+      const hasTouchID = supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
+      const hasActualBiometrics = hasFaceID || hasTouchID;
+
+      console.log('🔐 [BiometricLock] Biometric check:', {
+        hasHardware,
+        isEnrolled,
+        supportedTypes,
+        hasFaceID,
+        hasTouchID,
+        hasActualBiometrics
+      });
+
+      // Enable if we have hardware and enrollment - errors will be handled during actual auth
+      const biometricAvailable = hasHardware && isEnrolled && hasActualBiometrics;
       setHasBiometric(biometricAvailable);
       
       // Set biometric type icon based on supported types
       if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
         setBiometricType("face-recognition");
+        console.log('🔐 [BiometricLock] Face ID available');
       } else if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
         setBiometricType("finger-print");
+        console.log('🔐 [BiometricLock] Touch ID/Fingerprint available');
+      } else {
+        setBiometricType("finger-print"); // Default fallback
+        console.log('🔐 [BiometricLock] Using fingerprint icon as fallback');
       }
       
+      console.log('🔐 [BiometricLock] Biometric final state:', {
+        biometricAvailable,
+        biometricType
+      });
     } catch (error) {
-      // Silently handle error
+      console.log('🔐 [BiometricLock] Error checking biometric availability:', error);
     }
   };
 
   const loadBiometricSettings = async () => {
     try {
       const biometricEnabled = await AsyncStorage.getItem("@expenzez_biometric_enabled");
+      console.log('🔐 [BiometricLock] Loaded biometric setting:', biometricEnabled);
       setIsBiometricEnabled(biometricEnabled === "true");
+      
+      // If biometrics are available but not enabled, and user has a PIN, auto-enable biometrics
+      if (!biometricEnabled && hasBiometric) {
+        console.log('🔐 [BiometricLock] Biometric hardware available but not enabled, auto-enabling...');
+        await AsyncStorage.setItem("@expenzez_biometric_enabled", "true");
+        setIsBiometricEnabled(true);
+      }
     } catch (error) {
-      // Silently handle error
+      console.log('🔐 [BiometricLock] Error loading biometric settings:', error);
     }
   };
 
   const handleBiometricAuth = async () => {
+    console.log('🔐 [BiometricLock] Biometric auth requested:', {
+      hasBiometric,
+      isBiometricEnabled,
+      canProceed: hasBiometric && isBiometricEnabled
+    });
+
     if (!hasBiometric || !isBiometricEnabled) {
-      return; // Don't show PIN fallback, just stay on PIN screen
+      console.log('🔐 [BiometricLock] Biometric auth not available, staying on PIN screen');
+      return;
     }
 
     setIsAuthenticating(true);
-    
+
     // Signal to SecurityContext that we're authenticating
     if ((global as any).__setAuthenticating) {
       (global as any).__setAuthenticating(true);
     }
 
     try {
+      console.log('🔐 [BiometricLock] Requesting biometric authentication...');
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: "Unlock Expenzez",
-        fallbackLabel: "Use PIN",
+        fallbackLabel: "Use App PIN",
         cancelLabel: "Cancel",
+        disableDeviceFallback: true, // Only allow actual biometrics, not device passcode
+        requireConfirmation: false
       });
-      
+
+      console.log('🔐 [BiometricLock] Biometric auth result:', result);
+
       if (result.success) {
+        console.log('🔐 [BiometricLock] ✅ Biometric authentication successful');
         await onUnlock();
-        
+
         // Reset authentication flag after delay
         setTimeout(() => {
           if ((global as any).__setAuthenticating) {
             (global as any).__setAuthenticating(false);
           }
         }, 1500);
+      } else {
+        console.log('🔐 [BiometricLock] ❌ Biometric authentication failed:', result);
+
+        // Check if it's the missing usage description error (Expo Go limitation)
+        if (!result.success && (result as any).error === 'missing_usage_description') {
+          console.log('🔐 [BiometricLock] Face ID not available in Expo Go - disabling biometric features');
+          // Disable biometric features for this session since it's not supported in Expo Go
+          setHasBiometric(false);
+          setIsBiometricEnabled(false);
+          Alert.alert(
+            "Face ID Not Available",
+            "Face ID requires a development build. For now, please use your PIN to unlock the app.",
+            [{ text: "OK" }]
+          );
+        }
       }
     } catch (error) {
-      // Silently handle error
+      console.log('🔐 [BiometricLock] ❌ Biometric auth error:', error);
     } finally {
       setIsAuthenticating(false);
-      
+
       // Reset authentication flag
       setTimeout(() => {
         if ((global as any).__setAuthenticating) {
@@ -131,39 +230,156 @@ export default function BiometricSecurityLock({ isVisible, onUnlock }: Biometric
       const newPin = pin + digit;
       setPin(newPin);
       
-      // Auto-submit when 5 digits entered
-      if (newPin.length === 5) {
+      // Auto-submit when 5 digits entered (only if not currently authenticating)
+      if (newPin.length === 5 && !isAuthenticating) {
         setTimeout(() => handlePinSubmit(newPin), 100);
       }
     }
   };
 
   const handlePinSubmit = async (pinToCheck: string) => {
+    setIsAuthenticating(true);
     try {
-      // Import security API dynamically to avoid circular imports
-      const { securityAPI } = await import('../services/api/securityAPI');
-      const { deviceManager } = await import('../services/deviceManager');
-      
+      // Check if user is still logged in - if not, don't attempt PIN validation
+      if (!isLoggedIn) {
+        console.log('🔐 [BiometricLock] User not logged in, skipping PIN validation');
+        Alert.alert(
+          "Session Expired", 
+          "Your session has expired. Please log in again.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // Close the PIN screen since user needs to log in
+                setPin("");
+                setIsAuthenticating(false);
+              }
+            }
+          ]
+        );
+        return;
+      }
+
+      // Check if max attempts reached
+      if (pinAttempts >= maxAttempts) {
+        console.log('🔐 [BiometricLock] Max attempts reached, showing password option');
+        Alert.alert(
+          "Too Many Attempts", 
+          "You've exceeded the maximum number of PIN attempts. Please use your account password to unlock.",
+          [
+            {
+              text: "Use Password",
+              onPress: () => setShowPasswordModal(true)
+            }
+          ]
+        );
+        setPin("");
+        setIsAuthenticating(false);
+        return;
+      }
+
       const deviceId = await deviceManager.getDeviceId();
       
-      // Use server-side validation first (secure, encrypted DynamoDB storage)
-      const result = await securityAPI.validatePin({
+      console.log('🔐 [BiometricLock] Attempting PIN validation with secure API, attempt:', pinAttempts + 1);
+      
+      // EMERGENCY CHECK: If no PIN exists, auto-unlock to prevent infinite loop
+      const hasPinSetup = await nativeSecurityAPI.hasPinSetup();
+      if (!hasPinSetup) {
+        await AsyncStorage.multiRemove([
+          '@expenzez_security_enabled',
+          '@expenzez_app_locked', 
+          '@expenzez_last_unlock'
+        ]);
+        await onUnlock();
+        return;
+      }
+      
+      // Use secure API for validation (PBKDF2 hash-based validation)
+      const result = await nativeSecurityAPI.validatePin({
         pin: pinToCheck,
         deviceId
       });
       
       if (result.success) {
+        console.log('🔐 [BiometricLock] PIN validation successful, resetting attempts');
+        setPinAttempts(0); // Reset attempts on success
+        setShowAttemptsWarning(false);
         await onUnlock();
-        setPin("");
+        setTimeout(() => setPin(""), 100); // Clear after successful unlock
       } else {
-        Alert.alert("Incorrect PIN", "Please try again.");
-        setPin("");
+        // Increment attempts and show error
+        const newAttempts = pinAttempts + 1;
+        setPinAttempts(newAttempts);
+        
+        const attemptsLeft = maxAttempts - newAttempts;
+        console.log('🔐 [BiometricLock] PIN validation failed, attempts left:', attemptsLeft);
+
+        // Always show attempts warning after any failed attempt
+        setShowAttemptsWarning(true);
+        
+        if (attemptsLeft === 0) {
+          Alert.alert(
+            "Too Many Attempts",
+            "You've exceeded the maximum number of PIN attempts. Please use your account password to unlock.",
+            [
+              {
+                text: "Use Password",
+                onPress: () => setShowPasswordModal(true)
+              }
+            ]
+          );
+        } else {
+          const warningMessage = attemptsLeft <= 2
+            ? `Incorrect PIN. ${attemptsLeft} ${attemptsLeft === 1 ? 'attempt' : 'attempts'} remaining.`
+            : "Incorrect PIN. Please try again.";
+
+          console.log('🔐 [BiometricLock] Setting attempts warning in UI:', {
+            showAttemptsWarning: attemptsLeft <= 2,
+            attemptsRemaining: attemptsLeft
+          });
+        }
+
+        // Clear PIN with slight delay to prevent rapid re-submission
+        setTimeout(() => setPin(""), 300);
       }
     } catch (error: any) {
-      // If server validation fails, show appropriate error
-      if (error.response?.status === 404) {
+      console.error('🔐 [BiometricLock] PIN validation error:', error);
+
+      // Handle specific error cases gracefully without technical details
+      if (error.response?.status === 400) {
+        // 400 means incorrect PIN - this should be handled above in the normal flow
+        // If we reach here, it's likely a validation error, so treat as incorrect PIN
+        const newAttempts = pinAttempts + 1;
+        setPinAttempts(newAttempts);
+
+        const attemptsLeft = maxAttempts - newAttempts;
+        console.log('🔐 [BiometricLock] PIN validation failed (400 error), attempts left:', attemptsLeft);
+
+        if (attemptsLeft <= 2) {
+          setShowAttemptsWarning(true);
+        }
+
+        if (attemptsLeft === 0) {
+          Alert.alert(
+            "Too Many Attempts",
+            "You've exceeded the maximum number of PIN attempts. Please use your account password to unlock.",
+            [
+              {
+                text: "Use Password",
+                onPress: () => setShowPasswordModal(true)
+              }
+            ]
+          );
+        } else {
+          const warningMessage = attemptsLeft <= 2
+            ? `Incorrect PIN. ${attemptsLeft} ${attemptsLeft === 1 ? 'attempt' : 'attempts'} remaining.`
+            : "Incorrect PIN. Please try again.";
+
+          Alert.alert("Incorrect PIN", warningMessage);
+        }
+      } else if (error.response?.status === 404) {
         Alert.alert(
-          "No PIN Set Up", 
+          "No PIN Set Up",
           "You need to set up a PIN first. Please go to Settings > Security to set up your PIN.",
           [
             {
@@ -174,43 +390,171 @@ export default function BiometricSecurityLock({ isVisible, onUnlock }: Biometric
             }
           ]
         );
+      } else if (error.message?.includes('Session expired') || error.response?.status === 401) {
+        // Handle session expired separately without counting as PIN attempt
+        Alert.alert(
+          "Session Expired",
+          "Your session has expired. Please use your password to unlock.",
+          [
+            {
+              text: "Use Password",
+              onPress: () => setShowPasswordModal(true)
+            }
+          ]
+        );
       } else {
-        Alert.alert("Error", "Authentication failed. Please try again.");
+        // Network or other errors - don't count as PIN attempts
+        Alert.alert(
+          "Connection Error",
+          "Unable to verify PIN due to connection issues. Please try again or use your password.",
+          [
+            {
+              text: "Try Again",
+              onPress: () => {}
+            },
+            {
+              text: "Use Password",
+              onPress: () => setShowPasswordModal(true)
+            }
+          ]
+        );
       }
-      setPin("");
+      // Clear PIN with delay to prevent rapid re-submission
+      setTimeout(() => setPin(""), 300);
+    } finally {
+      setIsAuthenticating(false);
     }
   };
 
-  const PinDot = ({ filled }: { filled: boolean }) => (
-    <View style={[
-      styles.pinDot,
-      { 
-        borderColor: colors.primary[500],
-        backgroundColor: filled ? colors.primary[500] : 'transparent'
-      }
-    ]} />
-  );
+  const handlePasswordAuthentication = () => {
+    setShowPasswordModal(true);
+  };
 
-  const NumberButton = ({ digit, onPress }: { digit: string, onPress: (digit: string) => void }) => (
-    <TouchableOpacity
-      style={[
-        styles.numberButton,
-        { 
-          backgroundColor: colors.background.secondary,
-          borderWidth: 1,
-          borderColor: colors.border.medium
+  const handlePasswordSubmit = async () => {
+    if (!password.trim()) {
+      Alert.alert("Error", "Please enter your password");
+      return;
+    }
+
+    setIsAuthenticating(true);
+    try {
+      // Debug: Log all available user data
+      console.log('🔐 [BiometricLock] User from AuthContext:', user);
+      console.log('🔐 [BiometricLock] Available user properties:', user ? Object.keys(user) : 'null');
+      
+      // Try to get user email from multiple sources
+      let email = user?.email;
+      
+      // Check all possible email fields in user object
+      if (!email && user) {
+        email = user.username || (user as any).email_address || (user as any).emailAddress || (user as any).Email;
+        console.log('🔐 [BiometricLock] Trying alternate user fields, found:', email?.substring(0, 3) + '***');
+      }
+      
+      // If AuthContext doesn't have email, try AsyncStorage as fallback
+      if (!email) {
+        console.log('🔐 [BiometricLock] Email not in AuthContext, trying AsyncStorage fallback');
+        try {
+          const userString = await AsyncStorage.getItem('user');
+          if (userString) {
+            const storedUser = JSON.parse(userString);
+            console.log('🔐 [BiometricLock] AsyncStorage user object:', storedUser);
+            console.log('🔐 [BiometricLock] AsyncStorage user keys:', Object.keys(storedUser));
+            email = storedUser.email || storedUser.username || storedUser.emailAddress || storedUser.Email;
+            console.log('🔐 [BiometricLock] Found email in AsyncStorage:', email?.substring(0, 3) + '***');
+          }
+        } catch (storageError) {
+          console.log('🔐 [BiometricLock] AsyncStorage fallback failed:', storageError);
         }
-      ]}
-      onPress={() => onPress(digit)}
-      activeOpacity={0.7}
-    >
-      <Text style={[styles.numberButtonText, { color: colors.text.primary }]}>
-        {digit}
-      </Text>
-    </TouchableOpacity>
-  );
+      } else {
+        console.log('🔐 [BiometricLock] Using email from AuthContext:', email.substring(0, 3) + '***');
+      }
+
+      // If still no email, try getting from login credentials storage
+      if (!email) {
+        console.log('🔐 [BiometricLock] No email found, checking for stored login credentials');
+        try {
+          // Check all possible storage keys for login data
+          const storageKeys = ['rememberMe', 'loginCredentials', 'lastLogin', 'storedLogin'];
+          
+          for (const key of storageKeys) {
+            const storedData = await AsyncStorage.getItem(key);
+            if (storedData) {
+              try {
+                const loginData = JSON.parse(storedData);
+                console.log(`🔐 [BiometricLock] Found data in ${key}:`, loginData);
+                email = loginData.email || loginData.username || loginData.identifier;
+                if (email) {
+                  console.log('🔐 [BiometricLock] Found email in stored login:', email?.substring(0, 3) + '***');
+                  break;
+                }
+              } catch (parseError) {
+                console.log(`🔐 [BiometricLock] Failed to parse ${key}:`, parseError);
+              }
+            }
+          }
+        } catch (loginError) {
+          console.log('🔐 [BiometricLock] Stored login check failed:', loginError);
+        }
+      }
+
+      if (!email) {
+        console.log('🔐 [BiometricLock] No email found in any source');
+        Alert.alert(
+          "Authentication Error", 
+          "Unable to find your account information. Please log in again.",
+          [{ text: "OK" }]
+        );
+        setIsAuthenticating(false);
+        return;
+      }
+
+      // Import auth API dynamically
+      const { authAPI } = await import('../services/api');
+      
+      // Attempt to authenticate with Cognito
+      const response = await authAPI.login({ email, password });
+      
+      // Check if login was successful
+      const responseData = response.data || response;
+      if (responseData && responseData.idToken && responseData.accessToken) {
+        console.log('🔐 [BiometricLock] Password authentication successful');
+        // Reset PIN attempts since user successfully used password
+        setPinAttempts(0);
+        setShowAttemptsWarning(false);
+        // Close password modal
+        setShowPasswordModal(false);
+        setPassword("");
+        // Unlock the app
+        await onUnlock();
+      } else {
+        Alert.alert("Incorrect Password", "The password you entered is incorrect. Please try again.");
+        setPassword("");
+      }
+    } catch (error: any) {
+      console.error('🔐 [BiometricLock] Password authentication failed:', error);
+      let errorMessage = "Password authentication failed. Please try again.";
+      
+      if (error.response?.status === 401 || error.message?.includes('NotAuthorizedException')) {
+        errorMessage = "Incorrect password. Please try again.";
+      }
+      
+      Alert.alert("Authentication Failed", errorMessage);
+      setPassword("");
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
 
   if (!isVisible) return null;
+
+
+  // Don't show PIN screen if user is not logged in (session expired)
+  if (!isLoggedIn) {
+    console.log('🔐 [BiometricLock] User not logged in, not showing PIN screen');
+    return null;
+  }
 
   return (
     <Modal
@@ -226,68 +570,119 @@ export default function BiometricSecurityLock({ isVisible, onUnlock }: Biometric
             Enter PIN
           </Text>
 
-          {/* PIN Dots */}
-          <View style={styles.pinDotsContainer}>
-            {[0, 1, 2, 3, 4].map(index => (
-              <PinDot key={index} filled={index < pin.length} />
-            ))}
-          </View>
+          <PinInput
+            pin={pin}
+            onPinChange={(newPin) => {
+              setPin(newPin);
+              if (newPin.length === 5 && !isAuthenticating) {
+                setTimeout(() => handlePinSubmit(newPin), 100);
+              }
+            }}
+            isLoading={isAuthenticating}
+            showBiometric={hasBiometric}
+            onBiometricPress={handleBiometricAuth}
+            isBiometricEnabled={isBiometricEnabled}
+            showPassword={true}
+            onPasswordPress={handlePasswordAuthentication}
+            showAttemptsWarning={showAttemptsWarning}
+            attemptsRemaining={maxAttempts - pinAttempts}
+          />
 
-          {/* Number Pad */}
-          <View style={styles.numberPad}>
-            <View style={styles.numberRow}>
-              <NumberButton digit="1" onPress={handlePinPress} />
-              <NumberButton digit="2" onPress={handlePinPress} />
-              <NumberButton digit="3" onPress={handlePinPress} />
+          {/* Loading Overlay */}
+          {isAuthenticating && (
+            <View style={[StyleSheet.absoluteFillObject, styles.loadingOverlay, { backgroundColor: colors.background.primary + 'CC' }]}>
+              <View style={styles.loadingContainer}>
+                <Animated.View style={[styles.loadingSpinner, { transform: [{ scale: scaleAnim }] }]}>
+                  <Ionicons name="lock-closed" size={40} color={colors.primary[500]} />
+                </Animated.View>
+                <Text style={[styles.loadingText, { color: colors.text.primary }]}>
+                  Verifying PIN...
+                </Text>
+              </View>
             </View>
-            <View style={styles.numberRow}>
-              <NumberButton digit="4" onPress={handlePinPress} />
-              <NumberButton digit="5" onPress={handlePinPress} />
-              <NumberButton digit="6" onPress={handlePinPress} />
-            </View>
-            <View style={styles.numberRow}>
-              <NumberButton digit="7" onPress={handlePinPress} />
-              <NumberButton digit="8" onPress={handlePinPress} />
-              <NumberButton digit="9" onPress={handlePinPress} />
-            </View>
-            <View style={styles.numberRow}>
-              {/* Face ID Button - always show if biometrics are supported */}
-              <TouchableOpacity
-                style={[
-                  styles.specialButton,
-                  { 
-                    backgroundColor: colors.background.secondary,
-                    borderWidth: 1,
-                    borderColor: colors.border.medium,
-                    opacity: (hasBiometric && isBiometricEnabled) ? 1 : 0.5
-                  }
-                ]}
-                onPress={() => handlePinPress('biometric')}
-                disabled={!hasBiometric || !isBiometricEnabled}
-              >
-                <Ionicons name="finger-print" size={28} color={colors.primary[500]} />
-              </TouchableOpacity>
-              
-              <NumberButton digit="0" onPress={handlePinPress} />
-              
-              {/* Backspace Button */}
-              <TouchableOpacity
-                style={[
-                  styles.specialButton,
-                  { 
-                    backgroundColor: colors.background.secondary,
-                    borderWidth: 1,
-                    borderColor: colors.border.medium
-                  }
-                ]}
-                onPress={() => handlePinPress('backspace')}
-              >
-                <Ionicons name="backspace-outline" size={24} color={colors.text.secondary} />
-              </TouchableOpacity>
-            </View>
-          </View>
+          )}
         </View>
       </SafeAreaView>
+
+      {/* Password Authentication Modal */}
+      <Modal
+        visible={showPasswordModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowPasswordModal(false)}
+      >
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+          <View style={styles.passwordModalContainer}>
+            {/* Header */}
+            <View style={styles.passwordModalHeader}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => {
+                  setShowPasswordModal(false);
+                  setPassword("");
+                }}
+                disabled={isAuthenticating}
+              >
+                <Text style={[styles.cancelButtonText, { color: colors.primary[500] }]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <Text style={[styles.passwordModalTitle, { color: colors.text.primary }]}>
+                Enter Password
+              </Text>
+              <View style={styles.headerRight} />
+            </View>
+
+            {/* Content */}
+            <View style={styles.passwordModalContent}>
+              <Text style={[styles.passwordInstructions, { color: colors.text.secondary }]}>
+                Please enter your account password to unlock the app
+              </Text>
+
+              <View style={[styles.passwordInputContainer, { 
+                backgroundColor: colors.background.secondary,
+                borderColor: colors.border.medium,
+              }]}>
+                <TextInput
+                  style={[styles.passwordInput, { color: colors.text.primary }]}
+                  placeholder="Password"
+                  placeholderTextColor={colors.text.secondary}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoFocus
+                  editable={!isAuthenticating}
+                  onSubmitEditing={handlePasswordSubmit}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.passwordSubmitButton, { 
+                  backgroundColor: colors.primary[500],
+                  opacity: (!password.trim() || isAuthenticating) ? 0.5 : 1
+                }]}
+                onPress={handlePasswordSubmit}
+                disabled={!password.trim() || isAuthenticating}
+              >
+                {isAuthenticating ? (
+                  <View style={styles.passwordSubmitContent}>
+                    <Animated.View style={[styles.passwordLoadingSpinner, { transform: [{ scale: scaleAnim }] }]}>
+                      <Ionicons name="sync" size={20} color="white" />
+                    </Animated.View>
+                    <Text style={styles.passwordSubmitButtonText}>
+                      Verifying...
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={styles.passwordSubmitButtonText}>
+                    Unlock App
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </Modal>
   );
 }
@@ -390,5 +785,133 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingOverlay: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl * 2,
+    minWidth: 120,
+    minHeight: 120,
+  },
+  loadingSpinner: {
+    marginBottom: spacing.md,
+  },
+  loadingText: {
+    fontSize: typography.fontSizes.sm,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  passwordModalContainer: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+  },
+  passwordModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  cancelButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  cancelButtonText: {
+    fontSize: typography.fontSizes.base,
+    fontWeight: '500',
+  },
+  passwordModalTitle: {
+    fontSize: typography.fontSizes.xl,
+    fontWeight: '600',
+  },
+  passwordModalContent: {
+    flex: 1,
+    paddingTop: spacing.xl * 2,
+    alignItems: 'center',
+  },
+  passwordInstructions: {
+    fontSize: typography.fontSizes.base,
+    textAlign: 'center',
+    marginBottom: spacing.xl * 2,
+    paddingHorizontal: spacing.md,
+    lineHeight: 22,
+  },
+  passwordInputContainer: {
+    width: '100%',
+    borderWidth: 2,
+    borderRadius: borderRadius.xl,
+    marginBottom: spacing.xl * 2,
+  },
+  passwordInput: {
+    fontSize: typography.fontSizes.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    textAlign: 'center',
+  },
+  passwordSubmitButton: {
+    width: '100%',
+    paddingVertical: spacing.lg,
+    borderRadius: borderRadius.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 56,
+  },
+  passwordSubmitContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  passwordSubmitButtonText: {
+    color: 'white',
+    fontSize: typography.fontSizes.lg,
+    fontWeight: '600',
+  },
+  passwordLoadingSpinner: {
+    marginRight: spacing.sm,
+  },
+  attemptsWarningContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+  },
+  attemptsWarningText: {
+    fontSize: typography.fontSizes.sm,
+    fontWeight: '500',
+  },
+  alternativeSection: {
+    alignItems: 'center',
+    marginTop: spacing.lg,
+  },
+  passwordButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+  },
+  passwordButtonText: {
+    fontSize: 16,
+    marginLeft: spacing.sm,
+  },
+  headerRight: {
+    width: 60,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

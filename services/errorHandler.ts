@@ -5,6 +5,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import { sessionManager } from './sessionManager';
 
 export interface ErrorContext {
   userId?: string;
@@ -376,13 +377,24 @@ class ErrorHandlerService {
         // The API interceptor will handle the session expiration gracefully
         handled = false; // Allow error to propagate but don't logout
       } else {
-        console.log(`[ErrorHandler] Session expired - automatically logging out user`);
+        console.log(`[ErrorHandler] Session expired - using graceful session manager`);
         try {
+          // Use the new session manager for graceful handling
+          const sessionRestored = await sessionManager.handleApiSessionExpiration();
+          if (sessionRestored) {
+            console.log(`[ErrorHandler] Session restored successfully - continuing`);
+            handled = true;
+          } else {
+            console.log(`[ErrorHandler] Session could not be restored - user will be notified`);
+            // Session manager handles user notification and graceful logout
+            handled = true;
+          }
+        } catch (sessionError) {
+          console.error(`[ErrorHandler] Session manager failed:`, sessionError);
+          // Fallback to original logout behavior
           await this.performLogout();
           this.redirectToLogin();
           handled = true;
-        } catch (logoutError) {
-          console.error(`[ErrorHandler] Failed to perform automatic logout:`, logoutError);
         }
       }
     }

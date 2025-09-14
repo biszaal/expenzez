@@ -57,35 +57,16 @@ export default function AccountScreen() {
       try {
         setLoading(true);
 
-        // 🚀 PERFORMANCE: Fetch all user data in parallel
-        const [profileData, creditScoreData, goalsData] = await Promise.all([
-          getProfile().catch((err) => {
-            console.error("❌ Error fetching profile:", err);
-            return null;
-          }),
-          getCreditScore().catch((err) => {
-            console.error("❌ Error fetching credit score:", err);
-            return { score: null };
-          }),
-          getGoals().catch((err) => {
-            console.error("❌ Error fetching goals:", err);
-            return { completed: 0, total: 0 };
-          }),
-        ]);
+        // Fetch profile data
+        const profileData = await getProfile().catch((err) => {
+          console.error("❌ Error fetching profile:", err);
+          return null;
+        });
 
         // Set profile data
         if (profileData) {
           setProfile(profileData);
         }
-
-        // Set credit score
-        setCreditScore(creditScoreData.score);
-
-        // Set goals data
-        setGoalsMet({
-          completed: goalsData.completed,
-          total: goalsData.total,
-        });
       } catch (error) {
         console.error("Error fetching user data:", error);
         showError("Failed to load user data");
@@ -175,14 +156,6 @@ export default function AccountScreen() {
     setShowExport(true);
   };
 
-  // Handle coming soon features (for other features)
-  const showComingSoon = (featureName: string) => {
-    Alert.alert(
-      "Coming Soon",
-      `${featureName} feature is currently under development and will be available in a future update.`,
-      [{ text: "OK", style: "default" }]
-    );
-  };
 
   // Fetch savings goals
   const fetchSavingsGoals = async () => {
@@ -239,20 +212,6 @@ export default function AccountScreen() {
     setShowSavingsGoals(true);
   };
 
-  const getStatColors = () => {
-    return {
-      creditScore: {
-        gradient: ["#FEF3C7", "#FDE68A"],
-        text: "#92400E",
-        icon: "#F59E0B",
-      },
-      goals: {
-        gradient: ["#DBEAFE", "#BFDBFE"],
-        text: "#1E40AF",
-        icon: "#3B82F6",
-      },
-    };
-  };
 
   const profileOptions = [
     {
@@ -314,13 +273,13 @@ export default function AccountScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Premium Header */}
-        <View style={styles.premiumHeader}>
+        {/* Header */}
+        <View style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
               <Text
                 style={[
-                  styles.premiumHeaderTitle,
+                  styles.headerTitle,
                   { color: colors.text.primary },
                 ]}
               >
@@ -328,7 +287,7 @@ export default function AccountScreen() {
               </Text>
               <Text
                 style={[
-                  styles.premiumHeaderSubtitle,
+                  styles.headerSubtitle,
                   { color: colors.text.secondary },
                 ]}
               >
@@ -337,7 +296,7 @@ export default function AccountScreen() {
             </View>
             <TouchableOpacity
               style={[
-                styles.premiumSettingsButton,
+                styles.headerButton,
                 { backgroundColor: colors.background.primary, ...shadows.sm },
               ]}
               onPress={() => router.push("/settings")}
@@ -351,120 +310,66 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        {/* Premium Profile Card */}
-        <View style={styles.premiumProfileSection}>
-          <LinearGradient
-            colors={[colors.primary[500], "#8B5CF6"]}
-            style={[styles.premiumProfileCard, shadows.lg]}
-          >
-            <View style={styles.premiumProfileContent}>
-              <View style={styles.premiumAvatarContainer}>
-                <View style={styles.premiumAvatar}>
-                  <Text style={styles.premiumAvatarText}>
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          <View style={[styles.profileCard, { backgroundColor: colors.background.primary, ...shadows.lg }]}>
+            <View style={styles.profileContent}>
+              <View style={styles.avatarContainer}>
+                <View style={[styles.avatar, { backgroundColor: colors.primary[500] }]}>
+                  <Text style={styles.avatarText}>
                     {getUserInitials()}
                   </Text>
                 </View>
-                <View style={styles.premiumBadge}>
-                  <Ionicons name="star" size={12} color="white" />
-                  <Text style={styles.premiumBadgeText}>Premium</Text>
-                </View>
               </View>
-              <View style={styles.premiumProfileDetails}>
-                <Text style={styles.premiumProfileName}>
+              <View style={styles.profileDetails}>
+                <Text style={[styles.profileName, { color: colors.text.primary }]}>
                   {getUserDisplayName()}
                 </Text>
-                <Text style={styles.premiumProfileEmail}>{getUserEmail()}</Text>
-                <View style={styles.premiumMemberInfo}>
-                  <Ionicons
-                    name="calendar-outline"
-                    size={16}
-                    color="rgba(255,255,255,0.8)"
-                  />
-                  <Text style={styles.premiumMemberText}>
+                <Text style={[styles.profileEmail, { color: colors.text.secondary }]}>
+                  {getUserEmail()}
+                </Text>
+                <View style={styles.profileBadges}>
+                  <Text style={[styles.memberText, { color: colors.text.secondary }]}>
                     Member since {getMemberSince()}
                   </Text>
                 </View>
               </View>
             </View>
             <TouchableOpacity
-              style={styles.premiumEditButton}
+              style={[styles.editButton, { backgroundColor: colors.primary[100] }]}
               onPress={() => router.push("/profile/personal")}
             >
-              <Ionicons name="pencil" size={16} color="white" />
-              <Text style={styles.premiumEditText}>Edit Profile</Text>
+              <Ionicons name="pencil" size={16} color={colors.primary[600]} />
+              <Text style={[styles.editButtonText, { color: colors.primary[600] }]}>Edit</Text>
             </TouchableOpacity>
-          </LinearGradient>
+          </View>
         </View>
 
-        {/* Premium Stats */}
-        <View style={styles.premiumStatsContainer}>
+        {/* Savings Goals Stats */}
+        <View style={styles.statsContainer}>
           <TouchableOpacity
-            style={styles.premiumStatCard}
-            onPress={() => showComingSoon("Credit Score")}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={[colors.primary[100], colors.primary[50]]}
-              style={[styles.premiumStatGradient, shadows.md]}
-            >
-              <View
-                style={[
-                  styles.premiumStatIcon,
-                  { backgroundColor: colors.primary[500] },
-                ]}
-              >
-                <Ionicons name="trending-up" size={24} color="white" />
-              </View>
-              <Text
-                style={[
-                  styles.premiumStatLabel,
-                  { color: colors.text.secondary },
-                ]}
-              >
-                Credit Score
-              </Text>
-              <Text
-                style={[
-                  styles.premiumStatValue,
-                  { color: colors.text.tertiary },
-                ]}
-              >
-                Coming
-              </Text>
-              <Text
-                style={[
-                  styles.premiumStatChange,
-                  { color: colors.text.tertiary },
-                ]}
-              >
-                Soon
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.premiumStatCard}
+            style={styles.statCard}
             onPress={openSavingsGoals}
             activeOpacity={0.8}
           >
             <LinearGradient
               colors={[
-                colors.secondary?.[100] || "#DBEAFE",
-                colors.secondary?.[50] || "#BFDBFE",
+                colors.primary[100] || "#DBEAFE",
+                colors.primary[50] || "#BFDBFE",
               ]}
-              style={[styles.premiumStatGradient, shadows.md]}
+              style={[styles.statGradient, shadows.md]}
             >
               <View
                 style={[
-                  styles.premiumStatIcon,
-                  { backgroundColor: colors.secondary?.[500] || "#3B82F6" },
+                  styles.statIcon,
+                  { backgroundColor: colors.primary[500] || "#3B82F6" },
                 ]}
               >
-                <Ionicons name="trophy" size={24} color="white" />
+                <Ionicons name="trophy" size={20} color="white" />
               </View>
               <Text
                 style={[
-                  styles.premiumStatLabel,
+                  styles.statLabel,
                   { color: colors.text.secondary },
                 ]}
               >
@@ -472,7 +377,7 @@ export default function AccountScreen() {
               </Text>
               <Text
                 style={[
-                  styles.premiumStatValue,
+                  styles.statValue,
                   { color: colors.text.primary },
                 ]}
               >
@@ -480,7 +385,7 @@ export default function AccountScreen() {
               </Text>
               <Text
                 style={[
-                  styles.premiumStatChange,
+                  styles.statChange,
                   { color: colors.text.secondary },
                 ]}
               >
@@ -490,10 +395,10 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Premium Menu Options */}
-        <View style={styles.premiumMenuSection}>
+        {/* Menu Options */}
+        <View style={styles.menuSection}>
           <Text
-            style={[styles.premiumSectionTitle, { color: colors.text.primary }]}
+            style={[styles.sectionTitle, { color: colors.text.primary }]}
           >
             Quick Actions
           </Text>
@@ -666,7 +571,7 @@ export default function AccountScreen() {
           {/* Settings Menu */}
           <Text
             style={[
-              styles.premiumSectionTitle,
+              styles.sectionTitle,
               { color: colors.text.primary, marginTop: spacing.xl },
             ]}
           >
@@ -674,7 +579,7 @@ export default function AccountScreen() {
           </Text>
           <View
             style={[
-              styles.premiumMenuCard,
+              styles.menuCard,
               { backgroundColor: colors.background.primary, ...shadows.lg },
             ]}
           >
@@ -682,39 +587,28 @@ export default function AccountScreen() {
               <TouchableOpacity
                 key={option.title}
                 style={[
-                  styles.premiumMenuItem,
+                  styles.menuItem,
                   index !== profileOptions.length - 1 && {
                     borderBottomColor: colors.border.light,
                     borderBottomWidth: 0.5,
                   },
                 ]}
                 onPress={() => {
-                  const implementedRoutes = [
-                    "/settings",
-                    "/profile/personal",
-                    "/security",
-                    "/notifications",
-                    "/notifications/preferences",
-                  ];
-                  if (implementedRoutes.includes(option.route)) {
-                    router.push(option.route as any);
-                  } else {
-                    showComingSoon(option.title);
-                  }
+                  router.push(option.route as any);
                 }}
               >
                 <View
                   style={[
-                    styles.premiumMenuIconContainer,
+                    styles.menuIconContainer,
                     { backgroundColor: colors.primary[100] },
                   ]}
                 >
                   {option.icon}
                 </View>
-                <View style={styles.premiumMenuContent}>
+                <View style={styles.menuContent}>
                   <Text
                     style={[
-                      styles.premiumMenuTitle,
+                      styles.menuTitle,
                       { color: colors.text.primary },
                     ]}
                   >
@@ -722,25 +616,18 @@ export default function AccountScreen() {
                   </Text>
                   <Text
                     style={[
-                      styles.premiumMenuSubtitle,
+                      styles.menuSubtitle,
                       { color: colors.text.secondary },
                     ]}
                   >
                     {option.subtitle}
                   </Text>
                 </View>
-                <View
-                  style={[
-                    styles.premiumMenuArrow,
-                    { backgroundColor: colors.primary[100] },
-                  ]}
-                >
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.primary[500]}
-                  />
-                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.primary[500]}
+                />
               </TouchableOpacity>
             ))}
           </View>
@@ -756,109 +643,51 @@ export default function AccountScreen() {
           </View>
         )}
 
-        {/* Premium Logout Button */}
-        <View style={styles.premiumLogoutSection}>
+        {/* Logout Button */}
+        <View style={styles.logoutSection}>
           <TouchableOpacity
             onPress={handleLogout}
-            style={[styles.premiumLogoutButton, { opacity: isLoggingOut ? 0.7 : 1 }]}
+            style={[
+              styles.logoutButton,
+              {
+                backgroundColor: isDark ? "#7F1D1D" : "#FEF2F2",
+                borderColor: isDark ? "#991B1B" : "#FECACA",
+                opacity: isLoggingOut ? 0.7 : 1,
+                ...shadows.sm,
+              },
+            ]}
             disabled={isLoggingOut}
           >
-            <LinearGradient
-              colors={isDark ? ["#7F1D1D", "#991B1B"] : ["#FEF2F2", "#FECACA"]}
-              style={[styles.premiumLogoutGradient, shadows.sm]}
+            {isLoggingOut ? (
+              <ActivityIndicator size="small" color={isDark ? "#FCA5A5" : "#DC2626"} />
+            ) : (
+              <Ionicons
+                name="log-out-outline"
+                size={20}
+                color={isDark ? "#FCA5A5" : "#DC2626"}
+              />
+            )}
+            <Text
+              style={[
+                styles.logoutText,
+                { color: isDark ? "#FCA5A5" : "#DC2626" },
+              ]}
             >
-              {isLoggingOut ? (
-                <ActivityIndicator size="small" color={isDark ? "#FCA5A5" : "#DC2626"} />
-              ) : (
-                <Ionicons
-                  name="log-out-outline"
-                  size={20}
-                  color={isDark ? "#FCA5A5" : "#DC2626"}
-                />
-              )}
-              <Text
-                style={[
-                  styles.premiumLogoutText,
-                  { color: isDark ? "#FCA5A5" : "#DC2626" },
-                ]}
-              >
-                {isLoggingOut ? "Signing Out..." : "Sign Out"}
-              </Text>
-            </LinearGradient>
+              {isLoggingOut ? "Signing Out..." : "Sign Out"}
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Premium App Info */}
-        <View style={styles.premiumAppInfo}>
-          <View style={styles.appInfoCard}>
-            <LinearGradient
-              colors={[colors.primary[500], "#8B5CF6"]}
-              style={styles.premiumAppLogo}
-            >
-              <Text style={styles.premiumAppLogoText}>E</Text>
-            </LinearGradient>
-            <View style={styles.appInfoDetails}>
-              <Text
-                style={[styles.premiumAppName, { color: colors.text.primary }]}
-              >
-                Expenzez
-              </Text>
-              <Text
-                style={[
-                  styles.premiumAppVersion,
-                  { color: colors.text.secondary },
-                ]}
-              >
-                Version 1.0.0
-              </Text>
-            </View>
-          </View>
+        {/* App Info */}
+        <View style={styles.appInfo}>
           <Text
             style={[
-              styles.premiumAppCopyright,
+              styles.appCopyright,
               { color: colors.text.tertiary },
             ]}
           >
-            © {new Date().getFullYear()} Expenzez. All rights reserved.
+            Expenzez v1.0.0 - © {new Date().getFullYear()}
           </Text>
-          <View style={styles.socialLinks}>
-            <TouchableOpacity
-              style={[
-                styles.socialButton,
-                { backgroundColor: colors.background.primary, ...shadows.sm },
-              ]}
-            >
-              <Ionicons
-                name="mail-outline"
-                size={16}
-                color={colors.text.secondary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.socialButton,
-                { backgroundColor: colors.background.primary, ...shadows.sm },
-              ]}
-            >
-              <Ionicons
-                name="globe-outline"
-                size={16}
-                color={colors.text.secondary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.socialButton,
-                { backgroundColor: colors.background.primary, ...shadows.sm },
-              ]}
-            >
-              <Ionicons
-                name="logo-twitter"
-                size={16}
-                color={colors.text.secondary}
-              />
-            </TouchableOpacity>
-          </View>
         </View>
       </ScrollView>
 
@@ -1248,6 +1077,18 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: typography.fontSizes.xl,
     fontWeight: "700" as const,
+  },
+  statIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  statChange: {
+    fontSize: typography.fontSizes.sm,
+    fontWeight: "500" as const,
   },
   menuSection: {
     marginHorizontal: spacing.lg,

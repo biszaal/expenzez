@@ -1,21 +1,22 @@
 import { Alert } from "react-native";
+import { useCallback } from "react";
 
 /**
  * Custom hook for consistent alert handling across the app
- * Provides standardized alert methods with proper typing
+ * Provides standardized alert methods with proper typing and memoization
  */
 export function useAlert() {
   /**
    * Show a simple alert with title and message
    */
-  const showAlert = (title: string, message?: string) => {
+  const showAlert = useCallback((title: string, message?: string) => {
     Alert.alert(title, message);
-  };
+  }, []);
 
   /**
    * Show a confirmation dialog with custom actions
    */
-  const showConfirmation = (
+  const showConfirmation = useCallback((
     title: string,
     message: string,
     onConfirm: () => void,
@@ -35,28 +36,28 @@ export function useAlert() {
         onPress: onConfirm,
       },
     ]);
-  };
+  }, []);
 
   /**
    * Show a success alert
    */
-  const showSuccess = (message: string) => {
+  const showSuccess = useCallback((message: string) => {
     Alert.alert("Success", message);
-  };
+  }, []);
 
   /**
    * Show an error alert
    */
-  const showError = (message: string) => {
+  const showError = useCallback((message: string) => {
     Alert.alert("Error", message);
-  };
+  }, []);
 
   /**
    * Show a warning alert
    */
-  const showWarning = (message: string) => {
+  const showWarning = useCallback((message: string) => {
     Alert.alert("Warning", message);
-  };
+  }, []);
 
   return {
     showAlert,
