@@ -273,6 +273,22 @@ export const getLegalSections = async () => {
 
 export const getNotificationSettings = async () => {
   try {
+    // Check if app is locked first - prevent API calls that cause session expiry
+    const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+    const isSecurityEnabled = await AsyncStorage.getItem('@expenzez_security_enabled');
+    
+    if (isSecurityEnabled === 'true') {
+      const lastUnlockTime = await AsyncStorage.getItem('@expenzez_last_unlock');
+      const sessionTimeout = 15 * 60 * 1000; // 15 minutes (matches security system)
+      const now = Date.now();
+      const hasValidSession = lastUnlockTime && (now - parseInt(lastUnlockTime)) < sessionTimeout;
+      
+      if (!hasValidSession) {
+        console.log("🔒 [DataSource] App is locked, skipping notification preferences fetch to prevent session expiry");
+        return getDefaultNotificationSettings(); // Return defaults instead of making API call
+      }
+    }
+
     // Try to get real notification preferences from API
     const { notificationAPI } = await import("./api");
     const response = await notificationAPI.getPreferences();
@@ -303,6 +319,22 @@ const getDefaultNotificationSettings = () => ({
 
 export const getRecentNotifications = async () => {
   try {
+    // Check if app is locked first - prevent API calls that cause session expiry
+    const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+    const isSecurityEnabled = await AsyncStorage.getItem('@expenzez_security_enabled');
+    
+    if (isSecurityEnabled === 'true') {
+      const lastUnlockTime = await AsyncStorage.getItem('@expenzez_last_unlock');
+      const sessionTimeout = 15 * 60 * 1000; // 15 minutes (matches security system)
+      const now = Date.now();
+      const hasValidSession = lastUnlockTime && (now - parseInt(lastUnlockTime)) < sessionTimeout;
+      
+      if (!hasValidSession) {
+        console.log("🔒 [DataSource] App is locked, skipping notification history fetch to prevent session expiry");
+        return []; // Return empty array instead of making API call
+      }
+    }
+
     // Fetch real notifications from backend API
     const { notificationAPI } = await import("./api");
     const response = await notificationAPI.getHistory(20);

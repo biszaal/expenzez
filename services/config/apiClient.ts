@@ -69,16 +69,13 @@ api.interceptors.request.use(
       return config;
     }
 
-    console.log(`[API] Interceptor: Requesting token for ${config.url}`);
     try {
       // Import tokenManager dynamically to avoid circular dependency
       const { tokenManager } = await import('../tokenManager');
       const token = await tokenManager.getValidAccessToken();
       if (token) {
-        console.log(`[API] Interceptor: Token obtained for ${config.url}`);
         config.headers.Authorization = `Bearer ${token}`;
       } else {
-        console.log(`[API] Interceptor: No token available for ${config.url}`);
       }
       return config;
     } catch (error: any) {
@@ -138,7 +135,6 @@ aiAPI.interceptors.request.use(
 // Response interceptor for main API
 api.interceptors.response.use(
   (response) => {
-    console.log(`[API] Response: ${response.config.url} - ${response.status}`);
     return response;
   },
   async (error) => {
@@ -164,10 +160,17 @@ api.interceptors.response.use(
       '/auth/confirm-forgot-password'
     ];
     
+    // Don't trigger session expiry for security endpoints - 401 is expected for wrong PINs
+    const securityEndpoints = [
+      '/security/validate-pin',
+      '/security/setup-pin',
+      '/security/change-pin'
+    ];
+    
     const isAuthEndpoint = authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
+    const isSecurityEndpoint = securityEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
     
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
-      console.log(`[API] 401 Unauthorized: ${originalRequest.url} - Attempting token refresh`);
       originalRequest._retry = true;
 
       try {
@@ -175,15 +178,20 @@ api.interceptors.response.use(
         const newToken = await tokenManager.refreshTokenIfNeeded();
         
         if (newToken) {
-          console.log(`[API] Token refreshed successfully for retry: ${originalRequest.url}`);
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return api(originalRequest);
         } else {
           console.log(`[API] Token refresh failed - checking if this is a critical endpoint`);
-          console.log(`[API] Request URL: ${originalRequest.url}`);
           
-          // For critical endpoints like banking callbacks, allow the request to proceed without token
-          const criticalEndpoints = ['/nordigen/callback', '/banking/callback', '/banks/callback'];
+          // For critical endpoints like banking callbacks and security validation, allow the request to proceed without token
+          const criticalEndpoints = [
+            '/nordigen/callback', 
+            '/banking/callback', 
+            '/banks/callback',
+            '/security/validate-pin',  // Allow PIN validation failures without logout
+            '/security/setup-pin',     // Allow PIN setup failures without logout
+            '/security/change-pin',    // Allow PIN change failures without logout
+          ];
           const isCriticalEndpoint = criticalEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
           
           // Also check if we're in a banking callback context (even for auth/refresh)
@@ -195,7 +203,6 @@ api.interceptors.response.use(
               m.default.getAllKeys().then(keys => keys.filter(key => key.startsWith('requisition_expenzez_')))
             );
             
-            console.log(`[API] Banking callback detection - found keys:`, keys);
             
             isBankingCallbackContext = keys.some(key => {
               const match = key.match(/requisition_expenzez_(\d+)/);
@@ -203,13 +210,11 @@ api.interceptors.response.use(
                 const timestamp = parseInt(match[1]);
                 const age = Date.now() - timestamp;
                 const isActive = age < 3 * 60 * 1000; // 3 minutes for active banking flows
-                console.log(`[API] Key ${key}: timestamp=${timestamp}, age=${age}ms (${Math.round(age/1000)}s), isActive=${isActive}`);
                 return isActive;
               }
               return false;
             });
             
-            console.log(`[API] Banking callback context detection result:`, isBankingCallbackContext);
           } catch (error) {
             console.log(`[API] Error checking banking callback context:`, error);
           }
@@ -259,6 +264,12 @@ api.interceptors.response.use(
     // For auth endpoints with 401, just pass through the error without token refresh
     if (isAuthEndpoint && error.response?.status === 401) {
       console.log(`[API] Auth endpoint ${originalRequest.url} returned 401 - this is expected, not attempting token refresh`);
+    }
+
+    // For security endpoints with 401, pass through without session expiry logic
+    if (isSecurityEndpoint && (error.response?.status === 401 || error.response?.status === 400)) {
+      console.log(`[API] Security endpoint ${originalRequest.url} returned ${error.response?.status} - this is expected for wrong PIN, not triggering logout`);
+      return Promise.reject(error); // Pass through raw error without error handler
     }
 
     // Don't spam console with errors if user is already logged out
@@ -319,16 +330,13 @@ aiAPI.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return aiAPI(originalRequest);
         } else {
-          // Use error handler for session expiration
-          const sessionError = await errorHandler.handleError(
-            { 
-              response: { status: 401, data: { error: { code: 'AUTH_SESSION_EXPIRED' } } },
-              message: 'AI API session expired - please log in again'
-            },
-            errorContext
-          );
-          
-          return Promise.reject(sessionError.transformedError);
+          // Don't immediately log out on AI API failures - use graceful degradation
+          console.log('[AI API] Token refresh failed - API will return null/fallback data');
+
+          // Return a user-friendly error that doesn't trigger logout
+          const aiError = new Error('AI features temporarily unavailable');
+          aiError.name = 'AI_TEMPORARILY_UNAVAILABLE';
+          return Promise.reject(aiError);
         }
       } catch (refreshError: any) {
         // If token refresh fails due to network issues, don't mark user as logged out
@@ -339,16 +347,12 @@ aiAPI.interceptors.response.use(
           return Promise.reject(networkError.transformedError);
         }
         
-        // Handle token refresh failure
-        const refreshFailureError = await errorHandler.handleError(
-          {
-            response: { status: 401, data: { error: { code: 'AUTH_REFRESH_FAILED' } } },
-            message: 'AI API token refresh failed - session expired'
-          },
-          errorContext
-        );
-        
-        return Promise.reject(refreshFailureError.transformedError);
+        // Handle token refresh failure gracefully for AI API
+        console.log('[AI API] Token refresh failed - AI features will be temporarily unavailable');
+        const aiError = new Error('AI features temporarily unavailable due to authentication');
+        aiError.name = 'AI_TEMPORARILY_UNAVAILABLE';
+
+        return Promise.reject(aiError);
       }
     }
     

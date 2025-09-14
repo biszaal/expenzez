@@ -5,6 +5,9 @@ import { AppState } from "react-native";
 import { authAPI } from "../../services/api";
 import { CURRENT_API_CONFIG } from "../../config/api";
 import { deviceManager } from "../../services/deviceManager";
+import { securityAPI } from "../../services/api/securityAPI";
+import { sessionManager } from "../../services/sessionManager";
+import { deviceAPI } from "../../services/api/deviceAPI";
 
 interface User {
   id: string;
@@ -33,11 +36,12 @@ interface AuthContextType {
   isLoggedIn: boolean;
   user: User | null;
   userBudget: number | null;
+  needsPinSetup: boolean;
   login: (
     identifier: string,
     password: string,
     rememberMe?: boolean
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{ success: boolean; error?: string; needsPinSetup?: boolean }>;
   loginWithApple: (
     identityToken: string,
     authorizationCode: string,
@@ -50,13 +54,14 @@ interface AuthContextType {
     email: string,
     password: string,
     rememberMe?: boolean
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{ success: boolean; error?: string; needsPinSetup?: boolean }>;
   register: (
     input: RegisterInput
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   clearAllData: () => Promise<void>;
   clearCorruptedCache: () => Promise<void>;
+  clearNeedsPinSetup: () => void;
   loading: boolean;
   isDeviceTrusted: boolean;
   setRememberMe: (rememberMe: boolean) => Promise<void>;
@@ -66,6 +71,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoggedIn: false,
   user: null,
   userBudget: null,
+  needsPinSetup: false,
   login: async () => ({ success: false }),
   loginWithApple: async () => ({ success: false }),
   autoLoginAfterVerification: async () => ({ success: false }),
@@ -73,6 +79,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
   clearAllData: async () => {},
   clearCorruptedCache: async () => {},
+  clearNeedsPinSetup: () => {},
   loading: true,
   isDeviceTrusted: false,
   setRememberMe: async () => {},
@@ -85,6 +92,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [hasLoadedAuthState, setHasLoadedAuthState] = useState(false);
   const [isDeviceTrusted, setIsDeviceTrusted] = useState(false);
+  const [needsPinSetup, setNeedsPinSetup] = useState(false);
+
+  // Helper function to check if user has PIN in database
+  const checkUserHasPin = async (): Promise<boolean> => {
+    try {
+      console.log('🔐 [AuthContext] Checking if user has PIN in database...');
+      const deviceId = await deviceManager.getDeviceId();
+      const securitySettings = await securityAPI.getSecuritySettings(deviceId);
+      const hasPin = !!securitySettings && !!securitySettings.encryptedPin;
+      console.log('🔐 [AuthContext] PIN check result:', { hasPin });
+      return hasPin;
+    } catch (error) {
+      console.log('🔐 [AuthContext] PIN check failed, assuming no PIN:', error);
+      return false;
+    }
+  };
 
   // Initialize device trust state
   const initializeDeviceState = async () => {
@@ -290,6 +313,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Initialize device state after loading auth
         await initializeDeviceState();
 
+        // PIN is now optional - no mandatory setup required
+        setNeedsPinSetup(false);
+
       } catch (error) {
         console.log('❌ [AuthContext] Error during auth state loading:', error);
         // Don't aggressively clear auth data for minor errors - let user stay logged in
@@ -421,6 +447,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } else {
             console.log('✅ [AuthContext] Short-term persistent session created (7 days)');
           }
+
+          // Register device with backend for trusted device management
+          try {
+            const deviceInfo = await deviceManager.getDeviceInfo();
+            // Generate device fingerprint for secure identification
+            const deviceFingerprint = await deviceManager.generateDeviceFingerprint();
+
+            const registrationResult = await deviceAPI.registerDevice({
+              deviceId: deviceInfo.deviceId,
+              deviceFingerprint: deviceFingerprint,
+              deviceName: deviceInfo.deviceName,
+              platform: deviceInfo.platform,
+              appVersion: deviceInfo.appVersion,
+              rememberMe: rememberMe || false
+            });
+
+            if (registrationResult.success) {
+              console.log('✅ [AuthContext] Device registered with backend successfully');
+            } else {
+              console.log('⚠️ [AuthContext] Device registration failed but continuing login:', registrationResult.message);
+            }
+          } catch (deviceRegError) {
+            console.log('⚠️ [AuthContext] Device registration error (non-blocking):', deviceRegError);
+          }
         } else {
           console.log('❌ [AuthContext] Cannot create persistent session - missing data:', {
             missingRefreshToken: !responseData.refreshToken,
@@ -431,14 +481,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Initialize device state
         await initializeDeviceState();
 
-        // Note: Security/PIN setup will be handled by SecurityContext after login
-        console.log('🔐 [AuthContext] Login complete - SecurityContext will handle PIN setup if needed');
-
         // Verify tokens were stored
         const storedAccessToken = await AsyncStorage.getItem("accessToken");
         const storedIdToken = await AsyncStorage.getItem("idToken");
 
-        return { success: true };
+        return { 
+          success: true, 
+          needsPinSetup: false 
+        };
       } else {
         return {
           success: false,
@@ -517,6 +567,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } else {
             console.log('✅ [AuthContext] Short-term persistent session created for Apple login (7 days)');
           }
+
+          // Register device with backend for trusted device management
+          try {
+            const deviceInfo = await deviceManager.getDeviceInfo();
+            // Generate device fingerprint for secure identification
+            const deviceFingerprint = await deviceManager.generateDeviceFingerprint();
+
+            const registrationResult = await deviceAPI.registerDevice({
+              deviceId: deviceInfo.deviceId,
+              deviceFingerprint: deviceFingerprint,
+              deviceName: deviceInfo.deviceName,
+              platform: deviceInfo.platform,
+              appVersion: deviceInfo.appVersion,
+              rememberMe: rememberMe || false
+            });
+
+            if (registrationResult.success) {
+              console.log('✅ [AuthContext] Device registered with backend successfully (Apple login)');
+            } else {
+              console.log('⚠️ [AuthContext] Apple login device registration failed but continuing login:', registrationResult.message);
+            }
+          } catch (deviceRegError) {
+            console.log('⚠️ [AuthContext] Apple login device registration error (non-blocking):', deviceRegError);
+          }
         } else {
           console.log('❌ [AuthContext] Cannot create Apple persistent session - missing data:', {
             missingRefreshToken: !tokens.refreshToken,
@@ -593,8 +667,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         // Initialize device state
         await initializeDeviceState();
-
-        return { success: true };
+        
+        return { 
+          success: true, 
+          needsPinSetup: false 
+        };
       } else {
         return {
           success: false,
@@ -677,10 +754,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoggedIn(false);
       setUser(null);
       setUserBudget(null);
+      setNeedsPinSetup(false);
 
     } catch (error) {
       // Silent error handling
     }
+  };
+
+  // Function to clear the PIN setup requirement (called after PIN is set up)
+  const clearNeedsPinSetup = () => {
+    console.log('🔐 [AuthContext] Clearing PIN setup requirement');
+    setNeedsPinSetup(false);
   };
 
   // Function to manually clear all stored data (for testing)
@@ -818,6 +902,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         isLoggedIn,
         user,
         userBudget,
+        needsPinSetup,
         login,
         loginWithApple,
         autoLoginAfterVerification,
@@ -825,6 +910,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         logout,
         clearAllData,
         clearCorruptedCache,
+        clearNeedsPinSetup,
         loading,
         isDeviceTrusted,
         setRememberMe,

@@ -7,6 +7,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useSecurity } from "../../contexts/SecurityContext";
 import { bankingAPI, budgetAPI } from "../../services/api";
 import { SPACING } from "../../constants/Colors";
 import { APP_STRINGS } from "../../constants/strings";
@@ -102,6 +103,7 @@ const getDisplayAccountType = (accountType: string | undefined): string => {
 
 export default function HomePage() {
   const { colors } = useTheme();
+  const { isLocked } = useSecurity();
   
   const styles = createStyles(colors);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -114,6 +116,7 @@ export default function HomePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshingTransactions, setRefreshingTransactions] = useState(false);
   const [refreshingBanks, setRefreshingBanks] = useState(false);
+  const [fetchingData, setFetchingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [hasExpiredBanks, setHasExpiredBanks] = useState(false);
@@ -122,18 +125,34 @@ export default function HomePage() {
   const [cachedBalanceData, setCachedBalanceData] = useState<CachedBalanceData | null>(null);
 
   const fetchData = async () => {
+    // Prevent concurrent API calls that can overload the app
+    if (fetchingData) {
+      console.log("🚫 [HomePage] Data fetch already in progress, skipping...");
+      return;
+    }
+    
     try {
+      setFetchingData(true);
       setLoading(true);
       setError(null);
       setWarning(null);
 
       console.log("=== STARTING DATA FETCH ===");
 
+      // Check if app is locked first
+      if (isLocked) {
+        console.log("🔒 [HomePage] App is locked, skipping data fetch to prevent session expiry");
+        setLoading(false);
+        setFetchingData(false);
+        return;
+      }
+
       // Check authentication first
       const accessToken = await AsyncStorage.getItem("accessToken");
       if (!accessToken) {
         setWarning(APP_STRINGS.HOME.LOGIN_WARNING);
         setLoading(false);
+        setFetchingData(false);
         return;
       }
 
@@ -344,6 +363,7 @@ export default function HomePage() {
       }
     } finally {
       setLoading(false);
+      setFetchingData(false);
     }
   };
 
@@ -481,6 +501,14 @@ export default function HomePage() {
     };
     checkBankConnected();
   }, []);
+
+  // Fetch data when app gets unlocked
+  useEffect(() => {
+    if (!isLocked) {
+      console.log("🔓 [HomePage] App unlocked, fetching data...");
+      fetchData();
+    }
+  }, [isLocked]);
 
   const percentUsed = userBudget ? (thisMonthSpent / userBudget) * 100 : 0;
   const recentTransactions = transactions.slice(0, 5);

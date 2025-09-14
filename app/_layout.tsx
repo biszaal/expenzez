@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { AppState, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
+import { useSegments, useRouter } from "expo-router";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
 import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
@@ -11,6 +12,24 @@ import { NotificationProvider } from "../contexts/NotificationContext";
 import { NetworkProvider } from "../contexts/NetworkContext";
 import BiometricSecurityLock from "../components/BiometricSecurityLock";
 import { AppLoadingScreen } from "../components/ui/AppLoadingScreen";
+import PinSetupScreen from "./auth/PinSetup";
+
+// Global error handlers to catch crashes
+if (typeof global !== 'undefined' && (global as any).ErrorUtils) {
+  (global as any).ErrorUtils.setGlobalHandler?.((error: Error, isFatal: boolean) => {
+    console.error('🚨 [GLOBAL ERROR]', { isFatal, error: error.message, stack: error.stack });
+  });
+}
+
+// Catch unhandled promise rejections
+process.on?.('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  console.error('🚨 [UNHANDLED PROMISE REJECTION]', reason);
+});
+
+// Catch uncaught exceptions
+process.on?.('uncaughtException', (error: Error) => {
+  console.error('🚨 [UNCAUGHT EXCEPTION]', error.message, error.stack);
+});
 
 // Simple Error Boundary Component
 interface ErrorBoundaryProps {
@@ -33,7 +52,11 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error Boundary caught an error:', error, errorInfo);
+    console.error('🚨 [ErrorBoundary] CRITICAL ERROR CAUGHT:', error);
+    console.error('🚨 [ErrorBoundary] Error stack:', error.stack);
+    console.error('🚨 [ErrorBoundary] Component stack:', errorInfo.componentStack);
+    console.error('🚨 [ErrorBoundary] Error name:', error.name);
+    console.error('🚨 [ErrorBoundary] Error message:', error.message);
   }
 
   render() {
@@ -54,9 +77,11 @@ function RootLayoutNav() {
   const auth = useAuth();
   const isLoggedIn = auth?.isLoggedIn ?? false;
   const loading = auth?.loading ?? true;
-  const { isLocked, isSecurityEnabled, needsPinSetup, unlockApp } = useSecurity();
+  const { isLocked, isSecurityEnabled, needsPinSetup, unlockApp, isInitialized: securityInitialized } = useSecurity();
   const [isLoading, setIsLoading] = useState(true);
   const [hasValidSession, setHasValidSession] = useState(false);
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const segments = useSegments();
 
   // Quick session check on app startup
   useEffect(() => {
@@ -97,6 +122,11 @@ function RootLayoutNav() {
       setIsLoading(false);
     }
   }, [loading, isLoading]);
+
+  // PIN setup is now optional - no mandatory setup required
+  useEffect(() => {
+    setShowPinSetup(false);
+  }, []);
 
 
   useEffect(() => {
@@ -225,24 +255,42 @@ function RootLayoutNav() {
     return () => subscription?.remove();
   }, [auth]);
 
-  if (isLoading || loading) {
-    console.log(`🔄 [Layout] Showing loading screen: isLoading=${isLoading}, loading=${loading}`);
-    return <AppLoadingScreen message="Setting up your account..." />;
+  if (isLoading || loading || !securityInitialized) {
+    console.log(`🔄 [Layout] Showing loading screen: isLoading=${isLoading}, loading=${loading}, securityInitialized=${securityInitialized}`);
+    const message = !securityInitialized ? "Initializing security..." : "Setting up your account...";
+    return <AppLoadingScreen message={message} />;
   }
 
-  // Show security lock if app is locked
-  if (isLoggedIn && isLocked) {
-    return <BiometricSecurityLock isVisible={true} onUnlock={async () => unlockApp()} />;
+  // PIN is now optional - no mandatory setup screen needed
+
+  // Check if current route is the security settings page or related security pages
+  const currentRoute = segments.join('/');
+  const isOnSecurityPage = currentRoute.includes('security');
+
+  // Show security lock if app is locked, but NOT if user is trying to access security settings
+  console.log('🔐 [Layout] Security check:', {
+    isLoggedIn,
+    isLocked,
+    isSecurityEnabled,
+    currentRoute,
+    isOnSecurityPage
+  });
+
+  // Show security lock if app is locked - this takes priority over everything
+  if (isLoggedIn && isLocked && !isOnSecurityPage) {
+    console.log('🔐 [Layout] App is LOCKED - showing PIN screen ONLY');
+    return (
+      <View style={{ flex: 1 }}>
+        <BiometricSecurityLock isVisible={true} onUnlock={async () => unlockApp()} />
+      </View>
+    );
   }
 
   // Determine if user should be treated as logged in
   const shouldTreatAsLoggedIn = isLoggedIn || hasValidSession;
   
-  // Determine initial route based on PIN setup status
+  // Determine initial route - PIN is optional, no forced setup
   let initialRoute = shouldTreatAsLoggedIn ? "(tabs)" : "auth/Login";
-  if (shouldTreatAsLoggedIn && needsPinSetup) {
-    initialRoute = "security/index"; // Redirect to security settings to set up PIN
-  }
   
   return (
     <Stack 
@@ -255,6 +303,7 @@ function RootLayoutNav() {
       <Stack.Screen name="profile/index" />
       <Stack.Screen name="profile/personal" />
       <Stack.Screen name="security/index" />
+      <Stack.Screen name="security/create-pin" />
       <Stack.Screen name="notifications/index" />
       <Stack.Screen name="payment/index" />
       <Stack.Screen name="help/index" />
