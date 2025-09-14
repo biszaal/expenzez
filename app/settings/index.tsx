@@ -5,19 +5,15 @@ import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Switch, Alert, Li
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme, ColorScheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../auth/AuthContext";
-import { useNotifications } from "../../contexts/NotificationContext";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { colors, colorScheme, setColorScheme, isDark } = useTheme();
   const { logout } = useAuth();
-  const { preferences, updatePreferences, loading: notificationLoading } = useNotifications();
 
-  // Local state for various settings
+  // Local state for settings
   const [currency, setCurrency] = useState("GBP");
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const [dataSync, setDataSync] = useState(true);
 
   const themeOptions = [
     {
@@ -215,69 +211,11 @@ export default function SettingsPage() {
             </View>
           </View>
 
-          {/* Account Settings Section */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Account Settings
-            </Text>
-            
-            <TouchableOpacity
-              style={[
-                styles.settingItem,
-                {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-            >
-              <Ionicons
-                name="mail-outline"
-                size={22}
-                color={colors.primary[500]}
-                style={{ marginRight: 14 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
-                Change Email
-              </Text>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.text.tertiary}
-              />
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[
-                styles.settingItem,
-                {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-            >
-              <Ionicons
-                name="key-outline"
-                size={22}
-                color={colors.primary[500]}
-                style={{ marginRight: 14 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
-                Change Password
-              </Text>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.text.tertiary}
-              />
-            </TouchableOpacity>
-          </View>
 
-          {/* Financial Settings */}
+          {/* App Settings */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Financial Settings
+              App Settings
             </Text>
             
             <TouchableOpacity
@@ -345,95 +283,8 @@ export default function SettingsPage() {
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
               Preferences
             </Text>
-            
-            {/* Push Notifications */}
-            <View
-              style={[
-                styles.settingItem,
-                {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-            >
-              <Ionicons
-                name="notifications-outline"
-                size={22}
-                color={colors.primary[500]}
-                style={{ marginRight: 14 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
-                Push Notifications
-              </Text>
-              <Switch
-                value={preferences?.pushEnabled ?? true}
-                onValueChange={(value) => { updatePreferences({ pushEnabled: value }); }}
-                trackColor={{ false: colors.background.tertiary, true: colors.primary[200] || colors.primary[500] + '40' }}
-                thumbColor={preferences?.pushEnabled ? colors.primary[500] : colors.text.tertiary}
-                disabled={notificationLoading}
-              />
-            </View>
 
-            {/* Transaction Alerts */}
-            <View
-              style={[
-                styles.settingItem,
-                {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-            >
-              <Ionicons
-                name="swap-horizontal-outline"
-                size={22}
-                color={colors.success[500]}
-                style={{ marginRight: 14 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
-                Transaction Alerts
-              </Text>
-              <Switch
-                value={preferences?.transactionAlerts ?? true}
-                onValueChange={(value) => { updatePreferences({ transactionAlerts: value }); }}
-                trackColor={{ false: colors.background.tertiary, true: colors.primary[200] || colors.primary[500] + '40' }}
-                thumbColor={preferences?.transactionAlerts ? colors.primary[500] : colors.text.tertiary}
-                disabled={notificationLoading}
-              />
-            </View>
-
-            {/* Budget Alerts */}
-            <View
-              style={[
-                styles.settingItem,
-                {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-            >
-              <Ionicons
-                name="trending-up-outline"
-                size={22}
-                color={colors.warning[500]}
-                style={{ marginRight: 14 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
-                Budget Alerts
-              </Text>
-              <Switch
-                value={preferences?.budgetAlerts ?? true}
-                onValueChange={(value) => { updatePreferences({ budgetAlerts: value }); }}
-                trackColor={{ false: colors.background.tertiary, true: colors.primary[200] || colors.primary[500] + '40' }}
-                thumbColor={preferences?.budgetAlerts ? colors.primary[500] : colors.text.tertiary}
-                disabled={notificationLoading}
-              />
-            </View>
-
-            {/* View Notification History */}
+            {/* Notifications */}
             <TouchableOpacity
               style={[
                 styles.settingItem,
@@ -443,16 +294,16 @@ export default function SettingsPage() {
                 },
                 shadows.sm,
               ]}
-              onPress={() => router.push("/notifications")}
+              onPress={() => router.push("/notifications/preferences")}
             >
               <Ionicons
-                name="time-outline"
+                name="notifications-outline"
                 size={22}
                 color={colors.primary[500]}
                 style={{ marginRight: 14 }}
               />
               <Text style={[styles.settingText, { color: colors.text.primary }]}>
-                Notification History
+                Notifications
               </Text>
               <Ionicons
                 name="chevron-forward"
@@ -461,33 +312,6 @@ export default function SettingsPage() {
               />
             </TouchableOpacity>
 
-            <View
-              style={[
-                styles.settingItem,
-                {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-            >
-              <Ionicons
-                name="sync-outline"
-                size={22}
-                color={colors.primary[500]}
-                style={{ marginRight: 14 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
-                Auto Data Sync
-              </Text>
-              <Switch
-                value={dataSync}
-                onValueChange={setDataSync}
-                trackColor={{ false: colors.background.tertiary, true: colors.primary[200] || colors.primary[500] + '40' }}
-                thumbColor={dataSync ? colors.primary[500] : colors.text.tertiary}
-              />
-            </View>
-            
             <TouchableOpacity
               style={[
                 styles.settingItem,
@@ -516,10 +340,10 @@ export default function SettingsPage() {
             </TouchableOpacity>
           </View>
 
-          {/* Data Management */}
+          {/* Account */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Data Management
+              Account
             </Text>
             
             <TouchableOpacity
@@ -604,12 +428,12 @@ export default function SettingsPage() {
             </TouchableOpacity>
           </View>
 
-          {/* Support & Legal */}
+          {/* Support */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Support & Legal
+              Support
             </Text>
-            
+
             <TouchableOpacity
               style={[
                 styles.settingItem,
@@ -635,58 +459,6 @@ export default function SettingsPage() {
                 size={20}
                 color={colors.text.tertiary}
               />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.settingItem,
-                {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-              onPress={() => router.push("/terms")}
-            >
-              <Ionicons
-                name="document-text-outline"
-                size={22}
-                color={colors.primary[500]}
-                style={{ marginRight: 14 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
-                Terms & Privacy
-              </Text>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.text.tertiary}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.settingItem,
-                {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-              onPress={() => Alert.alert("Version", "expenzez v1.0.0\nBuild 2024.1")}
-            >
-              <Ionicons
-                name="information-circle-outline"
-                size={22}
-                color={colors.primary[500]}
-                style={{ marginRight: 14 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
-                App Version
-              </Text>
-              <Text style={[styles.settingValueText, { color: colors.text.secondary }]}>
-                v1.0.0
-              </Text>
             </TouchableOpacity>
           </View>
 

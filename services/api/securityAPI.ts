@@ -47,7 +47,7 @@ const getEncryptionKey = async (): Promise<string> => {
     // Create a unique key combining device ID and user info
     return CryptoJS.SHA256(`${deviceId}_${userInfo}_expenzez_security`).toString();
   } catch (_error) {
-    console.warn('Error generating encryption key, using fallback:', error);
+    console.warn('Error generating encryption key, using fallback:', _error);
     // Fallback to a simpler key for Expo Go
     return 'expenzez_fallback_key_12345';
   }
@@ -123,9 +123,16 @@ export const securityAPI = {
           await AsyncStorage.setItem('@expenzez_biometric_enabled', 'true');
         }
         
+        // Clear PIN removal flag since new PIN is now created
+        await AsyncStorage.removeItem('@expenzez_pin_removed');
+        
+        console.log('🔒 [SecurityAPI] ✅ PIN setup successful - stored locally and on server');
+        console.log('🔒 [SecurityAPI] Server response:', response.data);
         return { success: true };
       } else {
-        return { success: false, error: 'Failed to set up PIN' };
+        console.log('🔒 [SecurityAPI] ❌ Server setup failed with status:', response.status);
+        console.log('🔒 [SecurityAPI] Response data:', response.data);
+        return { success: false, error: response.data?.message || 'Failed to set up PIN' };
       }
     } catch (error: any) {
       // Skip logging in development - fallback works fine
@@ -135,12 +142,19 @@ export const securityAPI = {
       
       // Fallback: store locally if server is unavailable
       if (error.response?.status === 404 || !error.response) {
-        console.log('Server unavailable, storing PIN locally only');
+        console.log('🔒 [SecurityAPI] ⚠️ Server unavailable, storing PIN locally only');
+        console.log('🔒 [SecurityAPI] Error details:', error.message);
+        
         await AsyncStorage.setItem('@expenzez_app_password', request.pin);
         await AsyncStorage.setItem('@expenzez_security_enabled', 'true');
         if (request.biometricEnabled) {
           await AsyncStorage.setItem('@expenzez_biometric_enabled', 'true');
         }
+        
+        // Clear PIN removal flag since new PIN is now created
+        await AsyncStorage.removeItem('@expenzez_pin_removed');
+        
+        console.log('🔒 [SecurityAPI] ✅ PIN stored locally as fallback (server will sync later)');
         return { success: true };
       }
       
@@ -156,9 +170,42 @@ export const securityAPI = {
    */
   validatePin: async (request: ValidatePinRequest): Promise<SecurityValidationResponse> => {
     try {
+      console.log('🔒 [SecurityAPI] Validating PIN for device:', request.deviceId);
+      
+      // Check if security is enabled
+      const securityEnabled = await AsyncStorage.getItem('@expenzez_security_enabled');
+      if (securityEnabled !== 'true') {
+        console.log('🔒 [SecurityAPI] Security not enabled, rejecting PIN validation');
+        return { success: false, error: 'Security not enabled' };
+      }
+      
       // First validate locally for immediate feedback
       const localPin = await AsyncStorage.getItem('@expenzez_app_password');
-      if (localPin && localPin === request.pin) {
+      console.log('🔒 [SecurityAPI] Local PIN check:', { 
+        hasLocalPin: !!localPin, 
+        localPin: localPin?.substring(0, 2) + '***',
+        requestPin: request.pin.substring(0, 2) + '***',
+        matches: localPin === request.pin 
+      });
+
+      // If no local PIN exists, validation should fail
+      if (!localPin) {
+        console.log('🔒 [SecurityAPI] No local PIN found, validation failed');
+        
+        // EMERGENCY FIX: If no PIN exists, completely disable security to prevent lock loop
+        console.log('🚨 [SecurityAPI] EMERGENCY: No PIN found but app is locked - force disabling security');
+        await AsyncStorage.multiRemove([
+          '@expenzez_security_enabled',
+          '@expenzez_app_locked', 
+          '@expenzez_last_unlock',
+          '@expenzez_biometric_enabled'
+        ]);
+        
+        return { success: false, error: 'No PIN set up - security disabled' };
+      }
+      
+      if (localPin === request.pin) {
+        console.log('🔒 [SecurityAPI] Local validation successful');
         // Try to sync with server, but don't fail if server is down
         try {
           const encryptedPin = await encryptPin(request.pin);
@@ -166,14 +213,22 @@ export const securityAPI = {
             encryptedPin,
             deviceId: request.deviceId,
           });
-        } catch (_serverError) {
-          console.log('Server validation failed, but local validation succeeded');
+          console.log('🔒 [SecurityAPI] Local and server validation both successful');
+        } catch (serverError: any) {
+          console.log('🔒 [SecurityAPI] Server validation failed, but local validation succeeded - continuing...', {
+            status: serverError.response?.status,
+            isNetworkError: !serverError.response,
+            error: serverError.message
+          });
+          // Don't let server validation errors affect local validation success
+          // This prevents session logout when PIN is correct but server has issues
         }
         
         return { success: true };
       }
 
       // If local validation fails, try server validation
+      console.log('🔒 [SecurityAPI] Local validation failed, trying server validation');
       const encryptedPin = await encryptPin(request.pin);
       const response = await api.post('/security/validate-pin', {
         encryptedPin,
@@ -181,27 +236,35 @@ export const securityAPI = {
       });
 
       if (response.status === 200) {
+        console.log('🔒 [SecurityAPI] Server validation successful, updating local storage');
         // Update local storage with server's PIN
         await AsyncStorage.setItem('@expenzez_app_password', request.pin);
         return { success: true };
       } else {
+        console.log('🔒 [SecurityAPI] Server validation failed with status:', response.status);
         return { success: false, error: 'Invalid PIN' };
       }
     } catch (error: any) {
-      // Skip logging in development - fallback works fine
-      if (error.response?.status !== 404 && !error.message?.includes('Network Error')) {
-        console.error('PIN validation error:', error);
-      }
+      console.log('🔒 [SecurityAPI] Server validation failed, using local fallback:', {
+        errorType: error.constructor.name,
+        status: error.response?.status,
+        isNetworkError: !error.response,
+        hasLocalPin: !!(await AsyncStorage.getItem('@expenzez_app_password'))
+      });
       
-      // Fallback to local validation only
+      // For security endpoints, server failures (like 401) are expected for incorrect PINs
+      // Always fallback to local validation if server fails
       const localPin = await AsyncStorage.getItem('@expenzez_app_password');
       if (localPin && localPin === request.pin) {
+        console.log('🔒 [SecurityAPI] Local PIN validation successful (server failed)');
         return { success: true };
       }
       
+      console.log('🔒 [SecurityAPI] Both server and local validation failed');
+      // For PIN validation, we return a specific error that won't cause logout
       return { 
         success: false, 
-        error: 'Invalid PIN' 
+        error: 'Invalid PIN'
       };
     }
   },
@@ -211,26 +274,39 @@ export const securityAPI = {
    */
   getSecuritySettings: async (deviceId: string): Promise<SecuritySettings | null> => {
     try {
+      console.log('🔒 [SecurityAPI] Fetching security settings from server for device:', deviceId);
       const response = await api.get(`/security/settings/${deviceId}`);
       
       if (response.status === 200) {
+        console.log('🔒 [SecurityAPI] ✅ Server security settings found:', { 
+          hasEncryptedPin: !!response.data?.encryptedPin,
+          biometricEnabled: response.data?.biometricEnabled 
+        });
         return response.data;
       }
+      console.log('🔒 [SecurityAPI] Server returned non-200 status:', response.status);
       return null;
     } catch (error: any) {
-      // Skip all logging in development - fallback works fine
+      console.log('🔒 [SecurityAPI] ⚠️ Server security settings fetch failed, using local fallback');
+      console.log('🔒 [SecurityAPI] Error:', error.response?.status || error.message);
       
       // Fallback: return local settings
       const localPin = await AsyncStorage.getItem('@expenzez_app_password');
       const biometricEnabled = await AsyncStorage.getItem('@expenzez_biometric_enabled');
       const user = await AsyncStorage.getItem('user');
       
+      console.log('🔒 [SecurityAPI] Local fallback check:', { 
+        hasLocalPin: !!localPin,
+        hasUser: !!user,
+        biometricEnabled: biometricEnabled === 'true'
+      });
+      
       if (localPin && user) {
         try {
           const userObj = JSON.parse(user);
           const encryptedPin = await encryptPin(localPin);
           
-          return {
+          const localSettings = {
             userId: userObj.username || userObj.id,
             encryptedPin,
             biometricEnabled: biometricEnabled === 'true',
@@ -238,11 +314,15 @@ export const securityAPI = {
             lastUpdated: Date.now(),
             createdAt: Date.now(),
           };
+          
+          console.log('🔒 [SecurityAPI] ✅ Local security settings created as fallback');
+          return localSettings;
         } catch (parseError) {
-          console.error('Error parsing local user data:', parseError);
+          console.error('🔒 [SecurityAPI] ❌ Error parsing local user data:', parseError);
         }
       }
       
+      console.log('🔒 [SecurityAPI] ❌ No local PIN or user data found');
       return null;
     }
   },
@@ -339,7 +419,12 @@ export const securityAPI = {
         return { success: false, error: 'Failed to remove PIN' };
       }
     } catch (error: any) {
-      console.error('Remove PIN error:', error);
+      // Only log non-network errors to reduce noise
+      if (error.response?.status !== 404 && !error.message?.includes('Network Error') && !error.message?.includes('timeout')) {
+        console.log('🔒 [SecurityAPI] Server PIN removal had issues, using local fallback:', error.message);
+      } else {
+        console.log('🔒 [SecurityAPI] Server unavailable during PIN removal, clearing locally');
+      }
       
       // Fallback: clear local storage
       await AsyncStorage.multiRemove([

@@ -1,6 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   ScrollView,
   Text,
@@ -53,7 +53,7 @@ export default function BillsScreen() {
     { name: "Inactive", icon: "pause-circle-outline", color: colors.text.secondary },
   ];
 
-  const fetchBills = async (showRefresh = false) => {
+  const fetchBills = useCallback(async (showRefresh = false) => {
     try {
       if (showRefresh) setRefreshing(true);
       else setLoading(true);
@@ -166,7 +166,7 @@ export default function BillsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [setRefreshing, setLoading, setBills, showSuccess, showError]);
 
   const onRefresh = () => {
     fetchBills(true);

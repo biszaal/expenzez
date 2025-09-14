@@ -17,7 +17,32 @@ export const AppleSignInButton: React.FC<AppleSignInButtonProps> = ({
   type = 'sign-in',
   disabled = false 
 }) => {
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
+  const [isChecking, setIsChecking] = React.useState(true);
+  const [isAvailable, setIsAvailable] = React.useState(false);
+
+  React.useEffect(() => {
+    // Only check availability on iOS devices
+    if (Platform.OS !== 'ios') {
+      setIsChecking(false);
+      setIsAvailable(false);
+      return;
+    }
+    const checkAvailability = async () => {
+      try {
+        const available = await AppleAuthentication.isAvailableAsync();
+        console.log('🍎 [AppleButton] Availability check result:', available);
+        setIsAvailable(available);
+      } catch (error) {
+        console.log('🍎 [AppleButton] Availability check failed:', error);
+        setIsAvailable(false);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+    
+    checkAvailability();
+  }, []);
 
   // Only show on iOS devices
   if (Platform.OS !== 'ios') {
@@ -25,24 +50,58 @@ export const AppleSignInButton: React.FC<AppleSignInButtonProps> = ({
   }
 
   const buttonText = type === 'sign-up' ? 'Sign up with Apple' : 'Sign in with Apple';
+  const unavailableText = 'Apple Sign In (Dev Build Required)';
+
+  if (isChecking) {
+    return (
+      <TouchableOpacity
+        style={[
+          styles.appleButton,
+          {
+            backgroundColor: isDark ? '#666' : '#ccc',
+          }
+        ]}
+        disabled={true}
+      >
+        <View style={styles.appleButtonContent}>
+          <Ionicons 
+            name="logo-apple" 
+            size={18} 
+            color={isDark ? '#ccc' : '#666'} 
+            style={styles.appleIcon}
+          />
+          <Typography
+            variant="body"
+            weight="medium"
+            style={[
+              styles.appleButtonText,
+              { color: isDark ? '#ccc' : '#666' }
+            ]}
+          >
+            Checking Apple Sign In...
+          </Typography>
+        </View>
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <TouchableOpacity
       style={[
         styles.appleButton,
         {
-          backgroundColor: isDark ? '#fff' : '#000',
-          opacity: disabled ? 0.6 : 1,
+          backgroundColor: isAvailable ? (isDark ? '#fff' : '#000') : (isDark ? '#444' : '#888'),
+          opacity: (disabled || !isAvailable) ? 0.6 : 1,
         }
       ]}
-      onPress={onPress}
-      disabled={disabled}
+      onPress={isAvailable ? onPress : undefined}
+      disabled={disabled || !isAvailable}
     >
       <View style={styles.appleButtonContent}>
         <Ionicons 
           name="logo-apple" 
           size={18} 
-          color={isDark ? '#000' : '#fff'} 
+          color={isAvailable ? (isDark ? '#000' : '#fff') : (isDark ? '#888' : '#ccc')} 
           style={styles.appleIcon}
         />
         <Typography
@@ -50,10 +109,10 @@ export const AppleSignInButton: React.FC<AppleSignInButtonProps> = ({
           weight="medium"
           style={[
             styles.appleButtonText,
-            { color: isDark ? '#000' : '#fff' }
+            { color: isAvailable ? (isDark ? '#000' : '#fff') : (isDark ? '#888' : '#ccc') }
           ]}
         >
-          {buttonText}
+          {isAvailable ? buttonText : unavailableText}
         </Typography>
       </View>
     </TouchableOpacity>
@@ -65,10 +124,14 @@ export const useAppleSignIn = () => {
     try {
       // Check if Apple Authentication is available
       const isAvailable = await AppleAuthentication.isAvailableAsync();
+      console.log('🍎 [Apple Auth] Availability check:', { isAvailable });
+      
       if (!isAvailable) {
-        throw new Error('Apple Sign In is not available on this device');
+        throw new Error('Apple Sign In is not available. This feature requires a development build with Expo SDK 54+.');
       }
 
+      console.log('🍎 [Apple Auth] Starting sign in process...');
+      
       // Request Apple Authentication
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -77,32 +140,48 @@ export const useAppleSignIn = () => {
         ],
       });
 
+      console.log('🍎 [Apple Auth] Sign in successful:', {
+        hasIdentityToken: !!credential.identityToken,
+        hasAuthorizationCode: !!credential.authorizationCode,
+        hasUser: !!credential.user,
+        hasEmail: !!credential.email,
+      });
+
       return credential;
     } catch (error: any) {
-      console.log('Apple Sign In error details:', error);
+      console.error('🍎 [Apple Auth] Error details:', {
+        message: error.message,
+        code: error.code,
+        name: error.name,
+        stack: error.stack?.split('\n').slice(0, 3),
+      });
       
       // Handle different types of cancellation and errors
       if (error.code === 'ERR_REQUEST_CANCELED') {
         // User canceled the sign-in flow - return null to indicate cancellation
-        console.log('User canceled Apple Sign In');
+        console.log('🍎 [Apple Auth] User canceled Apple Sign In');
         return null;
       } else if (error.code === 'ERR_INVALID_RESPONSE') {
         // Apple returned an invalid response
-        console.error('Apple Sign In invalid response:', error);
+        console.error('🍎 [Apple Auth] Invalid response:', error);
         throw new Error('Apple Sign In encountered an issue. Please try again.');
       } else if (error.code === 'ERR_REQUEST_FAILED') {
         // Network or server error
-        console.error('Apple Sign In request failed:', error);
+        console.error('🍎 [Apple Auth] Request failed:', error);
         throw new Error('Network error during Apple Sign In. Please check your connection.');
       } else if (error.message?.toLowerCase().includes('not available')) {
-        // Apple Sign In not available
-        console.error('Apple Sign In not available:', error);
-        throw new Error('Apple Sign In is not available on this device.');
+        // Apple Sign In not available - likely Expo Go limitation
+        console.error('🍎 [Apple Auth] Not available (likely Expo Go limitation):', error);
+        throw new Error('Apple Sign In requires a development build. Use "npx expo run:ios" or build with EAS to enable this feature.');
+      } else if (error.message?.includes('development build')) {
+        // Development build required
+        console.error('🍎 [Apple Auth] Development build required:', error);
+        throw new Error('Apple Sign In requires a development build. This feature is not supported in Expo Go.');
       }
       
       // Re-throw other errors with more context
-      console.error('Unexpected Apple Sign In error:', error);
-      throw error;
+      console.error('🍎 [Apple Auth] Unexpected error:', error);
+      throw new Error(`Apple Sign In failed: ${error.message || 'Unknown error'}`);
     }
   };
 

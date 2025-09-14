@@ -191,21 +191,25 @@ export default function Login() {
         }
       }
     } catch (error: any) {
-      console.error('Apple Sign In error:', error);
+      console.error('🍎 [Login] Apple Sign In error:', error);
       
       // Handle different types of Apple Sign In errors
       if (error.code === 'ERR_REQUEST_CANCELED') {
         // User canceled - do not show error message
+        console.log('🍎 [Login] User canceled Apple Sign In');
         return;
       } else if (error.code === 'ERR_INVALID_RESPONSE') {
         showError('Apple Sign In encountered an issue. Please try again.');
-      } else if (error.message?.includes('not available')) {
-        showError('Apple Sign In is not available on this device.');
+      } else if (error.message?.includes('not available') || error.message?.includes('development build')) {
+        showError('Apple Sign In requires a development build. Please use "npx expo run:ios" or regular login for now.');
+      } else if (error.message?.includes('Dev Build Required')) {
+        showError('Apple Sign In is not supported in Expo Go. Please use regular login or create a development build.');
       } else if (error.message?.includes('network')) {
         showError('Network error during Apple Sign In. Please check your connection.');
       } else {
         // Generic fallback error
-        showError('Apple Sign In failed. Please try again or use regular login.');
+        const errorMsg = error.message || 'Apple Sign In failed. Please try again or use regular login.';
+        showError(errorMsg);
       }
     } finally {
       setIsLoading(false);

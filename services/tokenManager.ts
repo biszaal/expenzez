@@ -62,7 +62,7 @@ class TokenManager {
     const expiresAt = this.parseJWTExpiration(token) || 0;
     const now = Date.now();
     const isExpired = expiresAt <= now;
-    const shouldRefresh = expiresAt <= now + 5 * 60 * 1000; // 5 minutes before expiry
+    const shouldRefresh = expiresAt <= now + 15 * 60 * 1000; // 15 minutes before expiry (increased from 5 minutes)
 
 
     return {
@@ -126,7 +126,7 @@ class TokenManager {
 
       await Promise.all(storagePromises);
     } catch (_error) {
-      throw error;
+      throw _error;
     }
   }
 
@@ -170,10 +170,10 @@ class TokenManager {
     const isTrustedDevice = await deviceManager.isDeviceTrusted();
     const persistentSession = await deviceManager.getPersistentSession();
     
-    // Longer grace periods for trusted devices with persistent sessions
-    const maxExpiredTime = isTrustedDevice && persistentSession ? 
-      (7 * 24 * 60 * 60 * 1000) : // 7 days for trusted devices
-      (2 * 60 * 60 * 1000); // 2 hours for non-trusted devices
+    // Much longer grace periods for better user experience
+    const maxExpiredTime = isTrustedDevice && persistentSession ?
+      (30 * 24 * 60 * 60 * 1000) : // 30 days for trusted devices
+      (7 * 24 * 60 * 60 * 1000); // 7 days for non-trusted devices (increased from 2 hours)
     
     if (tokenInfo.isExpired && timeExpired > maxExpiredTime) {
       // Try to restore from persistent session before clearing tokens
@@ -258,11 +258,11 @@ class TokenManager {
    * Refresh token if needed (with deduplication and retry limits)
    */
   async refreshTokenIfNeeded(): Promise<string | null> {
-    // Check if we've tried too many times recently
+    // Check if we've tried too many times recently - be more lenient
     const now = Date.now();
     if (now - this.lastRefreshAttempt < 60000) { // 1 minute
-      if (this.refreshAttempts >= 5) { // Allow more attempts
-        // Don't clear tokens immediately - just return null and let app continue
+      if (this.refreshAttempts >= 10) { // Increased from 5 to 10 attempts
+        console.log('[TokenManager] Too many refresh attempts, waiting before retry');
         return null;
       }
     } else {
@@ -462,7 +462,7 @@ class TokenManager {
   }
 
   /**
-   * Check if tokens need refresh and refresh them
+   * Check if tokens need refresh and refresh them - now more proactive
    */
   async checkAndRefreshTokenIfNeeded(): Promise<void> {
     try {
@@ -472,8 +472,17 @@ class TokenManager {
       }
 
       const tokenInfo = await this.getTokenInfo(storedTokens.accessToken);
-      
-      if (tokenInfo.shouldRefresh || tokenInfo.isExpired) {
+
+      // Proactive refresh: if token has less than 75% of its lifetime remaining
+      const now = Date.now();
+      const tokenLifetime = tokenInfo.expiresAt - (tokenInfo.expiresAt - 3600000); // Assume 1 hour token lifetime
+      const timeElapsed = now - (tokenInfo.expiresAt - tokenLifetime);
+      const lifetimePercentage = timeElapsed / tokenLifetime;
+
+      const shouldProactivelyRefresh = lifetimePercentage > 0.75; // Refresh when 75% of lifetime has passed
+
+      if (tokenInfo.shouldRefresh || tokenInfo.isExpired || shouldProactivelyRefresh) {
+        console.log(`[TokenManager] Proactive token refresh triggered - lifetime: ${Math.round(lifetimePercentage * 100)}%`);
         await this.refreshTokenIfNeeded();
       }
     } catch (_error) {
@@ -519,7 +528,7 @@ class TokenManager {
       // If token is expired, check if it's been expired for too long
       const now = Date.now();
       const timeExpired = now - tokenInfo.expiresAt;
-      const isWithinGracePeriod = timeExpired <= 2 * 60 * 60 * 1000; // Allow up to 2 hours of expiry
+      const isWithinGracePeriod = timeExpired <= 7 * 24 * 60 * 60 * 1000; // Allow up to 7 days of expiry (increased from 2 hours)
       return isWithinGracePeriod;
     } catch (_error) {
       return false;
@@ -569,6 +578,13 @@ class TokenManager {
     if (this.appStateSubscription) {
       this.appStateSubscription.remove();
     }
+  }
+
+  /**
+   * Public method to refresh access token (for session manager)
+   */
+  async refreshAccessToken(): Promise<string | null> {
+    return await this.refreshTokenIfNeeded();
   }
 }
 

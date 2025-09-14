@@ -10,10 +10,8 @@ import {
   View,
   StyleSheet,
   TextInput,
-  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useNotifications, NotificationPreferences } from "../../contexts/NotificationContext";
@@ -24,291 +22,80 @@ import {
   typography,
 } from "../../constants/theme";
 
-interface PreferenceSection {
-  title: string;
-  icon: string;
-  description: string;
-  preferences: PreferenceItem[];
-}
-
 interface PreferenceItem {
   key: keyof NotificationPreferences;
   title: string;
   subtitle: string;
-  type: 'boolean' | 'number' | 'array' | 'time';
+  type: 'boolean' | 'number' | 'select';
   icon?: string;
   min?: number;
   max?: number;
   step?: number;
   unit?: string;
+  options?: { label: string; value: any }[];
 }
 
-const preferencesSections: PreferenceSection[] = [
+const simplifiedPreferences: PreferenceItem[] = [
   {
-    title: "Delivery Channels",
-    icon: "send-outline",
-    description: "Choose how you want to receive notifications",
-    preferences: [
-      {
-        key: "pushEnabled",
-        title: "Push Notifications",
-        subtitle: "Instant alerts on your device",
-        type: "boolean",
-        icon: "notifications-outline",
-      },
-      {
-        key: "emailEnabled", 
-        title: "Email Notifications",
-        subtitle: "Get updates via email",
-        type: "boolean",
-        icon: "mail-outline",
-      },
-      {
-        key: "smsEnabled",
-        title: "SMS Notifications",
-        subtitle: "Receive text message alerts",
-        type: "boolean",
-        icon: "chatbubble-outline",
-      },
-    ],
+    key: "pushEnabled",
+    title: "Push Notifications",
+    subtitle: "Master switch for all push notifications",
+    type: "boolean",
+    icon: "notifications-outline",
   },
   {
+    key: "transactionAlerts",
     title: "Transaction Alerts",
-    icon: "card-outline",
-    description: "Control when you&apos;re notified about spending",
-    preferences: [
-      {
-        key: "transactionAlerts",
-        title: "All Transaction Alerts",
-        subtitle: "Enable/disable all transaction notifications",
-        type: "boolean",
-        icon: "swap-horizontal-outline",
-      },
-      {
-        key: "minimumTransactionAmount",
-        title: "Minimum Amount",
-        subtitle: "Only notify for transactions above this amount",
-        type: "number",
-        min: 0,
-        max: 1000,
-        step: 1,
-        unit: "£",
-        icon: "calculator-outline",
-      },
-      {
-        key: "largeTransactionThreshold",
-        title: "Large Transaction Threshold",
-        subtitle: "Amount considered unusually large",
-        type: "number",
-        min: 100,
-        max: 5000,
-        step: 50,
-        unit: "£",
-        icon: "warning-outline",
-      },
-      {
-        key: "unusualSpendingAlerts",
-        title: "Unusual Spending Patterns",
-        subtitle: "Alert when spending deviates from normal patterns",
-        type: "boolean",
-        icon: "analytics-outline",
-      },
-      {
-        key: "newMerchantAlerts",
-        title: "New Merchant Alerts",
-        subtitle: "Notify when spending at new merchants",
-        type: "boolean",
-        icon: "storefront-outline",
-      },
-    ],
+    subtitle: "Notify me about all transactions",
+    type: "boolean",
+    icon: "swap-horizontal-outline",
   },
   {
+    key: "largeTransactionThreshold",
+    title: "Large Transaction Alerts",
+    subtitle: "Notify for transactions over this amount",
+    type: "number",
+    min: 100,
+    max: 2000,
+    step: 50,
+    unit: "£",
+    icon: "warning-outline",
+  },
+  {
+    key: "budgetAlerts",
     title: "Budget Alerts",
-    icon: "trending-up-outline",
-    description: "Stay on track with your spending goals",
-    preferences: [
-      {
-        key: "budgetAlerts",
-        title: "Budget Alerts",
-        subtitle: "Enable budget threshold notifications",
-        type: "boolean",
-        icon: "pie-chart-outline",
-      },
-      {
-        key: "categoryBudgetAlerts",
-        title: "Category Budget Alerts",
-        subtitle: "Separate alerts for spending categories",
-        type: "boolean",
-        icon: "apps-outline",
-      },
-      {
-        key: "monthlyBudgetSummary",
-        title: "Monthly Summary",
-        subtitle: "End-of-month budget report",
-        type: "boolean",
-        icon: "calendar-outline",
-      },
-    ],
+    subtitle: "Warn me when approaching budget limits",
+    type: "boolean",
+    icon: "pie-chart-outline",
   },
   {
-    title: "Security Alerts",
-    icon: "shield-checkmark-outline",
-    description: "Keep your account secure",
-    preferences: [
-      {
-        key: "securityAlerts",
-        title: "All Security Alerts",
-        subtitle: "Enable/disable all security notifications",
-        type: "boolean",
-        icon: "shield-outline",
-      },
-      {
-        key: "loginAlerts",
-        title: "Login Notifications",
-        subtitle: "Alert on successful logins",
-        type: "boolean",
-        icon: "log-in-outline",
-      },
-      {
-        key: "newDeviceAlerts",
-        title: "New Device Alerts",
-        subtitle: "Notify when logging in from new devices",
-        type: "boolean",
-        icon: "phone-portrait-outline",
-      },
-      {
-        key: "failedLoginAlerts",
-        title: "Failed Login Attempts",
-        subtitle: "Alert on unsuccessful login attempts",
-        type: "boolean",
-        icon: "alert-circle-outline",
-      },
-      {
-        key: "locationChangeAlerts",
-        title: "Location Change Alerts", 
-        subtitle: "Notify when logging in from new locations",
-        type: "boolean",
-        icon: "location-outline",
-      },
-    ],
+    key: "lowBalanceThreshold",
+    title: "Low Balance Alerts",
+    subtitle: "Warn when account balance drops below",
+    type: "number",
+    min: 10,
+    max: 500,
+    step: 10,
+    unit: "£",
+    icon: "trending-down-outline",
   },
   {
-    title: "Account & Banking",
-    icon: "business-outline",
-    description: "Banking and account notifications",
-    preferences: [
-      {
-        key: "accountAlerts",
-        title: "Account Alerts",
-        subtitle: "General account notifications",
-        type: "boolean",
-        icon: "wallet-outline",
-      },
-      {
-        key: "bankConnectionAlerts",
-        title: "Bank Connection Issues",
-        subtitle: "Alert when bank connections need attention",
-        type: "boolean",
-        icon: "link-outline",
-      },
-      {
-        key: "lowBalanceAlerts",
-        title: "Low Balance Alerts",
-        subtitle: "Notify when balance drops below threshold",
-        type: "boolean",
-        icon: "trending-down-outline",
-      },
-      {
-        key: "lowBalanceThreshold",
-        title: "Low Balance Threshold",
-        subtitle: "Balance level that triggers alerts",
-        type: "number",
-        min: 0,
-        max: 1000,
-        step: 10,
-        unit: "£",
-        icon: "settings-outline",
-      },
-      {
-        key: "recurringPaymentAlerts",
-        title: "Recurring Payment Alerts",
-        subtitle: "Notify about direct debits and subscriptions",
-        type: "boolean",
-        icon: "refresh-outline",
-      },
-    ],
+    key: "weeklyInsights",
+    title: "Weekly Summary",
+    subtitle: "Receive weekly spending insights and tips",
+    type: "boolean",
+    icon: "calendar-outline",
   },
   {
-    title: "AI & Insights",
-    icon: "bulb-outline",
-    description: "Personalized financial insights",
-    preferences: [
-      {
-        key: "insightAlerts",
-        title: "All AI Insights",
-        subtitle: "Enable/disable all AI-generated insights",
-        type: "boolean",
-        icon: "bulb-outline",
-      },
-      {
-        key: "dailyReminders",
-        title: "Daily Expense Reminders",
-        subtitle: "Evening reminders to track your daily spending (9 PM)",
-        type: "boolean",
-        icon: "alarm-outline",
-      },
-      {
-        key: "weeklyInsights",
-        title: "Weekly Insights",
-        subtitle: "Weekly spending analysis and tips",
-        type: "boolean",
-        icon: "calendar-outline",
-      },
-      {
-        key: "monthlyReports",
-        title: "Monthly Reports",
-        subtitle: "Comprehensive monthly financial reports",
-        type: "boolean",
-        icon: "document-text-outline",
-      },
-      {
-        key: "savingsTips",
-        title: "Savings Tips",
-        subtitle: "Personalized money-saving recommendations",
-        type: "boolean",
-        icon: "trophy-outline",
-      },
-      {
-        key: "creditScoreUpdates",
-        title: "Credit Score Updates",
-        subtitle: "Changes to your credit score",
-        type: "boolean",
-        icon: "trending-up-outline",
-      },
-    ],
-  },
-  {
-    title: "Timing & Frequency",
-    icon: "time-outline",
-    description: "Control when and how often you receive notifications",
-    preferences: [
-      {
-        key: "maxNotificationsPerDay",
-        title: "Daily Notification Limit",
-        subtitle: "Maximum notifications per day",
-        type: "number",
-        min: 1,
-        max: 50,
-        step: 1,
-        icon: "settings-outline",
-      },
-      {
-        key: "batchNotifications",
-        title: "Batch Similar Notifications",
-        subtitle: "Group similar notifications together",
-        type: "boolean",
-        icon: "layers-outline",
-      },
+    key: "maxNotificationsPerDay",
+    title: "Notification Frequency",
+    subtitle: "How many notifications per day",
+    type: "select",
+    icon: "settings-outline",
+    options: [
+      { label: "Few (1-5 per day)", value: 5 },
+      { label: "Normal (6-15 per day)", value: 15 },
+      { label: "Many (16+ per day)", value: 30 },
     ],
   },
 ];
@@ -350,11 +137,10 @@ export default function NotificationPreferencesScreen() {
     }
   };
 
-  const renderPreferenceItem = (item: PreferenceItem, sectionEnabled: boolean = true) => {
+  const renderPreferenceItem = (item: PreferenceItem) => {
     if (!localPreferences) return null;
 
     const value = localPreferences[item.key];
-    const isDisabled = !sectionEnabled;
 
     switch (item.type) {
       case 'boolean':
@@ -363,10 +149,9 @@ export default function NotificationPreferencesScreen() {
             key={item.key}
             style={[
               styles.preferenceItem,
-              { 
+              {
                 backgroundColor: colors.background.primary,
                 borderColor: colors.border.light,
-                opacity: isDisabled ? 0.6 : 1,
               },
             ]}
           >
@@ -397,7 +182,6 @@ export default function NotificationPreferencesScreen() {
             <Switch
               value={Boolean(value)}
               onValueChange={(newValue) => handlePreferenceChange(item.key, newValue)}
-              disabled={isDisabled}
               trackColor={{ false: colors.gray[300], true: colors.primary[400] }}
               thumbColor={Boolean(value) ? colors.primary[600] : colors.gray[400]}
               ios_backgroundColor={colors.gray[300]}
@@ -411,10 +195,9 @@ export default function NotificationPreferencesScreen() {
             key={item.key}
             style={[
               styles.preferenceItem,
-              { 
+              {
                 backgroundColor: colors.background.primary,
                 borderColor: colors.border.light,
-                opacity: isDisabled ? 0.6 : 1,
               },
             ]}
           >
@@ -449,7 +232,7 @@ export default function NotificationPreferencesScreen() {
               <TextInput
                 style={[
                   styles.numberInput,
-                  { 
+                  {
                     color: colors.text.primary,
                     borderColor: colors.border.light,
                     backgroundColor: colors.background.secondary,
@@ -463,10 +246,74 @@ export default function NotificationPreferencesScreen() {
                   handlePreferenceChange(item.key, numValue);
                 }}
                 keyboardType="numeric"
-                editable={!isDisabled}
               />
             </View>
           </View>
+        );
+
+      case 'select':
+        const selectedOption = item.options?.find(opt => opt.value === value);
+        return (
+          <TouchableOpacity
+            key={item.key}
+            style={[
+              styles.preferenceItem,
+              {
+                backgroundColor: colors.background.primary,
+                borderColor: colors.border.light,
+              },
+            ]}
+            onPress={() => {
+              if (item.options) {
+                Alert.alert(
+                  item.title,
+                  "Choose your preference",
+                  [
+                    ...item.options.map(option => ({
+                      text: option.label,
+                      onPress: () => handlePreferenceChange(item.key, option.value),
+                    })),
+                    { text: "Cancel", style: "cancel" as const }
+                  ]
+                );
+              }
+            }}
+          >
+            <View style={styles.preferenceLeft}>
+              {item.icon && (
+                <View
+                  style={[
+                    styles.preferenceIcon,
+                    { backgroundColor: colors.primary[100] },
+                  ]}
+                >
+                  <Ionicons
+                    name={item.icon as any}
+                    size={24}
+                    color={colors.primary[500]}
+                  />
+                </View>
+              )}
+              <View style={styles.preferenceContent}>
+                <Text style={[styles.preferenceTitle, { color: colors.text.primary }]}>
+                  {item.title}
+                </Text>
+                <Text style={[styles.preferenceSubtitle, { color: colors.text.secondary }]}>
+                  {item.subtitle}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.selectContainer}>
+              <Text style={[styles.selectValue, { color: colors.text.primary }]}>
+                {selectedOption?.label || "Not set"}
+              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.text.tertiary}
+              />
+            </View>
+          </TouchableOpacity>
         );
 
       default:
@@ -513,7 +360,7 @@ export default function NotificationPreferencesScreen() {
               />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-              Notification Preferences
+              Notifications
             </Text>
             <View style={{ width: 32 }} />
           </View>
@@ -524,59 +371,53 @@ export default function NotificationPreferencesScreen() {
           )}
         </View>
 
-        {/* Preference Sections */}
-        {preferencesSections.map((section, sectionIndex) => (
-          <View key={section.title} style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionHeaderLeft}>
-                <View
-                  style={[
-                    styles.sectionIcon,
-                    { backgroundColor: colors.primary[100] },
-                  ]}
-                >
-                  <Ionicons
-                    name={section.icon as any}
-                    size={28}
-                    color={colors.primary[500]}
-                  />
-                </View>
-                <View style={styles.sectionHeaderContent}>
-                  <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-                    {section.title}
-                  </Text>
-                  <Text style={[styles.sectionDescription, { color: colors.text.secondary }]}>
-                    {section.description}
-                  </Text>
-                </View>
-              </View>
-            </View>
+        {/* Description */}
+        <View style={styles.section}>
+          <Text style={[styles.description, { color: colors.text.secondary }]}>
+            Control when and how you receive notifications from Expenzez. Security alerts are always enabled for your protection.
+          </Text>
+        </View>
 
-            <View
-              style={[
-                styles.preferencesCard,
-                { 
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-              ]}
-            >
-              {section.preferences.map((preference, index) => (
-                <View key={preference.key}>
-                  {renderPreferenceItem(preference)}
-                  {index < section.preferences.length - 1 && (
-                    <View
-                      style={[
-                        styles.separator,
-                        { backgroundColor: colors.border.light },
-                      ]}
-                    />
-                  )}
-                </View>
-              ))}
-            </View>
+        {/* Simplified Preferences */}
+        <View style={styles.section}>
+          <View
+            style={[
+              styles.preferencesCard,
+              {
+                backgroundColor: colors.background.primary,
+                borderColor: colors.border.light,
+              },
+            ]}
+          >
+            {simplifiedPreferences.map((preference, index) => (
+              <View key={preference.key}>
+                {renderPreferenceItem(preference)}
+                {index < simplifiedPreferences.length - 1 && (
+                  <View
+                    style={[
+                      styles.separator,
+                      { backgroundColor: colors.border.light },
+                    ]}
+                  />
+                )}
+              </View>
+            ))}
           </View>
-        ))}
+        </View>
+
+        {/* Security Note */}
+        <View style={styles.section}>
+          <View style={[styles.securityNote, { backgroundColor: colors.primary[100] }]}>
+            <Ionicons
+              name="shield-checkmark"
+              size={24}
+              color={colors.primary[600]}
+            />
+            <Text style={[styles.securityNoteText, { color: colors.primary[700] }]}>
+              Security alerts (login attempts, failed logins) are always enabled and cannot be disabled to protect your account.
+            </Text>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -709,5 +550,32 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     marginLeft: spacing.lg + 40 + spacing.md, // Icon width + margin
+  },
+  description: {
+    fontSize: typography.fontSizes.sm,
+    lineHeight: 20,
+    textAlign: "center",
+    marginBottom: spacing.md,
+  },
+  selectContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  selectValue: {
+    fontSize: typography.fontSizes.base,
+    fontWeight: "500" as const,
+    marginRight: spacing.sm,
+  },
+  securityNote: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    gap: spacing.sm,
+  },
+  securityNoteText: {
+    flex: 1,
+    fontSize: typography.fontSizes.sm,
+    lineHeight: 18,
   },
 });
