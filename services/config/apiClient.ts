@@ -32,7 +32,7 @@ api.interceptors.request.use(
     const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
     const allowedWhenLoggedOut = [
       '/nordigen/callback',
-      '/banking/callback', 
+      '/banking/callback',
       '/auth/login',
       '/auth/register',
       '/auth/refresh',
@@ -41,15 +41,29 @@ api.interceptors.request.use(
       '/auth/forgot-password',
       '/auth/confirm-forgot-password'
     ];
-    
+
     const isAllowedEndpoint = allowedWhenLoggedOut.some(endpoint => config.url?.includes(endpoint));
-    
+
     if (isLoggedIn === 'false' && !isAllowedEndpoint) {
       console.log(`[API] Interceptor: User logged out, cancelling request to ${config.url}`);
       const error = new Error('User is logged out');
       (error as any).config = config;
       (error as any).isUserLoggedOut = true;
       return Promise.reject(error);
+    }
+
+    // If isLoggedIn is null (not set yet), wait briefly for login process to complete
+    if (isLoggedIn === null && !isAllowedEndpoint) {
+      console.log(`[API] Interceptor: Login state unclear, waiting briefly for ${config.url}`);
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const recheck = await AsyncStorage.getItem('isLoggedIn');
+      if (recheck === 'false') {
+        console.log(`[API] Interceptor: User confirmed logged out after wait, cancelling request to ${config.url}`);
+        const error = new Error('User is logged out');
+        (error as any).config = config;
+        (error as any).isUserLoggedOut = true;
+        return Promise.reject(error);
+      }
     }
 
     // Don't add tokens to auth endpoints (they don't need/want them)

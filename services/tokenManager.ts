@@ -142,8 +142,34 @@ class TokenManager {
         }, 35000);
       });
 
-      const tokenPromise = this.getValidAccessTokenInternal();
-      return await Promise.race([tokenPromise, tokenTimeout]);
+      // Add small retry logic for race conditions during login
+      let attempt = 0;
+      const maxAttempts = 3;
+
+      while (attempt < maxAttempts) {
+        try {
+          const tokenPromise = this.getValidAccessTokenInternal();
+          const result = await Promise.race([tokenPromise, tokenTimeout]);
+          if (result) return result;
+
+          // If no token but no error, might be a race condition, wait and retry
+          if (attempt < maxAttempts - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+            attempt++;
+          } else {
+            return null;
+          }
+        } catch (error: any) {
+          if (attempt < maxAttempts - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+            attempt++;
+          } else {
+            return null;
+          }
+        }
+      }
+
+      return null;
     } catch (error: any) {
       return null;
     }

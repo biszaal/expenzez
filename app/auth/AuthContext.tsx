@@ -419,8 +419,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         await Promise.all(storagePromises);
 
-        // Small delay to ensure AsyncStorage write is complete
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Longer delay to ensure AsyncStorage write is complete and prevent race conditions
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Verify tokens were actually stored before proceeding
+        const verifyPromise = Promise.all([
+          AsyncStorage.getItem("isLoggedIn"),
+          AsyncStorage.getItem("accessToken"),
+          AsyncStorage.getItem("idToken"),
+          AsyncStorage.getItem("refreshToken")
+        ]);
+
+        const [storedLogin, storedAccess, storedId, storedRefresh] = await verifyPromise;
+        console.log('🔍 [AuthContext] Token storage verification:', {
+          isLoggedIn: storedLogin === "true",
+          hasAccessToken: !!storedAccess && storedAccess !== "null",
+          hasIdToken: !!storedId && storedId !== "null",
+          hasRefreshToken: !!storedRefresh && storedRefresh !== "null"
+        });
 
         // Update state
         setIsLoggedIn(true);
@@ -541,8 +557,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         await Promise.all(storagePromises);
 
-        // Small delay to ensure AsyncStorage write is complete
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Longer delay to ensure AsyncStorage write is complete and prevent race conditions
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Verify tokens were actually stored before proceeding
+        const verifyPromise = Promise.all([
+          AsyncStorage.getItem("isLoggedIn"),
+          AsyncStorage.getItem("accessToken"),
+          AsyncStorage.getItem("idToken"),
+          AsyncStorage.getItem("refreshToken")
+        ]);
+
+        const [storedLogin, storedAccess, storedId, storedRefresh] = await verifyPromise;
+        console.log('🔍 [AuthContext] Apple login token storage verification:', {
+          isLoggedIn: storedLogin === "true",
+          hasAccessToken: !!storedAccess && storedAccess !== "null",
+          hasIdToken: !!storedId && storedId !== "null",
+          hasRefreshToken: !!storedRefresh && storedRefresh !== "null"
+        });
 
         // Update state
         setIsLoggedIn(true);
