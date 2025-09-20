@@ -10,6 +10,7 @@ import {
   Alert,
   RefreshControl,
   Dimensions,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -27,7 +28,7 @@ import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { getTransactions } from "../../services/dataSource";
 import BillTrackingAlgorithm, { DetectedBill, Transaction } from "../../services/billTrackingAlgorithm";
 import { autoBillDetection } from "../../services/automaticBillDetection";
-import * as BillPreferencesAPI from "../../services/billPreferencesAPI";
+import { BillPreferencesAPI } from "../../services/api/billPreferencesAPI";
 import { BillDetailsModal } from "../../components/BillDetailsModal";
 import dayjs from "dayjs";
 
@@ -36,7 +37,7 @@ const { width } = Dimensions.get("window");
 export default function BillsScreen() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
-  const { isLoggedIn: authLoggedIn, hasBank, checkingBank } = useAuthGuard(undefined, true);
+  const { isLoggedIn: authLoggedIn } = useAuthGuard();
   const { colors } = useTheme();
   const { showSuccess, showError } = useAlert();
 
@@ -46,6 +47,8 @@ export default function BillsScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedBill, setSelectedBill] = useState<DetectedBill | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [excludeModalVisible, setExcludeModalVisible] = useState(false);
+  const [billToExclude, setBillToExclude] = useState<DetectedBill | null>(null);
 
   const categories = [
     { name: "All", icon: "apps-outline", color: colors.primary[500] },
@@ -62,13 +65,24 @@ export default function BillsScreen() {
       if (showRefresh) setRefreshing(true);
       else setLoading(true);
 
-      console.log('[Bills] Using automatic bill detection service...');
+      console.log('[Bills] Fetching bills with improved algorithm...');
 
-      // Use the automatic bill detection service
-      // Force refresh when manually refreshing
-      const detectedBills = await autoBillDetection.triggerBillDetection(showRefresh);
+      // For the first load after algorithm improvements, invalidate cache
+      // This ensures old grocery bills are removed
+      let detectedBills: DetectedBill[];
 
-      console.log(`[Bills] Detected ${detectedBills.length} bills:`, detectedBills.map(b => `${b.merchant}: £${Math.abs(b.amount)}`));
+      if (showRefresh) {
+        // Manual refresh - force complete cache invalidation
+        console.log('[Bills] Manual refresh - invalidating cache and running fresh detection...');
+        detectedBills = await autoBillDetection.invalidateCacheAndRefresh();
+      } else {
+        // Now that cache is cleared, use smart caching for optimal performance
+        // The new algorithm will automatically filter out grocery stores
+        console.log('[Bills] Loading bills with improved merchant filtering...');
+        detectedBills = await autoBillDetection.getBillsWithSmartCaching();
+      }
+
+      console.log(`[Bills] Got ${detectedBills.length} bills:`, detectedBills.map(b => `${b.merchant}: £${Math.abs(b.amount)}`));
 
       let finalBills = detectedBills;
 
@@ -87,6 +101,8 @@ export default function BillsScreen() {
 
       if (showRefresh) {
         showSuccess(`Found ${finalBills.length} recurring bills`);
+      } else if (finalBills.length > 0) {
+        console.log(`[Bills] Loaded ${finalBills.length} bills from cache/detection`);
       }
     } catch (error) {
       console.error("Error analyzing bills:", error);
@@ -106,6 +122,52 @@ export default function BillsScreen() {
     }
   }, [setRefreshing, setLoading, setBills, showSuccess, showError]);
 
+  // Handle bill exclusion with user-friendly options
+  const handleExcludeBill = useCallback(async (reason: 'not_recurring' | 'no_longer_active' | 'incorrect_detection') => {
+    if (!billToExclude) return;
+
+    try {
+      setExcludeModalVisible(false);
+
+      // Show loading state
+      showSuccess('Removing bill...');
+
+      // Exclude the bill via API
+      await BillPreferencesAPI.excludeBill({
+        merchant: billToExclude.merchant,
+        amount: billToExclude.amount,
+        category: billToExclude.category,
+        reason
+      });
+
+      // Remove from current bills list immediately for better UX
+      setBills(prevBills => prevBills.filter(bill => bill.id !== billToExclude.id));
+
+      // Show success message with appropriate text
+      const reasonText = {
+        'not_recurring': 'not a recurring bill',
+        'no_longer_active': 'no longer active',
+        'incorrect_detection': 'incorrectly detected'
+      }[reason];
+
+      showSuccess(`✓ Removed "${billToExclude.merchant}" - marked as ${reasonText}`);
+
+      // Clear selected bill
+      setBillToExclude(null);
+
+    } catch (error) {
+      console.error('Error excluding bill:', error);
+      showError('Failed to remove bill. Please try again.');
+      setExcludeModalVisible(true); // Show modal again on error
+    }
+  }, [billToExclude, showSuccess, showError, setBills]);
+
+  // Open exclusion modal for a bill
+  const openExcludeModal = useCallback((bill: DetectedBill) => {
+    setBillToExclude(bill);
+    setExcludeModalVisible(true);
+  }, []);
+
   const onRefresh = () => {
     fetchBills(true);
   };
@@ -114,11 +176,10 @@ export default function BillsScreen() {
     if (!authLoggedIn) {
       router.replace("/auth/Login");
     }
-  }, [authLoggedIn, hasBank, checkingBank, router]);
+  }, [authLoggedIn, router]);
 
   useEffect(() => {
-    // Always try to fetch bills if user is logged in
-    // Even if bank connection is expired, we should show cached data from DynamoDB
+    // Load bills using manual transaction data from DynamoDB
     if (isLoggedIn) {
       fetchBills();
     }
@@ -243,9 +304,9 @@ export default function BillsScreen() {
           onPress: () => isInactive ? reactivateBill(bill) : markBillInactive(bill),
           style: "default"
         },
-        { 
-          text: "Remove Bill", 
-          onPress: () => confirmRemoveBill(bill),
+        {
+          text: "Don't Track This",
+          onPress: () => openExcludeModal(bill),
           style: "destructive"
         },
         { text: "Cancel", style: "cancel" }
@@ -407,7 +468,7 @@ export default function BillsScreen() {
     );
   };
 
-  if (!authLoggedIn || checkingBank) {
+  if (!authLoggedIn) {
     return null;
   }
 
@@ -416,34 +477,7 @@ export default function BillsScreen() {
     return <TabLoadingScreen message="Analyzing your bills..." />;
   }
 
-  // Only show "Connect Bank" if we have no bills AND no bank connection
-  // This allows showing cached data even when bank connection is expired
-  if (!hasBank && bills.length === 0 && !loading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
-        <View style={styles.emptyState}>
-          <View style={[styles.emptyIcon, { backgroundColor: colors.primary[100] }]}>
-            <Ionicons name="link-outline" size={48} color={colors.primary[500]} />
-          </View>
-          <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
-            Connect Your Bank
-          </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.text.secondary }]}>
-            Connect your bank account to automatically detect and track your recurring bills and subscriptions
-          </Text>
-          <TouchableOpacity
-            style={[styles.connectButton, { backgroundColor: colors.primary[500] }]}
-            onPress={() => router.push("/banks")}
-          >
-            <View style={styles.connectButtonContent}>
-              <Text style={styles.connectButtonText}>Connect Bank</Text>
-              <Ionicons name="arrow-forward" size={16} color="white" />
-            </View>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // Manual input mode - no need to check for bank connections
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
@@ -465,13 +499,22 @@ export default function BillsScreen() {
           <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
               <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-                Bills & Subscriptions
+                Bills
               </Text>
               <Text style={[styles.headerSubtitle, { color: colors.text.secondary }]}>
                 AI-powered bill tracking
               </Text>
             </View>
             <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={[styles.upcomingButton, { backgroundColor: colors.primary[500], ...shadows.sm }]}
+                onPress={() => router.push("/upcoming-bills")}
+              >
+                <Ionicons name="calendar" size={16} color="white" />
+                <Text style={[styles.upcomingButtonText, { color: "white" }]}>
+                  Upcoming
+                </Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.transactionsButton, { backgroundColor: colors.background.primary, ...shadows.sm }]}
                 onPress={() => router.push("/transactions")}
@@ -759,6 +802,83 @@ export default function BillsScreen() {
           }}
         />
       )}
+
+      {/* User-Friendly Bill Exclusion Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={excludeModalVisible}
+        onRequestClose={() => setExcludeModalVisible(false)}
+      >
+        <View style={excludeModalStyles.overlay}>
+          <View style={[excludeModalStyles.modal, { backgroundColor: colors.background.primary }]}>
+            <View style={excludeModalStyles.header}>
+              <Text style={[excludeModalStyles.title, { color: colors.text.primary }]}>
+                Don't Track This Bill?
+              </Text>
+              <Text style={[excludeModalStyles.subtitle, { color: colors.text.secondary }]}>
+                {billToExclude?.merchant} • £{Math.abs(billToExclude?.amount || 0).toFixed(2)}
+              </Text>
+            </View>
+
+            <View style={excludeModalStyles.options}>
+              <TouchableOpacity
+                style={[excludeModalStyles.option, { backgroundColor: colors.background.secondary }]}
+                onPress={() => handleExcludeBill('not_recurring')}
+              >
+                <Ionicons name="close-circle" size={24} color="#F59E0B" />
+                <View style={excludeModalStyles.optionText}>
+                  <Text style={[excludeModalStyles.optionTitle, { color: colors.text.primary }]}>
+                    This isn't a recurring bill
+                  </Text>
+                  <Text style={[excludeModalStyles.optionDescription, { color: colors.text.secondary }]}>
+                    It's a one-time purchase or varies too much
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[excludeModalStyles.option, { backgroundColor: colors.background.secondary }]}
+                onPress={() => handleExcludeBill('no_longer_active')}
+              >
+                <Ionicons name="pause-circle" size={24} color="#EF4444" />
+                <View style={excludeModalStyles.optionText}>
+                  <Text style={[excludeModalStyles.optionTitle, { color: colors.text.primary }]}>
+                    I don't pay this anymore
+                  </Text>
+                  <Text style={[excludeModalStyles.optionDescription, { color: colors.text.secondary }]}>
+                    Cancelled subscription or ended service
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[excludeModalStyles.option, { backgroundColor: colors.background.secondary }]}
+                onPress={() => handleExcludeBill('incorrect_detection')}
+              >
+                <Ionicons name="warning" size={24} color="#8B5CF6" />
+                <View style={excludeModalStyles.optionText}>
+                  <Text style={[excludeModalStyles.optionTitle, { color: colors.text.primary }]}>
+                    This was detected incorrectly
+                  </Text>
+                  <Text style={[excludeModalStyles.optionDescription, { color: colors.text.secondary }]}>
+                    Not actually a bill I want to track
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={[excludeModalStyles.cancelButton, { borderColor: colors.primary[500] }]}
+              onPress={() => setExcludeModalVisible(false)}
+            >
+              <Text style={[excludeModalStyles.cancelText, { color: colors.primary[500] }]}>
+                Keep Tracking This Bill
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -780,11 +900,12 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
   },
   headerLeft: {
     flex: 1,
+    marginRight: spacing.sm,
   },
   headerTitle: {
     fontSize: typography.fontSizes["3xl"],
@@ -799,18 +920,31 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: spacing.xs,
+    flexShrink: 0,
+  },
+  upcomingButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.xl,
+    gap: 4,
+  },
+  upcomingButtonText: {
+    fontSize: typography.fontSizes.xs,
+    fontWeight: "600" as const,
   },
   transactionsButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: borderRadius.xl,
-    gap: spacing.xs,
+    gap: 4,
   },
   transactionsButtonText: {
-    fontSize: typography.fontSizes.sm,
+    fontSize: typography.fontSizes.xs,
     fontWeight: "600" as const,
   },
   helpButton: {
@@ -1080,5 +1214,69 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+  },
+});
+
+// Styles for the user-friendly exclusion modal
+const excludeModalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modal: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+    maxHeight: '80%',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    opacity: 0.8,
+  },
+  options: {
+    gap: 12,
+    marginBottom: 24,
+  },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+  },
+  optionText: {
+    flex: 1,
+  },
+  optionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  optionDescription: {
+    fontSize: 14,
+    opacity: 0.7,
+    lineHeight: 18,
+  },
+  cancelButton: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  cancelText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
