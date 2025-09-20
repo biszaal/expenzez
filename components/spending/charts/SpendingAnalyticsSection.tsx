@@ -76,7 +76,7 @@ export const SpendingAnalyticsSection: React.FC<SpendingAnalyticsSectionProps> =
               { backgroundColor: colors.background.secondary },
             ]}
           >
-            {hasTransactions ? (
+            {hasTransactions || dayjs(selectedMonth).isSame(dayjs(), 'month') ? (
               <>
                 {/* Chart Legend */}
                 <View style={styles.premiumChartTitleRow}>

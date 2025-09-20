@@ -34,7 +34,7 @@ export interface DetectedBill {
 
 export class BillTrackingAlgorithm {
   private transactions: Transaction[];
-  private minConfidence: number = 0.7;
+  private minConfidence: number = 0.5; // Lowered for better detection
   private minOccurrences: number = 2;
 
   constructor(transactions: Transaction[]) {
@@ -57,6 +57,10 @@ export class BillTrackingAlgorithm {
       const bills = this.analyzeTransactionPattern(merchant, transactions);
       detectedBills.push(...bills);
     }
+
+    // Also check for bills by same day of month pattern (even with fewer occurrences)
+    const dayPatternBills = this.detectSameDayPatterns();
+    detectedBills.push(...dayPatternBills);
 
     // Sort by confidence and filter by minimum confidence
     return detectedBills
@@ -93,8 +97,11 @@ export class BillTrackingAlgorithm {
       .toLowerCase()
       .replace(/\s+/g, ' ')
       .replace(/[^a-z0-9\s]/g, '')
-      .replace(/\b(ltd|limited|inc|corp|llc|co)\b/g, '')
-      .replace(/\b(payment|autopay|auto|recurring)\b/g, '')
+      .replace(/\b(ltd|limited|inc|corp|llc|co|plc)\b/g, '')
+      .replace(/\b(payment|autopay|auto|recurring|subscription|monthly|annual)\b/g, '')
+      .replace(/\b(direct|debit|dd|so|standing|order)\b/g, '') // Bank-specific terms
+      .replace(/\b(ref|reference|memo|description)\b/g, '') // Transaction reference terms
+      .replace(/\d{2,}/g, '') // Remove long number sequences (transaction IDs)
       .trim();
   }
 
@@ -131,14 +138,16 @@ export class BillTrackingAlgorithm {
    */
   private groupByAmount(transactions: Transaction[]): Map<number, Transaction[]> {
     const groups = new Map<number, Transaction[]>();
-    const variance = 0.1; // 10% variance allowed
+    const variance = 0.15; // Increased to 15% variance for more flexibility
 
     for (const transaction of transactions) {
       let foundGroup = false;
+      const absAmount = Math.abs(transaction.amount);
 
       for (const [baseAmount, group] of groups) {
-        const difference = Math.abs(transaction.amount - baseAmount) / baseAmount;
-        
+        const absBaseAmount = Math.abs(baseAmount);
+        const difference = Math.abs(absAmount - absBaseAmount) / absBaseAmount;
+
         if (difference <= variance) {
           group.push(transaction);
           foundGroup = true;
@@ -181,21 +190,21 @@ export class BillTrackingAlgorithm {
     // Analyze intervals to detect patterns
     // Made more flexible for real-world usage
     const patterns = [
-      { frequency: 'weekly' as const, expectedInterval: 7, tolerance: 3 }, // 4-10 days
-      { frequency: 'monthly' as const, expectedInterval: 30, tolerance: 10 }, // 20-40 days  
-      { frequency: 'quarterly' as const, expectedInterval: 90, tolerance: 15 }, // 75-105 days
-      { frequency: 'yearly' as const, expectedInterval: 365, tolerance: 30 }, // 335-395 days
+      { frequency: 'weekly' as const, expectedInterval: 7, tolerance: 4 }, // 3-11 days
+      { frequency: 'monthly' as const, expectedInterval: 30, tolerance: 12 }, // 18-42 days
+      { frequency: 'quarterly' as const, expectedInterval: 90, tolerance: 20 }, // 70-110 days
+      { frequency: 'yearly' as const, expectedInterval: 365, tolerance: 40 }, // 325-405 days
     ];
-    
+
     // Check for standard patterns first
     for (const pattern of patterns) {
-      const matchingIntervals = intervals.filter(interval => 
+      const matchingIntervals = intervals.filter(interval =>
         Math.abs(interval - pattern.expectedInterval) <= pattern.tolerance
       );
 
       const confidence = matchingIntervals.length / intervals.length;
-      
-      if (confidence >= 0.5) { // At least 50% of intervals match (more lenient)
+
+      if (confidence >= 0.4) { // At least 40% of intervals match (more lenient)
         const result: any = {
           frequency: pattern.frequency,
           confidence,
@@ -215,13 +224,27 @@ export class BillTrackingAlgorithm {
     }
     
     // If no standard pattern, check for frequent irregular transactions (potential subscription services)
-    // If merchant has 3+ transactions in a short period, it might be a service
+    // If merchant has multiple transactions, it might be a service
     const avgInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;
-    if (transactions.length >= 3 && avgInterval <= 20) {
-      return {
-        frequency: 'monthly' as const, // Treat as monthly for estimation
-        confidence: 0.6, // Medium confidence for irregular pattern
-      };
+
+    // More flexible irregular pattern detection
+    if (transactions.length >= 2) {
+      // Check if it could be a bi-weekly pattern (14 days)
+      const biWeeklyMatches = intervals.filter(interval => Math.abs(interval - 14) <= 5).length;
+      if (biWeeklyMatches / intervals.length >= 0.3) {
+        return {
+          frequency: 'monthly' as const, // Treat bi-weekly as monthly for simplicity
+          confidence: 0.6,
+        };
+      }
+
+      // Check for very frequent small transactions (could be subscription services)
+      if (avgInterval <= 25 && transactions.length >= 2) {
+        return {
+          frequency: 'monthly' as const, // Treat as monthly for estimation
+          confidence: 0.5, // Lower confidence for irregular pattern
+        };
+      }
     }
 
     return null;
@@ -277,9 +300,11 @@ export class BillTrackingAlgorithm {
         name: 'Utilities', 
         keywords: ['electric', 'gas', 'water', 'sewer', 'internet', 'phone', 'mobile', 'broadband', 'wifi']
       },
-      { 
-        name: 'Subscriptions', 
-        keywords: ['netflix', 'spotify', 'apple', 'google', 'amazon prime', 'disney', 'hulu', 'subscription']
+      {
+        name: 'Subscriptions',
+        keywords: ['netflix', 'spotify', 'apple', 'google', 'amazon prime', 'disney', 'hulu', 'subscription',
+                  'youtube', 'premium', 'microsoft', 'adobe', 'office', 'dropbox', 'icloud', 'zoom', 'canva',
+                  'github', 'slack', 'figma', 'notion', 'evernote', 'lastpass', 'nordvpn', 'expressvpn']
       },
       { 
         name: 'Insurance', 
@@ -333,22 +358,53 @@ export class BillTrackingAlgorithm {
    */
   private calculateNextDueDate(lastPayment: string, pattern: any): string {
     const lastDate = dayjs(lastPayment);
-    
+    const today = dayjs();
+
+    let nextDate: dayjs.Dayjs;
+
     switch (pattern.frequency) {
       case 'weekly':
-        return lastDate.add(1, 'week').format('YYYY-MM-DD');
-      case 'monthly':
-        const nextMonth = lastDate.add(1, 'month');
-        if (pattern.dayOfMonth) {
-          return nextMonth.date(pattern.dayOfMonth).format('YYYY-MM-DD');
+        nextDate = lastDate.add(1, 'week');
+        // If date is in the past, calculate next occurrence
+        while (nextDate.isBefore(today)) {
+          nextDate = nextDate.add(1, 'week');
         }
-        return nextMonth.format('YYYY-MM-DD');
+        return nextDate.format('YYYY-MM-DD');
+
+      case 'monthly':
+        nextDate = lastDate.add(1, 'month');
+        if (pattern.dayOfMonth) {
+          nextDate = nextDate.date(pattern.dayOfMonth);
+        }
+        // If date is in the past, move to next month
+        while (nextDate.isBefore(today)) {
+          nextDate = nextDate.add(1, 'month');
+          if (pattern.dayOfMonth) {
+            nextDate = nextDate.date(pattern.dayOfMonth);
+          }
+        }
+        return nextDate.format('YYYY-MM-DD');
+
       case 'quarterly':
-        return lastDate.add(3, 'months').format('YYYY-MM-DD');
+        nextDate = lastDate.add(3, 'months');
+        while (nextDate.isBefore(today)) {
+          nextDate = nextDate.add(3, 'months');
+        }
+        return nextDate.format('YYYY-MM-DD');
+
       case 'yearly':
-        return lastDate.add(1, 'year').format('YYYY-MM-DD');
+        nextDate = lastDate.add(1, 'year');
+        while (nextDate.isBefore(today)) {
+          nextDate = nextDate.add(1, 'year');
+        }
+        return nextDate.format('YYYY-MM-DD');
+
       default:
-        return lastDate.add(1, 'month').format('YYYY-MM-DD');
+        nextDate = lastDate.add(1, 'month');
+        while (nextDate.isBefore(today)) {
+          nextDate = nextDate.add(1, 'month');
+        }
+        return nextDate.format('YYYY-MM-DD');
     }
   }
 
@@ -358,9 +414,9 @@ export class BillTrackingAlgorithm {
   private determineBillStatus(transactions: Transaction[]): 'active' | 'cancelled' | 'irregular' {
     const latestTransaction = dayjs(transactions[0].date);
     const daysSinceLatest = dayjs().diff(latestTransaction, 'days');
-    
-    // If no recent activity (>60 days), might be cancelled
-    if (daysSinceLatest > 60) return 'cancelled';
+
+    // More lenient for imported/historical data - only mark as cancelled if >6 months old
+    if (daysSinceLatest > 180) return 'cancelled';
     
     // Check for irregularity in recent payments
     if (transactions.length >= 3) {
@@ -394,10 +450,103 @@ export class BillTrackingAlgorithm {
     });
     
     return parseInt(
-      Object.keys(frequency).reduce((a, b) => 
+      Object.keys(frequency).reduce((a, b) =>
         frequency[parseInt(a)] > frequency[parseInt(b)] ? a : b
       )
     );
+  }
+
+  /**
+   * Detect bills that occur on the same day of the month
+   */
+  private detectSameDayPatterns(): DetectedBill[] {
+    const dayGroups = new Map<number, Transaction[]>();
+    const bills: DetectedBill[] = [];
+
+    // Group transactions by day of month
+    for (const transaction of this.transactions) {
+      if (transaction.type !== 'debit') continue;
+
+      const dayOfMonth = dayjs(transaction.date).date();
+      if (!dayGroups.has(dayOfMonth)) {
+        dayGroups.set(dayOfMonth, []);
+      }
+      dayGroups.get(dayOfMonth)!.push(transaction);
+    }
+
+    // Check each day group for potential recurring bills
+    for (const [day, transactions] of dayGroups) {
+      if (transactions.length < 2) continue;
+
+      // Group by similar merchants and amounts
+      const merchantGroups = new Map<string, Transaction[]>();
+
+      for (const transaction of transactions) {
+        const normalizedMerchant = this.normalizeMerchantName(transaction.merchant);
+        if (!merchantGroups.has(normalizedMerchant)) {
+          merchantGroups.set(normalizedMerchant, []);
+        }
+        merchantGroups.get(normalizedMerchant)!.push(transaction);
+      }
+
+      // Check each merchant group for recurring patterns
+      for (const [merchant, merchantTransactions] of merchantGroups) {
+        if (merchantTransactions.length < 2) continue;
+
+        // Check if amounts are similar
+        const amounts = merchantTransactions.map(t => Math.abs(t.amount));
+        const avgAmount = amounts.reduce((sum, amt) => sum + amt, 0) / amounts.length;
+        const amountVariance = amounts.every(amt => Math.abs(amt - avgAmount) / avgAmount <= 0.15);
+
+        if (amountVariance) {
+          // Check if transactions span multiple months
+          const dates = merchantTransactions.map(t => dayjs(t.date));
+          const monthSpan = Math.max(...dates.map(d => d.month())) - Math.min(...dates.map(d => d.month()));
+
+          if (monthSpan >= 1 || merchantTransactions.length >= 3) {
+            const latestTransaction = merchantTransactions[0];
+            const category = this.categorizeBill(merchant, latestTransaction.description);
+
+            const bill: DetectedBill = {
+              id: `day_pattern_${merchant.replace(/\s+/g, '_')}_day${day}`,
+              name: this.generateBillName(merchant, category),
+              merchant: merchant,
+              amount: Math.round(avgAmount * 100) / 100,
+              frequency: 'monthly',
+              category,
+              nextDueDate: this.calculateNextDueDateForDay(day),
+              lastPaymentDate: latestTransaction.date,
+              accountId: latestTransaction.accountId,
+              bankName: latestTransaction.bankName || 'Unknown Bank',
+              confidence: 0.6, // Medium confidence for day pattern
+              transactions: merchantTransactions,
+              status: this.determineBillStatus(merchantTransactions),
+              averageAmount: avgAmount,
+              dayOfMonth: day,
+            };
+
+            bills.push(bill);
+          }
+        }
+      }
+    }
+
+    return bills;
+  }
+
+  /**
+   * Calculate next due date for a specific day of month
+   */
+  private calculateNextDueDateForDay(dayOfMonth: number): string {
+    const today = dayjs();
+    let nextDate = today.date(dayOfMonth);
+
+    // If the day has already passed this month, move to next month
+    if (nextDate.isBefore(today) || nextDate.isSame(today, 'day')) {
+      nextDate = nextDate.add(1, 'month').date(dayOfMonth);
+    }
+
+    return nextDate.format('YYYY-MM-DD');
   }
 
   /**

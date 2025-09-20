@@ -13,7 +13,6 @@ const APP_SCHEME = Constants.expoConfig?.scheme || 'expenzez';
 
 // Deep link URLs
 const DEEP_LINK_URLS = {
-  BANK_CALLBACK: `${APP_SCHEME}://banks/callback`,
   AUTH_CALLBACK: `${APP_SCHEME}://auth/callback`,
 };
 

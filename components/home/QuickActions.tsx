@@ -3,7 +3,6 @@ import { View, TouchableOpacity, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
-import { bankingAPI } from '../../services/api';
 import { DEEP_LINK_URLS } from '../../constants/config';
 import { SHADOWS } from '../../constants/Colors';
 import { styles } from './QuickActions.styles';
@@ -41,7 +40,7 @@ export const QuickActions: React.FC = () => {
 
         <TouchableOpacity
           style={styles.professionalQuickActionCard}
-          onPress={() => router.push("/banks")}
+          onPress={() => router.push("/add-expense")}
           activeOpacity={0.85}
         >
           <View
@@ -49,12 +48,12 @@ export const QuickActions: React.FC = () => {
           >
             <View style={styles.professionalQuickActionIconContainer}>
               <View style={styles.professionalQuickActionIcon}>
-                <Ionicons name="card-outline" size={24} color="white" />
+                <Ionicons name="add-circle-outline" size={24} color="white" />
               </View>
             </View>
             <View style={styles.professionalQuickActionText}>
-              <Text style={styles.professionalQuickActionTitle}>My Banks</Text>
-              <Text style={styles.professionalQuickActionSubtitle}>Manage accounts</Text>
+              <Text style={styles.professionalQuickActionTitle}>Add Expense</Text>
+              <Text style={styles.professionalQuickActionSubtitle}>Manual entry</Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -81,7 +80,7 @@ export const QuickActions: React.FC = () => {
 
         <TouchableOpacity
           style={styles.professionalQuickActionCard}
-          onPress={handleConnectBank}
+          onPress={() => router.push("/import-csv")}
           activeOpacity={0.85}
         >
           <View
@@ -89,12 +88,12 @@ export const QuickActions: React.FC = () => {
           >
             <View style={styles.professionalQuickActionIconContainer}>
               <View style={styles.professionalQuickActionIcon}>
-                <Ionicons name="add-circle-outline" size={24} color="white" />
+                <Ionicons name="document-text-outline" size={24} color="white" />
               </View>
             </View>
             <View style={styles.professionalQuickActionText}>
-              <Text style={styles.professionalQuickActionTitle}>Connect</Text>
-              <Text style={styles.professionalQuickActionSubtitle}>Add bank</Text>
+              <Text style={styles.professionalQuickActionTitle}>Import CSV</Text>
+              <Text style={styles.professionalQuickActionSubtitle}>Upload data</Text>
             </View>
           </View>
         </TouchableOpacity>

@@ -14,7 +14,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
-import { expenseAPI, budgetAPI, profileAPI, bankingAPI } from '../services/api';
+import { expenseAPI, budgetAPI, profileAPI } from '../services/api';
+import { transactionAPI } from '../services/api/transactionAPI';
 import { spacing, borderRadius, typography } from '../constants/theme';
 
 interface ExportOption {
@@ -125,7 +126,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({ isVisible, onClose }
         case 'transactions':
           setExportProgress('Fetching transactions...');
           try {
-            const transactionsResponse = await bankingAPI.getAllTransactions(5000);
+            const transactionsResponse = await transactionAPI.getTransactions({ limit: 5000 });
             data.transactions = transactionsResponse.transactions || [];
           } catch (error) {
             console.log('Failed to fetch bank transactions, using empty array');
@@ -188,7 +189,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({ isVisible, onClose }
           try {
             // Fetch all data types
             const [transactionsResponse, expensesResponse, budgetsResponse, profileResponse, goalsResponse] = await Promise.allSettled([
-              bankingAPI.getAllTransactions(5000),
+              transactionAPI.getTransactions({ limit: 5000 }),
               expenseAPI.getExpenses({ startDate, endDate, limit: 5000 }),
               budgetAPI.getBudgets(),
               profileAPI.getProfile(),

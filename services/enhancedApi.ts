@@ -1,179 +1,125 @@
-import { useState } from 'react';
-import { useApiCache } from '../hooks/useApiCache';
-import { useNetwork } from '../contexts/NetworkContext';
-import { bankingAPI } from './api';
+// Enhanced API service for manual input mode
+import { transactionAPI } from './api/transactionAPI';
+import { expenseAPI, budgetAPI, profileAPI } from './api';
 
-// Progressive loading wrapper for API calls
-export const useProgressiveData = () => {
-  const { isOnline, queueRequest } = useNetwork();
+// 📱 MANUAL INPUT MODE: Simplified API service without banking dependencies
 
-  const loadCriticalData = async () => {
-    // Load only essential data first
-    const criticalCalls = [
-      () => bankingAPI.getAccounts(),
-      () => bankingAPI.getConnectedBanks(),
-    ];
-
-    const results = await Promise.allSettled(
-      criticalCalls.map(call => 
-        isOnline ? call() : queueRequest(call)
-      )
-    );
-
-    return results.map((result, index) => ({
-      type: ['accounts', 'balance'][index],
-      status: result.status,
-      data: result.status === 'fulfilled' ? result.value : null,
-      error: result.status === 'rejected' ? result.reason : null,
-    }));
-  };
-
-  const loadSecondaryData = async () => {
-    // Load less critical data in background
-    const secondaryCalls = [
-      () => bankingAPI.getTransactionsUnified({ limit: 20 }), // Recent transactions only
-      () => bankingAPI.getCachedBankData(),
-    ];
-
-    const results = await Promise.allSettled(
-      secondaryCalls.map(call => 
-        isOnline ? call() : queueRequest(call)
-      )
-    );
-
-    return results.map((result, index) => ({
-      type: ['recent_transactions', 'bank_data'][index],
-      status: result.status,
-      data: result.status === 'fulfilled' ? result.value : null,
-      error: result.status === 'rejected' ? result.reason : null,
-    }));
-  };
-
-  const loadDetailedData = async () => {
-    // Load comprehensive data last
-    const detailedCalls = [
-      () => bankingAPI.getTransactionsUnified({ limit: 1000 }), // All transactions
-      () => bankingAPI.getCachedBankData(),
-    ];
-
-    const results = await Promise.allSettled(
-      detailedCalls.map(call => 
-        isOnline ? call() : queueRequest(call)
-      )
-    );
-
-    return results.map((result, index) => ({
-      type: ['all_transactions', 'all_bank_data'][index],
-      status: result.status,
-      data: result.status === 'fulfilled' ? result.value : null,
-      error: result.status === 'rejected' ? result.reason : null,
-    }));
-  };
-
-  return {
-    loadCriticalData,
-    loadSecondaryData,
-    loadDetailedData,
-  };
-};
-
-// Enhanced API hooks with caching and progressive loading
-export const useAccountsData = () => {
-  return useApiCache(
-    () => bankingAPI.getAccounts(),
-    {
-      cacheKey: 'accounts',
-      cacheTTL: 2 * 60 * 1000, // 2 minutes
-      maxAge: 5 * 60 * 1000, // 5 minutes
-    }
-  );
-};
-
-export const useTransactionsData = (options: { limit?: number; offset?: number } = {}) => {
-  const { limit = 50, offset = 0 } = options;
-  
-  return useApiCache(
-    () => bankingAPI.getTransactionsUnified({ limit }),
-    {
-      cacheKey: `transactions_${limit}_${offset}`,
-      cacheTTL: 1 * 60 * 1000, // 1 minute for transactions
-      maxAge: 3 * 60 * 1000, // 3 minutes
-    }
-  );
-};
-
-export const useBalanceData = () => {
-  return useApiCache(
-    () => bankingAPI.getConnectedBanks(),
-    {
-      cacheKey: 'balance',
-      cacheTTL: 30 * 1000, // 30 seconds for balance
-      maxAge: 2 * 60 * 1000, // 2 minutes
-    }
-  );
-};
-
-export const useBankConnectionsData = () => {
-  return useApiCache(
-    () => bankingAPI.getCachedBankData(),
-    {
-      cacheKey: 'bank_connections',
-      cacheTTL: 5 * 60 * 1000, // 5 minutes
-      maxAge: 10 * 60 * 1000, // 10 minutes
-    }
-  );
-};
-
-// Pagination helper for large datasets
-export const usePaginatedData = <T>(
-  fetchFunction: (limit: number, offset: number) => Promise<T[]>,
-  itemsPerPage: number = 20
-) => {
-  const [allData, setAllData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(0);
-
-  const loadMore = async () => {
-    if (loading || !hasMore) return;
-
-    setLoading(true);
+export const enhancedApi = {
+  // Get manual transactions with caching
+  getTransactions: async (options: { limit?: number; useCache?: boolean } = {}) => {
     try {
-      const newData = await fetchFunction(itemsPerPage, page * itemsPerPage);
-      
-      if (newData.length < itemsPerPage) {
-        setHasMore(false);
-      }
-
-      setAllData(prev => [...prev, ...newData]);
-      setPage(prev => prev + 1);
+      const { limit = 100 } = options;
+      const response = await transactionAPI.getTransactions({ limit });
+      return {
+        success: true,
+        data: response.transactions || [],
+        source: 'manual_transactions'
+      };
     } catch (error) {
-      console.error('Error loading more data:', error);
-    } finally {
-      setLoading(false);
+      console.error('Enhanced API: Error fetching manual transactions:', error);
+      return {
+        success: false,
+        data: [],
+        error: 'Failed to fetch transactions'
+      };
     }
-  };
+  },
 
-  const reset = () => {
-    setAllData([]);
-    setPage(0);
-    setHasMore(true);
-  };
+  // Get financial overview from manual data
+  getFinancialOverview: async () => {
+    try {
+      const transactionsResponse = await transactionAPI.getTransactions({ limit: 1000 });
+      const transactions = transactionsResponse.transactions || [];
 
-  return {
-    data: allData,
-    loading,
-    hasMore,
-    loadMore,
-    reset,
-  };
+      // Calculate balance from transactions
+      const totalBalance = transactions.reduce((sum: number, tx: any) => {
+        const amount = parseFloat(tx.amount) || 0;
+        return sum + amount;
+      }, 0);
+
+      // Calculate monthly spending
+      const currentMonth = new Date().toISOString().substring(0, 7);
+      const monthlySpending = transactions
+        .filter((tx: any) => tx.date?.startsWith(currentMonth) && (tx.type === 'debit' || tx.amount < 0))
+        .reduce((sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount) || 0), 0);
+
+      return {
+        success: true,
+        overview: {
+          totalBalance,
+          monthlySpending,
+          transactionCount: transactions.length,
+          accountType: 'Manual Entry'
+        }
+      };
+    } catch (error) {
+      console.error('Enhanced API: Error getting financial overview:', error);
+      return {
+        success: false,
+        overview: {
+          totalBalance: 0,
+          monthlySpending: 0,
+          transactionCount: 0,
+          accountType: 'Manual Entry'
+        }
+      };
+    }
+  },
+
+  // Expense tracking functions remain the same
+  getExpenses: async (options: { limit?: number } = {}) => {
+    try {
+      const { limit = 100 } = options;
+      const response = await expenseAPI.getExpenses({ limit });
+      return {
+        success: true,
+        data: response.expenses || []
+      };
+    } catch (error) {
+      console.error('Enhanced API: Error fetching expenses:', error);
+      return {
+        success: false,
+        data: [],
+        error: 'Failed to fetch expenses'
+      };
+    }
+  },
+
+  // Budget functions remain the same
+  getBudgets: async () => {
+    try {
+      const response = await budgetAPI.getBudgets();
+      return {
+        success: true,
+        data: response.budgets || []
+      };
+    } catch (error) {
+      console.error('Enhanced API: Error fetching budgets:', error);
+      return {
+        success: false,
+        data: [],
+        error: 'Failed to fetch budgets'
+      };
+    }
+  },
+
+  // Profile functions remain the same
+  getProfile: async () => {
+    try {
+      const response = await profileAPI.getProfile();
+      return {
+        success: true,
+        data: response.profile || {}
+      };
+    } catch (error) {
+      console.error('Enhanced API: Error fetching profile:', error);
+      return {
+        success: false,
+        data: {},
+        error: 'Failed to fetch profile'
+      };
+    }
+  }
 };
 
-export default {
-  useProgressiveData,
-  useAccountsData,
-  useTransactionsData,
-  useBalanceData,
-  useBankConnectionsData,
-  usePaginatedData,
-};
+export default enhancedApi;

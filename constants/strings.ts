@@ -25,12 +25,12 @@ export const APP_STRINGS = {
   QUICK_ACTIONS: {
     ADD_EXPENSE: "Add Expense",
     TRACK_SPENDING: "Track spending",
-    AI_INSIGHTS: "AI Insights", 
+    AI_INSIGHTS: "AI Insights",
     GET_ADVICE: "Get advice",
-    BANKS: "Banks",
-    MANAGE_ACCOUNTS: "Manage accounts",
-    CONNECT_BANK: "Connect Bank",
-    LINK_ACCOUNT: "Link account",
+    IMPORT_CSV: "Import CSV",
+    UPLOAD_DATA: "Upload data",
+    ADD_INCOME: "Add Income",
+    RECORD_INCOME: "Record income",
   },
   
   // Monthly overview
@@ -43,17 +43,17 @@ export const APP_STRINGS = {
   // Transactions
   TRANSACTIONS: {
     RECENT_TRANSACTIONS: "Recent Transactions",
-    REFRESH: "Refresh", 
+    REFRESH: "Refresh",
     SYNCING: "Syncing...",
     SEE_ALL: "See All",
-    CONNECT_BANK_TO_SEE: "🔄 Connect your bank above to see transactions",
+    ADD_MANUALLY: "📝 Add expenses manually or import CSV data",
   },
-  
-  // Banks
-  BANKS: {
-    CONNECTED_BANKS: "Connected Banks",
-    NO_BANKS_CONNECTED: "No banks connected",
-    CONNECT_TO_GET_STARTED: "Connect your bank to get started",
+
+  // Manual Data Entry
+  MANUAL: {
+    NO_TRANSACTIONS: "No transactions yet",
+    ADD_EXPENSE_TO_START: "Add expenses manually or import CSV to get started",
+    IMPORT_CSV_HINT: "Import your bank statements or add transactions one by one",
   },
   
   // Common
