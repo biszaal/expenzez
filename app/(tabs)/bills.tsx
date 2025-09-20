@@ -26,7 +26,9 @@ import {
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { getTransactions } from "../../services/dataSource";
 import BillTrackingAlgorithm, { DetectedBill, Transaction } from "../../services/billTrackingAlgorithm";
+import { autoBillDetection } from "../../services/automaticBillDetection";
 import * as BillPreferencesAPI from "../../services/billPreferencesAPI";
+import { BillDetailsModal } from "../../components/BillDetailsModal";
 import dayjs from "dayjs";
 
 const { width } = Dimensions.get("window");
@@ -42,6 +44,8 @@ export default function BillsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [selectedBill, setSelectedBill] = useState<DetectedBill | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const categories = [
     { name: "All", icon: "apps-outline", color: colors.primary[500] },
@@ -58,97 +62,31 @@ export default function BillsScreen() {
       if (showRefresh) setRefreshing(true);
       else setLoading(true);
 
-      // Add timeout protection
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Bills fetch timeout')), 8000); // 8 second timeout
-      });
+      console.log('[Bills] Using automatic bill detection service...');
 
-      // Fetch transactions from the last 12 months for pattern analysis
-      const startDate = dayjs().subtract(12, 'months').format('YYYY-MM-DD');
-      const endDate = dayjs().format('YYYY-MM-DD');
-      
-      const transactionsData = await Promise.race([
-        getTransactions(),
-        timeoutPromise
-      ]);
-      console.log(`[Bills] Raw transactions data:`, transactionsData?.length || 0, 'transactions');
-      
-      if (transactionsData && transactionsData.length > 0) {
-        console.log(`[Bills] Sample transaction:`, transactionsData[0]);
-        // Convert to our Transaction interface
-        // IMPORTANT: Keep original amount sign for bill detection (negative = spending)
-        const transactions: Transaction[] = transactionsData.map((tx: any) => ({
-          id: tx.id || tx.transaction_id,
-          amount: tx.amount || 0, // Keep negative amounts for spending detection
-          description: tx.description || tx.merchant_name || 'Unknown',
-          date: tx.date || tx.timestamp,
-          merchant: tx.merchant_name || tx.description || 'Unknown Merchant',
-          category: tx.category,
-          accountId: tx.account_id || 'unknown',
-          bankName: tx.bank_name || 'Unknown Bank',
-          type: (tx.amount || 0) < 0 ? 'debit' : 'credit',
-        }));
+      // Use the automatic bill detection service
+      // Force refresh when manually refreshing
+      const detectedBills = await autoBillDetection.triggerBillDetection(showRefresh);
 
-        // Run bill detection algorithm
-        console.log(`[Bills] Processing ${transactions.length} transactions for bill detection`);
-        
-        // Debug: Analyze transaction data structure
-        const merchantCounts = transactions.reduce((acc, tx) => {
-          const merchant = tx.merchant || 'Unknown';
-          acc[merchant] = (acc[merchant] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-        
-        console.log(`[Bills] Transactions by merchant:`, merchantCounts);
-        console.log(`[Bills] Sample transactions:`, transactions.slice(0, 3).map(tx => ({
-          merchant: tx.merchant,
-          amount: tx.amount,
-          description: tx.description,
-          date: tx.date,
-          type: tx.type
-        })));
-        
-        // Debug: Check for spending transactions (negative amounts)
-        const spendingTransactions = transactions.filter(tx => tx.amount < 0);
-        console.log(`[Bills] Spending transactions: ${spendingTransactions.length}/${transactions.length}`);
-        
-        const algorithm = new BillTrackingAlgorithm(transactions);
-        const detectedBills = algorithm.detectBills();
-        
-        console.log(`[Bills] Detected ${detectedBills.length} bills:`, detectedBills.map(b => `${b.merchant}: £${Math.abs(b.amount)}`));
-        
-        // TEMPORARY: Show debug info on screen if no bills found
-        if (detectedBills.length === 0 && transactions.length > 0) {
-          console.log(`[Bills] DEBUG: No bills detected from ${transactions.length} transactions`);
-          console.log(`[Bills] DEBUG: Merchants with multiple transactions:`, 
-            Object.entries(merchantCounts).filter(([_, count]) => count >= 2)
-          );
-        }
-        
-        let finalBills = detectedBills;
-        
-        // Try to fetch user preferences, but don't fail if it doesn't work
-        try {
-          console.log(`[Bills] Attempting to fetch user preferences...`);
-          const userPreferences = await BillPreferencesAPI.getBillPreferences();
-          const mergedBills = BillPreferencesAPI.mergeBillsWithPreferences(detectedBills, userPreferences);
-          console.log(`[Bills] Successfully merged with ${userPreferences.length} user preferences`);
-          finalBills = mergedBills;
-          setBills(mergedBills);
-        } catch (error) {
-          console.log(`[Bills] Bill preferences API not available yet, using detected bills only:`, error instanceof Error ? error.message : String(error));
-          setBills(detectedBills);
-        }
-        
-        if (showRefresh) {
-          showSuccess(`Found ${finalBills.length} recurring bills`);
-        }
-      } else {
-        console.log(`[Bills] No transactions found - cannot analyze bills`);
-        setBills([]);
-        if (showRefresh) {
-          showError("No transaction data available for bill analysis");
-        }
+      console.log(`[Bills] Detected ${detectedBills.length} bills:`, detectedBills.map(b => `${b.merchant}: £${Math.abs(b.amount)}`));
+
+      let finalBills = detectedBills;
+
+      // Try to fetch user preferences, but don't fail if it doesn't work
+      try {
+        console.log(`[Bills] Attempting to fetch user preferences...`);
+        const userPreferences = await BillPreferencesAPI.getBillPreferences();
+        const mergedBills = BillPreferencesAPI.mergeBillsWithPreferences(detectedBills, userPreferences);
+        console.log(`[Bills] Successfully merged with ${userPreferences.length} user preferences`);
+        finalBills = mergedBills;
+        setBills(mergedBills);
+      } catch (error) {
+        console.log(`[Bills] Bill preferences API not available yet, using detected bills only:`, error instanceof Error ? error.message : String(error));
+        setBills(detectedBills);
+      }
+
+      if (showRefresh) {
+        showSuccess(`Found ${finalBills.length} recurring bills`);
       }
     } catch (error) {
       console.error("Error analyzing bills:", error);
@@ -212,14 +150,80 @@ export default function BillsScreen() {
   }, [filteredBills]);
 
   const showBillDetails = (bill: DetectedBill) => {
-    Alert.alert(
-      bill.name,
-      `Amount: £${Math.abs(bill.amount).toFixed(2)}\nFrequency: ${bill.frequency}\nNext Due: ${dayjs(bill.nextDueDate).format('MMM DD, YYYY')}\nBank: ${bill.bankName}\nConfidence: ${(bill.confidence * 100).toFixed(0)}%\nStatus: ${bill.status}`,
-      [
-        { text: "View Transactions", onPress: () => router.push(`/transactions?merchant=${encodeURIComponent(bill.merchant)}`) },
-        { text: "OK", style: "default" }
-      ]
-    );
+    setSelectedBill(bill);
+    setModalVisible(true);
+  };
+
+  // Generate analysis data for the selected bill
+  const getAnalysisForBill = (bill: DetectedBill) => {
+    if (!bill || !bill.transactions || bill.transactions.length === 0) return null;
+
+    const transactions = bill.transactions.map(t => ({ ...t, amount: Math.abs(t.amount) }));
+    const sortedTransactions = transactions.sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
+
+    // Monthly data
+    const monthlyMap = new Map<string, number>();
+    transactions.forEach(transaction => {
+      const monthKey = dayjs(transaction.date).format('YYYY-MM');
+      const amount = Math.abs(transaction.amount);
+
+      if (monthlyMap.has(monthKey)) {
+        monthlyMap.set(monthKey, monthlyMap.get(monthKey)! + amount);
+      } else {
+        monthlyMap.set(monthKey, amount);
+      }
+    });
+
+    const sortedEntries = Array.from(monthlyMap.entries())
+      .sort((a, b) => dayjs(a[0]).valueOf() - dayjs(b[0]).valueOf());
+
+    const monthlyData = sortedEntries
+      .map(([month, amount], index) => {
+        const monthDate = dayjs(month);
+        const prevMonth = index > 0 ? dayjs(sortedEntries[index - 1][0]) : null;
+
+        // Show year if it's January OR if the previous month is in a different year OR if it's the first month
+        const isJanuary = monthDate.month() === 0; // January is month 0 (0-indexed)
+        const isYearChange = prevMonth && monthDate.year() !== prevMonth.year();
+        const isFirstMonth = index === 0;
+
+        const displayMonth = (isJanuary || isYearChange || isFirstMonth)
+          ? monthDate.format('MMM YYYY')
+          : monthDate.format('MMM');
+
+        return {
+          month,
+          amount,
+          isRecent: dayjs().diff(monthDate, 'months') <= 6,
+          displayMonth,
+          count: transactions.filter(t => dayjs(t.date).format('YYYY-MM') === month).length
+        };
+      });
+
+    const totalSpent = transactions.reduce((sum, t) => sum + t.amount, 0);
+    const averageMonthly = totalSpent / monthlyData.length;
+    const firstAmount = sortedTransactions[0].amount;
+    const lastAmount = sortedTransactions[sortedTransactions.length - 1].amount;
+    const firstPaymentDate = sortedTransactions[0].date;
+    const lastPaymentDate = sortedTransactions[sortedTransactions.length - 1].date;
+
+    const totalIncrease = lastAmount - firstAmount;
+    const percentageIncrease = firstAmount > 0 ? (totalIncrease / firstAmount) * 100 : 0;
+
+    return {
+      totalSpent,
+      averageMonthly,
+      firstAmount,
+      lastAmount,
+      firstPaymentDate,
+      lastPaymentDate,
+      totalIncrease,
+      percentageIncrease,
+      transactionCount: transactions.length,
+      monthlyData,
+      highestPayment: Math.max(...transactions.map(t => t.amount)),
+      lowestPayment: Math.min(...transactions.map(t => t.amount))
+    };
   };
 
   const showBillManagement = (bill: DetectedBill) => {
@@ -734,6 +738,27 @@ export default function BillsScreen() {
       >
         <Ionicons name="add" size={28} color="white" />
       </TouchableOpacity>
+
+      {/* Bill Details Modal */}
+      {selectedBill && (
+        <BillDetailsModal
+          visible={modalVisible}
+          onClose={() => {
+            setModalVisible(false);
+            setSelectedBill(null);
+          }}
+          bill={selectedBill}
+          analysis={getAnalysisForBill(selectedBill)}
+          onViewTransactions={() => {
+            setModalVisible(false);
+            router.push(`/transactions?merchant=${encodeURIComponent(selectedBill.merchant)}`);
+          }}
+          onManageBill={() => {
+            setModalVisible(false);
+            showBillManagement(selectedBill);
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }

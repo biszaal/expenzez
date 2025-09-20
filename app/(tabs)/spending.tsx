@@ -13,7 +13,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
 import { TabLoadingScreen } from "../../components/ui";
 import { spacing } from "../../constants/theme";
-import { bankingAPI, budgetAPI } from "../../services/api";
+import { budgetAPI } from "../../services/api";
+import { transactionAPI } from "../../services/api/transactionAPI";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
@@ -98,9 +99,8 @@ export default function SpendingPage() {
     ? monthlyData.monthlyTotalSpent / dayOfMonth 
     : monthlyData.monthlyTotalSpent / daysInMonth;
 
-  const predictedMonthlySpend = currentMonth 
-    ? averageSpendPerDay * daysInMonth 
-    : monthlyData.monthlyTotalSpent;
+  // Always show expected total based on average daily spend
+  const predictedMonthlySpend = averageSpendPerDay * daysInMonth;
 
   const displayLeftToSpend = totalBudget - monthlyData.monthlyTotalSpent;
 
@@ -316,17 +316,13 @@ export default function SpendingPage() {
       setLoading(true);
       setError(null);
 
-      // Always load categories first (works without bank connections)
-      const categoriesResponse = await generateCategoriesFromTransactions();
-      setCategoryData(categoriesResponse);
-
-      // Try to fetch transactions (may fail if no bank connections)
+      // Load manual transactions from DynamoDB first
       try {
-        console.log("🔄 [Spending] Fetching transactions...");
-        const transactionsResponse = await bankingAPI.getTransactionsUnified();
-        
+        console.log("🔄 [Spending] Fetching manual transactions from DynamoDB...");
+        const transactionsResponse = await transactionAPI.getTransactions({ limit: 2000 });
+
         if (transactionsResponse && transactionsResponse.transactions) {
-          console.log("✅ [Spending] Loaded transactions:", transactionsResponse.transactions.length);
+          console.log("✅ [Spending] Loaded manual transactions:", transactionsResponse.transactions.length);
           console.log("📝 [Spending] Sample transactions:", transactionsResponse.transactions.slice(0, 2));
           setTransactions(transactionsResponse.transactions);
         } else {
@@ -337,14 +333,18 @@ export default function SpendingPage() {
         // Don't treat missing transactions as an error - user might have no bank connections
         console.warn("⚠️ [Spending] Could not fetch transactions:", transactionError);
         console.warn("⚠️ [Spending] Error details:", transactionError?.response?.data || transactionError?.message);
-        
+
         // Don't set UI errors for transaction fetch failures in development
         // if (__DEV__) {
         //   setError(`Transaction fetch failed: ${transactionError?.response?.data?.message || transactionError?.message}`);
         // }
-        
+
         setTransactions([]);
       }
+
+      // Load categories after transactions (so we have data to work with)
+      const categoriesResponse = await generateCategoriesFromTransactions();
+      setCategoryData(categoriesResponse);
 
     } catch (err: any) {
       console.error("❌ [Spending] Error fetching spending data:", err);
@@ -464,8 +464,10 @@ export default function SpendingPage() {
         const mostRecentMonth = sortedMonths[0];
         
         // Only change selected month if current selection has no data
+        // BUT never auto-switch away from the current month
         const currentMonthHasData = monthsWithData.has(selectedMonth);
-        if (!currentMonthHasData) {
+        const isCurrentMonth = dayjs(selectedMonth).isSame(dayjs(), 'month');
+        if (!currentMonthHasData && !isCurrentMonth) {
           setSelectedMonth(mostRecentMonth);
         }
       }
@@ -554,28 +556,28 @@ export default function SpendingPage() {
 
 
         {/* Empty State - No Transactions */}
-        {transactions.length === 0 && !hasBank && (
+        {transactions.length === 0 && (
           <View style={[styles.emptyStateContainer, { backgroundColor: colors.background.primary }]}>
             <View style={styles.emptyStateContent}>
-              <Ionicons 
-                name="card-outline" 
-                size={64} 
-                color={colors.text.secondary} 
+              <Ionicons
+                name="wallet-outline"
+                size={64}
+                color={colors.text.secondary}
                 style={styles.emptyStateIcon}
               />
               <Text style={[styles.emptyStateTitle, { color: colors.text.primary }]}>
-                Connect Your Bank Account
+                No Expenses Yet
               </Text>
               <Text style={[styles.emptyStateDescription, { color: colors.text.secondary }]}>
-                Connect your bank account to start tracking your spending and see detailed insights about your financial habits.
+                Start tracking your spending by adding expenses manually or importing CSV data to see detailed insights about your financial habits.
               </Text>
               <TouchableOpacity
                 style={[styles.emptyStateButton, { backgroundColor: colors.primary[500] }]}
-                onPress={() => router.push('/banks/connect' as any)}
+                onPress={() => router.push('/add-expense')}
                 activeOpacity={0.8}
               >
                 <Ionicons name="add" size={20} color="white" style={styles.emptyStateButtonIcon} />
-                <Text style={styles.emptyStateButtonText}>Connect Bank Account</Text>
+                <Text style={styles.emptyStateButtonText}>Add Expense</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -610,7 +612,7 @@ export default function SpendingPage() {
         )}
 
         {/* Budget Summary Card */}
-        {selectedTab === "summary" && transactions.length > 0 && (
+        {selectedTab === "summary" && (
           <BudgetSummaryCard
             selectedMonth={selectedMonth}
             monthlyTotalSpent={monthlyData.monthlyTotalSpent}
@@ -629,7 +631,7 @@ export default function SpendingPage() {
         )}
 
         {/* Analytics Section */}
-        {selectedTab === "categories" && transactions.length > 0 && (
+        {selectedTab === "categories" && (
           <>
             <SpendingAnalyticsSection
               selectedMonth={selectedMonth}

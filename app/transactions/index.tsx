@@ -16,7 +16,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
-import { bankingAPI } from "../../services/api";
+import { transactionAPI } from "../../services/api/transactionAPI";
 import { getMerchantInfo } from "../../services/merchantService";
 import MonthFilter from "../../components/ui/MonthFilter";
 import dayjs from "dayjs";
@@ -48,7 +48,6 @@ export default function TransactionsScreen() {
   const { isLoggedIn } = useAuth();
   const {
     isLoggedIn: authLoggedIn,
-    hasBank,
     checkingBank,
   } = useAuthGuard(undefined, true);
   const { colors } = useTheme();
@@ -66,36 +65,47 @@ export default function TransactionsScreen() {
       if (showRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const transactionsResponse = await bankingAPI.getTransactionsUnified();
+      console.log(`[Transactions] Fetching transactions...`);
+      const transactionsResponse = await transactionAPI.getTransactions({ limit: 1000 });
+      console.log(`[Transactions] API Response:`, transactionsResponse);
 
-      if (transactionsResponse?.success && transactionsResponse.transactions && transactionsResponse.transactions.length > 0) {
+      if (transactionsResponse?.transactions && transactionsResponse.transactions.length > 0) {
         const formattedTransactions: Transaction[] = transactionsResponse.transactions.map(
           (tx: any) => {
+            console.log(`[Transactions] Processing transaction:`, tx);
 
-            // Determine transaction type from amount if not provided
+            // Get the original amount (should be positive)
+            const originalAmount = Math.abs(tx.originalAmount || tx.amount || 0);
+
+            // Determine transaction type from amount
             const rawAmount = tx.amount || 0;
             let transactionType = tx.type;
             if (!transactionType) {
               transactionType = rawAmount < 0 ? "debit" : "credit";
             }
 
-            return {
-              id: tx.id || tx.transaction_id,
-              amount: transactionType === "debit" ? -(Math.abs(rawAmount)) : Math.abs(rawAmount),
-              description: tx.description || tx.merchant_name || "Unknown Transaction",
-              date: tx.date || tx.timestamp,
-              merchant: tx.merchant_name || tx.description || "Unknown Merchant",
+            const formatted = {
+              id: tx.id || tx.transactionId || `tx_${Date.now()}_${Math.random()}`,
+              amount: rawAmount,
+              description: tx.description || "Unknown Transaction",
+              date: tx.date || new Date().toISOString(),
+              timestamp: tx.date || new Date().toISOString(),
+              merchant: tx.merchant || tx.description || "Manual Entry",
               category: tx.category || "General",
-              accountId: tx.account_id || "unknown",
-              bankName: tx.bank_name || "Unknown Bank",
+              accountId: tx.accountId || "manual",
+              bankName: tx.bankName || "Manual Entry",
               type: transactionType,
-              originalAmount: Math.abs(rawAmount),
-              accountType: tx.account_type || "Current Account",
-              isPending: tx.status === "pending" || tx.pending || false,
+              originalAmount: originalAmount,
+              accountType: tx.accountType || "Manual Account",
+              isPending: tx.isPending || false,
             };
+
+            console.log(`[Transactions] Formatted transaction:`, formatted);
+            return formatted;
           }
         );
 
+        console.log(`[Transactions] Setting ${formattedTransactions.length} formatted transactions`);
         setTransactions(formattedTransactions);
         setLastUpdated(dayjs().format("HH:mm"));
 
@@ -127,7 +137,7 @@ export default function TransactionsScreen() {
     if (!authLoggedIn) {
       router.replace("/auth/Login");
     }
-  }, [authLoggedIn, hasBank, checkingBank]);
+  }, [authLoggedIn, checkingBank]);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -141,49 +151,39 @@ export default function TransactionsScreen() {
     }
   }, [merchant]);
 
-  // Auto-select the most recent month when transactions are loaded
+  // Auto-select the most recent month when transactions are loaded - but don't auto-filter
   useEffect(() => {
     console.log(`[Transactions] useEffect triggered - selectedMonth: ${selectedMonth}, transactions: ${transactions.length}`);
-    console.log(`[Transactions] All transactions:`, transactions.map(tx => ({ 
-      date: tx.date, 
-      timestamp: tx.timestamp, 
-      description: tx.description 
-    })));
-    
-    // Test date parsing for specific dates like the ones in DynamoDB
+
     if (transactions.length > 0) {
+      console.log(`[Transactions] Sample transactions:`, transactions.slice(0, 5).map(tx => ({
+        date: tx.date,
+        timestamp: tx.timestamp,
+        description: tx.description
+      })));
+
+      // Test date parsing for specific dates like the ones in DynamoDB
       console.log(`[Transactions] Testing date parsing:`);
       console.log(`  2025-08-22 → ${dayjs("2025-08-22").format("YYYY-MM")}`);
       console.log(`  2025-08-23T10:30:14.816Z → ${dayjs("2025-08-23T10:30:14.816Z").format("YYYY-MM")}`);
       console.log(`  Current date → ${dayjs().format("YYYY-MM")}`);
     }
-    
+
+    // Don't auto-select a month - show all transactions by default
+    // Users can manually select a month to filter if needed
     if (!selectedMonth && transactions.length > 0) {
       const monthsSet = new Set<string>();
-      transactions.forEach((tx, index) => {
-        console.log(`[Transactions] Processing tx ${index}:`, {
-          date: tx.date,
-          timestamp: tx.timestamp,
-          amount: tx.amount,
-          description: tx.description
-        });
+      transactions.forEach((tx) => {
         const month = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
-        console.log(`[Transactions] Month for tx ${index}: ${month} from date: ${tx.date || tx.timestamp}`);
         monthsSet.add(month);
       });
       const sortedMonths = Array.from(monthsSet).sort().reverse();
-      console.log(`[Transactions] Available months found:`, sortedMonths);
-      
-      if (sortedMonths.length > 0) {
-        // Check if current month has transactions, if not use the latest available month
-        const currentMonth = dayjs().format("YYYY-MM");
-        const monthToSelect = sortedMonths.includes(currentMonth) ? currentMonth : sortedMonths[0];
-        
-        setSelectedMonth(monthToSelect);
-        console.log(`[Transactions] Auto-selected month: ${monthToSelect} (current: ${currentMonth}, available: ${sortedMonths.join(', ')})`);
-      }
+      console.log(`[Transactions] Available months found (but not auto-selecting):`, sortedMonths);
+
+      // Don't auto-select any month - let users see all transactions
+      // setSelectedMonth("");  // Keep empty to show all
     }
-  }, [transactions, selectedMonth]);
+  }, [transactions]);
 
   // Generate available months from transactions
   const availableMonths = useMemo(() => {
@@ -193,10 +193,13 @@ export default function TransactionsScreen() {
       monthsSet.add(month);
     });
 
-    const months = Array.from(monthsSet).sort().reverse().slice(0, 6);
+    console.log(`[Transactions] Available months for filter:`, Array.from(monthsSet).sort().reverse());
+
+    // Show more months since user has 975 transactions
+    const months = Array.from(monthsSet).sort().reverse().slice(0, 12);
     return months.map((month) => ({
       key: month,
-      label: dayjs(month).format("MMM"),
+      label: dayjs(month).format("MMM YY"),
       isActive: true,
     }));
   }, [transactions]);
@@ -205,30 +208,33 @@ export default function TransactionsScreen() {
   const { filteredTransactions, pendingTransactions } = useMemo(() => {
     let filtered = transactions;
     console.log(`[Transactions] Starting filter with ${transactions.length} transactions, selectedMonth: ${selectedMonth}`);
-    console.log(`[Transactions] Sample transaction dates:`, transactions.slice(0, 3).map(tx => ({
-      description: tx.description,
-      date: tx.date,
-      timestamp: tx.timestamp,
-      parsedMonth: dayjs(tx.date || tx.timestamp).format("YYYY-MM")
-    })));
 
-    // Month filter - only apply if selectedMonth is set
-    if (selectedMonth) {
+    if (transactions.length > 0) {
+      console.log(`[Transactions] Sample transaction dates:`, transactions.slice(0, 3).map(tx => ({
+        description: tx.description,
+        date: tx.date,
+        timestamp: tx.timestamp,
+        parsedMonth: dayjs(tx.date || tx.timestamp).format("YYYY-MM")
+      })));
+    }
+
+    // Month filter - only apply if selectedMonth is set and not empty
+    if (selectedMonth && selectedMonth.trim() !== "") {
+      console.log(`[Transactions] Applying month filter for: ${selectedMonth}`);
+      const beforeFilterCount = filtered.length;
       filtered = filtered.filter(
         (tx) => {
           const txMonth = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
           const matches = txMonth === selectedMonth;
-          if (!matches) {
-            console.log(`[Transactions] Filtering out tx: ${tx.description}, month: ${txMonth}, selected: ${selectedMonth}`);
-          }
           return matches;
         }
       );
+      console.log(`[Transactions] Month filter: ${beforeFilterCount} → ${filtered.length} transactions`);
     } else {
-      console.log(`[Transactions] No selectedMonth set, showing all ${transactions.length} transactions`);
+      console.log(`[Transactions] No month filter applied, showing all ${transactions.length} transactions`);
     }
-    
-    console.log(`[Transactions] After month filter: ${filtered.length} transactions (selectedMonth: ${selectedMonth})`);
+
+    console.log(`[Transactions] After month filter: ${filtered.length} transactions (selectedMonth: "${selectedMonth}")`);
 
     // Search filter
     if (searchQuery.trim()) {
@@ -301,7 +307,7 @@ export default function TransactionsScreen() {
     return null;
   }
 
-  if (!hasBank && transactions.length === 0 && !loading) {
+  if (transactions.length === 0 && !loading) {
     return (
       <SafeAreaView
         style={[
@@ -309,33 +315,65 @@ export default function TransactionsScreen() {
           { backgroundColor: colors.background.primary },
         ]}
       >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={[
+              styles.backButton,
+              { backgroundColor: colors.background.secondary },
+            ]}
+            onPress={() => router.back()}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={colors.primary[500]}
+            />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
+              ALL TRANSACTIONS
+            </Text>
+          </View>
+          <View style={styles.menuButton} />
+        </View>
+
         <View style={styles.emptyState}>
           <View
             style={[styles.emptyIcon, { backgroundColor: colors.primary[100] }]}
           >
             <Ionicons
-              name="link-outline"
+              name="receipt-outline"
               size={48}
               color={colors.primary[500]}
             />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
-            Connect Your Bank
+            No Transactions Yet
           </Text>
           <Text
             style={[styles.emptySubtitle, { color: colors.text.secondary }]}
           >
-            Connect your bank account to view your transactions
+            Add expenses manually or import from CSV to get started
           </Text>
           <TouchableOpacity
             style={[
               styles.connectButton,
               { backgroundColor: colors.primary[500] },
             ]}
-            onPress={() => router.push("/banks")}
+            onPress={() => router.push("/add-expense")}
           >
-            <Text style={styles.connectButtonText}>Connect Bank</Text>
+            <Text style={styles.connectButtonText}>Add Expense</Text>
             <Ionicons name="arrow-forward" size={16} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.connectButton,
+              { backgroundColor: colors.background.secondary, marginTop: 12 },
+            ]}
+            onPress={() => router.push("/import-csv")}
+          >
+            <Text style={[styles.connectButtonText, { color: colors.primary[500] }]}>Import CSV</Text>
+            <Ionicons name="document-text-outline" size={16} color={colors.primary[500]} />
           </TouchableOpacity>
         </View>
       </SafeAreaView>

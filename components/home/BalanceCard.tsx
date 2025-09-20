@@ -3,21 +3,16 @@ import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../app/auth/AuthContext';
-import { formatCacheAge, CachedBalanceData } from '../../utils/balanceCache';
 import { styles } from './BalanceCard.styles';
 import { SHADOWS } from '../../constants/Colors';
 
 interface BalanceCardProps {
   totalBalance: number;
-  usingCachedBalance: boolean;
-  cachedBalanceData: CachedBalanceData | null;
   getTimeOfDay: () => string;
 }
 
 export const BalanceCard: React.FC<BalanceCardProps> = ({
   totalBalance,
-  usingCachedBalance,
-  cachedBalanceData,
   getTimeOfDay,
 }) => {
   const { colors } = useTheme();
@@ -34,7 +29,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
               {user?.name ? `Hello, ${user.name.split(" ")[0]}` : `Good ${getTimeOfDay().toLowerCase()}`}
             </Text>
             <Text style={styles.professionalBalanceLabel}>
-              Total Balance
+              Monthly Balance
             </Text>
           </View>
           <View style={styles.professionalBalanceIcon}>
@@ -59,14 +54,6 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
           </View>
         </View>
         
-        {usingCachedBalance && cachedBalanceData && (
-          <View style={styles.professionalCachedBadge}>
-            <Ionicons name="time-outline" size={14} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.professionalCachedText}>
-              Cached {formatCacheAge(cachedBalanceData.cachedAt)}
-            </Text>
-          </View>
-        )}
         
         {/* Professional Decorative Elements */}
         <View style={styles.professionalDecoration1} />

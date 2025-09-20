@@ -52,7 +52,7 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
         <View style={styles.budgetGridContainer}>
           {/* Top Row */}
           <View style={styles.budgetRow}>
-            <View style={[styles.budgetCard, styles.budgetCardPrimary]}>
+            <View style={[styles.budgetCard, styles.budgetCardPrimary, { backgroundColor: colors.background.secondary }]}>
               <Text style={[styles.budgetCardAmount, { color: colors.text.primary }]}>
                 {formatAmount(monthlyTotalSpent, currency)}
               </Text>
@@ -60,8 +60,8 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                 This Month Spent
               </Text>
             </View>
-            
-            <View style={[styles.budgetCard, styles.budgetCardSecondary]}>
+
+            <View style={[styles.budgetCard, styles.budgetCardSecondary, { backgroundColor: colors.background.secondary }]}>
               <Text style={[styles.budgetCardAmount, { color: colors.text.primary }]}>
                 {formatAmount(totalBudget, currency)}
               </Text>
@@ -73,7 +73,7 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
 
           {/* Bottom Row */}
           <View style={styles.budgetRow}>
-            <View style={[styles.budgetCard, styles.budgetCardAccent]}>
+            <View style={[styles.budgetCard, styles.budgetCardAccent, { backgroundColor: colors.background.secondary }]}>
               <Text style={[styles.budgetCardAmount, { color: colors.primary[500] }]}>
                 {formatAmount(averageSpendPerDay, currency)}
               </Text>
@@ -81,13 +81,12 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                 Average Per Day
               </Text>
             </View>
-            
-            <View style={[styles.budgetCard, styles.budgetCardWarning]}>
-              <Text style={[styles.budgetCardAmount, { 
+
+            <View style={[styles.budgetCard, styles.budgetCardWarning, { backgroundColor: colors.background.secondary }]}>
+              <Text style={[styles.budgetCardAmount, {
                 color: (() => {
-                  if (!currentMonth) return colors.text.primary;
                   if (totalBudget === 0) return colors.text.primary;
-                  
+
                   const percentage = (predictedMonthlySpend / totalBudget) * 100;
                   if (percentage > 100) return colors.error[500];
                   if (percentage > 80) return colors.warning[500];
@@ -97,7 +96,7 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                 {formatAmount(predictedMonthlySpend, currency)}
               </Text>
               <Text style={[styles.budgetCardLabel, { color: colors.text.secondary }]}>
-                {currentMonth ? 'Predicted Monthly' : 'Monthly Total'}
+                Expected Total
               </Text>
             </View>
           </View>

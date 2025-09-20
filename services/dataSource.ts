@@ -1,5 +1,5 @@
-// Centralized data source for real API calls
-import { bankingAPI, profileAPI } from "./api";
+// Centralized data source for manual input mode
+import { profileAPI } from "./api";
 
 // Helper function to extract merchant name from transaction description
 function extractMerchantFromDescription(description: string): string {
@@ -16,7 +16,7 @@ function extractMerchantFromDescription(description: string): string {
 // Helper function to categorize transactions based on description
 function categorizeTransaction(description: string): string {
   const desc = description.toLowerCase();
-  
+
   if (desc.includes('grocery') || desc.includes('supermarket') || desc.includes('tesco') || desc.includes('asda') || desc.includes('sainsbury')) {
     return 'groceries';
   } else if (desc.includes('restaurant') || desc.includes('cafe') || desc.includes('pizza') || desc.includes('mcdonald') || desc.includes('kfc')) {
@@ -34,241 +34,100 @@ function categorizeTransaction(description: string): string {
   }
 }
 
-// Real API-backed implementations
+// 📱 MANUAL INPUT MODE: All banking functions return empty/default data
+
 export const getInstitutions = async (...args: any[]) => {
-  try {
-    const res = await bankingAPI.getInstitutions();
-    return res;
-  } catch (error: any) {
-    console.error("Error loading institutions:", error);
-
-    // Handle rate limit errors gracefully
-    if (error.response?.status === 429) {
-      throw new Error("Rate limit exceeded. Please try again tomorrow.");
-    }
-
-    throw error;
-  }
+  console.log("📱 [DataSource] Manual input mode: No institutions available");
+  return { institutions: [] };
 };
 
 export const getAccountDetails = async (accountId: string) => {
-  try {
-    const accountsRes = await bankingAPI.getAccounts();
-    const institutions = await getInstitutions();
-    const account = (accountsRes.accounts || []).find(
-      (a: any) => a.id === accountId
-    );
-
-    if (!account) {
-      throw new Error("Account not found");
-    }
-
-    // Try to fetch balance for this account
-    let balance = 0;
-    try {
-      const balanceRes = await bankingAPI.getBalance(accountId);
-      balance = balanceRes.balance?.[0]?.balanceAmount?.amount || 0;
-    } catch (balanceError) {
-      console.error(
-        `Error fetching balance for account ${accountId}:`,
-        balanceError
-      );
-      // Use default balance of 0 if balance fetch fails
-    }
-
-    // Try to find institution logo
-    const institutionsData = (institutions as any).data?.institutions || (institutions as any).institutions || [];
-    const institution =
-      institutionsData.find((inst: any) => inst.id === account.institutionId) || {};
-
-    return {
-      id: account.id,
-      name: account.name || `Account ${accountId.slice(-4)}`,
-      iban: account.iban || `****${accountId.slice(-4)}`,
-      balance: balance,
-      currency: account.currency || "GBP",
-      status: account.status || "connected",
-      institution: {
-        id: account.institutionId,
-        name: institution.name || "Bank",
-        logo: institution.logo || "",
-      },
-      type: account.type || "Current Account",
-      createdAt: account.createdAt,
-    };
-  } catch (error) {
-    console.error(`Error fetching account details for ${accountId}:`, error);
-    throw error;
-  }
+  console.log("📱 [DataSource] Manual input mode: No account details available");
+  return {
+    id: accountId,
+    name: "Manual Account",
+    iban: "****MANUAL",
+    balance: 0,
+    currency: "GBP",
+    status: "manual",
+    institution: {
+      id: "manual",
+      name: "Manual Entry",
+      logo: "",
+    },
+    type: "Manual Account",
+    createdAt: new Date().toISOString(),
+  };
 };
 
 export const getAccountBalance = async (accountId: string) => {
-  try {
-    const balanceRes = await bankingAPI.getBalance(accountId);
-    const balance = balanceRes.balance?.[0]?.balanceAmount || {
+  console.log("📱 [DataSource] Manual input mode: No account balance available");
+  return {
+    balanceAmount: {
       amount: 0,
       currency: "GBP",
-    };
-
-    return {
-      balanceAmount: {
-        amount: parseFloat(balance.amount) || 0,
-        currency: balance.currency || "GBP",
-      },
-      balanceType: balanceRes.balance?.[0]?.balanceType || "interimAvailable",
-      referenceDate:
-        balanceRes.balance?.[0]?.referenceDate || new Date().toISOString(),
-    };
-  } catch (error) {
-    console.error(`Error fetching balance for account ${accountId}:`, error);
-    // Return default balance if fetch fails
-    return {
-      balanceAmount: {
-        amount: 0,
-        currency: "GBP",
-      },
-      balanceType: "interimAvailable",
-      referenceDate: new Date().toISOString(),
-    };
-  }
+    },
+    balanceType: "manual",
+    referenceDate: new Date().toISOString(),
+  };
 };
 
 export const getAccountTransactions = async (accountId: string) => {
-  try {
-    const transactionsRes = await bankingAPI.getTransactions(accountId);
-    const transactions = Array.isArray(transactionsRes.transactions) 
-      ? transactionsRes.transactions 
-      : ((transactionsRes.transactions as any)?.booked || []);
-
-    return {
-      transactions: transactions.map((tx: any) => ({
-        id: tx.transactionId || tx.id || `tx_${Date.now()}`,
-        amount: parseFloat(tx.transactionAmount?.amount || tx.amount || "0"),
-        currency: tx.transactionAmount?.currency || tx.currency || "GBP",
-        description:
-          tx.remittanceInformationUnstructured ||
-          tx.description ||
-          "Transaction",
-        date: tx.bookingDate || tx.date || new Date().toISOString(),
-        category: tx.category || "Other",
-        accountId: accountId,
-        // Additional fields that might be useful
-        creditorName: tx.creditorName || "",
-        debtorName: tx.debtorName || "",
-        transactionType: tx.transactionType || "debit",
-        status: tx.status || "booked",
-      })),
-    };
-  } catch (error) {
-    console.error(
-      `Error fetching transactions for account ${accountId}:`,
-      error
-    );
-    // Return empty transactions if fetch fails
-    return {
-      transactions: [],
-    };
-  }
+  console.log("📱 [DataSource] Manual input mode: No account transactions available");
+  return {
+    transactions: [],
+  };
 };
 
 export const getAllAccountIds = async () => {
   try {
-    const accountsRes = await bankingAPI.getAccounts();
-    const accounts = accountsRes.accounts || accountsRes.banks || [];
-    return accounts.map((a: any) => a.id || a.accountId);
+    // 📱 MANUAL INPUT MODE: Return empty array since we're not using bank connections
+    console.log("📱 [DataSource] Manual input mode: Skipping bank account fetch");
+    return [];
   } catch (error: any) {
     console.error("Error loading accounts:", error);
-
-    // Handle rate limit errors gracefully
-    if (error.response?.status === 429) {
-      throw new Error("Rate limit exceeded. Please try again tomorrow.");
-    }
-
-    throw error;
+    return [];
   }
 };
 
 export const refreshAccountBalances = async () => {
-  try {
-    const response = await bankingAPI.refreshBalances();
-    return response;
-  } catch (error: any) {
-    console.error("Error refreshing account balances:", error);
-    throw error;
-  }
+  console.log("📱 [DataSource] Manual input mode: No account balances to refresh");
+  return { success: true, message: "Manual mode - no balances to refresh" };
 };
 
-// Real API implementations for previously mock-only endpoints
+// Non-banking functionality that can remain
+
 export const getSpendingCategories = async () => {
   try {
-    // This would typically come from a backend API
-    // For now, we'll return a dynamic list based on user's actual spending
-    const accountIds = await getAllAccountIds();
-    const categories = new Set();
-
-    // Collect categories from actual transactions
-    for (const accountId of accountIds) {
-      try {
-        const transactions = await getAccountTransactions(accountId);
-        transactions.transactions?.forEach((tx: any) => {
-          if (tx.category) {
-            categories.add(tx.category);
-          }
-        });
-      } catch (error) {
-        console.error(
-          `Error fetching transactions for account ${accountId}:`,
-          error
-        );
-      }
-    }
-
-    // Return dynamic categories based on actual spending
-    return Array.from(categories).map((category: any, index) => ({
-      id: String(category).toLowerCase().replace(/\s+/g, "-"),
-      name: String(category),
-      icon: getCategoryIcon(String(category)),
-      defaultBudget: 0, // Will be set by user
-      spent: 0, // Will be calculated from transactions
-      color: getCategoryColor(index),
-    }));
+    // Return default categories for manual input mode
+    return [
+      { id: "food", name: "Food & Dining", icon: "restaurant", defaultBudget: 300, spent: 0, color: "#3B82F6" },
+      { id: "transport", name: "Transportation", icon: "car", defaultBudget: 150, spent: 0, color: "#10B981" },
+      { id: "entertainment", name: "Entertainment", icon: "game-controller", defaultBudget: 100, spent: 0, color: "#8B5CF6" },
+      { id: "shopping", name: "Shopping", icon: "bag", defaultBudget: 200, spent: 0, color: "#F59E0B" },
+      { id: "bills", name: "Bills & Utilities", icon: "flash", defaultBudget: 150, spent: 0, color: "#EF4444" },
+      { id: "health", name: "Health & Fitness", icon: "fitness", defaultBudget: 100, spent: 0, color: "#06B6D4" },
+      { id: "other", name: "Other", icon: "card", defaultBudget: 100, spent: 0, color: "#84CC16" },
+    ];
   } catch (error) {
     console.error("Error loading spending categories:", error);
-    // Return empty array if no transactions or API fails
     return [];
   }
 };
 
 export const getPaymentMethods = async () => {
-  try {
-    // This would typically come from a backend API
-    // For now, return empty array - payment methods would be managed by user
-    return [];
-  } catch (error) {
-    console.error("Error loading payment methods:", error);
-    return [];
-  }
+  console.log("📱 [DataSource] Manual input mode: No payment methods available");
+  return [];
 };
 
 export const getFAQ = async () => {
-  try {
-    // This would typically come from a backend API
-    // For now, return empty array
-    return [];
-  } catch (error) {
-    console.error("Error loading FAQ:", error);
-    return [];
-  }
+  console.log("📱 [DataSource] Manual input mode: No FAQ available");
+  return [];
 };
 
 export const getLegalSections = async () => {
-  try {
-    // This would typically come from a backend API
-    return [];
-  } catch (error) {
-    console.error("Error loading legal sections:", error);
-    return [];
-  }
+  console.log("📱 [DataSource] Manual input mode: No legal sections available");
+  return [];
 };
 
 export const getNotificationSettings = async () => {
@@ -276,13 +135,13 @@ export const getNotificationSettings = async () => {
     // Check if app is locked first - prevent API calls that cause session expiry
     const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
     const isSecurityEnabled = await AsyncStorage.getItem('@expenzez_security_enabled');
-    
+
     if (isSecurityEnabled === 'true') {
       const lastUnlockTime = await AsyncStorage.getItem('@expenzez_last_unlock');
       const sessionTimeout = 15 * 60 * 1000; // 15 minutes (matches security system)
       const now = Date.now();
       const hasValidSession = lastUnlockTime && (now - parseInt(lastUnlockTime)) < sessionTimeout;
-      
+
       if (!hasValidSession) {
         console.log("🔒 [DataSource] App is locked, skipping notification preferences fetch to prevent session expiry");
         return getDefaultNotificationSettings(); // Return defaults instead of making API call
@@ -322,13 +181,13 @@ export const getRecentNotifications = async () => {
     // Check if app is locked first - prevent API calls that cause session expiry
     const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
     const isSecurityEnabled = await AsyncStorage.getItem('@expenzez_security_enabled');
-    
+
     if (isSecurityEnabled === 'true') {
       const lastUnlockTime = await AsyncStorage.getItem('@expenzez_last_unlock');
       const sessionTimeout = 15 * 60 * 1000; // 15 minutes (matches security system)
       const now = Date.now();
       const hasValidSession = lastUnlockTime && (now - parseInt(lastUnlockTime)) < sessionTimeout;
-      
+
       if (!hasValidSession) {
         console.log("🔒 [DataSource] App is locked, skipping notification history fetch to prevent session expiry");
         return []; // Return empty array instead of making API call
@@ -338,8 +197,7 @@ export const getRecentNotifications = async () => {
     // Fetch real notifications from backend API
     const { notificationAPI } = await import("./api");
     const response = await notificationAPI.getHistory(20);
-    
-    
+
     // Transform backend data to match frontend interface
     return (response.notifications || []).map((notification: any) => ({
       id: notification.id || notification.notificationId,
@@ -352,19 +210,19 @@ export const getRecentNotifications = async () => {
     }));
   } catch (error) {
     console.error("Error loading real notifications:", error);
-    
+
     // Handle timeout errors gracefully
     if ((error as any).code === 'ECONNABORTED' || (error as any).message?.includes('timeout')) {
       console.warn("Notification request timed out, returning empty list");
       return [];
     }
-    
+
     // API not available, return empty array
     if ((error as any).response?.status === 404) {
       console.log('Notifications API not available');
       return [];
     }
-    
+
     // Return empty array for other errors
     return [];
   }
@@ -496,97 +354,41 @@ export const getMonths = async () => {
   }
 };
 
-// Helper functions
-const getCategoryIcon = (category: string): string => {
-  const iconMap: { [key: string]: string } = {
-    groceries: "food-apple-outline",
-    transport: "bus-clock",
-    entertainment: "game-controller-outline",
-    utilities: "flash-outline",
-    shopping: "bag-outline",
-    health: "fitness-outline",
-    coffee: "cafe",
-    restaurant: "restaurant",
-    gas: "car",
-    parking: "car",
-    uber: "car",
-    lyft: "car",
-    amazon: "basket",
-    netflix: "tv",
-    spotify: "musical-notes",
-    gym: "fitness",
-    pharmacy: "medical",
-    doctor: "medical",
-    dentist: "medical",
-    salary: "cash",
-    income: "cash",
-    refund: "card",
-    default: "card",
-  };
-
-  return iconMap[category.toLowerCase()] || iconMap.default;
-};
-
-const getCategoryColor = (index: number): string => {
-  const colors = [
-    "#3B82F6", // blue
-    "#10B981", // green
-    "#8B5CF6", // purple
-    "#F59E0B", // amber
-    "#EF4444", // red
-    "#06B6D4", // cyan
-    "#84CC16", // lime
-    "#F97316", // orange
-    "#EC4899", // pink
-    "#6366F1", // indigo
-  ];
-
-  return colors[index % colors.length];
-};
-
+// 📱 MANUAL INPUT MODE: Use transactionAPI instead of banking APIs
 export const getTransactions = async () => {
   try {
-    console.log("[DataSource] getTransactions called");
-    
-    // Use the unified API call with fallback logic (same as spending page)
-    const response = await bankingAPI.getTransactionsUnified({ limit: 100 });
-    
-    console.log("[DataSource] Raw API response:", response);
+    console.log("[DataSource] getTransactions called - using manual transaction API");
 
-    if (!response || !response.success || !response.transactions) {
+    const { transactionAPI } = await import("./api/transactionAPI");
+    const response = await transactionAPI.getTransactions({ limit: 2000 });
+
+    console.log("[DataSource] Manual transaction API response:", response);
+
+    if (!response || !response.transactions) {
       console.log("[DataSource] No transactions in response");
       return [];
     }
 
     console.log("[DataSource] Found transactions:", response.transactions.length);
-    
-    // Return the transactions exactly as they come from the unified API
-    // Just add the fields that the UI expects, with correct amount signs
+
+    // Return the transactions with proper formatting
     const formattedTransactions = response.transactions.map((tx: any, index: number) => ({
       // Keep all original fields from API
       ...tx,
-      // Correct the amount sign based on transaction type
-      amount: tx.type === "debit" ? -(Math.abs(tx.amount || 0)) : Math.abs(tx.amount || 0),
       // Add UI-expected fields
-      id: tx.transactionId || tx.id || `tx_${index}`,
-      transaction_id: tx.transactionId || tx.id,
-      account_id: tx.accountId,
-      merchant_name: tx.merchant || tx.description || 'Unknown Merchant',
+      id: tx.id || `tx_${index}`,
+      transaction_id: tx.id,
+      account_id: tx.accountId || 'manual',
+      merchant_name: tx.merchant || tx.description || 'Manual Entry',
       transaction_type: tx.type || (parseFloat(tx.amount || '0') < 0 ? 'debit' : 'credit'),
-      bank_name: tx.bankName || 'Unknown Bank',
+      bank_name: tx.bankName || 'Manual Entry',
     }));
-    
+
     console.log("[DataSource] Returning formatted transactions:", formattedTransactions.length);
     return formattedTransactions;
-    
+
   } catch (error: any) {
-    console.error("[DataSource] Error with unified API call:", error);
-    console.error("[DataSource] Error details:", {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data
-    });
-    
+    console.error("[DataSource] Error with transaction API call:", error);
     return [];
   }
 };
