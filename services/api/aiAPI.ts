@@ -178,9 +178,13 @@ export const aiService = {
   // Get monthly financial report
   getMonthlyReport: async (month?: string, year?: string) => {
     try {
-      const response = await aiAPI.get("/ai/monthly-report", {
-        params: { month, year }
-      });
+      // Create reportMonth in YYYY-MM format
+      const now = new Date();
+      const reportMonth = month && year
+        ? `${year}-${month.padStart(2, '0')}`
+        : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+      const response = await aiAPI.get(`/ai/monthly-report/${reportMonth}`);
       return response.data;
     } catch (error: any) {
       // Handle both 404 and 401 errors gracefully

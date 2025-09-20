@@ -22,6 +22,7 @@ import {
   MonthlyOverview,
   TransactionsList,
   AIAssistantCard,
+  UpcomingBillsCard,
 } from "../../components/home";
 
 interface Transaction {
@@ -276,6 +277,8 @@ export default function HomeScreen() {
         />
 
         <QuickActions />
+
+        <UpcomingBillsCard />
 
         <MonthSelector
           selectedMonth={selectedMonth}

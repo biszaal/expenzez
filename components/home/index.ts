@@ -5,3 +5,4 @@ export { MonthSelector } from './MonthSelector';
 export { MonthlyOverview } from './MonthlyOverview';
 export { TransactionsList } from './TransactionsList';
 export { AIAssistantCard } from './AIAssistantCard';
+export { UpcomingBillsCard } from './UpcomingBillsCard';

@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import MerchantClassifier from './merchantClassifier';
 
 export interface Transaction {
   id: string;
@@ -34,7 +35,7 @@ export interface DetectedBill {
 
 export class BillTrackingAlgorithm {
   private transactions: Transaction[];
-  private minConfidence: number = 0.5; // Lowered for better detection
+  private minConfidence: number = 0.3; // Further lowered for better detection
   private minOccurrences: number = 2;
 
   constructor(transactions: Transaction[]) {
@@ -47,13 +48,27 @@ export class BillTrackingAlgorithm {
    * Main method to detect all recurring bills and subscriptions
    */
   detectBills(): DetectedBill[] {
+    console.log('[BillTrackingAlgorithm] Starting bill detection with', this.transactions.length, 'transactions');
+
     const merchantGroups = this.groupTransactionsByMerchant();
+    console.log('[BillTrackingAlgorithm] Merchant groups:', {
+      totalGroups: merchantGroups.size,
+      groupSizes: Array.from(merchantGroups.entries()).map(([merchant, txs]) => ({
+        merchant,
+        count: txs.length
+      }))
+    });
+
     const detectedBills: DetectedBill[] = [];
 
     for (const [merchant, transactions] of merchantGroups) {
       // Skip if not enough transactions to establish pattern
-      if (transactions.length < this.minOccurrences) continue;
+      if (transactions.length < this.minOccurrences) {
+        console.log('[BillTrackingAlgorithm] Skipping merchant', merchant, '- only', transactions.length, 'transactions');
+        continue;
+      }
 
+      console.log('[BillTrackingAlgorithm] Analyzing pattern for', merchant, 'with', transactions.length, 'transactions');
       const bills = this.analyzeTransactionPattern(merchant, transactions);
       detectedBills.push(...bills);
     }
@@ -62,10 +77,35 @@ export class BillTrackingAlgorithm {
     const dayPatternBills = this.detectSameDayPatterns();
     detectedBills.push(...dayPatternBills);
 
-    // Sort by confidence and filter by minimum confidence
-    return detectedBills
-      .filter(bill => bill.confidence >= this.minConfidence)
+    console.log('[BillTrackingAlgorithm] Before filtering:', detectedBills.length, 'bills detected');
+    console.log('[BillTrackingAlgorithm] Min confidence:', this.minConfidence);
+
+    // Sort by confidence and filter using merchant-specific thresholds
+    const filteredBills = detectedBills
+      .filter(bill => {
+        const classification = MerchantClassifier.classifyMerchant(bill.merchant, '');
+        const minThreshold = MerchantClassifier.getMinConfidenceThreshold(classification);
+        const passes = bill.confidence >= minThreshold;
+
+        console.log('[BillTrackingAlgorithm] Bill evaluation:', {
+          merchant: bill.merchant,
+          confidence: bill.confidence,
+          classification: classification.type,
+          threshold: minThreshold,
+          passes: passes
+        });
+
+        if (!passes) {
+          console.log('[BillTrackingAlgorithm] Filtered out bill:', bill.merchant,
+            'confidence:', bill.confidence, 'threshold:', minThreshold);
+        }
+        return passes;
+      })
       .sort((a, b) => b.confidence - a.confidence);
+
+    console.log('[BillTrackingAlgorithm] Final detected bills:', filteredBills.length);
+
+    return filteredBills;
   }
 
   /**
@@ -74,15 +114,41 @@ export class BillTrackingAlgorithm {
   private groupTransactionsByMerchant(): Map<string, Transaction[]> {
     const groups = new Map<string, Transaction[]>();
 
+    // Debug: Check transaction types
+    const typeCount = this.transactions.reduce((acc, tx) => {
+      acc[tx.type] = (acc[tx.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    console.log('[BillTrackingAlgorithm] Transaction types:', typeCount);
+
     for (const transaction of this.transactions) {
-      if (transaction.type !== 'debit') continue; // Only track outgoing payments
+      if (transaction.type !== 'debit') {
+        console.log('[BillTrackingAlgorithm] Skipping non-debit transaction:', {
+          merchant: transaction.merchant,
+          amount: transaction.amount,
+          type: transaction.type,
+          description: transaction.description
+        });
+        continue; // Only track outgoing payments
+      }
+
+      // Check if merchant should be excluded from bill detection (e.g., groceries, retail)
+      if (MerchantClassifier.shouldExcludeFromBills(transaction.merchant, transaction.description)) {
+        console.log('[BillTrackingAlgorithm] Excluding retail/variable expense:', {
+          merchant: transaction.merchant,
+          amount: transaction.amount,
+          description: transaction.description,
+          classification: MerchantClassifier.classifyMerchant(transaction.merchant, transaction.description)
+        });
+        continue;
+      }
 
       const normalizedMerchant = this.normalizeMerchantName(transaction.merchant);
-      
+
       if (!groups.has(normalizedMerchant)) {
         groups.set(normalizedMerchant, []);
       }
-      
+
       groups.get(normalizedMerchant)!.push(transaction);
     }
 
@@ -134,11 +200,26 @@ export class BillTrackingAlgorithm {
   }
 
   /**
-   * Group transactions by similar amounts
+   * Group transactions by similar amounts using merchant-specific variance thresholds
    */
   private groupByAmount(transactions: Transaction[]): Map<number, Transaction[]> {
     const groups = new Map<number, Transaction[]>();
-    const variance = 0.15; // Increased to 15% variance for more flexibility
+
+    // Get merchant classification from first transaction (all should be same merchant)
+    const sampleTransaction = transactions[0];
+    const classification = MerchantClassifier.classifyMerchant(
+      sampleTransaction.merchant,
+      sampleTransaction.description
+    );
+
+    // Use merchant-specific variance threshold
+    const variance = MerchantClassifier.getAmountVarianceThreshold(classification);
+
+    console.log('[BillTrackingAlgorithm] Amount grouping for', sampleTransaction.merchant, ':', {
+      classification: classification.type,
+      variance: variance,
+      transactionCount: transactions.length
+    });
 
     for (const transaction of transactions) {
       let foundGroup = false;
@@ -466,6 +547,11 @@ export class BillTrackingAlgorithm {
     // Group transactions by day of month
     for (const transaction of this.transactions) {
       if (transaction.type !== 'debit') continue;
+
+      // Apply same merchant filtering for day patterns
+      if (MerchantClassifier.shouldExcludeFromBills(transaction.merchant, transaction.description)) {
+        continue;
+      }
 
       const dayOfMonth = dayjs(transaction.date).date();
       if (!dayGroups.has(dayOfMonth)) {

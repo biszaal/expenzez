@@ -563,9 +563,11 @@ export default function CSVImportScreen() {
       // Trigger automatic bill detection for recurring patterns
       if (successCount > 0) {
         // Run bill detection in background (don't block the success alert)
-        autoBillDetection.triggerBillDetection()
+        // Use refreshAfterTransactionChanges for better performance tracking
+        autoBillDetection.refreshAfterTransactionChanges(successCount)
           .then(detectedBills => {
             if (detectedBills.length > 0) {
+              console.log(`[CSV Import] Detected ${detectedBills.length} bills after import`);
             }
           })
           .catch(error => {
