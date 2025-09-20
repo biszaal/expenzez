@@ -20,7 +20,7 @@ export const API_CONFIG = {
   retryAttempts: 3,
 } as const;
 
-// Navigation constants
+// Navigation constants - updated for manual input mode
 export const NAVIGATION = {
   auth: {
     login: "/auth/Login",
@@ -32,18 +32,17 @@ export const NAVIGATION = {
     spending: "/(tabs)/spending",
     accounts: "/(tabs)/account",
     credit: "/(tabs)/credit",
-  },
-  banking: {
-    connect: "/banks/connect",
-    select: "/banks/select",
-    callback: "/banks/callback",
+    addExpense: "/add-expense",
+    importCsv: "/import-csv",
+    transactions: "/transactions",
   },
 } as const;
 
-// Feature flags
+// Feature flags - updated for manual input mode
 export const FEATURES = {
   aiAssistant: true,
-  bankConnections: true,
+  manualEntry: true,
+  csvImport: true,
   notifications: true,
   darkMode: true,
   biometricAuth: true,
@@ -56,13 +55,17 @@ export const ERROR_MESSAGES = {
   server: "Server error. Please try again later.",
   unknown: "An unexpected error occurred.",
   rateLimit: "Rate limit exceeded. Please try again later.",
+  csvImport: "Failed to import CSV file. Please check the format.",
+  transactionSave: "Failed to save transaction. Please try again.",
 } as const;
 
-// Success messages
+// Success messages - updated for manual input mode
 export const SUCCESS_MESSAGES = {
   login: "Login successful!",
   register: "Registration successful!",
-  bankConnected: "Bank account connected successfully!",
+  expenseAdded: "Expense added successfully!",
+  incomeAdded: "Income added successfully!",
+  csvImported: "CSV data imported successfully!",
   profileUpdated: "Profile updated successfully!",
   settingsSaved: "Settings saved successfully!",
 } as const;
@@ -87,6 +90,11 @@ export const VALIDATION = {
   phone: {
     pattern: /^\+?[\d\s\-\(\)]+$/,
   },
+  amount: {
+    min: 0.01,
+    max: 999999.99,
+    pattern: /^\d+(\.\d{1,2})?$/,
+  },
 } as const;
 
 // Currency configuration
@@ -100,386 +108,89 @@ export const CURRENCY = {
   },
 } as const;
 
-// Date formats
-export const DATE_FORMATS = {
-  display: "MMM DD, YYYY",
-  input: "YYYY-MM-DD",
-  api: "YYYY-MM-DDTHH:mm:ss.SSSZ",
-  short: "MMM DD",
-  month: "MMMM YYYY",
+// Transaction categories for manual input
+export const TRANSACTION_CATEGORIES = {
+  expenses: [
+    { id: "food", name: "Food & Dining", icon: "restaurant", color: "#FF6B6B" },
+    { id: "transport", name: "Transportation", icon: "car", color: "#4ECDC4" },
+    { id: "shopping", name: "Shopping", icon: "bag", color: "#45B7D1" },
+    { id: "bills", name: "Bills & Utilities", icon: "flash", color: "#96CEB4" },
+    { id: "entertainment", name: "Entertainment", icon: "game-controller", color: "#FECA57" },
+    { id: "health", name: "Health & Fitness", icon: "fitness", color: "#FF9FF3" },
+    { id: "education", name: "Education", icon: "school", color: "#54A0FF" },
+    { id: "travel", name: "Travel", icon: "airplane", color: "#5F27CD" },
+    { id: "other", name: "Other", icon: "card", color: "#00D2D3" },
+  ],
+  income: [
+    { id: "salary", name: "Salary", icon: "briefcase", color: "#2ED573" },
+    { id: "freelance", name: "Freelance", icon: "laptop", color: "#3742FA" },
+    { id: "investment", name: "Investment", icon: "trending-up", color: "#FF6348" },
+    { id: "rental", name: "Rental Income", icon: "home", color: "#2F3542" },
+    { id: "business", name: "Business", icon: "storefront", color: "#FF4757" },
+    { id: "gift", name: "Gift/Bonus", icon: "gift", color: "#5352ED" },
+    { id: "refund", name: "Refund", icon: "refresh", color: "#FF9F43" },
+    { id: "other_income", name: "Other Income", icon: "cash", color: "#10AC84" },
+  ],
 } as const;
 
-// Transaction types
-export const TRANSACTION_TYPES = {
-  debit: "debit",
-  credit: "credit",
-  transfer: "transfer",
+// CSV import configuration
+export const CSV_CONFIG = {
+  supportedFormats: [".csv", ".txt"],
+  maxFileSize: 5 * 1024 * 1024, // 5MB
+  requiredColumns: ["date", "description", "amount"],
+  optionalColumns: ["category", "type", "merchant"],
+  dateFormats: [
+    "DD/MM/YYYY",
+    "MM/DD/YYYY",
+    "YYYY-MM-DD",
+    "DD-MM-YYYY",
+    "MM-DD-YYYY",
+  ],
 } as const;
 
-// Account types
-export const ACCOUNT_TYPES = {
-  current: "current",
-  savings: "savings",
-  credit: "credit",
-  investment: "investment",
-} as const;
-
-// Notification types
-export const NOTIFICATION_TYPES = {
-  spending: "spending",
-  budget: "budget",
-  security: "security",
-  system: "system",
-} as const;
-
-// Security levels
-export const SECURITY_LEVELS = {
-  low: "low",
-  medium: "medium",
-  high: "high",
-} as const;
-
-// Theme colors (will be replaced by dynamic theme system)
-export const THEME_COLORS = {
-  primary: "#3B82F6",
-  secondary: "#6B7280",
-  success: "#10B981",
-  warning: "#F59E0B",
-  error: "#EF4444",
-  info: "#06B6D4",
-} as const;
-
-// Animation durations
-export const ANIMATION = {
-  fast: 200,
-  normal: 300,
-  slow: 500,
-} as const;
-
-// Storage keys
-export const STORAGE_KEYS = {
-  auth: {
-    isLoggedIn: "isLoggedIn",
-    accessToken: "accessToken",
-    idToken: "idToken",
-    refreshToken: "refreshToken",
-    user: "user",
-  },
-  settings: {
-    theme: "theme",
-    notifications: "notifications",
-    biometric: "biometric",
-    language: "language",
-  },
-  data: {
-    accounts: "accounts",
-    transactions: "transactions",
-    profile: "profile",
-    budgets: "budgets",
-  },
-} as const;
-
-// Default values
-export const DEFAULTS = {
-  pageSize: 20,
-  refreshInterval: 300000, // 5 minutes
-  sessionTimeout: 3600000, // 1 hour
-  maxRetries: 3,
-} as const;
-
-// Environment-specific configuration
-export const ENV_CONFIG = {
-  development: {
-    apiUrl: "https://g77tomv0vk.execute-api.eu-west-2.amazonaws.com",
-    logLevel: "debug",
-  },
-  production: {
-    apiUrl: "https://g77tomv0vk.execute-api.eu-west-2.amazonaws.com",
-    logLevel: "error",
-  },
-} as const;
-
-// Bank categories for filtering
-export const BANK_CATEGORIES = {
-  retail: {
-    name: "Retail Banks",
-    description: "High street banks and building societies",
-    icon: "🏦",
+// Quick action configurations for manual input mode
+export const QUICK_ACTIONS = [
+  {
+    id: "add-expense",
+    title: "Add Expense",
+    subtitle: "Manual entry",
+    icon: "add-circle-outline",
     color: "#3B82F6",
+    route: "/add-expense",
   },
-  digital: {
-    name: "Digital Banks",
-    description: "Online-only banks and fintech",
-    icon: "📱",
+  {
+    id: "add-income",
+    title: "Add Income",
+    subtitle: "Record income",
+    icon: "arrow-up-circle-outline",
     color: "#10B981",
+    route: "/add-income",
   },
-  investment: {
-    name: "Investment",
-    description: "Investment and wealth management",
-    icon: "📈",
+  {
+    id: "import-csv",
+    title: "Import CSV",
+    subtitle: "Upload data",
+    icon: "document-text-outline",
     color: "#F59E0B",
+    route: "/import-csv",
   },
-  credit: {
-    name: "Credit Unions",
-    description: "Credit unions and mutuals",
-    icon: "🤝",
+  {
+    id: "ai-insights",
+    title: "AI Insights",
+    subtitle: "Smart analysis",
+    icon: "sparkles",
     color: "#8B5CF6",
+    route: "/ai-assistant",
   },
-  international: {
-    name: "International",
-    description: "International and foreign banks",
-    icon: "🌍",
-    color: "#EF4444",
-  },
-} as const;
+] as const;
 
-// Bank logos mapping - updated to match actual API bank names
-export const BANK_LOGOS = {
-  // Major UK banks (matching API names)
-  "Barclays Personal": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/barclayspersonal.png",
-    color: "#00A1DE",
-    type: "traditional",
-    description: "Personal Banking",
-  },
-  "Barclays Business": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/barclayscorporate.png",
-    color: "#00A1DE",
-    type: "business",
-    description: "Business Banking",
-  },
-  "Barclays Corporate": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/barclayscorporate.png",
-    color: "#00A1DE",
-    type: "corporate",
-    description: "Corporate Banking",
-  },
-  "HSBC Personal": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/hsbcpersonal.png",
-    color: "#DB0011",
-    type: "traditional",
-    description: "Personal Banking",
-  },
-  "HSBC Business": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/hsbcpersonal.png",
-    color: "#DB0011",
-    type: "business",
-    description: "Business Banking",
-  },
-  "HSBC Kinetic": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/hsbcpersonal.png",
-    color: "#DB0011",
-    type: "digital",
-    description: "Digital Banking",
-  },
-  "Lloyds Bank Personal": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/lloyds.png",
-    color: "#D81F2A",
-    type: "traditional",
-    description: "Personal Banking",
-  },
-  "Lloyds Bank Business": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/lloyds.png",
-    color: "#D81F2A",
-    type: "business",
-    description: "Business Banking",
-  },
-  "Lloyds Bank Commercial": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/lloyds.png",
-    color: "#D81F2A",
-    type: "commercial",
-    description: "Commercial Banking",
-  },
-  Natwest: {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/natwest.png",
-    color: "#DA1710",
-    type: "traditional",
-    description: "Personal Banking",
-  },
-  "Natwest Bankline": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/natwestbankline.png",
-    color: "#DA1710",
-    type: "business",
-    description: "Business Banking",
-  },
-  "Natwest ClearSpend": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/natwest.png",
-    color: "#DA1710",
-    type: "digital",
-    description: "Digital Banking",
-  },
-  "Royal Bank of Scotland": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/rbs.png",
-    color: "#0052CC",
-    type: "traditional",
-    description: "Personal Banking",
-  },
-  "Royal Bank of Scotland Bankline": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/rbsbankline.png",
-    color: "#0052CC",
-    type: "business",
-    description: "Business Banking",
-  },
-  "Royal Bank of Scotland ClearSpend": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/rbs.png",
-    color: "#0052CC",
-    type: "digital",
-    description: "Digital Banking",
-  },
-  Santander: {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/santander.png",
-    color: "#EC0000",
-    type: "traditional",
-    description: "Personal Banking",
-  },
-  "TSB Bank": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/tsbbank.png",
-    color: "#FF6600",
-    type: "traditional",
-    description: "Personal Banking",
-  },
-  "Nationwide Building Society": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/nationwide.png",
-    color: "#00A3E0",
-    type: "building society",
-    description: "Building Society",
-  },
-
-  // Digital banks
-  "Monzo Bank Limited": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/monzo.png",
-    color: "#FF5F5F",
-    type: "digital",
-    description: "Digital Banking",
-  },
-  Revolut: {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/revolut.png",
-    color: "#0075FF",
-    type: "digital",
-    description: "Digital Banking",
-  },
-  "Starling Bank": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/starling.png",
-    color: "#00D4AA",
-    type: "digital",
-    description: "Digital Banking",
-  },
-  "Chase Bank": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/chasebank.png",
-    color: "#117ACA",
-    type: "digital",
-    description: "Digital Banking",
-  },
-  "N26 Bank": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/DE/PNG/n26.png",
-    color: "#000000",
-    type: "digital",
-    description: "Digital Banking",
-  },
-
-  // Other banks
-  "Metro Bank": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/metro.png",
-    color: "#D81F2A",
-    type: "traditional",
-    description: "Personal Banking",
-  },
-  Mettle: {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/mettle.png",
-    color: "#00A3E0",
-    type: "digital",
-    description: "Digital Banking",
-  },
-  Monese: {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/FR/PNG/monese.png",
-    color: "#00A3E0",
-    type: "digital",
-    description: "Digital Banking",
-  },
-  Tide: {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/tide.png",
-    color: "#00A3E0",
-    type: "digital",
-    description: "Digital Banking",
-  },
-  Wise: {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/wise.png",
-    color: "#00B9FF",
-    type: "digital",
-    description: "Digital Banking",
-  },
-
-  // Uppercase variants for API compatibility
-  "NATWEST": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/natwest.png",
-    color: "#DA1710",
-    type: "traditional",
-    description: "Personal Banking",
-  },
-  "LLOYDS": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/lloyds.png",
-    color: "#D81F2A",
-    type: "traditional",
-    description: "Personal Banking",
-  },
-  "HALIFAX": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/halifax.png",
-    color: "#0058A6",
-    type: "traditional",
-    description: "Personal Banking",
-  },
-  "BARCLAYS": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/barclayspersonal.png",
-    color: "#00A1DE",
-    type: "traditional",
-    description: "Personal Banking",
-  },
-  "HSBC": {
-    logoUrl:
-      "https://storage.googleapis.com/gc-prd-institution_icons-production/UK/PNG/hsbcpersonal.png",
-    color: "#DB0011",
-    type: "traditional",
-    description: "Personal Banking",
-  },
-  
-  // Default fallback
-  default: {
-    logoUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Bank_logo_placeholder.svg/1200px-Bank_logo_placeholder.svg.png",
-    color: "#6B7280",
-    type: "traditional",
-    description: "Bank",
-  },
+// Default budget categories
+export const DEFAULT_BUDGETS = {
+  "food": 300,
+  "transport": 150,
+  "shopping": 200,
+  "bills": 150,
+  "entertainment": 100,
+  "health": 100,
+  "other": 100,
 } as const;

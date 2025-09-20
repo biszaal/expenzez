@@ -11,7 +11,8 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../contexts/ThemeContext";
-import { bankingAPI, budgetAPI } from "../../services/api";
+import { budgetAPI } from "../../services/api";
+import { transactionAPI } from "../../services/api/transactionAPI";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
@@ -84,7 +85,7 @@ export default function EditBudgetPage() {
         }
 
         // Fetch transactions to generate categories
-        const transactionsData = await bankingAPI.getTransactionsUnified({ limit: 1000 });
+        const transactionsData = await transactionAPI.getTransactions({ limit: 1000 });
         let allTransactions: any[] = [];
         
         if (transactionsData.success && transactionsData.transactions && Array.isArray(transactionsData.transactions)) {

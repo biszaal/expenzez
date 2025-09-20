@@ -90,19 +90,10 @@ function RootLayoutNav() {
         const storedLogin = await AsyncStorage.getItem('isLoggedIn');
         const accessToken = await AsyncStorage.getItem('accessToken');
         
-        // Also check for banking callback URLs which should preserve logged in state
-        const initialUrl = await Linking.getInitialURL();
-        const isBankingCallback = initialUrl && (
-          initialUrl.includes('banks/callback') || 
-          initialUrl.includes('banking/callback') ||
-          initialUrl.includes('ref=expenzez_')
-        );
-        
-        if ((storedLogin === 'true' && accessToken && accessToken !== 'null') || isBankingCallback) {
-          console.log('🔄 [Layout] Found valid session during startup', { 
-            storedLogin: storedLogin === 'true', 
-            hasToken: !!accessToken,
-            isBankingCallback 
+        if (storedLogin === 'true' && accessToken && accessToken !== 'null') {
+          console.log('🔄 [Layout] Found valid session during startup', {
+            storedLogin: storedLogin === 'true',
+            hasToken: !!accessToken
           });
           setHasValidSession(true);
         }
@@ -308,13 +299,12 @@ function RootLayoutNav() {
       <Stack.Screen name="payment/index" />
       <Stack.Screen name="help/index" />
       <Stack.Screen name="terms/index" />
-      <Stack.Screen name="banks/index" />
-      <Stack.Screen name="banks/callback" />
-      <Stack.Screen name="banks/select" />
-      <Stack.Screen name="banking/callback" />
       <Stack.Screen name="credit-score/index" />
       <Stack.Screen name="target/index" />
       <Stack.Screen name="transactions/index" />
+      <Stack.Screen name="add-expense" />
+      <Stack.Screen name="add-income" />
+      <Stack.Screen name="import-csv" />
       <Stack.Screen name="settings/index" />
       <Stack.Screen name="CompleteProfile" />
     </Stack>

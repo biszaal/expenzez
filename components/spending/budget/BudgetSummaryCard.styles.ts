@@ -38,16 +38,16 @@ export const budgetSummaryCardStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   budgetCardPrimary: {
-    backgroundColor: '#F8F9FA',
+    // Will be set dynamically with theme colors
   },
   budgetCardSecondary: {
-    backgroundColor: '#F1F3F4',
+    // Will be set dynamically with theme colors
   },
   budgetCardAccent: {
-    backgroundColor: '#E8F5E8',
+    // Will be set dynamically with theme colors
   },
   budgetCardWarning: {
-    backgroundColor: '#FFF8E7',
+    // Will be set dynamically with theme colors
   },
   budgetCardAmount: {
     fontSize: 18,

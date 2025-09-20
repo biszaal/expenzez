@@ -11,13 +11,13 @@ import { api } from './api/index';
 
 export {
   authAPI,
-  bankingAPI,
   aiService,
   expenseAPI,
   budgetAPI,
   profileAPI,
   notificationAPI,
   securityAPI,
+  transactionAPI,
   api,
   aiAPI,
   healthCheck,
