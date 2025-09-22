@@ -6,3 +6,4 @@ export { MonthlyOverview } from './MonthlyOverview';
 export { TransactionsList } from './TransactionsList';
 export { AIAssistantCard } from './AIAssistantCard';
 export { UpcomingBillsCard } from './UpcomingBillsCard';
+export { AchievementProgressCard, SavingsOpportunitiesCard, GoalProgressCard, NotificationCard } from './widgets';

@@ -1,6 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { aiAPI } from "../config/apiClient";
 import { transactionAPI } from "./transactionAPI";
+import { goalsAPI, GoalsResponse } from "./goalsAPI";
+import { achievementAPI, AchievementResponse } from "./achievementAPI";
+import { savingsInsightsAPI, SavingsInsightsResponse } from "./savingsInsightsAPI";
 
 export const aiService = {
   // AI Assistant functionality
@@ -48,7 +51,7 @@ export const aiService = {
       return response.data;
     } catch (error: any) {
       // Enhanced fallback for when AI endpoints might not be available
-      if (error.response?.status === 404 || error.response?.status === 502 || error.response?.status === 503) {
+      if (error.response?.status === 404 || error.response?.status === 500 || error.response?.status === 502 || error.response?.status === 503) {
 
         // Generate contextual fallback responses using manual transaction data
         const lowerMessage = message.toLowerCase();
@@ -198,4 +201,222 @@ export const aiService = {
       throw error;
     }
   },
+
+  // Generate proactive insights based on user's financial data
+  generateProactiveInsights: async (userId: string): Promise<ProactiveInsight[]> => {
+    try {
+      console.log('🧠 [AI] Generating proactive insights for user:', userId);
+
+      const insights: ProactiveInsight[] = [];
+
+      // Gather financial context from all APIs
+      let goalsData: GoalsResponse | null = null;
+      let achievementsData: AchievementResponse | null = null;
+      let savingsData: SavingsInsightsResponse | null = null;
+      let transactionsData: any = null;
+
+      try {
+        const [goals, achievements, savings, transactions] = await Promise.allSettled([
+          goalsAPI.getUserGoals(userId),
+          achievementAPI.getUserAchievements(userId),
+          savingsInsightsAPI.getSavingsOpportunities(userId),
+          transactionAPI.getTransactions({ limit: 20 })
+        ]);
+
+        if (goals.status === 'fulfilled') goalsData = goals.value;
+        if (achievements.status === 'fulfilled') achievementsData = achievements.value;
+        if (savings.status === 'fulfilled') savingsData = savings.value;
+        if (transactions.status === 'fulfilled') transactionsData = transactions.value;
+      } catch (error) {
+        console.log('AI insights: Error gathering context, proceeding with available data');
+      }
+
+      // Goal-based insights
+      if (goalsData) {
+        // New goal milestone reached
+        if (achievementsData?.newAchievements?.some(a => a.type === 'goal_milestone')) {
+          insights.push({
+            id: 'goal_milestone_celebration',
+            type: 'celebration',
+            title: '🎉 Goal Milestone Reached!',
+            message: "Congratulations! You've hit a major milestone. This is a great time to review your progress and maybe set your next target even higher.",
+            priority: 'high',
+            actionable: true,
+            suggestedActions: ['Review goal progress', 'Set new milestone', 'Celebrate your success'],
+            relatedGoalId: achievementsData.newAchievements.find(a => a.type === 'goal_milestone')?.goalId
+          });
+        }
+
+        // Goals falling behind
+        const behindGoals = goalsData.goalProgress.filter(p => !p.isOnTrack);
+        if (behindGoals.length > 0) {
+          insights.push({
+            id: 'goals_behind_schedule',
+            type: 'warning',
+            title: '⚠️ Some Goals Need Attention',
+            message: `You have ${behindGoals.length} goal${behindGoals.length > 1 ? 's' : ''} that might need a strategy adjustment. Let's see how we can get back on track.`,
+            priority: 'medium',
+            actionable: true,
+            suggestedActions: ['Review goal timeline', 'Increase monthly savings', 'Consider goal adjustment'],
+            relatedGoalId: behindGoals[0].goalId
+          });
+        }
+
+        // No active goals
+        if (goalsData.activeGoals.length === 0) {
+          insights.push({
+            id: 'no_active_goals',
+            type: 'suggestion',
+            title: '🎯 Ready to Set Your First Goal?',
+            message: "Financial goals are the foundation of wealth building. Even a small emergency fund of £500 can make a huge difference in your financial confidence.",
+            priority: 'high',
+            actionable: true,
+            suggestedActions: ['Set emergency fund goal', 'Plan vacation savings', 'Start retirement planning']
+          });
+        }
+      }
+
+      // Achievement-based insights
+      if (achievementsData?.newAchievements && achievementsData.newAchievements.length > 0) {
+        const latestAchievement = achievementsData.newAchievements[0];
+        insights.push({
+          id: 'new_achievement_earned',
+          type: 'celebration',
+          title: '🏆 New Achievement Unlocked!',
+          message: `You've earned "${latestAchievement.title}"! You're building excellent financial habits. Keep up the momentum!`,
+          priority: 'high',
+          actionable: true,
+          suggestedActions: ['Share your success', 'Set next challenge', 'Review progress']
+        });
+      }
+
+      // Savings opportunity insights
+      if (savingsData?.opportunities && savingsData.opportunities.length > 0) {
+        const topOpportunity = savingsData.opportunities[0];
+        insights.push({
+          id: 'top_savings_opportunity',
+          type: 'tip',
+          title: '💡 Quick Savings Tip',
+          message: `You could save £${topOpportunity.potentialMonthlySavings}/month by ${topOpportunity.title.toLowerCase()}. ${topOpportunity.description}`,
+          priority: 'medium',
+          actionable: true,
+          suggestedActions: topOpportunity.actionSteps?.slice(0, 3) || ['Review expenses', 'Make changes', 'Track savings']
+        });
+      }
+
+      // Level progression insights
+      if (achievementsData?.progress) {
+        const { level, pointsToNextLevel } = achievementsData.progress;
+        if (pointsToNextLevel <= 50) {
+          insights.push({
+            id: 'level_up_soon',
+            type: 'motivation',
+            title: '🚀 Almost Level Up!',
+            message: `You're only ${pointsToNextLevel} points away from level ${level + 1}! Complete a few more financial actions to unlock the next level.`,
+            priority: 'low',
+            actionable: true,
+            suggestedActions: ['Add transactions', 'Review budget', 'Set new goal']
+          });
+        }
+      }
+
+      // Time-based insights
+      const now = new Date();
+      const dayOfMonth = now.getDate();
+      const dayOfWeek = now.getDay();
+
+      // Monthly check-in
+      if (dayOfMonth >= 28) {
+        insights.push({
+          id: 'monthly_review',
+          type: 'suggestion',
+          title: '📊 Month-End Review Time',
+          message: "It's the end of the month! This is a perfect time to review your spending, check goal progress, and plan for next month.",
+          priority: 'medium',
+          actionable: true,
+          suggestedActions: ['Review monthly spending', 'Check goal progress', 'Plan next month budget']
+        });
+      }
+
+      // Weekend planning
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        insights.push({
+          id: 'weekend_planning',
+          type: 'suggestion',
+          title: '🌟 Weekend Financial Planning',
+          message: "Weekends are great for financial planning! Take 10 minutes to review your goals and maybe set up some automated savings.",
+          priority: 'low',
+          actionable: true,
+          suggestedActions: ['Review goals', 'Set up auto-save', 'Plan week ahead']
+        });
+      }
+
+      console.log(`✅ [AI] Generated ${insights.length} proactive insights`);
+      return insights;
+    } catch (error: any) {
+      console.error('❌ [AI] Error generating proactive insights:', error);
+      // Return basic insights even if API calls fail
+      return [
+        {
+          id: 'welcome_insight',
+          type: 'tip',
+          title: '💡 Financial Tip',
+          message: "Start small but start today! Even saving £5 a week adds up to £260 a year. Every small step counts towards your financial freedom.",
+          priority: 'medium',
+          actionable: true,
+          suggestedActions: ['Set weekly savings goal', 'Track daily expenses', 'Review spending habits']
+        }
+      ];
+    }
+  },
+
+  // Get conversation starters based on user context
+  getConversationStarters: async (userId: string): Promise<string[]> => {
+    try {
+      const insights = await aiService.generateProactiveInsights(userId);
+      const starters: string[] = [];
+
+      // Generate contextual conversation starters based on insights
+      if (insights.some(i => i.type === 'celebration')) {
+        starters.push("Tell me about my recent achievements");
+        starters.push("How am I doing with my financial goals?");
+      }
+
+      if (insights.some(i => i.type === 'warning')) {
+        starters.push("Help me get back on track with my goals");
+        starters.push("What can I do to improve my savings rate?");
+      }
+
+      // Always include these general starters
+      starters.push("What's my spending pattern this month?");
+      starters.push("Give me a personalized budget tip");
+      starters.push("How can I save money this week?");
+      starters.push("What should I focus on financially right now?");
+
+      return starters.slice(0, 6); // Return top 6 starters
+    } catch (error) {
+      // Fallback starters
+      return [
+        "What's my spending pattern this month?",
+        "How can I save money?",
+        "Help me create a budget",
+        "Give me a financial tip",
+        "How am I doing with my goals?",
+        "What should I focus on next?"
+      ];
+    }
+  }
 };
+
+// Types for proactive insights
+export interface ProactiveInsight {
+  id: string;
+  type: 'tip' | 'warning' | 'celebration' | 'suggestion' | 'motivation';
+  title: string;
+  message: string;
+  priority: 'low' | 'medium' | 'high';
+  actionable: boolean;
+  suggestedActions: string[];
+  relatedGoalId?: string;
+  expiresAt?: string;
+}
