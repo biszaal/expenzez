@@ -23,6 +23,10 @@ import {
   TransactionsList,
   AIAssistantCard,
   UpcomingBillsCard,
+  AchievementProgressCard,
+  SavingsOpportunitiesCard,
+  GoalProgressCard,
+  NotificationCard,
 } from "../../components/home";
 
 interface Transaction {
@@ -277,6 +281,14 @@ export default function HomeScreen() {
         />
 
         <QuickActions />
+
+        <AchievementProgressCard />
+
+        <GoalProgressCard />
+
+        <NotificationCard />
+
+        <SavingsOpportunitiesCard />
 
         <UpcomingBillsCard />
 
