@@ -13,10 +13,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { notificationAPI, aiService } from "../../services/api";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAuth } from "../../app/auth/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { spacing, borderRadius, typography } from "../../constants/theme";
 import { useRouter } from "expo-router";
 import MarkdownRenderer from "../../components/ui/MarkdownRenderer";
+import type { ProactiveInsight } from "../../services/api/aiAPI";
 
 interface Message {
   role: "user" | "assistant";
@@ -45,6 +47,7 @@ interface MonthlyReport {
 
 export default function AIAssistantScreen() {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -52,6 +55,10 @@ export default function AIAssistantScreen() {
   const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [proactiveInsights, setProactiveInsights] = useState<ProactiveInsight[]>([]);
+  const [conversationStarters, setConversationStarters] = useState<string[]>([]);
+  const [insightsLoading, setInsightsLoading] = useState(true);
+  const [showInsights, setShowInsights] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Fetch chat history on mount
@@ -63,8 +70,8 @@ export default function AIAssistantScreen() {
           setMessages(
             res.history.map((msg: any) => ({
               role: msg.role,
-              content: msg.content,
-            }))
+              content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content) || "Invalid message",
+            })).filter((msg: any) => msg.content && typeof msg.content === 'string')
           );
         } else {
           setMessages([
@@ -135,7 +142,39 @@ export default function AIAssistantScreen() {
     
     fetchHistory();
     fetchMonthlyReport();
-  }, []);
+
+    // Fetch proactive insights and conversation starters
+    const fetchProactiveData = async () => {
+      if (!user?.id) {
+        setInsightsLoading(false);
+        return;
+      }
+
+      try {
+        console.log('🧠 [AI Assistant] Loading proactive insights...');
+        const [insights, starters] = await Promise.allSettled([
+          aiService.generateProactiveInsights(user.id),
+          aiService.getConversationStarters(user.id)
+        ]);
+
+        if (insights.status === 'fulfilled') {
+          setProactiveInsights(insights.value);
+          console.log(`✅ [AI Assistant] Loaded ${insights.value.length} proactive insights`);
+        }
+
+        if (starters.status === 'fulfilled') {
+          setConversationStarters(starters.value);
+          console.log(`✅ [AI Assistant] Loaded ${starters.value.length} conversation starters`);
+        }
+      } catch (error) {
+        console.error('❌ [AI Assistant] Error loading proactive data:', error);
+      } finally {
+        setInsightsLoading(false);
+      }
+    };
+
+    fetchProactiveData();
+  }, [user?.id]);
 
   useEffect(() => {
     if (scrollViewRef.current) {
@@ -143,12 +182,15 @@ export default function AIAssistantScreen() {
     }
   }, [messages]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return;
-    const userMessage: Message = { role: "user", content: input.trim() };
+  const sendMessage = async (messageText?: string) => {
+    const messageToSend = messageText || input.trim();
+    if (!messageToSend || loading) return;
+
+    const userMessage: Message = { role: "user", content: messageToSend };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
+    setShowInsights(false); // Hide insights after first message
     
     try {
       // Save user message (don't block on failure)
@@ -158,7 +200,7 @@ export default function AIAssistantScreen() {
       }
       
       // Get AI insight (with fallback support)
-      const res = await aiService.getAIInsight(userMessage.content);
+      const res = await aiService.getAIInsight(messageToSend);
       const aiMessage: Message = {
         role: "assistant",
         content: res.answer || "Sorry, I couldn't generate an answer.",
@@ -183,7 +225,7 @@ export default function AIAssistantScreen() {
       // Try to get a fallback response instead of generic error
       try {
         console.log("🤖 Attempting fallback response for error...");
-        const fallbackRes = await aiService.getAIInsight(userMessage.content);
+        const fallbackRes = await aiService.getAIInsight(messageToSend);
         
         if (fallbackRes.success && fallbackRes.answer) {
           // Use the fallback response
@@ -505,7 +547,150 @@ export default function AIAssistantScreen() {
                 )}
               </View>
             )}
-            
+
+            {/* Proactive Insights Section */}
+            {showInsights && messages.length <= 1 && (
+              <View style={{ marginBottom: 20 }}>
+                {/* Insights */}
+                {proactiveInsights.length > 0 && (
+                  <View style={{ marginBottom: 16 }}>
+                    <Text style={{
+                      fontSize: 16,
+                      fontWeight: '700',
+                      color: colors.text.primary,
+                      marginBottom: 12,
+                      marginLeft: 4,
+                    }}>💡 Personalized Insights</Text>
+
+                    {proactiveInsights.slice(0, 2).map((insight, index) => {
+                      const typeColors = {
+                        celebration: colors.success[500],
+                        warning: colors.warning[500],
+                        tip: colors.primary[500],
+                        suggestion: colors.secondary[500],
+                        motivation: colors.accent[500]
+                      };
+
+                      const typeColor = typeColors[insight.type] || colors.primary[500];
+
+                      return (
+                        <TouchableOpacity
+                          key={insight.id}
+                          style={{
+                            backgroundColor: colors.background.primary,
+                            borderRadius: borderRadius.lg,
+                            padding: 16,
+                            marginBottom: 12,
+                            borderLeftWidth: 4,
+                            borderLeftColor: typeColor,
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 3,
+                            elevation: 2,
+                          }}
+                          onPress={() => {
+                            if (insight.actionable && insight.suggestedActions.length > 0) {
+                              const actionQuestion = `Help me with: ${insight.message} What specific steps should I take?`;
+                              sendMessage(actionQuestion);
+                            }
+                          }}
+                          activeOpacity={insight.actionable ? 0.7 : 1}
+                        >
+                          <Text style={{
+                            fontSize: 16,
+                            fontWeight: '700',
+                            color: colors.text.primary,
+                            marginBottom: 8,
+                          }}>{insight.title}</Text>
+
+                          <Text style={{
+                            fontSize: 14,
+                            color: colors.text.secondary,
+                            lineHeight: 20,
+                            marginBottom: insight.actionable ? 12 : 0,
+                          }}>{insight.message}</Text>
+
+                          {insight.actionable && insight.suggestedActions.length > 0 && (
+                            <View style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              flexWrap: 'wrap',
+                              marginTop: 8,
+                            }}>
+                              <View style={{
+                                backgroundColor: typeColor + '15',
+                                paddingHorizontal: 8,
+                                paddingVertical: 4,
+                                borderRadius: borderRadius.sm,
+                                marginRight: 8,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                              }}>
+                                <Ionicons name="help-circle" size={14} color={typeColor} />
+                                <Text style={{
+                                  fontSize: 12,
+                                  fontWeight: '600',
+                                  color: typeColor,
+                                  marginLeft: 4,
+                                }}>Tap to get help</Text>
+                              </View>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+
+                {/* Conversation Starters */}
+                {conversationStarters.length > 0 && (
+                  <View>
+                    <Text style={{
+                      fontSize: 16,
+                      fontWeight: '700',
+                      color: colors.text.primary,
+                      marginBottom: 12,
+                      marginLeft: 4,
+                    }}>💬 Quick Questions</Text>
+
+                    <View style={{
+                      flexDirection: 'row',
+                      flexWrap: 'wrap',
+                      marginHorizontal: -4,
+                    }}>
+                      {conversationStarters.slice(0, 6).map((starter, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={{
+                            backgroundColor: colors.primary[500] + '15',
+                            borderRadius: borderRadius.xl,
+                            paddingHorizontal: 12,
+                            paddingVertical: 8,
+                            margin: 4,
+                            borderWidth: 1,
+                            borderColor: colors.primary[500] + '30',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                          }}
+                          onPress={() => sendMessage(starter)}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="chatbubble" size={14} color={colors.primary[500]} />
+                          <Text style={{
+                            fontSize: 14,
+                            fontWeight: '500',
+                            color: colors.primary[500],
+                            marginLeft: 6,
+                          }}>{starter}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
+            )}
+
             {messages.map((msg, idx) => (
               <Animated.View
                 key={idx}
@@ -550,14 +735,14 @@ export default function AIAssistantScreen() {
                   borderBottomRightRadius: msg.role === "user" ? 4 : 20,
                 }}>
                   {msg.role === "assistant" ? (
-                    <MarkdownRenderer content={msg.content} />
+                    <MarkdownRenderer content={typeof msg.content === 'string' ? msg.content : 'Invalid message content'} />
                   ) : (
                     <Text style={{
                       fontSize: 16,
                       lineHeight: 22,
                       color: msg.role === "user" ? "#fff" : colors.text.primary,
                     }}>
-                      {msg.content}
+                      {typeof msg.content === 'string' ? msg.content : 'Invalid message content'}
                     </Text>
                   )}
                 </View>
@@ -665,7 +850,7 @@ export default function AIAssistantScreen() {
                 value={input}
                 onChangeText={setInput}
                 editable={!loading}
-                onSubmitEditing={sendMessage}
+                onSubmitEditing={() => sendMessage()}
                 returnKeyType="send"
                 multiline
                 textAlignVertical="center"
@@ -685,7 +870,7 @@ export default function AIAssistantScreen() {
                   shadowRadius: 4,
                   elevation: 2,
                 }}
-                onPress={sendMessage}
+                onPress={() => sendMessage()}
                 disabled={!input.trim() || loading}
               >
                 {loading ? (
