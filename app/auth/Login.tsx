@@ -20,6 +20,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { spacing, borderRadius, layout } from "../../constants/theme";
 import { jwtDecode } from "jwt-decode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from 'expo-secure-store';
 import { useAlert } from "../../hooks/useAlert";
 import { AppleSignInButton, useAppleSignIn } from "../../components/auth/AppleSignInButton";
 import { RememberMeCheckbox } from "../../components/RememberMeCheckbox";
@@ -63,7 +64,7 @@ export default function Login() {
       const result = await login(identifier, password, rememberMe);
       if (result.success) {
         // Optionally, auto-redirect to main app
-        const idToken = await AsyncStorage.getItem("idToken");
+        const idToken = await SecureStore.getItemAsync("idToken", { keychainService: 'expenzez-tokens' });
         if (idToken) {
           jwtDecode(idToken);
         }

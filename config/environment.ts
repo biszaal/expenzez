@@ -5,7 +5,6 @@ export interface EnvironmentConfig {
   isTestFlight: boolean;
   isDevelopment: boolean;
   apiBaseURL: string;
-  nordigenRedirectURL: string;
   websiteURL: string;
   environment: 'development' | 'testflight' | 'production';
 }
@@ -64,26 +63,13 @@ export const ENV_CONFIG: EnvironmentConfig = {
   
   // API Configuration
   apiBaseURL: 'https://0hjm0et5ud.execute-api.eu-west-2.amazonaws.com', // Use AWS API for all environments
-  
-  // Nordigen/GoCardless Redirect URLs
-  nordigenRedirectURL: environment === 'production'
-    ? 'https://expenzez.com/banking/callback'
-    : environment === 'testflight'
-    ? 'expenzez://banking/callback'  // Use custom URL scheme for TestFlight
-    : 'exp://192.168.1.67:8081/--/banks/callback', // Use Expo dev server URL for development
-  
+
   // Website URLs
   websiteURL: environment === 'development'
     ? 'http://localhost:3000'
     : 'https://expenzez.com'
 };
 
-/**
- * Get environment-specific redirect URL for Nordigen/GoCardless
- */
-export const getNordigenRedirectURL = (): string => {
-  return ENV_CONFIG.nordigenRedirectURL;
-};
 
 /**
  * Check if current environment is TestFlight
@@ -125,7 +111,6 @@ export const logEnvironmentInfo = (): void => {
       isTestFlight: ENV_CONFIG.isTestFlight,
       isProduction: ENV_CONFIG.isProduction,
       apiBaseURL: ENV_CONFIG.apiBaseURL,
-      nordigenRedirectURL: ENV_CONFIG.nordigenRedirectURL,
       releaseChannel: (Constants.expoConfig as any)?.releaseChannel || 'default',
       appOwnership: Constants.appOwnership,
       bundleId: Constants.expoConfig?.ios?.bundleIdentifier,

@@ -20,7 +20,7 @@ interface FAQ {
   id: string;
   question: string;
   answer: string;
-  category: 'general' | 'banking' | 'transactions' | 'budgets' | 'technical';
+  category: 'general' | 'transactions' | 'budgets' | 'technical';
 }
 
 interface SupportOption {
@@ -51,14 +51,14 @@ export const SupportSystem: React.FC<SupportSystemProps> = ({ isVisible, onClose
   const faqData: FAQ[] = [
     {
       id: '1',
-      question: 'How do I connect my bank account?',
-      answer: 'To connect your bank account, go to the Banking tab and tap "Connect Account". Select your bank from the list and follow the secure authentication process through Nordigen/GoCardless.',
-      category: 'banking',
+      question: 'How do I add transactions?',
+      answer: 'You can manually add transactions by tapping the "+" button on the main screen. Fill in the amount, category, and description to track your expenses and income.',
+      category: 'transactions',
     },
     {
       id: '2',
-      question: 'Why are my transactions not updating?',
-      answer: 'Transactions typically update every few hours. If you need immediate updates, pull down on the transactions screen to refresh. Some banks may have longer sync delays.',
+      question: 'How do I categorize my transactions?',
+      answer: 'You can set categories when adding transactions manually. Tap any existing transaction to edit its category. This helps you better track your spending patterns.',
       category: 'transactions',
     },
     {
@@ -75,9 +75,9 @@ export const SupportSystem: React.FC<SupportSystemProps> = ({ isVisible, onClose
     },
     {
       id: '5',
-      question: 'Can I categorize transactions manually?',
-      answer: 'Yes, tap any transaction to edit its category. You can also set up automatic categorization rules in the transaction settings.',
-      category: 'transactions',
+      question: 'How do I set up budgets?',
+      answer: 'Go to the Budgets section and tap "Create Budget". Set your monthly limit and choose categories to track. You\'ll get notifications when approaching your limits.',
+      category: 'budgets',
     },
     {
       id: '6',
@@ -102,7 +102,6 @@ export const SupportSystem: React.FC<SupportSystemProps> = ({ isVisible, onClose
   const categories = [
     { id: 'all', name: 'All Questions', icon: 'help-circle' },
     { id: 'general', name: 'General', icon: 'information-circle' },
-    { id: 'banking', name: 'Banking', icon: 'card' },
     { id: 'transactions', name: 'Transactions', icon: 'receipt' },
     { id: 'budgets', name: 'Budgets', icon: 'pie-chart' },
     { id: 'technical', name: 'Technical', icon: 'construct' },

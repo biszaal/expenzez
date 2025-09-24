@@ -3,6 +3,7 @@ import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState } from "react";
 import { AppState, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from 'expo-secure-store';
 import * as Linking from "expo-linking";
 import { useSegments, useRouter } from "expo-router";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
@@ -89,7 +90,7 @@ function RootLayoutNav() {
     const quickSessionCheck = async () => {
       try {
         const storedLogin = await AsyncStorage.getItem('isLoggedIn');
-        const accessToken = await AsyncStorage.getItem('accessToken');
+        const accessToken = await SecureStore.getItemAsync('accessToken', { keychainService: 'expenzez-tokens' });
         
         if (storedLogin === 'true' && accessToken && accessToken !== 'null') {
           console.log('🔄 [Layout] Found valid session during startup', {
@@ -137,88 +138,43 @@ function RootLayoutNav() {
         if (initialUrl) {
           console.log('[Layout] Detected initial URL on app startup:', initialUrl);
           // If it's a stale banking callback URL, we'll ignore it
-          if (initialUrl.includes('banking/callback') || initialUrl.includes('banks/callback')) {
+          if (initialUrl.includes('banking/callback') ||
+              initialUrl.includes('banks/callback') ||
+              initialUrl.includes('nordigen') ||
+              initialUrl.includes('gocardless') ||
+              initialUrl.includes('truelayer') ||
+              initialUrl.includes('plaid')) {
             console.log('[Layout] Ignoring stale banking callback URL');
           }
         }
         
-        // Clear all Expo Router persistent states that might cause banking callback navigation
+        // Clear all Expo Router persistent states
         await AsyncStorage.removeItem('expo-router-last-route');
-        await AsyncStorage.removeItem('expo-router-state'); 
+        await AsyncStorage.removeItem('expo-router-state');
         await AsyncStorage.removeItem('expo-router-navigation-state');
-        await AsyncStorage.removeItem('bankingCallbackState');
         await AsyncStorage.removeItem('pendingNavigation');
-        
-        // Clear any cached navigation state that might trigger banking callback
+
+        // Clear any cached navigation state
         await AsyncStorage.removeItem('navigationState');
         await AsyncStorage.removeItem('lastRoute');
         await AsyncStorage.removeItem('activeCallback');
-        
-        // AGGRESSIVE CLEANUP: Remove ALL banking references on normal app startup
-        // Only keep them if this is an actual banking callback from a URL
+
+        // Remove all banking-related keys
         const keys = await AsyncStorage.getAllKeys();
-        const requisitionKeys = keys.filter(key => key.startsWith('requisition_') || key.includes('banking') || key.includes('nordigen'));
-        
-        // Check if this is actually a banking callback navigation
-        const isBankingCallback = initialUrl && (
-          initialUrl.includes('banks/callback') || 
-          initialUrl.includes('banking/callback') ||
-          initialUrl.includes('ref=expenzez_')
+        const bankingKeys = keys.filter(key =>
+          key.startsWith('requisition_') ||
+          key.includes('banking') ||
+          key.includes('nordigen') ||
+          key.includes('gocardless') ||
+          key.includes('truelayer') ||
+          key.includes('plaid') ||
+          key.includes('bankingCallbackState') ||
+          key.includes('ref=expenzez_')
         );
-        
-        console.log(`[Layout] Banking callback detection: isBankingCallback=${isBankingCallback}, initialUrl=${initialUrl}`);
-        console.log(`[Layout] Found banking keys:`, requisitionKeys);
-        
-        if (!isBankingCallback) {
-          // Check for recent banking activity and valid session before preserving references
-          // Banking references should only be preserved if user is still logged in
-          const storedLogin = await AsyncStorage.getItem('isLoggedIn');
-          const accessToken = await AsyncStorage.getItem('accessToken');
-          const hasValidSession = storedLogin === 'true' && accessToken && accessToken !== 'null';
-          
-          console.log(`[Layout] Session validity check: hasValidSession=${hasValidSession}, storedLogin=${storedLogin}, hasToken=${!!accessToken}`);
-          
-          const recentBankingKeys = [];
-          const staleBankingKeys = [];
-          
-          for (const key of requisitionKeys) {
-            if (key.startsWith('requisition_expenzez_')) {
-              const match = key.match(/requisition_expenzez_(\d+)/);
-              if (match) {
-                const timestamp = parseInt(match[1]);
-                const age = Date.now() - timestamp;
-                const isRecent = age < 15 * 60 * 1000; // 15 minutes - matches TokenManager
-                
-                // Only preserve recent banking keys if user has valid session
-                if (isRecent && hasValidSession) {
-                  recentBankingKeys.push(key);
-                } else {
-                  staleBankingKeys.push(key);
-                  if (isRecent && !hasValidSession) {
-                    console.log(`[Layout] Recent banking key ${key} marked for removal - no valid session`);
-                  }
-                }
-              }
-            } else {
-              // Other banking keys without timestamps - consider stale after startup
-              staleBankingKeys.push(key);
-            }
-          }
-          
-          console.log(`[Layout] Banking reference analysis: recent=${recentBankingKeys.length}, stale=${staleBankingKeys.length}`);
-          
-          if (recentBankingKeys.length > 0) {
-            console.log('[Layout] Preserving recent banking references with valid session:', recentBankingKeys);
-          }
-          
-          // Remove all stale references (including recent ones without valid session)
-          if (staleBankingKeys.length > 0) {
-            console.log('[Layout] Removing banking references without valid session:', staleBankingKeys);
-            await AsyncStorage.multiRemove(staleBankingKeys);
-            console.log('[Layout] Cleared banking references:', staleBankingKeys);
-          }
-        } else {
-          console.log('[Layout] Banking callback detected - keeping all references');
+
+        if (bankingKeys.length > 0) {
+          console.log('[Layout] Clearing banking references:', bankingKeys);
+          await AsyncStorage.multiRemove(bankingKeys);
         }
         
         console.log('[Layout] Cleared stale navigation state');

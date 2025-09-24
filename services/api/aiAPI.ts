@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from 'expo-secure-store';
 import { aiAPI } from "../config/apiClient";
 import { transactionAPI } from "./transactionAPI";
 import { goalsAPI, GoalsResponse } from "./goalsAPI";
@@ -9,7 +10,7 @@ export const aiService = {
   // AI Assistant functionality
   getAIInsight: async (message: string) => {
     try {
-      const token = await AsyncStorage.getItem("accessToken");
+      const token = await SecureStore.getItemAsync("accessToken", { keychainService: 'expenzez-tokens' });
 
       // 📱 MANUAL INPUT MODE: Gather user's financial context from manual transactions
       let financialContext: any = {};

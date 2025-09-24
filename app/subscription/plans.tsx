@@ -249,6 +249,36 @@ export default function SubscriptionPlansScreen() {
 
   const selectedPlanData = PRICING_PLANS.find(p => p.id === selectedPlan);
 
+  // Helper functions
+  const formatExpirationDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = date.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return 'today';
+    } else if (diffDays === 1) {
+      return 'tomorrow';
+    } else if (diffDays <= 7) {
+      return `in ${diffDays} days`;
+    } else if (diffDays <= 30) {
+      return `on ${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+    } else {
+      return `on ${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    }
+  };
+
+  const getTrialStatusColors = (): [string, string] => {
+    if (daysUntilTrialExpires <= 1) {
+      return [colors.error[100], colors.error[50]];
+    } else if (daysUntilTrialExpires <= 3) {
+      return [colors.warning[100], colors.warning[50]];
+    } else {
+      return [colors.primary[100], colors.primary[50]];
+    }
+  };
+
   const styles = createStyles(colors);
 
   return (
@@ -289,16 +319,23 @@ export default function SubscriptionPlansScreen() {
           </View>
 
           {/* Current Status Banner */}
-          {isPremium && (
+          {isPremium && !isTrialActive && (
             <View style={styles.statusBanner}>
               <LinearGradient
                 colors={[colors.success[100], colors.success[50]]}
                 style={styles.statusGradient}
               >
                 <Ionicons name="checkmark-circle" size={24} color={colors.success[600]} />
-                <Text style={[styles.statusText, { color: colors.success[700] }]}>
-                  You&apos;re Premium! Enjoy unlimited access 🎉
-                </Text>
+                <View style={styles.statusTextContainer}>
+                  <Text style={[styles.statusText, { color: colors.success[700] }]}>
+                    You&apos;re Premium! Enjoy unlimited access 🎉
+                  </Text>
+                  {subscription.endDate && (
+                    <Text style={[styles.statusSubtext, { color: colors.success[600] }]}>
+                      {subscription.tier === 'premium-annual' ? 'Annual' : 'Monthly'} plan • Renews {formatExpirationDate(subscription.endDate)}
+                    </Text>
+                  )}
+                </View>
               </LinearGradient>
             </View>
           )}
@@ -306,13 +343,49 @@ export default function SubscriptionPlansScreen() {
           {isTrialActive && (
             <View style={styles.statusBanner}>
               <LinearGradient
-                colors={[colors.warning[100], colors.warning[50]]}
+                colors={getTrialStatusColors()}
                 style={styles.statusGradient}
               >
-                <Ionicons name="time" size={24} color={colors.warning[600]} />
-                <Text style={[styles.statusText, { color: colors.warning[700] }]}>
-                  Free Trial Active • {daysUntilTrialExpires} days remaining
-                </Text>
+                <Ionicons
+                  name={daysUntilTrialExpires <= 3 ? "warning" : "time"}
+                  size={24}
+                  color={daysUntilTrialExpires <= 3 ? colors.error[600] : colors.warning[600]}
+                />
+                <View style={styles.statusTextContainer}>
+                  <Text style={[styles.statusText, {
+                    color: daysUntilTrialExpires <= 3 ? colors.error[700] : colors.warning[700]
+                  }]}>
+                    {daysUntilTrialExpires <= 3 ? '⚠️ Trial Ending Soon' : '🆓 Free Trial Active'}
+                  </Text>
+                  <Text style={[styles.statusSubtext, {
+                    color: daysUntilTrialExpires <= 3 ? colors.error[600] : colors.warning[600]
+                  }]}>
+                    {daysUntilTrialExpires === 0 ? 'Expires today' :
+                     daysUntilTrialExpires === 1 ? 'Expires tomorrow' :
+                     `${daysUntilTrialExpires} days remaining`} • {subscription.trialEndDate ? formatExpirationDate(subscription.trialEndDate) : 'No end date'}
+                  </Text>
+                </View>
+              </LinearGradient>
+            </View>
+          )}
+
+          {/* Urgent Trial Expiration Warning */}
+          {isTrialActive && daysUntilTrialExpires <= 3 && (
+            <View style={styles.urgentBanner}>
+              <LinearGradient
+                colors={[colors.error[100], colors.error[50]]}
+                style={styles.statusGradient}
+              >
+                <Ionicons name="flash" size={24} color={colors.error[600]} />
+                <View style={styles.statusTextContainer}>
+                  <Text style={[styles.urgentText, { color: colors.error[700] }]}>
+                    Don&apos;t Lose Your Premium Features!
+                  </Text>
+                  <Text style={[styles.urgentSubtext, { color: colors.error[600] }]}>
+                    Your trial ends {daysUntilTrialExpires === 0 ? 'today' : daysUntilTrialExpires === 1 ? 'tomorrow' : `in ${daysUntilTrialExpires} days`}.
+                    Upgrade now to continue unlimited access to all features.
+                  </Text>
+                </View>
               </LinearGradient>
             </View>
           )}
@@ -867,5 +940,34 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     gap: spacing.md,
+  },
+
+  // Status text container styles
+  statusTextContainer: {
+    flex: 1,
+    marginLeft: spacing.sm,
+  },
+
+  statusSubtext: {
+    fontSize: typography.sizes.sm,
+    marginTop: spacing.xs,
+  },
+
+  // Urgent banner styles
+  urgentBanner: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+
+  urgentText: {
+    fontSize: typography.sizes.base,
+    fontWeight: '700' as any,
+  },
+
+  urgentSubtext: {
+    fontSize: typography.sizes.sm,
+    marginTop: spacing.xs,
   },
 });
