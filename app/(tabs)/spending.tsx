@@ -11,21 +11,25 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useSubscription } from "../../contexts/SubscriptionContext";
+import { PremiumGate } from "../../components/premium";
 import { TabLoadingScreen } from "../../components/ui";
 import { spacing } from "../../constants/theme";
 import { budgetAPI } from "../../services/api";
 import { transactionAPI } from "../../services/api/transactionAPI";
+import { getMerchantInfo } from "../../services/merchantService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { ChartData, ChartDataPoint } from "../../components/charts";
-import { 
+import {
   SpendingTabSwitch,
   SpendingMonthPicker,
   BudgetSummaryCard,
   SpendingAnalyticsSection,
   CategoryMerchantSwitch,
-  SpendingCategoryList
+  SpendingCategoryListClean,
+  SpendingMerchantList
 } from "../../components/spending";
 import { useRouter } from "expo-router";
 
@@ -56,20 +60,27 @@ export default function SpendingPage() {
     });
 
     const monthlySpentByCategory: Record<string, number> = {};
+    const monthlySpentByMerchant: Record<string, number> = {};
     console.log(`[Spending] Processing ${monthlyTransactions.length} monthly transactions`);
     monthlyTransactions.forEach((txn, index) => {
       const category = txn.category || "Other";
+      const merchantInfo = getMerchantInfo(txn.description || txn.merchant || "Unknown Merchant");
+      const merchantName = merchantInfo.name;
+
       if (index < 3) { // Log first 3 transactions for debugging
-        console.log(`[Spending] Transaction ${index}: amount=${txn.amount}, type=${txn.type}, category=${category}, isExpense=${txn.type === 'debit'}`);
+        console.log(`[Spending] Transaction ${index}: amount=${txn.amount}, type=${txn.type}, category=${category}, merchant=${merchantName}, isExpense=${txn.type === 'debit'}`);
       }
       // Only count debit transactions (money going out) as expenses
       if (txn.type === 'debit') {
         monthlySpentByCategory[category] =
           (monthlySpentByCategory[category] || 0) + Math.abs(txn.amount);
+        monthlySpentByMerchant[merchantName] =
+          (monthlySpentByMerchant[merchantName] || 0) + Math.abs(txn.amount);
       }
     });
     
     console.log(`[Spending] Monthly spending by category:`, monthlySpentByCategory);
+    console.log(`[Spending] Monthly spending by merchant:`, monthlySpentByMerchant);
 
     const monthlyTotalSpent = Object.values(monthlySpentByCategory).reduce(
       (sum, amount) => sum + amount,
@@ -79,6 +90,7 @@ export default function SpendingPage() {
     return {
       monthlyTransactions,
       monthlySpentByCategory,
+      monthlySpentByMerchant,
       monthlyTotalSpent,
     };
   }, [transactions, selectedMonth]);
@@ -423,6 +435,21 @@ export default function SpendingPage() {
     })).sort((a, b) => (b.monthlySpent || 0) - (a.monthlySpent || 0));
   }, [categoryData, monthlyData.monthlySpentByCategory]);
 
+  // Merchant data with monthly spending
+  const sortedMerchantData = useMemo(() => {
+    return Object.entries(monthlyData.monthlySpentByMerchant || {}).map(([merchantName, amount]) => {
+      const merchantInfo = getMerchantInfo(merchantName);
+      return {
+        id: merchantName.toLowerCase().replace(/\s+/g, '-'),
+        name: merchantName,
+        icon: merchantInfo.logo,
+        color: merchantInfo.color || '#6366f1',
+        monthlySpent: amount,
+        category: merchantInfo.category || 'other'
+      };
+    }).sort((a, b) => (b.monthlySpent || 0) - (a.monthlySpent || 0));
+  }, [monthlyData.monthlySpentByMerchant]);
+
   // Point selection handler
   const handlePointSelect = React.useCallback((point: ChartDataPoint) => {
     console.log('Selected point:', point);
@@ -633,14 +660,42 @@ export default function SpendingPage() {
         {/* Analytics Section */}
         {selectedTab === "categories" && (
           <>
-            <SpendingAnalyticsSection
-              selectedMonth={selectedMonth}
-              chartData={chartData}
-              hasTransactions={monthlyData.monthlyTransactions.length > 0}
-              monthlyOverBudget={monthlyOverBudget}
-              dailySpendingData={dailySpendingData}
-              onPointSelect={handlePointSelect}
-            />
+            <PremiumGate
+              feature="advancedAnalytics"
+              upgradeMessage="Unlock detailed spending analytics, charts, and insights with Premium"
+              showPreview={true}
+              previewContent={
+                <View style={{ opacity: 0.5 }}>
+                  <SpendingAnalyticsSection
+                    selectedMonth={selectedMonth}
+                    chartData={{
+                      ...chartData,
+                      labels: chartData.labels?.slice(0, 3) || [],
+                      values: chartData.values?.slice(0, 3) || [],
+                      dataPoints: chartData.dataPoints?.slice(0, 3) || []
+                    }} // Show limited data in preview
+                    hasTransactions={monthlyData.monthlyTransactions.length > 0}
+                    monthlyOverBudget={monthlyOverBudget}
+                    dailySpendingData={{
+                      ...dailySpendingData,
+                      labels: dailySpendingData.labels?.slice(0, 7) || [],
+                      data: dailySpendingData.data?.slice(0, 7) || [],
+                      prevMonthData: dailySpendingData.prevMonthData?.slice(0, 7) || []
+                    }} // Show limited data
+                    onPointSelect={() => {}} // Disable interaction in preview
+                  />
+                </View>
+              }
+            >
+              <SpendingAnalyticsSection
+                selectedMonth={selectedMonth}
+                chartData={chartData}
+                hasTransactions={monthlyData.monthlyTransactions.length > 0}
+                monthlyOverBudget={monthlyOverBudget}
+                dailySpendingData={dailySpendingData}
+                onPointSelect={handlePointSelect}
+              />
+            </PremiumGate>
 
             {/* Category/Merchant Switch */}
             <CategoryMerchantSwitch
@@ -650,13 +705,26 @@ export default function SpendingPage() {
 
             {/* Category List */}
             {spendingTab === "categories" && (
-              <SpendingCategoryList
+              <SpendingCategoryListClean
                 sortedCategoryData={sortedCategoryData}
                 filteredTransactions={monthlyData.monthlyTransactions}
                 formatAmount={formatAmount}
                 currency="GBP"
                 onCategoryPress={(category) => {
                   console.log('Category pressed:', category.name);
+                }}
+              />
+            )}
+
+            {/* Merchant List */}
+            {spendingTab === "merchants" && (
+              <SpendingMerchantList
+                sortedMerchantData={sortedMerchantData}
+                filteredTransactions={monthlyData.monthlyTransactions}
+                formatAmount={formatAmount}
+                currency="GBP"
+                onMerchantPress={(merchant) => {
+                  console.log('Merchant pressed:', merchant.name);
                 }}
               />
             )}

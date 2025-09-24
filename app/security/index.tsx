@@ -308,7 +308,7 @@ export default function SecurityScreen() {
       // Add a test mode - bypass PIN validation for debugging
       const TEST_MODE = pinInput === '00000';
 
-      let validation = { success: false, error: null };
+      let validation: { success: boolean; error?: any } = { success: false };
 
       if (TEST_MODE) {
         console.log('🔐 [Security] TEST MODE - bypassing PIN validation');

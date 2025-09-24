@@ -27,6 +27,8 @@ interface MonthlyData {
   month: string;
   amount: number;
   isRecent: boolean;
+  displayMonth: string;
+  count: number;
 }
 
 interface BillAnalysis {
@@ -208,7 +210,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
   const getTrendIcon = () => {
     if (analysis.totalIncrease > 0) return 'trending-up';
     if (analysis.totalIncrease < 0) return 'trending-down';
-    return 'trending-flat';
+    return 'remove'; // Use 'remove' for flat/stable trend
   };
 
   const getTrendColor = () => {
@@ -717,6 +719,11 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
+  section: {
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 20,
+  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -931,38 +938,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     textAlign: 'center',
-  },
-  // Improved info grid
-  infoGrid: {
-    marginBottom: 20,
-  },
-  infoItem: {
-    flex: 1,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  infoLabel: {
-    fontSize: 13,
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  infoValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  // Enhanced tracking info
-  trackingInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  trackingText: {
-    fontSize: 13,
-    marginLeft: 10,
-    flex: 1,
   },
 
   // Notification Styles

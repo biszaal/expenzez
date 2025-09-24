@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useSubscription } from "../../contexts/SubscriptionContext";
 import { useAlert } from "../../hooks/useAlert";
 import { TabLoadingScreen } from "../../components/ui";
 import {
@@ -41,6 +42,7 @@ export default function AccountScreen() {
   const { isLoggedIn, user, logout } = useAuth();
   const { colors, isDark } = useTheme();
   const { showError } = useAlert();
+  const { isPremium, isTrialActive, subscription } = useSubscription();
 
   const [profile, setProfile] = useState<any>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
@@ -214,6 +216,21 @@ export default function AccountScreen() {
 
 
   const profileOptions = [
+    ...(!isPremium ? [{
+      title: isTrialActive ? "Upgrade to Premium" : "Get Premium",
+      subtitle: isTrialActive
+        ? `Trial ends in ${Math.max(0, Math.ceil((new Date(subscription?.trialEndDate || '').getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days`
+        : "Unlock unlimited features",
+      icon: (
+        <Ionicons
+          name="diamond"
+          size={24}
+          color="#F59E0B"
+        />
+      ),
+      route: "/subscription/plans",
+      isSpecial: true,
+    }] : []),
     {
       title: "Personal Information",
       subtitle: "Update your details",
@@ -250,6 +267,19 @@ export default function AccountScreen() {
       ),
       route: "/notifications/preferences",
     },
+    ...(isPremium ? [{
+      title: "Premium Membership",
+      subtitle: "Manage your subscription",
+      icon: (
+        <Ionicons
+          name="diamond"
+          size={24}
+          color="#10B981"
+        />
+      ),
+      route: "/subscription/plans",
+      isSpecial: true,
+    }] : []),
   ];
 
 
@@ -592,6 +622,9 @@ export default function AccountScreen() {
                     borderBottomColor: colors.border.light,
                     borderBottomWidth: 0.5,
                   },
+                  (option as any).isSpecial && {
+                    backgroundColor: (option as any).title.includes('Get') ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                  },
                 ]}
                 onPress={() => {
                   router.push(option.route as any);
@@ -600,7 +633,11 @@ export default function AccountScreen() {
                 <View
                   style={[
                     styles.menuIconContainer,
-                    { backgroundColor: colors.primary[100] },
+                    (option as any).isSpecial
+                      ? {
+                          backgroundColor: (option as any).title.includes('Get') ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                        }
+                      : { backgroundColor: colors.primary[100] },
                   ]}
                 >
                   {option.icon}
@@ -610,9 +647,13 @@ export default function AccountScreen() {
                     style={[
                       styles.menuTitle,
                       { color: colors.text.primary },
+                      (option as any).isSpecial && { fontWeight: '600' },
                     ]}
                   >
                     {option.title}
+                    {(option as any).isSpecial && !isPremium && (
+                      <Text style={{ color: '#F59E0B', marginLeft: 8 }}>✨</Text>
+                    )}
                   </Text>
                   <Text
                     style={[

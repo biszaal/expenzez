@@ -63,7 +63,7 @@ export const ENV_CONFIG: EnvironmentConfig = {
   environment,
   
   // API Configuration
-  apiBaseURL: 'https://0hjm0et5ud.execute-api.eu-west-2.amazonaws.com', // Always use AWS API
+  apiBaseURL: 'https://0hjm0et5ud.execute-api.eu-west-2.amazonaws.com', // Use AWS API for all environments
   
   // Nordigen/GoCardless Redirect URLs
   nordigenRedirectURL: environment === 'production'

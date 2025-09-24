@@ -3,7 +3,7 @@ export const lightColors = {
   // Primary colors - Beautiful purple palette
   primary: {
     50: "#FAF5FF",
-    100: "#F3E8FF", 
+    100: "#F3E8FF",
     200: "#E9D5FF",
     300: "#D8B4FE",
     400: "#C084FC",
@@ -12,12 +12,13 @@ export const lightColors = {
     700: "#6D28D9",
     800: "#5B21B6",
     900: "#4C1D95",
+    main: "#8B5CF6", // Alias for 500
   },
 
   // Secondary color - Green for financial success/positive actions
   secondary: {
     50: "#F0FDF4",
-    100: "#DCFCE7", 
+    100: "#DCFCE7",
     200: "#BBF7D0",
     300: "#86EFAC",
     400: "#4ADE80",
@@ -26,12 +27,13 @@ export const lightColors = {
     700: "#15803D",
     800: "#166534",
     900: "#14532D",
+    main: "#22C55E", // Alias for 500
   },
 
   // Accent color - Complementary color for variety
   accent: {
     50: "#F0F9FF",
-    100: "#E0F2FE", 
+    100: "#E0F2FE",
     200: "#BAE6FD",
     300: "#7DD3FC",
     400: "#38BDF8",
@@ -40,6 +42,7 @@ export const lightColors = {
     700: "#0369A1",
     800: "#075985",
     900: "#0C4A6E",
+    main: "#0EA5E9", // Alias for 500
   },
 
   // Neutral gray scale - Essential only
@@ -63,14 +66,16 @@ export const lightColors = {
     500: "#22C55E", // Main success color
     600: "#16A34A",
     700: "#15803D",
+    main: "#22C55E", // Alias for 500
   },
 
   error: {
     50: "#FEF2F2",
     100: "#FEE2E2",
     500: "#EF4444", // Main error color
-    600: "#DC2626", 
+    600: "#DC2626",
     700: "#B91C1C",
+    main: "#EF4444", // Alias for 500
   },
 
   warning: {
@@ -79,6 +84,7 @@ export const lightColors = {
     500: "#F59E0B", // Main warning color
     600: "#D97706",
     700: "#B45309",
+    main: "#F59E0B", // Alias for 500
   },
 
   // Clean background system with purple tints
@@ -194,12 +200,13 @@ export const darkColors = {
     700: "#E9D5FF",
     800: "#F3E8FF",
     900: "#FAF5FF",
+    main: "#C084FC", // Alias for 500
   },
 
   // Secondary color - Green for financial success/positive actions (dark mode)
   secondary: {
     50: "#14532D",
-    100: "#166534", 
+    100: "#166534",
     200: "#15803D",
     300: "#16A34A",
     400: "#22C55E",
@@ -208,6 +215,7 @@ export const darkColors = {
     700: "#BBF7D0",
     800: "#DCFCE7",
     900: "#F0FDF4",
+    main: "#4ADE80", // Alias for 500
   },
 
   // Accent color - Blue accent for variety in dark mode
@@ -222,6 +230,7 @@ export const darkColors = {
     700: "#BAE6FD",
     800: "#E0F2FE",
     900: "#F0F9FF",
+    main: "#38BDF8", // Alias for 500
   },
 
   // Neutral gray scale - Inverted for dark mode
@@ -241,10 +250,11 @@ export const darkColors = {
   // Minimal status colors - Same as light mode
   success: {
     50: "#0F2419",
-    100: "#14532D", 
+    100: "#14532D",
     500: "#22C55E", // Main success color
     600: "#16A34A",
     700: "#15803D",
+    main: "#22C55E", // Alias for 500
   },
 
   error: {
@@ -253,6 +263,7 @@ export const darkColors = {
     500: "#EF4444", // Main error color
     600: "#DC2626",
     700: "#B91C1C",
+    main: "#EF4444", // Alias for 500
   },
 
   warning: {
@@ -261,6 +272,7 @@ export const darkColors = {
     500: "#F59E0B", // Main warning color
     600: "#D97706",
     700: "#B45309",
+    main: "#F59E0B", // Alias for 500
   },
 
   // Clean background system for dark mode with purple tints

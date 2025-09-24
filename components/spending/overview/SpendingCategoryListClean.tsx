@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { CategoryIcon } from '../utils/CategoryIcon';
+import { getMerchantInfo } from '../../../services/merchantService';
 import { spendingCategoryListStyles } from './SpendingCategoryList.styles';
 
 interface CategoryData {
@@ -17,10 +18,13 @@ interface CategoryData {
 
 interface Transaction {
   category: string;
+  amount: number;
+  merchant?: string;
+  description?: string;
   [key: string]: any;
 }
 
-interface SpendingCategoryListProps {
+interface SpendingCategoryListCleanProps {
   sortedCategoryData: CategoryData[];
   filteredTransactions: Transaction[];
   formatAmount: (amount: number, currency?: string) => string;
@@ -28,7 +32,7 @@ interface SpendingCategoryListProps {
   onCategoryPress?: (category: CategoryData) => void;
 }
 
-export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
+export const SpendingCategoryListClean: React.FC<SpendingCategoryListCleanProps> = ({
   sortedCategoryData,
   filteredTransactions,
   formatAmount,
@@ -75,33 +79,34 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
   return (
     <View style={styles.categoriesTabWrapper}>
       {sortedCategoryData.map((category) => {
-        const budget = category.defaultBudget || 0;
         const spent = category.monthlySpent || 0;
-        const left = Math.max(0, budget - spent);
-        
-        // Fix percentage calculation to handle edge cases and cap at reasonable maximum
-        let percent = 0;
-        if (budget > 0 && spent >= 0) {
-          const rawPercent = (spent / budget) * 100;
-          // Cap display percentage at 999% to prevent UI overflow, but still calculate properly
-          percent = Math.min(999, Math.max(0, Math.round(rawPercent)));
-        }
-        
-        const overBudget = spent > budget;
-        
-        // Count transactions for this category in selected month
+
+        // Count transactions for this category
         const categoryTransactions = filteredTransactions.filter(
           (tx) => tx.category === category.name
         );
-        
+
         const txnCount = categoryTransactions.length;
-        
-        // Get top merchants for this category (first 3)
-        const merchants = categoryTransactions
-          .filter(tx => tx.merchant) // Only transactions with merchant info
-          .map(tx => tx.merchant)
-          .filter((merchant, index, arr) => arr.indexOf(merchant) === index) // Remove duplicates
-          .slice(0, 3); // Take first 3
+
+        // Calculate average transaction amount
+        const avgAmount = txnCount > 0 ? spent / txnCount : 0;
+
+        // Get top merchants for this category using merchant service
+        const merchantCounts: Record<string, number> = {};
+        categoryTransactions.forEach(tx => {
+          const description = tx.description || tx.merchant || '';
+          if (description) {
+            const merchantInfo = getMerchantInfo(description);
+            const merchantName = merchantInfo.name;
+            merchantCounts[merchantName] = (merchantCounts[merchantName] || 0) + 1;
+          }
+        });
+
+        // Sort merchants by frequency and take top 3
+        const merchants = Object.entries(merchantCounts)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 3)
+          .map(([name]) => name);
 
         return (
           <Pressable
@@ -117,7 +122,7 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
               },
             ]}
             accessibilityRole="button"
-            accessibilityLabel={`Edit budget for ${category.name}`}
+            accessibilityLabel={`View transactions for ${category.name}`}
             onPress={() => onCategoryPress?.(category)}
           >
             <LinearGradient
@@ -128,10 +133,6 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
               style={[
                 styles.categoryCard,
                 { borderColor: colors.border.light },
-                overBudget && {
-                  borderColor: colors.error[400],
-                  backgroundColor: "#FEF2F2",
-                },
               ]}
             >
               <View style={styles.categoryCardHeader}>
@@ -142,10 +143,7 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
                       { backgroundColor: category.color + "22" },
                     ]}
                   >
-                    {renderCategoryIcon(
-                      category.icon,
-                      category.color
-                    )}
+                    {renderCategoryIcon(category.icon, category.color)}
                   </View>
                   <View style={styles.categoryCardHeaderContent}>
                     <View style={styles.categoryCardHeaderTop}>
@@ -160,11 +158,7 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
                       <Text
                         style={[
                           styles.categoryCardAmount,
-                          {
-                            color: overBudget
-                              ? colors.error[500]
-                              : colors.text.primary,
-                          },
+                          { color: colors.text.primary },
                         ]}
                       >
                         {formatAmount(spent, currency)}
@@ -177,8 +171,8 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
                           { color: colors.text.secondary },
                         ]}
                       >
-                        {merchants.length > 0 
-                          ? merchants.join(', ') 
+                        {merchants.length > 0
+                          ? merchants.join(', ')
                           : `${txnCount} transaction${txnCount !== 1 ? 's' : ''}`
                         }
                       </Text>
@@ -188,78 +182,24 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
                           { color: colors.text.secondary },
                         ]}
                       >
-                        of {formatAmount(budget, currency)}
+                        {txnCount > 0 ? `avg ${formatAmount(avgAmount, currency)}` : 'No transactions'}
                       </Text>
                     </View>
                   </View>
                 </View>
                 <View style={styles.categoryCardHeaderRight}>
-                  <Text
-                    style={[
-                      styles.categoryCardPercentage,
-                      {
-                        color: overBudget
-                          ? colors.error[500]
-                          : percent > 80
-                          ? colors.warning[500]
-                          : colors.success[500],
-                      },
-                    ]}
-                  >
-                    {Math.round(percent || 0)}%
-                  </Text>
-                </View>
-              </View>
-
-              {/* Progress Bar */}
-              <View style={styles.categoryCardProgress}>
-                <View
-                  style={[
-                    styles.categoryCardProgressTrack,
-                    { backgroundColor: colors.background.secondary },
-                  ]}
-                >
                   <View
                     style={[
-                      styles.categoryCardProgressBar,
+                      styles.categoryIconBg,
                       {
-                        width: `${Math.min(percent, 100)}%`,
-                        backgroundColor: overBudget
-                          ? colors.error[500]
-                          : percent > 80
-                          ? colors.warning[500]
-                          : colors.primary[500],
-                      },
-                    ]}
-                  />
-                </View>
-              </View>
-
-              {/* Bottom Stats */}
-              <View style={styles.categoryCardStats}>
-                <View style={styles.categoryCardStat}>
-                  <Text
-                    style={[
-                      styles.categoryCardStatLabel,
-                      { color: colors.text.tertiary },
-                    ]}
-                  >
-                    Remaining
-                  </Text>
-                  <Text
-                    style={[
-                      styles.categoryCardStatValue,
-                      {
-                        color: overBudget
-                          ? colors.error[500]
-                          : colors.success[500],
+                        backgroundColor: category.color + "15",
+                        width: 32,
+                        height: 32,
                       },
                     ]}
                   >
-                    {overBudget
-                      ? `Over ${formatAmount(Math.abs(left), currency)}`
-                      : formatAmount(left, currency)}
-                  </Text>
+                    {renderCategoryIcon(category.icon, category.color)}
+                  </View>
                 </View>
               </View>
             </LinearGradient>

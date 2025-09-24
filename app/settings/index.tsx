@@ -382,7 +382,7 @@ export default function SettingsPage() {
                 },
                 shadows.sm,
               ]}
-              onPress={() => router.push("/banks")}
+              onPress={() => router.push("/(tabs)/banks" as any)}
             >
               <Ionicons
                 name="business-outline"

@@ -19,6 +19,9 @@ export default function GoalsScreen() {
   const { user } = useAuth();
   const router = useRouter();
 
+  // Styles
+  const styles = createStyles(colors);
+
   // State
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -183,8 +186,6 @@ export default function GoalsScreen() {
       </SafeAreaView>
     );
   }
-
-  const styles = createStyles(colors);
 
   return (
     <SafeAreaView style={styles.container}>

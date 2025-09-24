@@ -12,17 +12,27 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useTheme } from '../contexts/ThemeContext';
 import { transactionAPI } from '../services/api';
 import { autoBillDetection } from '../services/automaticBillDetection';
 import { ExpenseCategory, ImportPreview } from '../types/expense';
 
 interface CSVTransaction {
+  id: string;
   date: string;
   description: string;
   amount: number;
-  category?: string;
-  type?: 'debit' | 'credit';
+  originalAmount: number;
+  category: string;
+  type: 'debit' | 'credit';
+  tags?: string[];
+  merchant?: string;
+  accountId?: string;
+  bankName?: string;
+  accountType?: string;
+  isPending?: boolean;
 }
 
 const CSV_EXPENSE_CATEGORIES: ExpenseCategory[] = [
@@ -70,21 +80,28 @@ export default function CSVImportScreen() {
 
     // Check header row for expected columns
     const header = lines[0].toLowerCase();
-    const hasDate = header.includes('date') || header.includes('transaction date') || header.includes('posted date');
-    const hasDescription = header.includes('description') || header.includes('memo') || header.includes('reference') || header.includes('details');
-    const hasAmount = header.includes('amount') || header.includes('debit') || header.includes('credit') || header.includes('value');
+    const hasDate = header.includes('date');
+    const hasDescription = header.includes('description');
+    const hasAmount = header.includes('amount');
+    const hasCategory = header.includes('category');
+    const hasType = header.includes('type');
 
-    if (!hasDate && !hasDescription && !hasAmount) {
+    if (!hasDate && !hasDescription && !hasAmount && !hasCategory && !hasType) {
       // Maybe no header row, check if first data row looks valid
       const firstDataRow = lines[0].split(',');
-      if (firstDataRow.length < 3) {
-        return { isValid: false, error: 'CSV must have at least 3 columns: Date, Description, Amount (or Debit/Credit).' };
+      if (firstDataRow.length < 5) {
+        return { isValid: false, error: 'CSV must have exactly 5 columns: Date, Description, Amount, Category, Type.' };
       }
 
       // Try to validate first row as data
       const dateStr = firstDataRow[0].trim().replace(/"/g, '');
       if (!isValidDate(dateStr)) {
         return { isValid: false, error: 'First column does not appear to contain valid dates.' };
+      }
+    } else {
+      // Check that all required columns are present
+      if (!hasDate || !hasDescription || !hasAmount || !hasCategory || !hasType) {
+        return { isValid: false, error: 'CSV header must contain: Date, Description, Amount, Category, Type' };
       }
     }
 
@@ -100,7 +117,7 @@ export default function CSVImportScreen() {
 
     // Determine if first row is header
     const firstRow = lines[0].toLowerCase();
-    const isHeader = firstRow.includes('date') || firstRow.includes('description') || firstRow.includes('amount');
+    const isHeader = firstRow.includes('date') && firstRow.includes('description') && firstRow.includes('amount') && firstRow.includes('category') && firstRow.includes('type');
     const dataLines = isHeader ? lines.slice(1) : lines;
 
     for (let i = 0; i < dataLines.length; i++) {
@@ -108,17 +125,21 @@ export default function CSVImportScreen() {
       const columns = line.split(',').map(col => col.trim().replace(/"/g, ''));
       const rowNumber = i + (isHeader ? 2 : 1);
 
-      // Validate minimum columns
-      if (columns.length < 3) {
-        errors.push(`Row ${rowNumber}: Must have at least 3 columns`);
+      // Validate minimum columns (Date, Description, Amount, Category, Type)
+      if (columns.length < 5) {
+        errors.push(`Row ${rowNumber}: Must have 5 columns: Date, Description, Amount, Category, Type`);
         invalidRows++;
         continue;
       }
 
       const dateStr = columns[0];
       const description = columns[1];
+      const amountStr = columns[2];
+      const categoryStr = columns[3];
+      const typeStr = columns[4];
       let amount = 0;
       let type: 'debit' | 'credit' = 'debit';
+      let category = 'other';
 
       // Validate date
       if (!dateStr || !isValidDate(dateStr)) {
@@ -134,66 +155,51 @@ export default function CSVImportScreen() {
         continue;
       }
 
-      // Parse amount based on format
-      let amountParsed = false;
-
-      if (columns.length === 3) {
-        // Format 1: Date, Description, Amount
-        const amountStr = columns[2];
-        if (!amountStr) {
-          errors.push(`Row ${rowNumber}: Amount is missing`);
-          invalidRows++;
-          continue;
-        }
-
-        const rawAmount = parseFloat(amountStr.replace(/[£$,\s]/g, ''));
-        if (isNaN(rawAmount)) {
-          errors.push(`Row ${rowNumber}: Invalid amount "${amountStr}"`);
-          invalidRows++;
-          continue;
-        }
-
-        if (rawAmount < 0) {
-          amount = Math.abs(rawAmount);
-          type = 'debit';
-        } else if (rawAmount > 0) {
-          amount = rawAmount;
-          type = 'credit';
-        } else {
-          errors.push(`Row ${rowNumber}: Amount cannot be zero`);
-          invalidRows++;
-          continue;
-        }
-        amountParsed = true;
-
-      } else if (columns.length >= 4) {
-        // Format 2: Date, Description, Debit, Credit
-        const debitStr = columns[2];
-        const creditStr = columns[3];
-
-        const debit = parseFloat(debitStr.replace(/[£$,\s]/g, '')) || 0;
-        const credit = parseFloat(creditStr.replace(/[£$,\s]/g, '')) || 0;
-
-        if (debit > 0 && credit > 0) {
-          errors.push(`Row ${rowNumber}: Cannot have both debit and credit amounts`);
-          invalidRows++;
-          continue;
-        }
-
-        if (debit > 0) {
-          amount = debit;
-          type = 'debit';
-          amountParsed = true;
-        } else if (credit > 0) {
-          amount = credit;
-          type = 'credit';
-          amountParsed = true;
-        } else {
-          errors.push(`Row ${rowNumber}: No valid amount found in debit or credit columns`);
-          invalidRows++;
-          continue;
-        }
+      // Parse amount
+      if (!amountStr) {
+        errors.push(`Row ${rowNumber}: Amount is missing`);
+        invalidRows++;
+        continue;
       }
+
+      const rawAmount = parseFloat(amountStr.replace(/[£$,\s]/g, ''));
+      if (isNaN(rawAmount)) {
+        errors.push(`Row ${rowNumber}: Invalid amount "${amountStr}"`);
+        invalidRows++;
+        continue;
+      }
+
+      if (rawAmount === 0) {
+        errors.push(`Row ${rowNumber}: Amount cannot be zero`);
+        invalidRows++;
+        continue;
+      }
+
+      amount = Math.abs(rawAmount); // Store absolute value, sign will be handled by type
+
+      // Validate and parse type
+      if (!typeStr || (typeStr.toLowerCase() !== 'debit' && typeStr.toLowerCase() !== 'credit')) {
+        errors.push(`Row ${rowNumber}: Type must be "debit" or "credit", got "${typeStr}"`);
+        invalidRows++;
+        continue;
+      }
+      type = typeStr.toLowerCase() as 'debit' | 'credit';
+
+      // Validate and parse category
+      if (!categoryStr || categoryStr.length < 2) {
+        errors.push(`Row ${rowNumber}: Category is missing or too short`);
+        invalidRows++;
+        continue;
+      }
+
+      // Validate category is in allowed list
+      const validCategories = CSV_EXPENSE_CATEGORIES.map(c => c.id);
+      if (!validCategories.includes(categoryStr.toLowerCase())) {
+        errors.push(`Row ${rowNumber}: Invalid category "${categoryStr}". Valid categories: ${validCategories.join(', ')}`);
+        invalidRows++;
+        continue;
+      }
+      category = categoryStr.toLowerCase();
 
       // Validate amount limits
       if (amount > 50000) {
@@ -202,20 +208,23 @@ export default function CSVImportScreen() {
         continue;
       }
 
-      if (amountParsed) {
-        const category = categorizeTransaction(description);
-
-        transactions.push({
-          id: `csv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          date: formatDate(dateStr),
-          description: description.trim(),
-          amount: type === 'debit' ? -amount : amount,
-          currency: 'GBP',
-          type,
-          category,
-        });
-        validRows++;
-      }
+      // Create transaction
+      transactions.push({
+        id: `csv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        date: formatDate(dateStr),
+        description: description.trim(),
+        amount: type === 'debit' ? -amount : amount, // Negative for expenses, positive for income
+        originalAmount: amount,
+        category,
+        type,
+        tags: type === 'debit' ? ['expense', 'csv-import'] : ['income', 'csv-import'],
+        merchant: description.trim(),
+        accountId: 'csv-import',
+        bankName: 'CSV Import',
+        accountType: 'Imported Account',
+        isPending: false,
+      });
+      validRows++;
     }
 
     // Show validation summary if there are errors
@@ -483,8 +492,11 @@ export default function CSVImportScreen() {
       const endDate = new Date(Math.max(...dates.map(d => d.getTime())));
 
       setImportPreview({
-        transactions: sortedTransactions.slice(0, 10), // Show first 10 for preview
+        file: selectedFile || 'Unknown file',
         totalTransactions: transactions.length,
+        successfulImports: 0, // Will be updated after import
+        errors: [], // No errors at preview stage
+        transactions: sortedTransactions.slice(0, 10), // Show first 10 for preview
         totalAmount,
         dateRange: {
           start: startDate.toLocaleDateString(),
@@ -496,6 +508,47 @@ export default function CSVImportScreen() {
       Alert.alert('Error', 'Failed to read the CSV file. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      // Create CSV template data (headers only)
+      const templateData = [
+        ['Date', 'Description', 'Amount', 'Category', 'Type']
+      ];
+
+      // Convert to CSV string
+      const csvContent = templateData.map(row => row.join(',')).join('\n');
+
+      // Create temporary file
+      const fileName = 'expenzez-template.csv';
+      const file = new FileSystem.File(FileSystem.Paths.document, fileName);
+
+      await file.write(csvContent);
+
+      // Check if sharing is available
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(file.uri, {
+          mimeType: 'text/csv',
+          dialogTitle: 'Save CSV Template',
+          UTI: 'public.comma-separated-values-text',
+        });
+      } else {
+        // Fallback for devices without sharing - show template content
+        Alert.alert(
+          'CSV Template',
+          'Required format (5 columns):\n\nDate,Description,Amount,Category,Type\n2024-01-15,Tesco Grocery,-45.67,groceries,debit\n2024-01-15,Salary Payment,2500.00,income,credit\n\n• Amount: negative for expenses, positive for income\n• Type: "debit" for expenses, "credit" for income\n• Category: groceries, food, transport, bills, etc.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error creating template:', error);
+      Alert.alert(
+        'Template Format',
+        'CSV should have these 5 columns:\n\nDate,Description,Amount,Category,Type\n\nExample:\n2024-01-15,Coffee Shop,-4.50,food,debit\n2024-01-15,Salary,2500.00,income,credit\n\nAmount: negative for expenses, positive for income',
+        [{ text: 'OK' }]
+      );
     }
   };
 
@@ -512,22 +565,8 @@ export default function CSVImportScreen() {
 
       for (const transaction of allTransactions) {
         try {
-          const transactionData = {
-            amount: transaction.amount, // Keep original positive/negative amount
-            originalAmount: Math.abs(transaction.amount),
-            category: transaction.category,
-            description: transaction.description,
-            date: transaction.date,
-            type: transaction.type,
-            tags: transaction.type === 'debit' ? ['expense', 'csv-import'] : ['income', 'csv-import'],
-            merchant: transaction.description,
-            accountId: 'csv-import',
-            bankName: 'CSV Import',
-            accountType: 'Imported Account',
-            isPending: false
-          };
-
-          await transactionAPI.createTransaction(transactionData);
+          // CSVTransaction is now compatible with Expense interface
+          await transactionAPI.createTransaction(transaction);
           successCount++;
 
         } catch (error: any) {
@@ -629,14 +668,21 @@ export default function CSVImportScreen() {
 
           <View style={styles.formatInfo}>
             <Text style={[styles.formatTitle, { color: colors.text.primary }]}>
-              Supported CSV formats:
+              Required CSV format:
             </Text>
             <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Date, Description, Amount (negative = expense, positive = income)
+              • Date, Description, Amount, Category, Type
             </Text>
             <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Date, Description, Debit, Credit (separate columns)
+              • Amount: Positive for income, negative for expenses
             </Text>
+            <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
+              • Type: &quot;credit&quot; for income, &quot;debit&quot; for expenses
+            </Text>
+            <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
+              • Category: food, transport, shopping, etc.
+            </Text>
+
             <Text style={[styles.formatTitle, { color: colors.text.primary, marginTop: 12 }]}>
               Requirements:
             </Text>
@@ -653,6 +699,23 @@ export default function CSVImportScreen() {
               • Amounts under £50,000
             </Text>
           </View>
+
+          {/* Template Download Button */}
+          <TouchableOpacity
+            style={[
+              styles.templateButton,
+              {
+                backgroundColor: colors.success[100],
+                borderColor: colors.success[300],
+              },
+            ]}
+            onPress={handleDownloadTemplate}
+          >
+            <Ionicons name="download" size={20} color={colors.success[600]} />
+            <Text style={[styles.templateButtonText, { color: colors.success[600] }]}>
+              Download CSV Template
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* File Selection */}
@@ -925,5 +988,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-
+  templateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 16,
+    gap: 8,
+  },
+  templateButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
 });

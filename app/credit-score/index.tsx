@@ -4,10 +4,12 @@ import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useSubscription } from "../../contexts/SubscriptionContext";
+import { withPremiumGate } from "../../components/premium";
 import { useAlert } from "../../hooks/useAlert";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 
-export default function CreditScorePage() {
+function CreditScorePage() {
   const router = useRouter();
   const { colors } = useTheme();
   const { showSuccess, showError } = useAlert();
@@ -186,4 +188,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 8,
   },
+});
+
+// Wrap with premium gate for credit score monitoring
+export default withPremiumGate(CreditScorePage, 'creditScoreMonitoring', {
+  upgradeMessage: 'Monitor your credit score and get personalized improvement tips with Premium',
+  allowTrialAccess: true
 });

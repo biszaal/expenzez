@@ -29,7 +29,7 @@ export const HomeHeader: React.FC = () => {
           >
             <Ionicons name="notifications-outline" size={22} color={colors.primary[500]} />
             {unreadCount > 0 && (
-              <View style={[styles.professionalNotificationBadge, { backgroundColor: colors.error.main }]}>
+              <View style={[styles.professionalNotificationBadge, { backgroundColor: colors.error[500] }]}>
                 <Text style={[styles.professionalNotificationBadgeText, { color: colors.background.primary }]}>
                   {unreadCount > 99 ? '99+' : unreadCount.toString()}
                 </Text>

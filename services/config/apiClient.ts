@@ -185,25 +185,38 @@ api.interceptors.response.use(
           
           // For critical endpoints like banking callbacks and security validation, allow the request to proceed without token
           const criticalEndpoints = [
-            '/nordigen/callback', 
-            '/banking/callback', 
+            '/nordigen/callback',
+            '/banking/callback',
             '/banks/callback',
             '/security/validate-pin',  // Allow PIN validation failures without logout
             '/security/setup-pin',     // Allow PIN setup failures without logout
             '/security/change-pin',    // Allow PIN change failures without logout
           ];
+
+          // Endpoints that should fail gracefully without triggering immediate logout (GET requests only)
+          const gracefulDegradationEndpoints = [
+            '/notifications/preferences',
+            '/notifications/history',
+          ];
+
+          // Special handling for subscription endpoint - only GET requests should degrade gracefully
+          const requestMethod = originalRequest.method?.toUpperCase() || 'GET';
+          const isSubscriptionEndpoint = originalRequest.url?.includes('/subscription');
+          const isSubscriptionGet = isSubscriptionEndpoint && requestMethod === 'GET';
+
           const isCriticalEndpoint = criticalEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
-          
+          const isGracefulDegradationEndpoint = gracefulDegradationEndpoints.some(endpoint => originalRequest.url?.includes(endpoint)) || isSubscriptionGet;
+
           // Also check if we're in a banking callback context (even for auth/refresh)
           let isBankingCallbackContext = false;
           try {
             // Check if there are recent banking requisitions (within 3 minutes for active contexts)
             // Note: This is different from session preservation (15 minutes) - this is for active banking flows
-            const keys = await import('@react-native-async-storage/async-storage').then(m => 
+            const keys = await import('@react-native-async-storage/async-storage').then(m =>
               m.default.getAllKeys().then(keys => keys.filter(key => key.startsWith('requisition_expenzez_')))
             );
-            
-            
+
+
             isBankingCallbackContext = keys.some(key => {
               const match = key.match(/requisition_expenzez_(\d+)/);
               if (match) {
@@ -214,28 +227,54 @@ api.interceptors.response.use(
               }
               return false;
             });
-            
+
           } catch (error) {
             console.log(`[API] Error checking banking callback context:`, error);
           }
-          
+
+          // Special handling for subscription POST requests during trial activation
+          const isSubscriptionPost = isSubscriptionEndpoint && requestMethod === 'POST';
+          const isTrialActivation = isSubscriptionPost && originalRequest.data?.status === 'trialing';
+
           const shouldAllowWithoutAuth = isCriticalEndpoint || (isBankingCallbackContext && originalRequest.url?.includes('/auth/refresh'));
-          console.log(`[API] Critical endpoint check: ${isCriticalEndpoint}, Banking context: ${isBankingCallbackContext}, Should allow: ${shouldAllowWithoutAuth} for URL ${originalRequest.url}`);
-          
+          console.log(`[API] Critical endpoint check: ${isCriticalEndpoint}, Banking context: ${isBankingCallbackContext}, Graceful degradation: ${isGracefulDegradationEndpoint} (Subscription GET: ${isSubscriptionGet}), Trial activation: ${isTrialActivation}, Should allow: ${shouldAllowWithoutAuth} for URL ${originalRequest.url} (Method: ${requestMethod})`);
+
           if (shouldAllowWithoutAuth) {
             console.log(`[API] Allowing ${isCriticalEndpoint ? 'critical endpoint' : 'auth/refresh during banking callback'} ${originalRequest.url} to proceed without authentication`);
             delete originalRequest.headers.Authorization; // Remove auth header
             return api(originalRequest);
+          } else if (isGracefulDegradationEndpoint) {
+            // For graceful degradation endpoints, return a 401 error without triggering logout
+            console.log(`[API] Graceful degradation endpoint ${originalRequest.url} failed - returning 401 without logout`);
+            const error = {
+              response: {
+                status: 401,
+                data: { error: { code: 'AUTH_REQUIRED', message: 'Authentication required' } }
+              },
+              message: 'Authentication required for this endpoint'
+            };
+            return Promise.reject(error);
+          } else if (isTrialActivation) {
+            // For trial activation, return a 401 error without triggering logout
+            console.log(`[API] Trial activation subscription save failed - returning 401 without logout`);
+            const error = {
+              response: {
+                status: 401,
+                data: { error: { code: 'TRIAL_SAVE_AUTH_REQUIRED', message: 'Trial activated locally, database save will be retried' } }
+              },
+              message: 'Trial subscription save failed - will retry later'
+            };
+            return Promise.reject(error);
           } else {
             // Use error handler for session expiration
             const sessionError = await errorHandler.handleError(
-              { 
+              {
                 response: { status: 401, data: { error: { code: 'AUTH_SESSION_EXPIRED' } } },
                 message: 'Session expired - please log in again'
               },
               errorContext
             );
-            
+
             return Promise.reject(sessionError.transformedError);
           }
         }
