@@ -66,7 +66,7 @@ export const achievementAPI = {
     try {
       console.log(`🏆 [AchievementAPI] Fetching achievements for user: ${userId}`);
 
-      const response = await api.get(`/achievements/${userId}`);
+      const response = await api.get(`/achievements`);
 
       console.log(`✅ [AchievementAPI] Successfully fetched achievements:`, {
         level: response.data.progress?.level,
@@ -85,13 +85,17 @@ export const achievementAPI = {
         const goalsData = await goalsAPI.getUserGoals(userId);
 
         // Create user financial data for gamification engine
+        // Use goals data directly from the response
+        const activeGoals = goalsData.activeGoals || [];
+        const completedGoals = goalsData.completedGoals || [];
+
         const userFinancialData = {
           userId,
-          goals: goalsData.activeGoals.concat(goalsData.completedGoals),
-          goalProgress: goalsData.goalProgress,
+          goals: activeGoals.concat(completedGoals),
+          goalProgress: goalsData.goalProgress || [],
           totalTransactions: 45, // This would come from transaction API
           monthsActive: 3, // This would be calculated from user registration date
-          totalSaved: goalsData.totalSavedTowardsGoals,
+          totalSaved: goalsData.totalSavedTowardsGoals || 0,
           currentStreaks: {
             savings: 14, // This would come from transaction patterns
             budgetCompliance: 21 // This would come from budget API
@@ -118,7 +122,7 @@ export const achievementAPI = {
           },
           milestones: {
             totalSaved: userFinancialData.totalSaved,
-            goalsCompleted: goalsData.completedGoals.length,
+            goalsCompleted: completedGoals.length,
             transactionsLogged: userFinancialData.totalTransactions,
             categoriesUsed: 8 // This would come from transaction categorization
           },

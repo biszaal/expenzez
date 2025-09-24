@@ -9,6 +9,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useSecurity } from "../../contexts/SecurityContext";
+import { useSubscription } from "../../contexts/SubscriptionContext";
+import { PremiumUpgradeCard } from "../../components/premium/PremiumUpgradeCard";
 import { budgetAPI } from "../../services/api";
 import { transactionAPI } from "../../services/api/transactionAPI";
 import { SPACING } from "../../constants/Colors";
@@ -42,6 +44,7 @@ interface Transaction {
   originalAmount: number;
   accountType?: string;
   isPending?: boolean;
+  currency: string;
 }
 
 interface Account {
@@ -55,7 +58,8 @@ interface Account {
 
 export default function HomeScreen() {
   const { colors } = useTheme();
-  const { isAppLocked } = useSecurity();
+  const { isLocked } = useSecurity();
+  const { isPremium } = useSubscription();
 
   // Core data state
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -200,14 +204,14 @@ export default function HomeScreen() {
 
   // Initial load
   useEffect(() => {
-    if (!isAppLocked) {
+    if (!isLocked) {
       loadData();
     }
-  }, [isAppLocked]);
+  }, [isLocked]);
 
   // Reload data when selected month changes
   useEffect(() => {
-    if (!isAppLocked && !isFirstLoad) {
+    if (!isLocked && !isFirstLoad) {
       loadData();
     }
   }, [selectedMonth]);
@@ -268,12 +272,7 @@ export default function HomeScreen() {
           />
         }
       >
-        <HomeHeader
-          error={error}
-          warning={warning}
-          onClearError={() => setError(null)}
-          onClearWarning={() => setWarning(null)}
-        />
+        <HomeHeader />
 
         <BalanceCard
           totalBalance={totalBalance}
@@ -286,6 +285,8 @@ export default function HomeScreen() {
 
         <GoalProgressCard />
 
+        {!isPremium && <PremiumUpgradeCard />}
+
         <NotificationCard />
 
         <SavingsOpportunitiesCard />
@@ -297,10 +298,7 @@ export default function HomeScreen() {
           onMonthChange={setSelectedMonth}
         />
 
-        <AIAssistantCard
-          transactions={transactions}
-          totalBalance={totalBalance}
-        />
+        <AIAssistantCard />
 
         <MonthlyOverview
           thisMonthSpent={thisMonthSpent}
@@ -309,11 +307,8 @@ export default function HomeScreen() {
 
         <TransactionsList
           transactions={transactions}
-          loading={fetchingData}
-          onRefresh={refreshData}
-          getBankName={getBankName}
-          getBankLogo={getBankLogo}
-          getDisplayAccountType={getDisplayAccountType}
+          refreshingTransactions={fetchingData}
+          onRefreshTransactions={refreshData}
         />
       </ScrollView>
     </SafeAreaView>

@@ -64,7 +64,6 @@ class TokenManager {
     const isExpired = expiresAt <= now;
     const shouldRefresh = expiresAt <= now + 15 * 60 * 1000; // 15 minutes before expiry (increased from 5 minutes)
 
-
     return {
       token,
       expiresAt,

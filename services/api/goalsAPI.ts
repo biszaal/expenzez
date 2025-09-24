@@ -92,7 +92,7 @@ export const goalsAPI = {
     try {
       console.log(`🎯 [GoalsAPI] Fetching goals for user: ${userId}`);
 
-      const response = await api.get(`/goals/${userId}`);
+      const response = await api.get(`/goals`);
 
       console.log(`✅ [GoalsAPI] Successfully fetched goals:`, {
         activeGoals: response.data.activeGoals?.length,

@@ -28,14 +28,25 @@ export interface SpendingNudge {
 export interface CategoryInsights {
   category: string;
   totalSpent: number;
+  frequency: number;
+  averageTransaction: number;
+  trend: 'increasing' | 'decreasing' | 'stable';
+  trendPercentage: number;
+  topMerchants: Array<{ name: string; amount: number }>;
+  unusualTransactions: Array<{ id: string; amount: number; description: string }>;
+  // Legacy properties for backward compatibility
   transactionCount: number;
   averageAmount: number;
-  trend: 'up' | 'down' | 'stable';
   insights: SpendingInsight[];
 }
 
 export interface MonthlySpendingTrend {
   month: string;
+  totalSpent: number;
+  comparedToPrevious: number;
+  weeklyAverage: number;
+  categoryBreakdown: Record<string, number>;
+  // Legacy properties for backward compatibility
   amount: number;
   change: number;
 }
@@ -105,6 +116,104 @@ export class InsightsEngine {
 
   static async dismissInsight(insightId: string): Promise<void> {
     console.log('Dismissing insight:', insightId);
+  }
+
+  static async getCategoryInsights(category: string): Promise<CategoryInsights | null> {
+    try {
+      // In a real implementation, this would fetch data from API/storage
+      // For now, return mock data for categories that would have transactions
+
+      const mockCategories = ['food', 'transport', 'shopping', 'entertainment', 'bills'];
+      if (!mockCategories.includes(category)) {
+        return null;
+      }
+
+      // Generate mock data based on category
+      const mockData: CategoryInsights = {
+        category,
+        totalSpent: Math.random() * 500 + 100, // Random amount between 100-600
+        frequency: Math.floor(Math.random() * 20) + 5, // 5-25 transactions
+        averageTransaction: 0, // Will be calculated
+        trend: Math.random() > 0.5 ? 'increasing' : 'decreasing',
+        trendPercentage: Math.random() * 30 + 5, // 5-35% trend
+        topMerchants: [
+          { name: `Top ${category} merchant`, amount: Math.random() * 100 + 50 },
+          { name: `Second ${category} merchant`, amount: Math.random() * 80 + 30 }
+        ],
+        unusualTransactions: Math.random() > 0.7 ? [
+          {
+            id: `unusual_${Date.now()}`,
+            amount: Math.random() * 200 + 100,
+            description: `Unusual ${category} transaction`
+          }
+        ] : [],
+        // Legacy properties
+        transactionCount: 0,
+        averageAmount: 0,
+        insights: []
+      };
+
+      // Calculate derived values
+      mockData.averageTransaction = mockData.totalSpent / mockData.frequency;
+      mockData.transactionCount = mockData.frequency;
+      mockData.averageAmount = mockData.averageTransaction;
+
+      return mockData;
+    } catch (error) {
+      console.error('Error getting category insights:', error);
+      return null;
+    }
+  }
+
+  static async getSpendingTrend(months: 3 | 6 | 12): Promise<MonthlySpendingTrend[]> {
+    try {
+      // In a real implementation, this would fetch data from API/storage
+      // For now, generate mock data for the requested number of months
+
+      const trends: MonthlySpendingTrend[] = [];
+      const currentDate = new Date();
+
+      for (let i = months - 1; i >= 0; i--) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+        const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+        // Generate mock spending data
+        const baseAmount = Math.random() * 800 + 400; // 400-1200 range
+        const categoryBreakdown = {
+          food: Math.random() * 200 + 100,
+          transport: Math.random() * 150 + 50,
+          shopping: Math.random() * 300 + 100,
+          bills: Math.random() * 400 + 200,
+          entertainment: Math.random() * 150 + 50,
+        };
+
+        const totalSpent = Object.values(categoryBreakdown).reduce((sum, amount) => sum + amount, 0);
+        const weeklyAverage = totalSpent / 4.33; // Average weeks per month
+
+        // Calculate change compared to previous month
+        let comparedToPrevious = 0;
+        if (trends.length > 0) {
+          const previousAmount = trends[trends.length - 1].totalSpent;
+          comparedToPrevious = ((totalSpent - previousAmount) / previousAmount) * 100;
+        }
+
+        trends.push({
+          month: monthStr,
+          totalSpent,
+          comparedToPrevious,
+          weeklyAverage,
+          categoryBreakdown,
+          // Legacy properties
+          amount: totalSpent,
+          change: comparedToPrevious,
+        });
+      }
+
+      return trends;
+    } catch (error) {
+      console.error('Error getting spending trend:', error);
+      return [];
+    }
   }
 
   private static analyzeTrends(expenses: Expense[]): SpendingInsight[] {

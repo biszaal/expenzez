@@ -247,8 +247,10 @@ export const aiService = {
           });
         }
 
-        // Goals falling behind
-        const behindGoals = goalsData.goalProgress.filter(p => !p.isOnTrack);
+        // Goals falling behind - add safety check
+        const behindGoals = (goalsData.goalProgress && Array.isArray(goalsData.goalProgress))
+          ? goalsData.goalProgress.filter(p => !p.isOnTrack)
+          : [];
         if (behindGoals.length > 0) {
           insights.push({
             id: 'goals_behind_schedule',
@@ -414,6 +416,7 @@ export interface ProactiveInsight {
   type: 'tip' | 'warning' | 'celebration' | 'suggestion' | 'motivation';
   title: string;
   message: string;
+  description?: string;
   priority: 'low' | 'medium' | 'high';
   actionable: boolean;
   suggestedActions: string[];

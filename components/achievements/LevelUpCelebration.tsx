@@ -106,14 +106,14 @@ export const LevelUpCelebration: React.FC<LevelUpCelebrationProps> = ({
 
   // Star positions around the trophy
   const starPositions = [
-    { top: '15%', left: '20%' },
-    { top: '10%', left: '45%' },
-    { top: '15%', right: '20%' },
-    { top: '35%', left: '10%' },
-    { top: '35%', right: '10%' },
-    { bottom: '35%', left: '15%' },
-    { bottom: '30%', left: '45%' },
-    { bottom: '35%', right: '15%' }
+    { top: '15%' as any, left: '20%' as any },
+    { top: '10%' as any, left: '45%' as any },
+    { top: '15%' as any, right: '20%' as any },
+    { top: '35%' as any, left: '10%' as any },
+    { top: '35%' as any, right: '10%' as any },
+    { bottom: '35%' as any, left: '15%' as any },
+    { bottom: '30%' as any, left: '45%' as any },
+    { bottom: '35%' as any, right: '15%' as any }
   ];
 
   return (

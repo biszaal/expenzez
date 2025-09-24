@@ -14,6 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { notificationAPI, aiService } from "../../services/api";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../app/auth/AuthContext";
+import { useSubscription } from "../../contexts/SubscriptionContext";
+import { UsageIndicator, UpgradePrompt } from "../../components/premium";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { spacing, borderRadius, typography } from "../../constants/theme";
 import { useRouter } from "expo-router";
@@ -49,6 +51,13 @@ export default function AIAssistantScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
+  const {
+    checkFeatureAccess,
+    incrementUsage,
+    getUsageDisplay,
+    isPremium,
+    isTrialActive
+  } = useSubscription();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -59,6 +68,7 @@ export default function AIAssistantScreen() {
   const [conversationStarters, setConversationStarters] = useState<string[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [showInsights, setShowInsights] = useState(true);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Fetch chat history on mount
@@ -185,6 +195,15 @@ export default function AIAssistantScreen() {
   const sendMessage = async (messageText?: string) => {
     const messageToSend = messageText || input.trim();
     if (!messageToSend || loading) return;
+
+    // Check usage limits for free users
+    if (!isPremium && !isTrialActive) {
+      const canUse = await incrementUsage('aiChats');
+      if (!canUse) {
+        setShowUpgradePrompt(true);
+        return;
+      }
+    }
 
     const userMessage: Message = { role: "user", content: messageToSend };
     setMessages((prev) => [...prev, userMessage]);
@@ -393,6 +412,12 @@ export default function AIAssistantScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Usage Indicator for Free Users */}
+      {!isPremium && !isTrialActive && (
+        <UsageIndicator type="aiChats" style={{ marginHorizontal: 20, marginVertical: 8 }} />
+      )}
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -887,6 +912,21 @@ export default function AIAssistantScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Upgrade Prompt Modal */}
+      <UpgradePrompt
+        title="AI Chat Limit Reached"
+        message="You've used all your AI chats for this month. Upgrade to Premium for unlimited conversations with your AI financial assistant."
+        isModal={true}
+        visible={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+        features={[
+          'Unlimited AI conversations',
+          'Advanced financial insights',
+          'Personalized recommendations',
+          'Priority support'
+        ]}
+      />
     </SafeAreaView>
   );
 }

@@ -66,6 +66,7 @@ export default function CreateBudgetScreen() {
         startDate: now.toISOString(),
         endDate: endDate.toISOString(),
         alertThreshold,
+        isActive: true,
       });
 
       Alert.alert(

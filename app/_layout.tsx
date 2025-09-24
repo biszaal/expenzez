@@ -10,6 +10,7 @@ import { ThemeProvider } from "../contexts/ThemeContext";
 import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
 import { NotificationProvider } from "../contexts/NotificationContext";
 import { NetworkProvider } from "../contexts/NetworkContext";
+import { SubscriptionProvider } from "../contexts/SubscriptionContext";
 import BiometricSecurityLock from "../components/BiometricSecurityLock";
 import { AppLoadingScreen } from "../components/ui/AppLoadingScreen";
 import PinSetupScreen from "./auth/PinSetup";
@@ -317,11 +318,13 @@ export default function RootLayout() {
       <ThemeProvider>
         <NetworkProvider>
           <AuthProvider>
-            <SecurityProvider>
-              <NotificationProvider>
-                <RootLayoutNav />
-              </NotificationProvider>
-            </SecurityProvider>
+            <SubscriptionProvider>
+              <SecurityProvider>
+                <NotificationProvider>
+                  <RootLayoutNav />
+                </NotificationProvider>
+              </SecurityProvider>
+            </SubscriptionProvider>
           </AuthProvider>
         </NetworkProvider>
       </ThemeProvider>
