@@ -1,5 +1,6 @@
 // app/auth/AuthContext.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { authAPI } from "../../services/api";
@@ -126,7 +127,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (rememberMe && user) {
         // Create persistent session for current user
-        const refreshToken = await AsyncStorage.getItem('refreshToken');
+        const refreshToken = await SecureStore.getItemAsync('refreshToken', { keychainService: 'expenzez-tokens' });
         if (refreshToken && user.username) {
           await deviceManager.createPersistentSession(user.username, refreshToken, rememberMe);
           await deviceManager.trustDevice(rememberMe);
@@ -196,9 +197,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const storagePromise = Promise.all([
           AsyncStorage.getItem("isLoggedIn"),
           AsyncStorage.getItem("user"),
-          AsyncStorage.getItem("accessToken"),
-          AsyncStorage.getItem("idToken"),
-          AsyncStorage.getItem("refreshToken"),
+          SecureStore.getItemAsync("accessToken", { keychainService: 'expenzez-tokens' }),
+          SecureStore.getItemAsync("idToken", { keychainService: 'expenzez-tokens' }),
+          SecureStore.getItemAsync("refreshToken", { keychainService: 'expenzez-tokens' }),
           AsyncStorage.getItem("userBudget"),
         ]);
 
@@ -249,9 +250,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } else {
             await Promise.all([
               AsyncStorage.removeItem("isLoggedIn"),
-              AsyncStorage.removeItem("accessToken"),
-              AsyncStorage.removeItem("idToken"),
-              AsyncStorage.removeItem("refreshToken"),
+              SecureStore.deleteItemAsync("accessToken", { keychainService: 'expenzez-tokens' }).catch(() => {}),
+              SecureStore.deleteItemAsync("idToken", { keychainService: 'expenzez-tokens' }).catch(() => {}),
+              SecureStore.deleteItemAsync("refreshToken", { keychainService: 'expenzez-tokens' }).catch(() => {}),
               AsyncStorage.removeItem("user"),
             ]);
           }
@@ -275,9 +276,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 // Store the new tokens
                 const storagePromises = [
                   AsyncStorage.setItem("isLoggedIn", "true"),
-                  AsyncStorage.setItem("accessToken", refreshResponse.accessToken),
-                  AsyncStorage.setItem("idToken", refreshResponse.idToken || ""),
-                  AsyncStorage.setItem("refreshToken", refreshResponse.refreshToken || persistentSession.refreshToken)
+                  SecureStore.setItemAsync("accessToken", refreshResponse.accessToken, { keychainService: 'expenzez-tokens' }),
+                  SecureStore.setItemAsync("idToken", refreshResponse.idToken || "", { keychainService: 'expenzez-tokens' }),
+                  SecureStore.setItemAsync("refreshToken", refreshResponse.refreshToken || persistentSession.refreshToken, { keychainService: 'expenzez-tokens' })
                 ];
                 
                 if (refreshResponse.user) {
@@ -412,9 +413,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Store Cognito tokens and user data
         const storagePromises = [
           AsyncStorage.setItem("isLoggedIn", "true"),
-          AsyncStorage.setItem("accessToken", responseData.accessToken),
-          AsyncStorage.setItem("idToken", responseData.idToken),
-          AsyncStorage.setItem("refreshToken", responseData.refreshToken || ""),
+          SecureStore.setItemAsync("accessToken", responseData.accessToken, { keychainService: 'expenzez-tokens' }),
+          SecureStore.setItemAsync("idToken", responseData.idToken, { keychainService: 'expenzez-tokens' }),
+          SecureStore.setItemAsync("refreshToken", responseData.refreshToken || "", { keychainService: 'expenzez-tokens' }),
           AsyncStorage.setItem("user", JSON.stringify(responseData.user)),
         ];
 
@@ -483,8 +484,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         await initializeDeviceState();
 
         // Verify tokens were stored
-        const storedAccessToken = await AsyncStorage.getItem("accessToken");
-        const storedIdToken = await AsyncStorage.getItem("idToken");
+        const storedAccessToken = await SecureStore.getItemAsync("accessToken", { keychainService: 'expenzez-tokens' });
+        const storedIdToken = await SecureStore.getItemAsync("idToken", { keychainService: 'expenzez-tokens' });
 
         return { 
           success: true, 
@@ -821,76 +822,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       const keys = await AsyncStorage.getAllKeys();
       
-      // First, identify recent banking keys to preserve
-      const recentBankingKeysSet = new Set();
-      keys.filter(key => key.startsWith('requisition_expenzez_')).forEach(key => {
-        const match = key.match(/requisition_expenzez_(\d+)/);
-        if (match) {
-          const timestamp = parseInt(match[1]);
-          const age = Date.now() - timestamp;
-          const isRecent = age < 15 * 60 * 1000; // 15 minutes
-          if (isRecent) {
-            recentBankingKeysSet.add(key);
-          }
-        }
-      });
-      
-      const problematicKeys = keys.filter(key => 
+      const problematicKeys = keys.filter(key =>
         key.startsWith('@expenzez_cache_') || // Network cache
         key.includes('transactions') ||
-        key.includes('banking') ||
         key.includes('spending') ||
-        (key.startsWith('requisition_') && !recentBankingKeysSet.has(key)) // Only stale banking requisition data
+        key.startsWith('requisition_') || // Remove all banking requisition data
+        key.includes('nordigen') ||
+        key.includes('gocardless') ||
+        key.includes('truelayer') ||
+        key.includes('plaid')
       );
-      
+
       if (problematicKeys.length > 0) {
         await AsyncStorage.multiRemove(problematicKeys);
         console.log('✅ [AuthContext] Cleared', problematicKeys.length, 'potentially corrupted cache entries');
-      }
-      
-      // Clean up banking references, but preserve recent ones ONLY if user has valid session
-      // Check for valid session before preserving banking references
-      const storedLogin = await AsyncStorage.getItem('isLoggedIn');
-      const accessToken = await AsyncStorage.getItem('accessToken');
-      const hasValidSession = storedLogin === 'true' && accessToken && accessToken !== 'null';
-      
-      console.log('🏦 [AuthContext] Session validity for banking reference preservation:', hasValidSession);
-      
-      const recentBankingKeys = [];
-      const staleBankingKeys = [];
-      
-      const bankingKeys = keys.filter(key => key.startsWith('requisition_'));
-      for (const key of bankingKeys) {
-        if (key.startsWith('requisition_expenzez_')) {
-          const match = key.match(/requisition_expenzez_(\d+)/);
-          if (match) {
-            const timestamp = parseInt(match[1]);
-            const age = Date.now() - timestamp;
-            const isRecent = age < 15 * 60 * 1000; // 15 minutes - matches TokenManager and Layout
-            
-            // Only preserve recent banking keys if user has valid session
-            if (isRecent && hasValidSession) {
-              recentBankingKeys.push(key);
-            } else {
-              staleBankingKeys.push(key);
-              if (isRecent && !hasValidSession) {
-                console.log(`🏦 [AuthContext] Recent banking key ${key} marked for removal - no valid session`);
-              }
-            }
-          }
-        } else {
-          // Other banking keys without timestamps - consider stale
-          staleBankingKeys.push(key);
-        }
-      }
-      
-      if (recentBankingKeys.length > 0) {
-        console.log('🏦 [AuthContext] Preserving recent banking references with valid session:', recentBankingKeys);
-      }
-      
-      if (staleBankingKeys.length > 0) {
-        await AsyncStorage.multiRemove(staleBankingKeys);
-        console.log('🏦 [AuthContext] Cleared', staleBankingKeys.length, 'banking references (stale or no valid session)');
       }
     } catch (error) {
       console.log('❌ [AuthContext] Error clearing corrupted cache:', error);

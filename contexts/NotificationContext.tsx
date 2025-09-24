@@ -142,8 +142,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(true);
       setError(null);
 
-      // Small delay to ensure auth tokens are ready after login
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Longer delay to ensure auth tokens are fully ready after login
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
       // Register for push notifications if possible
       const tokenRegistered = await registerForPushNotifications();
@@ -155,11 +155,21 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         await registerForPushNotifications();
       }
       
-      // Load preferences
-      await loadPreferences();
-      
-      // Load notification history
-      await refreshNotifications();
+      // Load preferences with retry logic
+      try {
+        await loadPreferences();
+      } catch (prefError: any) {
+        console.log("[NotificationContext] Preferences load failed, using defaults:", prefError.message);
+        setPreferences(defaultPreferences);
+      }
+
+      // Load notification history with retry logic
+      try {
+        await refreshNotifications();
+      } catch (historyError: any) {
+        console.log("[NotificationContext] History load failed, will retry later:", historyError.message);
+        setNotifications([]);
+      }
 
     } catch (error: any) {
       console.error("[NotificationContext] Initialization failed:", error);

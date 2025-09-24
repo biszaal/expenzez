@@ -77,10 +77,8 @@ export const FrontendErrorCodes = {
   INVALID_RESPONSE: 'INVALID_RESPONSE',
   RATE_LIMITED: 'RATE_LIMITED',
   
-  // Banking & Financial
-  BANK_CONNECTION_LOST: 'BANK_CONNECTION_LOST',
+  // Financial
   INSUFFICIENT_PERMISSIONS: 'INSUFFICIENT_PERMISSIONS',
-  BANKING_CALLBACK_FAILED: 'BANKING_CALLBACK_FAILED',
   
   // UI & UX
   CACHE_ERROR: 'CACHE_ERROR',
@@ -107,11 +105,9 @@ const USER_FRIENDLY_MESSAGES: Record<string, string> = {
   [FrontendErrorCodes.NETWORK_UNAVAILABLE]: 'No internet connection. Please check your network and try again.',
   [FrontendErrorCodes.REQUEST_TIMEOUT]: 'Request timed out. Please try again.',
   [FrontendErrorCodes.SERVER_UNAVAILABLE]: 'Our servers are temporarily unavailable. Please try again later.',
-  [FrontendErrorCodes.BANK_CONNECTION_LOST]: 'Your bank connection has expired. Please reconnect your account.',
   [FrontendErrorCodes.RATE_LIMITED]: 'Too many requests. Please wait a moment before trying again.',
   [FrontendErrorCodes.BIOMETRIC_AUTH_FAILED]: 'Biometric authentication failed. Please try again or use your PIN.',
   [FrontendErrorCodes.INSUFFICIENT_PERMISSIONS]: 'You don\'t have permission to perform this action.',
-  [FrontendErrorCodes.BANKING_CALLBACK_FAILED]: 'Failed to complete bank connection. Please try again.',
   [FrontendErrorCodes.CACHE_ERROR]: 'Error loading cached data. The app will refresh.',
   [FrontendErrorCodes.STORAGE_ERROR]: 'Error accessing device storage. Please restart the app.',
   [FrontendErrorCodes.OFFLINE_MODE]: 'You\'re currently offline. Some features may be limited.',
@@ -129,10 +125,8 @@ const RECOVERY_ACTIONS: Record<string, string[]> = {
   [FrontendErrorCodes.NETWORK_UNAVAILABLE]: ['retry', 'use_cache', 'show_offline_message'],
   [FrontendErrorCodes.REQUEST_TIMEOUT]: ['retry', 'show_retry_button'],
   [FrontendErrorCodes.SERVER_UNAVAILABLE]: ['retry_later', 'use_cache', 'show_maintenance_message'],
-  [FrontendErrorCodes.BANK_CONNECTION_LOST]: ['redirect_banking', 'show_reconnect_prompt'],
   [FrontendErrorCodes.RATE_LIMITED]: ['wait_and_retry', 'show_cooldown_timer'],
   [FrontendErrorCodes.BIOMETRIC_AUTH_FAILED]: ['retry_biometric', 'fallback_to_pin'],
-  [FrontendErrorCodes.BANKING_CALLBACK_FAILED]: ['retry_callback', 'restart_banking_flow'],
   [FrontendErrorCodes.CACHE_ERROR]: ['clear_cache', 'refresh_data'],
   [FrontendErrorCodes.STORAGE_ERROR]: ['clear_storage', 'restart_app'],
   [FrontendErrorCodes.OFFLINE_MODE]: ['use_cache', 'show_offline_banner'],
@@ -245,26 +239,9 @@ class ErrorHandlerService {
       }
       
       if (status === 404) {
-        // Check if this is a bank removal 404 (expected behavior)
-        const isBankRemoval = context?.endpoint?.includes('/nordigen/accounts/') && 
-                              context?.additionalData?.method === 'DELETE';
-        
         // Check if this is a security endpoint 404 (expected during development)
         const isSecurityEndpoint = context?.endpoint?.includes('/security/');
-        
-        if (isBankRemoval) {
-          // This is expected - don't log as error, handle gracefully
-          return new ExpenzezFrontendError(
-            'BANK_REMOVAL_NOT_SUPPORTED',
-            'Bank removal requires manual action',
-            404,
-            { originalError: error.message, expectedBehavior: true },
-            context,
-            false,
-            false
-          );
-        }
-        
+
         if (isSecurityEndpoint) {
           // Security endpoints may not be available during development - this is expected
           return new ExpenzezFrontendError(
@@ -367,50 +344,31 @@ class ErrorHandlerService {
     // Perform automatic recovery actions
     let handled = false;
     
-    // Check for active banking flows before automatically logging out
     if (transformedError.requiresLogout) {
-      const hasActiveBankingContext = await this.checkActiveBankingContext();
-      
-      if (hasActiveBankingContext) {
-        console.log(`[ErrorHandler] Session expired during active banking flow - delaying logout to preserve banking context`);
-        // Don't logout immediately - let the banking flow complete
-        // The API interceptor will handle the session expiration gracefully
-        handled = false; // Allow error to propagate but don't logout
-      } else {
-        console.log(`[ErrorHandler] Session expired - using graceful session manager`);
-        try {
-          // Use the new session manager for graceful handling
-          const sessionRestored = await sessionManager.handleApiSessionExpiration();
-          if (sessionRestored) {
-            console.log(`[ErrorHandler] Session restored successfully - continuing`);
-            handled = true;
-          } else {
-            console.log(`[ErrorHandler] Session could not be restored - user will be notified`);
-            // Session manager handles user notification and graceful logout
-            handled = true;
-          }
-        } catch (sessionError) {
-          console.error(`[ErrorHandler] Session manager failed:`, sessionError);
-          // Fallback to original logout behavior
-          await this.performLogout();
-          this.redirectToLogin();
+      console.log(`[ErrorHandler] Session expired - using graceful session manager`);
+      try {
+        // Use the new session manager for graceful handling
+        const sessionRestored = await sessionManager.handleApiSessionExpiration();
+        if (sessionRestored) {
+          console.log(`[ErrorHandler] Session restored successfully - continuing`);
+          handled = true;
+        } else {
+          console.log(`[ErrorHandler] Session could not be restored - user will be notified`);
+          // Session manager handles user notification and graceful logout
           handled = true;
         }
+      } catch (sessionError) {
+        console.error(`[ErrorHandler] Session manager failed:`, sessionError);
+        // Fallback to original logout behavior
+        await this.performLogout();
+        this.redirectToLogin();
+        handled = true;
       }
     }
     
     // Perform other automatic recovery actions
     for (const action of recoveryActions) {
       try {
-        // Skip logout recovery actions during active banking flows
-        if (action === 'logout') {
-          const hasActiveBankingContext = await this.checkActiveBankingContext();
-          if (hasActiveBankingContext) {
-            console.log(`[ErrorHandler] Skipping logout recovery action - active banking flow detected`);
-            continue; // Skip this recovery action
-          }
-        }
-        
         handled = await this.performRecoveryAction(action, transformedError) || handled;
       } catch (recoveryError) {
         console.error(`Failed to perform recovery action ${action}:`, recoveryError);
@@ -583,32 +541,6 @@ class ErrorHandlerService {
     }
   }
 
-  // Check for active banking context to prevent premature logout
-  private async checkActiveBankingContext(): Promise<boolean> {
-    try {
-      const keys = await AsyncStorage.getAllKeys();
-      const recentBankingKeys = keys.filter(key => {
-        if (key.startsWith('requisition_expenzez_')) {
-          const match = key.match(/requisition_expenzez_(\d+)/);
-          if (match) {
-            const timestamp = parseInt(match[1]);
-            const age = Date.now() - timestamp;
-            const isActive = age < 3 * 60 * 1000; // 3 minutes for active banking flows - matches API interceptor
-            return isActive;
-          }
-        }
-        return false;
-      });
-
-      const hasActiveBankingContext = recentBankingKeys.length > 0;
-      console.log(`[ErrorHandler] Active banking context check: ${hasActiveBankingContext ? 'ACTIVE' : 'INACTIVE'}, recent keys: ${recentBankingKeys.length}`);
-      
-      return hasActiveBankingContext;
-    } catch (error) {
-      console.error('[ErrorHandler] Error checking banking context:', error);
-      return false; // Default to allowing logout if we can't check
-    }
-  }
 
   // Check if error should trigger logout
   shouldTriggerLogout(error: ExpenzezFrontendError): boolean {
@@ -666,16 +598,6 @@ export const createNetworkError = (context?: ErrorContext) =>
     true
   );
 
-export const createBankingError = (message: string, context?: ErrorContext) =>
-  new ExpenzezFrontendError(
-    FrontendErrorCodes.BANK_CONNECTION_LOST,
-    message,
-    400,
-    undefined,
-    context,
-    false,
-    true
-  );
 
 // Error boundary helper
 export interface ErrorBoundaryState {

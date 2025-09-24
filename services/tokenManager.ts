@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { SecureStorage } from './secureStorage';
 import { AppState, AppStateStatus } from 'react-native';
 import { deviceManager } from './deviceManager';
 
@@ -78,10 +80,10 @@ class TokenManager {
   async getStoredTokens(): Promise<StoredTokens | null> {
     try {
       const [accessToken, idToken, refreshToken, tokenExpiresAt] = await Promise.all([
-        AsyncStorage.getItem('accessToken'),
-        AsyncStorage.getItem('idToken'),
-        AsyncStorage.getItem('refreshToken'),
-        AsyncStorage.getItem('tokenExpiresAt')
+        SecureStore.getItemAsync('accessToken', { keychainService: 'expenzez-tokens' }),
+        SecureStore.getItemAsync('idToken', { keychainService: 'expenzez-tokens' }),
+        SecureStore.getItemAsync('refreshToken', { keychainService: 'expenzez-tokens' }),
+        SecureStore.getItemAsync('tokenExpiresAt', { keychainService: 'expenzez-tokens' })
       ]);
 
       if (!accessToken || !refreshToken) {
@@ -109,18 +111,30 @@ class TokenManager {
   }): Promise<void> {
     try {
       const expiresAt = this.parseJWTExpiration(tokens.accessToken);
-      
+
       const storagePromises = [
-        AsyncStorage.setItem('accessToken', tokens.accessToken),
-        AsyncStorage.setItem('refreshToken', tokens.refreshToken)
+        SecureStore.setItemAsync('accessToken', tokens.accessToken, {
+          keychainService: 'expenzez-tokens',
+          requireAuthentication: false
+        }),
+        SecureStore.setItemAsync('refreshToken', tokens.refreshToken, {
+          keychainService: 'expenzez-tokens',
+          requireAuthentication: false
+        })
       ];
 
       if (tokens.idToken) {
-        storagePromises.push(AsyncStorage.setItem('idToken', tokens.idToken));
+        storagePromises.push(SecureStore.setItemAsync('idToken', tokens.idToken, {
+          keychainService: 'expenzez-tokens',
+          requireAuthentication: false
+        }));
       }
 
       if (expiresAt) {
-        storagePromises.push(AsyncStorage.setItem('tokenExpiresAt', expiresAt.toString()));
+        storagePromises.push(SecureStore.setItemAsync('tokenExpiresAt', expiresAt.toString(), {
+          keychainService: 'expenzez-tokens',
+          requireAuthentication: false
+        }));
       }
 
       await Promise.all(storagePromises);
@@ -169,10 +183,10 @@ class TokenManager {
     const isTrustedDevice = await deviceManager.isDeviceTrusted();
     const persistentSession = await deviceManager.getPersistentSession();
     
-    // Much longer grace periods for better user experience
+    // Secure grace periods - maximum 24 hours for security
     const maxExpiredTime = isTrustedDevice && persistentSession ?
-      (30 * 24 * 60 * 60 * 1000) : // 30 days for trusted devices
-      (7 * 24 * 60 * 60 * 1000); // 7 days for non-trusted devices (increased from 2 hours)
+      (24 * 60 * 60 * 1000) : // 24 hours for trusted devices (reduced from 30 days for security)
+      (2 * 60 * 60 * 1000); // 2 hours for non-trusted devices (reduced from 7 days for security)
     
     if (tokenInfo.isExpired && timeExpired > maxExpiredTime) {
       // Try to restore from persistent session before clearing tokens
@@ -366,7 +380,7 @@ class TokenManager {
                 const freshToken = await this.performTokenRefreshWithToken(persistentSession.refreshToken);
                 if (freshToken) {
                   // Save the persistent refresh token for future use
-                  await AsyncStorage.setItem('refreshToken', persistentSession.refreshToken);
+                  await SecureStore.setItemAsync('refreshToken', persistentSession.refreshToken, { keychainService: 'expenzez-tokens' });
                   return freshToken;
                 }
               } catch (restoreError) {

@@ -1,6 +1,6 @@
 // Google Maps API Configuration
 export const GOOGLE_MAPS_CONFIG = {
-  API_KEY: 'AIzaSyBKdk9qcTdI73WxPcxzroweCtPvuV5uvPY',
+  API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || __DEV__ ? 'DEVELOPMENT_PLACEHOLDER_KEY' : '',
   
   // Google Places API endpoints
   PLACES_AUTOCOMPLETE_URL: 'https://maps.googleapis.com/maps/api/place/autocomplete/json',
@@ -26,10 +26,26 @@ export const GOOGLE_MAPS_CONFIG = {
 // Helper function to get place details from Google Places API
 export const getPlaceDetails = async (placeId: string) => {
   try {
+    // Security check: ensure API key is configured
+    if (!GOOGLE_MAPS_CONFIG.API_KEY || GOOGLE_MAPS_CONFIG.API_KEY === 'DEVELOPMENT_PLACEHOLDER_KEY') {
+      throw new Error('Google Maps API key not configured. Please set EXPO_PUBLIC_GOOGLE_MAPS_API_KEY environment variable.');
+    }
+
     const response = await fetch(
       `${GOOGLE_MAPS_CONFIG.PLACE_DETAILS_URL}?place_id=${placeId}&key=${GOOGLE_MAPS_CONFIG.API_KEY}&fields=address_components,formatted_address,geometry`
     );
+
+    if (!response.ok) {
+      throw new Error(`Google Places API error: ${response.status} ${response.statusText}`);
+    }
+
     const data = await response.json();
+
+    // Check for API key errors
+    if (data.status === 'REQUEST_DENIED') {
+      throw new Error('Google Maps API key is invalid or access is denied');
+    }
+
     return data;
   } catch (error) {
     console.error('Error fetching place details:', error);
