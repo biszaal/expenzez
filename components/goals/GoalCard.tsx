@@ -22,7 +22,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
 
   const typeColor = goalsAPI.getGoalTypeColor(goal.type);
   const typeIcon = goalsAPI.getGoalTypeIcon(goal.type);
-  const priorityColor = goalsAPI.getPriorityColor(goal.priority);
+  const priorityColor = goalsAPI.getPriorityColor(goal.priority || 'low');
 
   const styles = createStyles(colors, typeColor, progress.progressPercentage);
 
@@ -43,13 +43,15 @@ export const GoalCard: React.FC<GoalCardProps> = ({
               {goal.title}
             </Text>
             <View style={styles.metaContainer}>
-              <View style={[styles.priorityBadge, { backgroundColor: priorityColor + '20' }]}>
-                <Text style={[styles.priorityText, { color: priorityColor }]}>
-                  {goal.priority.toUpperCase()}
-                </Text>
-              </View>
+              {goal.priority && (
+                <View style={[styles.priorityBadge, { backgroundColor: priorityColor + '20' }]}>
+                  <Text style={[styles.priorityText, { color: priorityColor }]}>
+                    {goal.priority.toUpperCase()}
+                  </Text>
+                </View>
+              )}
               <Text style={styles.timeRemaining}>
-                {goalsAPI.formatTimeRemaining(progress.daysRemaining)} left
+                {progress.daysRemaining >= 0 ? goalsAPI.formatTimeRemaining(progress.daysRemaining) : 'No deadline'} left
               </Text>
             </View>
           </View>
@@ -68,12 +70,12 @@ export const GoalCard: React.FC<GoalCardProps> = ({
       <View style={styles.progressSection}>
         <View style={styles.progressHeader}>
           <Text style={styles.progressText}>
-            {goalsAPI.formatCurrency(goal.currentAmount)} of {goalsAPI.formatCurrency(goal.targetAmount)}
+            {goalsAPI.formatCurrency(goal.currentAmount || 0)} of {goalsAPI.formatCurrency(goal.targetAmount || 0)}
           </Text>
           <Text style={[styles.percentageText, {
             color: progress.isOnTrack ? colors.success.main : colors.warning.main
           }]}>
-            {progress.progressPercentage}%
+            {Math.round(progress.progressPercentage || 0)}%
           </Text>
         </View>
 
@@ -87,7 +89,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
         </View>
 
         <Text style={styles.remainingText}>
-          {goalsAPI.formatCurrency(progress.amountRemaining)} remaining
+          {goalsAPI.formatCurrency(progress.amountRemaining || 0)} remaining
         </Text>
       </View>
 
@@ -212,7 +214,7 @@ const createStyles = (colors: any, typeColor: string, progressPercentage: number
   },
   progressFill: {
     height: '100%',
-    width: `${Math.min(progressPercentage, 100)}%`,
+    width: `${Math.min(Math.max(progressPercentage || 0, 0), 100)}%`,
     backgroundColor: typeColor,
     borderRadius: 4
   },

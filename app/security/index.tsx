@@ -305,25 +305,17 @@ export default function SecurityScreen() {
       console.log('🔐 [Security] Starting PIN verification...');
       setIsLoading(true);
 
-      // Add a test mode - bypass PIN validation for debugging
-      const TEST_MODE = pinInput === '00000';
-
       let validation: { success: boolean; error?: any } = { success: false };
 
-      if (TEST_MODE) {
-        console.log('🔐 [Security] TEST MODE - bypassing PIN validation');
-        validation.success = true;
-      } else {
-        const deviceId = await deviceManager.getDeviceId();
-        console.log('🔐 [Security] Got device ID:', deviceId.slice(0, 8) + '...');
+      const deviceId = await deviceManager.getDeviceId();
+      console.log('🔐 [Security] Got device ID:', deviceId.slice(0, 8) + '...');
 
-        console.log('🔐 [Security] Calling nativeSecurityAPI.validatePin...');
-        validation = await nativeSecurityAPI.validatePin({
-          pin: pinInput,
-          deviceId,
-        });
-        console.log('🔐 [Security] PIN validation completed:', validation);
-      }
+      console.log('🔐 [Security] Calling nativeSecurityAPI.validatePin...');
+      validation = await nativeSecurityAPI.validatePin({
+        pin: pinInput,
+        deviceId,
+      });
+      console.log('🔐 [Security] PIN validation completed:', validation);
 
       console.log('🔐 [Security] PIN validation result:', validation.success);
 

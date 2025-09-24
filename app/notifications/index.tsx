@@ -34,36 +34,78 @@ export default function NotificationsScreen() {
   };
 
   const handleNotificationPress = (notification: any) => {
+    console.log('[NotificationsScreen] Notification pressed:', notification);
+
     // Mark as read
     if (!notification.read) {
       markAsRead(notification.id);
     }
 
-    // Navigate based on notification type
-    switch (notification.type) {
-      case 'transaction':
-        router.push('/(tabs)/spending');
-        break;
-      case 'budget':
-        router.push('/(tabs)/spending');
-        break;
-      case 'account':
-        router.push('/(tabs)/account');
-        break;
-      case 'insight':
-        router.push('/ai-assistant');
-        break;
-      case 'security':
-        router.push('/security');
-        break;
-      default:
-        // Show details in alert for now
-        Alert.alert(
-          notification.title,
-          notification.message,
-          [{ text: 'OK' }]
-        );
-        break;
+    try {
+      // Navigate based on notification type with robust error handling
+      switch (notification.type) {
+        case 'transaction':
+          console.log('[NotificationsScreen] Navigating to spending tab');
+          // Use replace to avoid navigation stack issues
+          router.replace('/(tabs)/spending');
+          break;
+        case 'budget':
+          console.log('[NotificationsScreen] Navigating to spending tab for budget');
+          router.replace('/(tabs)/spending');
+          break;
+        case 'account':
+          console.log('[NotificationsScreen] Navigating to account tab');
+          router.replace('/(tabs)/account');
+          break;
+        case 'insight':
+          console.log('[NotificationsScreen] Navigating to AI assistant');
+          // First navigate to home, then to AI assistant to ensure proper stack
+          router.replace('/(tabs)');
+          setTimeout(() => {
+            router.push('/ai-assistant');
+          }, 100);
+          break;
+        case 'security':
+          console.log('[NotificationsScreen] Navigating to security settings');
+          // First navigate to account tab, then to security
+          router.replace('/(tabs)/account');
+          setTimeout(() => {
+            router.push('/security');
+          }, 100);
+          break;
+        default:
+          console.log('[NotificationsScreen] Unknown notification type, showing alert');
+          // Show details in alert for now
+          Alert.alert(
+            notification.title,
+            notification.message,
+            [{ text: 'OK' }]
+          );
+          break;
+      }
+    } catch (error: any) {
+      console.error('[NotificationsScreen] Navigation error:', error);
+      Alert.alert(
+        'Navigation Error',
+        `Unable to navigate to ${notification.type} section. Please try again.`,
+        [
+          {
+            text: 'Show Details',
+            onPress: () => Alert.alert(notification.title, notification.message)
+          },
+          {
+            text: 'Go to Home',
+            onPress: () => {
+              try {
+                router.replace('/(tabs)');
+              } catch (err) {
+                console.error('[NotificationsScreen] Failed to navigate to home:', err);
+              }
+            }
+          },
+          { text: 'OK' }
+        ]
+      );
     }
   };
 

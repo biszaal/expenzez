@@ -6,6 +6,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from 'expo-secure-store';
 import dayjs from "dayjs";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useSecurity } from "../../contexts/SecurityContext";
@@ -95,7 +96,7 @@ export default function HomeScreen() {
       }
 
       // Check authentication first
-      const accessToken = await AsyncStorage.getItem("accessToken");
+      const accessToken = await SecureStore.getItemAsync("accessToken", { keychainService: 'expenzez-tokens' });
       if (!accessToken) {
         setWarning(APP_STRINGS.HOME.LOGIN_WARNING);
         setLoading(false);

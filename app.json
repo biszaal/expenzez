@@ -8,11 +8,10 @@
     "scheme": "expenzez",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "description": "Smart expense tracking with banking integration, AI insights, and comprehensive financial management for UK users.",
+    "description": "Smart expense tracking with AI insights and comprehensive financial management for users.",
     "keywords": [
       "expense",
       "finance",
-      "banking",
       "budget",
       "money",
       "AI"
@@ -34,11 +33,6 @@
               "NSExceptionRequiresForwardSecrecy": true
             },
             "cognito-idp.eu-west-2.amazonaws.com": {
-              "NSExceptionAllowsInsecureHTTPLoads": false,
-              "NSExceptionMinimumTLSVersion": "1.2",
-              "NSExceptionRequiresForwardSecrecy": true
-            },
-            "auth.truelayer.com": {
               "NSExceptionAllowsInsecureHTTPLoads": false,
               "NSExceptionMinimumTLSVersion": "1.2",
               "NSExceptionRequiresForwardSecrecy": true

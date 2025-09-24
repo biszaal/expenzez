@@ -1,10 +1,35 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from 'expo-secure-store';
 import { CURRENT_API_CONFIG } from "../../config/api";
 import { errorHandler, FrontendErrorCodes } from "../errorHandler";
 
 // API Configuration
 const API_BASE_URL = CURRENT_API_CONFIG.baseURL;
+
+// Helper function to check if user is logged in by checking for tokens
+const checkIsLoggedIn = async (): Promise<boolean> => {
+  try {
+    // Check both AsyncStorage (for backward compatibility) and SecureStore
+    const [asyncLoggedIn, accessToken] = await Promise.all([
+      AsyncStorage.getItem('isLoggedIn'),
+      SecureStore.getItemAsync('accessToken', { keychainService: 'expenzez-tokens' })
+    ]);
+
+    // User is logged in if either AsyncStorage says so or we have tokens in SecureStore
+    return asyncLoggedIn === 'true' || !!accessToken;
+  } catch (error) {
+    console.log('[API] Error checking login status:', error);
+    // Fallback to AsyncStorage check
+    try {
+      const asyncLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+      return asyncLoggedIn === 'true';
+    } catch (fallbackError) {
+      console.log('[API] Error checking AsyncStorage login status:', fallbackError);
+      return false;
+    }
+  }
+};
 
 // Create main axios instance
 export const api = axios.create({
@@ -28,11 +53,9 @@ export const aiAPI = axios.create({
 api.interceptors.request.use(
   async (config) => {
     // Check if user is logged out to prevent unnecessary API calls
-    // Exception: Allow banking callbacks and auth endpoints even when logged out
-    const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+    // Exception: Allow auth endpoints even when logged out
+    const isLoggedIn = await checkIsLoggedIn();
     const allowedWhenLoggedOut = [
-      '/nordigen/callback',
-      '/banking/callback', 
       '/auth/login',
       '/auth/register',
       '/auth/refresh',
@@ -44,7 +67,7 @@ api.interceptors.request.use(
     
     const isAllowedEndpoint = allowedWhenLoggedOut.some(endpoint => config.url?.includes(endpoint));
     
-    if (isLoggedIn === 'false' && !isAllowedEndpoint) {
+    if (!isLoggedIn && !isAllowedEndpoint) {
       console.log(`[API] Interceptor: User logged out, cancelling request to ${config.url}`);
       const error = new Error('User is logged out');
       (error as any).config = config;
@@ -97,8 +120,8 @@ api.interceptors.request.use(
 aiAPI.interceptors.request.use(
   async (config) => {
     // Check if user is logged out to prevent unnecessary API calls
-    const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
-    if (isLoggedIn === 'false') {
+    const isLoggedIn = await checkIsLoggedIn();
+    if (!isLoggedIn) {
       console.log(`[AI API] Interceptor: User logged out, cancelling request to ${config.url}`);
       const error = new Error('User is logged out');
       (error as any).config = config;
@@ -183,11 +206,8 @@ api.interceptors.response.use(
         } else {
           console.log(`[API] Token refresh failed - checking if this is a critical endpoint`);
           
-          // For critical endpoints like banking callbacks and security validation, allow the request to proceed without token
+          // For critical endpoints like security validation, allow the request to proceed without token
           const criticalEndpoints = [
-            '/nordigen/callback',
-            '/banking/callback',
-            '/banks/callback',
             '/security/validate-pin',  // Allow PIN validation failures without logout
             '/security/setup-pin',     // Allow PIN setup failures without logout
             '/security/change-pin',    // Allow PIN change failures without logout
@@ -207,40 +227,16 @@ api.interceptors.response.use(
           const isCriticalEndpoint = criticalEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
           const isGracefulDegradationEndpoint = gracefulDegradationEndpoints.some(endpoint => originalRequest.url?.includes(endpoint)) || isSubscriptionGet;
 
-          // Also check if we're in a banking callback context (even for auth/refresh)
-          let isBankingCallbackContext = false;
-          try {
-            // Check if there are recent banking requisitions (within 3 minutes for active contexts)
-            // Note: This is different from session preservation (15 minutes) - this is for active banking flows
-            const keys = await import('@react-native-async-storage/async-storage').then(m =>
-              m.default.getAllKeys().then(keys => keys.filter(key => key.startsWith('requisition_expenzez_')))
-            );
-
-
-            isBankingCallbackContext = keys.some(key => {
-              const match = key.match(/requisition_expenzez_(\d+)/);
-              if (match) {
-                const timestamp = parseInt(match[1]);
-                const age = Date.now() - timestamp;
-                const isActive = age < 3 * 60 * 1000; // 3 minutes for active banking flows
-                return isActive;
-              }
-              return false;
-            });
-
-          } catch (error) {
-            console.log(`[API] Error checking banking callback context:`, error);
-          }
 
           // Special handling for subscription POST requests during trial activation
           const isSubscriptionPost = isSubscriptionEndpoint && requestMethod === 'POST';
           const isTrialActivation = isSubscriptionPost && originalRequest.data?.status === 'trialing';
 
-          const shouldAllowWithoutAuth = isCriticalEndpoint || (isBankingCallbackContext && originalRequest.url?.includes('/auth/refresh'));
-          console.log(`[API] Critical endpoint check: ${isCriticalEndpoint}, Banking context: ${isBankingCallbackContext}, Graceful degradation: ${isGracefulDegradationEndpoint} (Subscription GET: ${isSubscriptionGet}), Trial activation: ${isTrialActivation}, Should allow: ${shouldAllowWithoutAuth} for URL ${originalRequest.url} (Method: ${requestMethod})`);
+          const shouldAllowWithoutAuth = isCriticalEndpoint;
+          console.log(`[API] Critical endpoint check: ${isCriticalEndpoint}, Graceful degradation: ${isGracefulDegradationEndpoint} (Subscription GET: ${isSubscriptionGet}), Trial activation: ${isTrialActivation}, Should allow: ${shouldAllowWithoutAuth} for URL ${originalRequest.url} (Method: ${requestMethod})`);
 
           if (shouldAllowWithoutAuth) {
-            console.log(`[API] Allowing ${isCriticalEndpoint ? 'critical endpoint' : 'auth/refresh during banking callback'} ${originalRequest.url} to proceed without authentication`);
+            console.log(`[API] Allowing critical endpoint ${originalRequest.url} to proceed without authentication`);
             delete originalRequest.headers.Authorization; // Remove auth header
             return api(originalRequest);
           } else if (isGracefulDegradationEndpoint) {
@@ -312,8 +308,8 @@ api.interceptors.response.use(
     }
 
     // Don't spam console with errors if user is already logged out
-    const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
-    if (isLoggedIn === 'false') {
+    const isLoggedIn = await checkIsLoggedIn();
+    if (!isLoggedIn) {
       // Still transform the error for consistency
       const transformedError = await errorHandler.handleError(error, errorContext);
       return Promise.reject(transformedError.transformedError);
@@ -401,8 +397,8 @@ aiAPI.interceptors.response.use(
     }
 
     // Don't spam console with errors if user is already logged out
-    const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
-    if (isLoggedIn === 'false') {
+    const isLoggedIn = await checkIsLoggedIn();
+    if (!isLoggedIn) {
       // Still transform the error for consistency
       const transformedError = await errorHandler.handleError(error, errorContext);
       return Promise.reject(transformedError.transformedError);
