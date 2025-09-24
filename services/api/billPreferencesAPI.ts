@@ -11,6 +11,8 @@ export interface BillPreference {
   createdAt: number;
   updatedAt: number;
   exclusionReason?: 'not_recurring' | 'no_longer_active' | 'incorrect_detection' | 'user_choice';
+  reason?: string;
+  excludedAt?: number;
 }
 
 export interface BillPreferencesResponse {
@@ -220,6 +222,90 @@ export class BillPreferencesAPI {
         byReason: {},
         recentlyExcluded: []
       };
+    }
+  }
+
+  /**
+   * Get bill preferences with additional filtering and merging capabilities
+   */
+  static async getBillPreferences(): Promise<BillPreference[]> {
+    return this.getBillExclusions();
+  }
+
+  /**
+   * Merge bills with preferences to provide enhanced bill data
+   */
+  static async mergeBillsWithPreferences(bills: any[], preferences?: BillPreference[]): Promise<any[]> {
+    try {
+      const prefs = preferences || await this.getBillPreferences();
+      const preferencesMap = new Map(prefs.map(p => [p.billId, p]));
+
+      return bills.map(bill => ({
+        ...bill,
+        preference: preferencesMap.get(bill.id),
+        isIgnored: preferencesMap.get(bill.id)?.isIgnored || false,
+        customName: preferencesMap.get(bill.id)?.customName || bill.name
+      }));
+    } catch (error) {
+      console.error('[BillPreferencesAPI] Error merging bills with preferences:', error);
+      return bills;
+    }
+  }
+
+  /**
+   * Update bill category
+   */
+  static async updateBillCategory(billId: string, category: string): Promise<boolean> {
+    try {
+      await api.put(`/bills/preferences/${billId}`, { category });
+      return true;
+    } catch (error) {
+      console.error('[BillPreferencesAPI] Error updating bill category:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Update bill status
+   */
+  static async updateBillStatus(billId: string, status: 'active' | 'inactive'): Promise<boolean> {
+    try {
+      await api.put(`/bills/preferences/${billId}`, { status });
+      return true;
+    } catch (error) {
+      console.error('[BillPreferencesAPI] Error updating bill status:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Create preference from bill
+   */
+  static async createPreferenceFromBill(bill: any, overrides: Partial<BillPreference> = {}): Promise<BillPreference> {
+    return {
+      userId: 'current-user', // This should come from auth context
+      billId: bill.id,
+      category: bill.category,
+      status: 'active',
+      customName: bill.name,
+      isIgnored: false,
+      userModified: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      ...overrides
+    };
+  }
+
+  /**
+   * Save bill preference
+   */
+  static async saveBillPreference(preference: BillPreference): Promise<boolean> {
+    try {
+      await api.post('/bills/preferences', preference);
+      return true;
+    } catch (error) {
+      console.error('[BillPreferencesAPI] Error saving bill preference:', error);
+      return false;
     }
   }
 }

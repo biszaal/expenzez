@@ -1,0 +1,871 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  Animated,
+  Dimensions,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+
+import { useTheme } from '../../contexts/ThemeContext';
+import { useSubscription } from '../../contexts/SubscriptionContext';
+import { spacing, borderRadius, typography } from '../../constants/theme';
+
+const { width } = Dimensions.get('window');
+
+interface PremiumFeature {
+  icon: string;
+  title: string;
+  description: string;
+  freeLimit?: string;
+  premiumLimit: string;
+  gradient: string[];
+}
+
+const PREMIUM_FEATURES: PremiumFeature[] = [
+  {
+    icon: 'sparkles',
+    title: 'Unlimited AI Financial Assistant',
+    description: 'Get personalized financial advice, insights, and recommendations anytime',
+    freeLimit: '3 chats/month',
+    premiumLimit: 'Unlimited conversations',
+    gradient: ['#6366F1', '#8B5CF6'],
+  },
+  {
+    icon: 'shield-outline',
+    title: 'Enhanced Security Features',
+    description: 'Biometric authentication, PIN protection, and advanced security monitoring',
+    freeLimit: 'Basic security',
+    premiumLimit: 'Advanced security suite',
+    gradient: ['#10B981', '#06B6D4'],
+  },
+  {
+    icon: 'flag-outline',
+    title: 'Unlimited Financial Goals',
+    description: 'Set and track unlimited savings goals with smart progress tracking',
+    freeLimit: '1 goal only',
+    premiumLimit: 'Unlimited goals',
+    gradient: ['#F59E0B', '#EF4444'],
+  },
+  {
+    icon: 'pie-chart-outline',
+    title: 'Advanced Budget Management',
+    description: 'Create unlimited budget categories with smart spending alerts',
+    freeLimit: '1 budget category',
+    premiumLimit: 'Unlimited budgets',
+    gradient: ['#8B5CF6', '#EC4899'],
+  },
+  {
+    icon: 'analytics-outline',
+    title: 'Advanced Analytics & Insights',
+    description: 'Detailed spending patterns, trends, and predictive analytics',
+    freeLimit: 'Basic charts only',
+    premiumLimit: 'Full analytics suite',
+    gradient: ['#06B6D4', '#10B981'],
+  },
+  {
+    icon: 'pricetags-outline',
+    title: 'AI Transaction Categorization',
+    description: 'Automatic smart categorization of all your transactions',
+    freeLimit: 'Basic categories',
+    premiumLimit: 'AI-powered categorization',
+    gradient: ['#10B981', '#059669'],
+  },
+];
+
+const PRICING_PLANS = [
+  {
+    id: 'premium-monthly',
+    name: 'Monthly',
+    price: 4.99,
+    originalPrice: null,
+    interval: 'month',
+    popular: false,
+    savings: null,
+  },
+  {
+    id: 'premium-annual',
+    name: 'Annual',
+    price: 49.99,
+    originalPrice: 59.88,
+    interval: 'year',
+    popular: true,
+    savings: '17% off',
+  },
+];
+
+export default function SubscriptionPlansScreen() {
+  const { colors } = useTheme();
+  const router = useRouter();
+  const {
+    subscription,
+    isPremium,
+    isTrialActive,
+    daysUntilTrialExpires,
+    purchaseSubscription,
+    restorePurchases,
+    getOfferings
+  } = useSubscription();
+
+  const [selectedPlan, setSelectedPlan] = useState('premium-annual');
+  const [purchasing, setPurchasing] = useState(false);
+  const [offerings, setOfferings] = useState<any[]>([]);
+  const [loadingOfferings, setLoadingOfferings] = useState(true);
+  const showTrialButton = !isPremium && !isTrialActive;
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(50))[0];
+
+  useEffect(() => {
+    // Load offerings from RevenueCat
+    loadOfferings();
+
+    // Animation
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [getOfferings]);
+
+  const loadOfferings = async () => {
+    try {
+      setLoadingOfferings(true);
+      const revenueCatOfferings = await getOfferings();
+      setOfferings(revenueCatOfferings);
+    } catch (error) {
+      console.error('Error loading offerings:', error);
+    } finally {
+      setLoadingOfferings(false);
+    }
+  };
+
+  const handleStartTrial = async () => {
+    setPurchasing(true);
+    try {
+      // Use the trial package for RevenueCat (you can create a trial package in RevenueCat dashboard)
+      const success = await purchaseSubscription('trial');
+      if (success) {
+        Alert.alert(
+          '🎉 Free Trial Started!',
+          'Welcome to Premium! You now have 14 days of unlimited access to all features.',
+          [
+            {
+              text: 'Start Exploring',
+              onPress: () => router.push('/(tabs)'),
+              style: 'default'
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Trial Not Available',
+          'Unable to start the free trial. Please try again or contact support.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to start trial. Please try again.');
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const handleRestorePurchases = async () => {
+    setPurchasing(true);
+    try {
+      const success = await restorePurchases();
+      if (success) {
+        Alert.alert(
+          '✅ Purchases Restored!',
+          'Your previous purchases have been successfully restored.',
+          [
+            {
+              text: 'Continue',
+              onPress: () => router.push('/(tabs)'),
+              style: 'default'
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'No Purchases Found',
+          'We could not find any previous purchases to restore.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to restore purchases. Please try again.');
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const handlePurchase = async () => {
+    setPurchasing(true);
+    try {
+      // Map local plan ID to RevenueCat package ID
+      const packageId = selectedPlan === 'premium-annual' ? 'annual' : 'monthly';
+      const success = await purchaseSubscription(packageId);
+
+      if (success) {
+        Alert.alert(
+          '🚀 Welcome to Premium!',
+          'Thank you for your purchase! You now have unlimited access to all premium features.',
+          [
+            {
+              text: 'Get Started',
+              onPress: () => router.push('/(tabs)'),
+              style: 'default'
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Purchase Failed',
+          'There was an issue processing your purchase. Please try again.',
+          [{ text: 'Try Again' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to process purchase. Please try again.');
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const selectedPlanData = PRICING_PLANS.find(p => p.id === selectedPlan);
+
+  const styles = createStyles(colors);
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Premium Membership</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View
+          style={{
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }}
+        >
+          {/* Hero Section */}
+          <View style={styles.heroSection}>
+            <View style={styles.heroContent}>
+              <Ionicons name="diamond" size={60} color={colors.text.primary} />
+              <Text style={styles.heroTitle}>Unlock Premium</Text>
+              <Text style={styles.heroSubtitle}>
+                Take control of your financial future with unlimited access to all features
+              </Text>
+            </View>
+          </View>
+
+          {/* Current Status Banner */}
+          {isPremium && (
+            <View style={styles.statusBanner}>
+              <LinearGradient
+                colors={[colors.success[100], colors.success[50]]}
+                style={styles.statusGradient}
+              >
+                <Ionicons name="checkmark-circle" size={24} color={colors.success[600]} />
+                <Text style={[styles.statusText, { color: colors.success[700] }]}>
+                  You&apos;re Premium! Enjoy unlimited access 🎉
+                </Text>
+              </LinearGradient>
+            </View>
+          )}
+
+          {isTrialActive && (
+            <View style={styles.statusBanner}>
+              <LinearGradient
+                colors={[colors.warning[100], colors.warning[50]]}
+                style={styles.statusGradient}
+              >
+                <Ionicons name="time" size={24} color={colors.warning[600]} />
+                <Text style={[styles.statusText, { color: colors.warning[700] }]}>
+                  Free Trial Active • {daysUntilTrialExpires} days remaining
+                </Text>
+              </LinearGradient>
+            </View>
+          )}
+
+          {/* Pricing Cards */}
+          {!isPremium && (
+            <View style={styles.pricingSection}>
+              <Text style={styles.sectionTitle}>Choose Your Plan</Text>
+
+              <View style={styles.pricingCards}>
+                {PRICING_PLANS.map((plan) => (
+                  <TouchableOpacity
+                    key={plan.id}
+                    style={[
+                      styles.pricingCard,
+                      selectedPlan === plan.id && styles.selectedPricingCard,
+                      plan.popular && styles.popularCard
+                    ]}
+                    onPress={() => setSelectedPlan(plan.id)}
+                    activeOpacity={0.8}
+                  >
+                    {plan.popular && (
+                      <View style={styles.popularBadge}>
+                        <Text style={styles.popularBadgeText}>Most Popular</Text>
+                      </View>
+                    )}
+
+                    <View style={styles.pricingCardHeader}>
+                      <Text style={styles.planName}>{plan.name}</Text>
+                      {plan.savings && (
+                        <Text style={styles.savingsText}>{plan.savings}</Text>
+                      )}
+                    </View>
+
+                    <View style={styles.priceContainer}>
+                      <Text style={styles.price}>£{plan.price}</Text>
+                      <Text style={styles.priceInterval}>/{plan.interval}</Text>
+                    </View>
+
+                    {plan.originalPrice && (
+                      <Text style={styles.originalPrice}>
+                        Was £{plan.originalPrice}
+                      </Text>
+                    )}
+
+                    <Text style={styles.monthlyEquivalent}>
+                      £{plan.id === 'premium-annual' ? '4.17' : '4.99'}/month
+                    </Text>
+
+                    {selectedPlan === plan.id && (
+                      <View style={styles.selectedIndicator}>
+                        <Ionicons name="checkmark" size={20} color="white" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Features Section */}
+          <View style={styles.featuresSection}>
+            <Text style={styles.sectionTitle}>Premium Features</Text>
+            <Text style={styles.sectionSubtitle}>
+              Everything you need to master your finances
+            </Text>
+
+            <View style={styles.featuresGrid}>
+              {PREMIUM_FEATURES.map((feature, index) => (
+                <Animated.View
+                  key={index}
+                  style={[
+                    styles.featureCard,
+                    {
+                      opacity: fadeAnim,
+                      transform: [{
+                        translateY: slideAnim.interpolate({
+                          inputRange: [0, 50],
+                          outputRange: [0, 20],
+                        })
+                      }]
+                    }
+                  ]}
+                >
+                  <View style={styles.featureIcon}>
+                    <Ionicons name={feature.icon as any} size={24} color={colors.primary[500]} />
+                  </View>
+
+                  <View style={styles.featureContent}>
+                    <Text style={styles.featureTitle}>{feature.title}</Text>
+                    <Text style={styles.featureDescription}>{feature.description}</Text>
+
+                    <View style={styles.featureLimits}>
+                      <View style={styles.limitRow}>
+                        <View style={styles.freeTag}>
+                          <Text style={styles.freeTagText}>Free</Text>
+                        </View>
+                        <Text style={styles.limitText}>{feature.freeLimit || 'Not available'}</Text>
+                      </View>
+
+                      <View style={styles.limitRow}>
+                        <View style={styles.premiumTag}>
+                          <Text style={styles.premiumTagText}>Premium</Text>
+                        </View>
+                        <Text style={styles.limitText}>{feature.premiumLimit}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </Animated.View>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.bottomSpacer} />
+        </Animated.View>
+      </ScrollView>
+
+      {/* Floating Action Buttons */}
+      {!isPremium && (
+        <View style={styles.floatingFooter}>
+          {showTrialButton && (
+            <TouchableOpacity
+              style={styles.trialButton}
+              onPress={handleStartTrial}
+              disabled={purchasing}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={[colors.primary[600], colors.primary[700]]}
+                style={styles.buttonGradient}
+              >
+                <Ionicons name="flash" size={20} color="white" />
+                <Text style={styles.trialButtonText}>
+                  {purchasing ? 'Starting Trial...' : 'Start 14-Day Free Trial'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            style={[styles.upgradeButton, !showTrialButton && styles.primaryButton]}
+            onPress={handlePurchase}
+            disabled={purchasing || !selectedPlanData}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={[colors.primary[500], colors.primary[600]]}
+              style={styles.buttonGradient}
+            >
+              <Ionicons name="diamond" size={20} color="white" />
+              <Text style={styles.upgradeButtonText}>
+                {purchasing ? 'Processing...' : `Get Premium - £${selectedPlanData?.price}/${selectedPlanData?.interval}`}
+              </Text>
+              <Ionicons name="arrow-forward" size={16} color="white" />
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <Text style={styles.disclaimerText}>
+            Cancel anytime. No hidden fees. 30-day money-back guarantee.
+          </Text>
+        </View>
+      )}
+    </SafeAreaView>
+  );
+}
+
+interface ThemeColors {
+  background: { primary: string; secondary: string; tertiary: string };
+  border: { light: string; medium: string; dark: string; focus: string };
+  text: { primary: string; secondary: string; tertiary: string };
+  primary: { [key: string]: string };
+  success: { [key: string]: string };
+  warning: { [key: string]: string };
+  [key: string]: any;
+}
+
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background.primary,
+  },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background.secondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  headerTitle: {
+    fontSize: typography.sizes.xl,
+    fontWeight: '700' as any,
+    color: colors.text.primary,
+  },
+
+  scrollView: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    paddingBottom: 200, // Add bottom padding to account for floating footer
+  },
+
+  heroSection: {
+    margin: spacing.lg,
+    padding: spacing.xl,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.background.secondary,
+    alignItems: 'center',
+  },
+
+  heroContent: {
+    alignItems: 'center',
+  },
+
+  heroTitle: {
+    fontSize: typography.sizes['2xl'],
+    fontWeight: '700' as any,
+    color: colors.text.primary,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+
+  heroSubtitle: {
+    fontSize: typography.sizes.base,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+
+  statusBanner: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+
+  statusGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+
+  statusText: {
+    fontSize: typography.sizes.base,
+    fontWeight: '600' as any,
+    marginLeft: spacing.sm,
+  },
+
+  pricingSection: {
+    margin: spacing.lg,
+  },
+
+  sectionTitle: {
+    fontSize: typography.sizes.xl,
+    fontWeight: '700' as any,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+
+  sectionSubtitle: {
+    fontSize: typography.sizes.base,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    lineHeight: 22,
+  },
+
+  pricingCards: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+
+  pricingCard: {
+    flex: 1,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    borderWidth: 2,
+    borderColor: colors.border.light,
+    position: 'relative',
+  },
+
+  selectedPricingCard: {
+    borderColor: colors.primary[500],
+    backgroundColor: colors.primary[50],
+  },
+
+  popularCard: {
+    borderColor: colors.primary[600],
+  },
+
+  popularBadge: {
+    position: 'absolute',
+    top: -8,
+    left: 20,
+    backgroundColor: colors.primary[600],
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.sm,
+  },
+
+  popularBadgeText: {
+    fontSize: typography.sizes.xs,
+    fontWeight: '700' as any,
+    color: 'white',
+  },
+
+  pricingCardHeader: {
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+
+  planName: {
+    fontSize: typography.sizes.lg,
+    fontWeight: '700' as any,
+    color: colors.text.primary,
+  },
+
+  savingsText: {
+    fontSize: typography.sizes.sm,
+    fontWeight: '600' as any,
+    color: colors.success[600],
+    marginTop: spacing.xs,
+  },
+
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+
+  price: {
+    fontSize: typography.sizes['2xl'],
+    fontWeight: '700' as any,
+    color: colors.text.primary,
+  },
+
+  priceInterval: {
+    fontSize: typography.sizes.base,
+    color: colors.text.secondary,
+    marginLeft: spacing.xs,
+  },
+
+  originalPrice: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    textDecorationLine: 'line-through',
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
+
+  monthlyEquivalent: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    textAlign: 'center',
+  },
+
+  selectedIndicator: {
+    position: 'absolute',
+    top: spacing.md,
+    right: spacing.md,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  featuresSection: {
+    margin: spacing.lg,
+  },
+
+  featuresGrid: {
+    gap: spacing.md,
+  },
+
+  featureCard: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    minHeight: 120,
+  },
+
+  featureIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.primary[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  featureContent: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+
+  featureTitle: {
+    fontSize: typography.sizes.base,
+    fontWeight: '700' as any,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+    lineHeight: 20,
+  },
+
+  featureDescription: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    lineHeight: 18,
+    marginBottom: spacing.sm,
+    flexWrap: 'wrap',
+  },
+
+  featureLimits: {
+    gap: spacing.xs,
+  },
+
+  limitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  freeTag: {
+    backgroundColor: colors.text.tertiary,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+    minWidth: 60,
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+
+  freeTagText: {
+    fontSize: typography.sizes.xs,
+    fontWeight: '600' as any,
+    color: 'white',
+  },
+
+  premiumTag: {
+    backgroundColor: colors.primary[500],
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+    minWidth: 60,
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+
+  premiumTagText: {
+    fontSize: typography.sizes.xs,
+    fontWeight: '600' as any,
+    color: 'white',
+  },
+
+  limitText: {
+    fontSize: typography.sizes.xs,
+    color: colors.text.secondary,
+    flex: 1,
+    marginLeft: spacing.sm,
+    lineHeight: 16,
+  },
+
+  actionSection: {
+    margin: spacing.lg,
+    gap: spacing.md,
+  },
+
+  trialButton: {
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+
+  upgradeButton: {
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+
+  primaryButton: {
+    marginTop: spacing.md,
+  },
+
+  buttonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    gap: spacing.sm,
+  },
+
+  trialButtonText: {
+    fontSize: typography.sizes.lg,
+    fontWeight: '700' as any,
+    color: 'white',
+  },
+
+  upgradeButtonText: {
+    fontSize: typography.sizes.base,
+    fontWeight: '600' as any,
+    color: 'white',
+    flex: 1,
+    textAlign: 'center',
+  },
+
+  disclaimerText: {
+    fontSize: typography.sizes.sm,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginTop: spacing.md,
+    lineHeight: 18,
+  },
+
+  bottomSpacer: {
+    height: spacing.xl,
+  },
+
+  floatingFooter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.background.primary,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.light,
+    shadowColor: colors.primary[500],
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+    gap: spacing.md,
+  },
+});

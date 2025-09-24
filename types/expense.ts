@@ -38,4 +38,9 @@ export interface ImportPreview {
   successfulImports: number;
   errors: string[];
   transactions: Expense[];
+  totalAmount?: number;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
 }

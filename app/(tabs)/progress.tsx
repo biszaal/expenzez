@@ -17,6 +17,9 @@ export default function ProgressScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
 
+  // Styles
+  const styles = createStyles(colors);
+
   // State
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -208,8 +211,6 @@ export default function ProgressScreen() {
       </SafeAreaView>
     );
   }
-
-  const styles = createStyles(colors);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>

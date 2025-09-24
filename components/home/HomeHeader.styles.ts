@@ -58,4 +58,18 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 12,
   },
+  quickActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 3,
+    minWidth: 60,
+    ...SHADOWS.sm,
+  },
+  quickActionText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
 });

@@ -33,7 +33,7 @@ export const savingsInsightsAPI = {
     try {
       console.log(`💰 [SavingsInsightsAPI] Fetching savings opportunities for user: ${userId}`);
 
-      const response = await api.get(`/insights/savings-opportunities/${userId}`);
+      const response = await api.get(`/insights/savings-opportunities`);
 
       console.log(`✅ [SavingsInsightsAPI] Successfully fetched savings insights:`, {
         opportunityCount: response.data.opportunities?.length,

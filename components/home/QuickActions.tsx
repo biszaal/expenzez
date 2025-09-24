@@ -12,7 +12,7 @@ export const QuickActions: React.FC = () => {
 
   const handleConnectBank = async () => {
     // Navigate to bank selection screen instead of direct connection
-    router.push('/banks/select');
+    router.push('/(tabs)/banks' as any);
   };
 
   return (
@@ -48,7 +48,7 @@ export const QuickActions: React.FC = () => {
           >
             <View style={styles.professionalQuickActionIconContainer}>
               <View style={styles.professionalQuickActionIcon}>
-                <Ionicons name="add-circle-outline" size={24} color="white" />
+                <Ionicons name="remove-circle-outline" size={24} color="white" />
               </View>
             </View>
             <View style={styles.professionalQuickActionText}>
@@ -60,11 +60,31 @@ export const QuickActions: React.FC = () => {
 
         <TouchableOpacity
           style={styles.professionalQuickActionCard}
+          onPress={() => router.push("/add-income")}
+          activeOpacity={0.85}
+        >
+          <View
+            style={[styles.professionalQuickActionGradient, SHADOWS.lg, { backgroundColor: '#22C55E' }]}
+          >
+            <View style={styles.professionalQuickActionIconContainer}>
+              <View style={styles.professionalQuickActionIcon}>
+                <Ionicons name="add-circle-outline" size={24} color="white" />
+              </View>
+            </View>
+            <View style={styles.professionalQuickActionText}>
+              <Text style={styles.professionalQuickActionTitle}>Add Income</Text>
+              <Text style={styles.professionalQuickActionSubtitle}>Manual entry</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.professionalQuickActionCard}
           onPress={() => router.push("/spending")}
           activeOpacity={0.85}
         >
           <View
-            style={[styles.professionalQuickActionGradient, SHADOWS.lg, { backgroundColor: '#10B981' }]}
+            style={[styles.professionalQuickActionGradient, SHADOWS.lg, { backgroundColor: '#0EA5E9' }]}
           >
             <View style={styles.professionalQuickActionIconContainer}>
               <View style={styles.professionalQuickActionIcon}>

@@ -17,6 +17,55 @@ export const GoalProgressCard: React.FC = () => {
 
   useEffect(() => {
     const loadGoalsData = async () => {
+      const getFallbackData = (fallbackUserId: string) => ({
+        userId: fallbackUserId,
+        activeGoals: [
+          {
+            userId: fallbackUserId,
+            goalId: 'goal-1',
+            title: 'Save for Holiday',
+            description: 'Summer vacation fund',
+            type: 'vacation' as const,
+            targetAmount: 2000,
+            currentAmount: 750,
+            targetDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+            priority: 'medium' as const,
+            category: 'lifestyle',
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            milestones: [],
+            linkedSavingsOpportunityIds: []
+          }
+        ],
+        completedGoals: [
+          {
+            userId: fallbackUserId,
+            goalId: 'goal-3',
+            title: 'New Laptop',
+            description: 'Work laptop upgrade',
+            type: 'major_purchase' as const,
+            targetAmount: 1200,
+            currentAmount: 1200,
+            targetDate: new Date().toISOString(),
+            priority: 'high' as const,
+            category: 'technology',
+            isActive: false,
+            createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date().toISOString(),
+            milestones: [],
+            linkedSavingsOpportunityIds: []
+          }
+        ],
+        goalProgress: [],
+        totalSavedTowardsGoals: 1950,
+        totalGoalAmount: 7200,
+        averageMonthlyProgress: 250,
+        recommendations: [],
+        motivationalMessage: "Keep up the great work!",
+        lastUpdated: new Date().toISOString()
+      });
+
       // More comprehensive user check
       const userId = user?.id || user?.username || user?.sub;
       if (!userId) {
@@ -29,77 +78,10 @@ export const GoalProgressCard: React.FC = () => {
 
       console.log('GoalProgressCard: Loading data for user:', userId);
 
-      const getFallbackData = (fallbackUserId: string = userId) => ({
-        userId: fallbackUserId,
-        activeGoals: [
-          {
-            userId: fallbackUserId,
-            goalId: 'emergency-fund-001',
-            title: 'Emergency Fund',
-            description: '6 months of expenses for security',
-            type: 'emergency_fund' as const,
-            targetAmount: 15000,
-            currentAmount: 3750,
-            targetDate: new Date(Date.now() + 18 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-            priority: 'high' as const,
-            category: 'security',
-            isActive: true,
-            createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-            updatedAt: new Date().toISOString(),
-            milestones: [],
-            linkedSavingsOpportunityIds: []
-          },
-          {
-            userId: fallbackUserId,
-            goalId: 'vacation-001',
-            title: 'Summer Vacation',
-            description: 'Trip to Italy for 2 weeks',
-            type: 'vacation' as const,
-            targetAmount: 4500,
-            currentAmount: 1800,
-            targetDate: new Date(Date.now() + 8 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-            priority: 'medium' as const,
-            category: 'lifestyle',
-            isActive: true,
-            createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            updatedAt: new Date().toISOString(),
-            milestones: [],
-            linkedSavingsOpportunityIds: []
-          }
-        ],
-        completedGoals: [],
-        goalProgress: [
-          {
-            goalId: 'emergency-fund-001',
-            progressPercentage: 25,
-            amountRemaining: 11250,
-            daysRemaining: 540,
-            isOnTrack: true,
-            projectedCompletionDate: new Date(Date.now() + 16 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-            recommendedMonthlySavings: 625
-          },
-          {
-            goalId: 'vacation-001',
-            progressPercentage: 40,
-            amountRemaining: 2700,
-            daysRemaining: 240,
-            isOnTrack: true,
-            projectedCompletionDate: new Date(Date.now() + 7 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-            recommendedMonthlySavings: 450
-          }
-        ],
-        totalSavedTowardsGoals: 5550,
-        totalGoalAmount: 19500,
-        averageMonthlyProgress: 462,
-        recommendations: [],
-        motivationalMessage: "Great progress on your financial goals! Keep up the momentum.",
-        lastUpdated: new Date().toISOString()
-      });
-
       // Set a timeout to show fallback data after 1 second if API is slow
       const timeoutId = setTimeout(() => {
         console.log('GoalProgressCard: Timeout reached, showing fallback data');
-        setGoalsData(getFallbackData());
+        setGoalsData(getFallbackData(userId));
         setLoading(false);
       }, 1000);
 
@@ -113,7 +95,7 @@ export const GoalProgressCard: React.FC = () => {
       } catch (error) {
         clearTimeout(timeoutId);
         console.error('GoalProgressCard: Error loading goals data, using fallback:', error);
-        setGoalsData(getFallbackData());
+        setGoalsData(getFallbackData(userId));
         setLoading(false);
       }
     };
@@ -163,12 +145,14 @@ export const GoalProgressCard: React.FC = () => {
     );
   }
 
-  const overallProgress = goalsData.totalGoalAmount > 0
+  const overallProgress = (goalsData?.totalGoalAmount > 0)
     ? (goalsData.totalSavedTowardsGoals / goalsData.totalGoalAmount) * 100
     : 0;
 
-  // Show top 2 goals
-  const topGoals = goalsData.activeGoals.slice(0, 2);
+  // Show top 2 goals - add safety check
+  const topGoals = (goalsData.activeGoals && Array.isArray(goalsData.activeGoals))
+    ? goalsData.activeGoals.slice(0, 2)
+    : [];
 
   const styles = createStyles(colors);
 

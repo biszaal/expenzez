@@ -165,8 +165,7 @@ export default function BudgetOverview() {
                   <Text style={[styles.statusText, { color: colors.text.secondary }]}>
                     {progress.status === 'on_track' && 'On Track'}
                     {progress.status === 'warning' && 'Warning'}
-                    {progress.status === 'over_budget' && 'Over Budget'}
-                    {progress.status === 'exceeded' && 'Exceeded'}
+                    {progress.status === 'danger' && 'Over Budget'}
                   </Text>
                 </View>
               </View>

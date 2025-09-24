@@ -90,7 +90,7 @@ export default function BillsScreen() {
       try {
         console.log(`[Bills] Attempting to fetch user preferences...`);
         const userPreferences = await BillPreferencesAPI.getBillPreferences();
-        const mergedBills = BillPreferencesAPI.mergeBillsWithPreferences(detectedBills, userPreferences);
+        const mergedBills = await BillPreferencesAPI.mergeBillsWithPreferences(detectedBills, userPreferences);
         console.log(`[Bills] Successfully merged with ${userPreferences.length} user preferences`);
         finalBills = mergedBills;
         setBills(mergedBills);
@@ -415,11 +415,11 @@ export default function BillsScreen() {
   const removeBill = async (bill: DetectedBill) => {
     try {
       // Mark bill as ignored in preferences so it won't appear again
-      const preference = BillPreferencesAPI.createPreferenceFromBill(bill, { 
+      const preference = await BillPreferencesAPI.createPreferenceFromBill(bill, {
         isIgnored: true,
         status: 'inactive' as const
       });
-      
+
       try {
         await BillPreferencesAPI.saveBillPreference(preference);
         showSuccess(`${bill.name} removed successfully`);
@@ -814,7 +814,7 @@ export default function BillsScreen() {
           <View style={[excludeModalStyles.modal, { backgroundColor: colors.background.primary }]}>
             <View style={excludeModalStyles.header}>
               <Text style={[excludeModalStyles.title, { color: colors.text.primary }]}>
-                Don't Track This Bill?
+                Don&apos;t Track This Bill?
               </Text>
               <Text style={[excludeModalStyles.subtitle, { color: colors.text.secondary }]}>
                 {billToExclude?.merchant} • £{Math.abs(billToExclude?.amount || 0).toFixed(2)}
@@ -829,10 +829,10 @@ export default function BillsScreen() {
                 <Ionicons name="close-circle" size={24} color="#F59E0B" />
                 <View style={excludeModalStyles.optionText}>
                   <Text style={[excludeModalStyles.optionTitle, { color: colors.text.primary }]}>
-                    This isn't a recurring bill
+                    This isn&apos;t a recurring bill
                   </Text>
                   <Text style={[excludeModalStyles.optionDescription, { color: colors.text.secondary }]}>
-                    It's a one-time purchase or varies too much
+                    It&apos;s a one-time purchase or varies too much
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -844,7 +844,7 @@ export default function BillsScreen() {
                 <Ionicons name="pause-circle" size={24} color="#EF4444" />
                 <View style={excludeModalStyles.optionText}>
                   <Text style={[excludeModalStyles.optionTitle, { color: colors.text.primary }]}>
-                    I don't pay this anymore
+                    I don&apos;t pay this anymore
                   </Text>
                   <Text style={[excludeModalStyles.optionDescription, { color: colors.text.secondary }]}>
                     Cancelled subscription or ended service

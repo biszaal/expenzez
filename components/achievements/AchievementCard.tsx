@@ -166,7 +166,7 @@ const createStyles = (colors: any, difficultyColor: string, cardSize: any) => St
     left: 0,
     right: 0,
     height: '30%',
-    background: `linear-gradient(135deg, ${difficultyColor}20 0%, transparent 50%)`,
+    backgroundColor: `${difficultyColor}20`,
     opacity: 0.3
   }
 });

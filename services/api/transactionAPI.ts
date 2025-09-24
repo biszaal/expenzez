@@ -26,6 +26,7 @@ export interface TransactionCreateData {
 
 export interface TransactionsResponse {
   message: string;
+  success: boolean;
   transactions: Transaction[];
   summary: {
     totalAmount: number;

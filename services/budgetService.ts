@@ -9,6 +9,8 @@ export interface Budget {
   currentSpent: number;
   isActive: boolean;
   alertThreshold: number;
+  startDate?: string;
+  endDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -273,6 +275,42 @@ export class BudgetService {
     } catch (error) {
       console.error('Error checking budget alerts:', error);
       return [];
+    }
+  }
+
+  static async getAllBudgetProgress(): Promise<BudgetProgress[]> {
+    try {
+      const budgets = await this.getBudgets();
+      return Promise.all(budgets.map(budget => this.calculateBudgetProgress(budget)));
+    } catch (error) {
+      console.error('Error getting all budget progress:', error);
+      return [];
+    }
+  }
+
+  static getBudgetStatusColor(status: 'on_track' | 'warning' | 'danger'): string {
+    switch (status) {
+      case 'on_track':
+        return '#22C55E'; // Green
+      case 'warning':
+        return '#F59E0B'; // Orange
+      case 'danger':
+        return '#EF4444'; // Red
+      default:
+        return '#6B7280'; // Gray
+    }
+  }
+
+  static getBudgetStatusIcon(status: 'on_track' | 'warning' | 'danger'): string {
+    switch (status) {
+      case 'on_track':
+        return 'checkmark-circle';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'alert-circle';
+      default:
+        return 'help-circle';
     }
   }
 }

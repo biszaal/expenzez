@@ -35,7 +35,7 @@ export default function InsightsScreen() {
       else setLoading(true);
 
       const [generatedInsights, dailyNudges] = await Promise.all([
-        insightsEngine.generateInsights(),
+        insightsEngine.generateInsights([]), // Pass empty array for now
         insightsEngine.generateDailyNudges(),
       ]);
 
