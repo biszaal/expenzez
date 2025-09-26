@@ -31,6 +31,33 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         return;
       }
 
+      // Check for heading (### heading)
+      const headingMatch = trimmedLine.match(/^(#{1,6})\s*(.+)/);
+      if (headingMatch) {
+        const [, hashes, text] = headingMatch;
+        const level = hashes.length;
+
+        // Calculate font size and weight based on heading level
+        const headingFontSize = level === 1 ? fontSize + 8 :
+                               level === 2 ? fontSize + 6 :
+                               level === 3 ? fontSize + 4 :
+                               level === 4 ? fontSize + 2 :
+                               fontSize + 1;
+
+        elements.push(
+          <Text key={`heading-${index}`} style={{
+            fontSize: headingFontSize,
+            fontWeight: level <= 2 ? '800' : level <= 4 ? '700' : '600',
+            color: colors.text.primary,
+            marginTop: level <= 2 ? 16 : 12,
+            marginBottom: level <= 2 ? 12 : 8,
+          }}>
+            {formatInlineText(text)}
+          </Text>
+        );
+        return;
+      }
+
       // Check for numbered list item (1. 2. 3. etc.)
       const numberedListMatch = trimmedLine.match(/^(\d+)\.\s*(.+)/);
       if (numberedListMatch) {

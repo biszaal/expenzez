@@ -1,13 +1,13 @@
 import { Stack } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState } from "react";
-import { AppState, Text, View } from "react-native";
+import { AppState, Text, View, StatusBar } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from 'expo-secure-store';
 import * as Linking from "expo-linking";
 import { useSegments, useRouter } from "expo-router";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
-import { ThemeProvider } from "../contexts/ThemeContext";
+import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
 import { NotificationProvider } from "../contexts/NotificationContext";
 import { NetworkProvider } from "../contexts/NetworkContext";
@@ -80,6 +80,7 @@ function RootLayoutNav() {
   const isLoggedIn = auth?.isLoggedIn ?? false;
   const loading = auth?.loading ?? true;
   const { isLocked, isSecurityEnabled, needsPinSetup, unlockApp, isInitialized: securityInitialized } = useSecurity();
+  const { isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [hasValidSession, setHasValidSession] = useState(false);
   const [showPinSetup, setShowPinSetup] = useState(false);
@@ -206,7 +207,16 @@ function RootLayoutNav() {
   if (isLoading || loading || !securityInitialized) {
     console.log(`🔄 [Layout] Showing loading screen: isLoading=${isLoading}, loading=${loading}, securityInitialized=${securityInitialized}`);
     const message = !securityInitialized ? "Initializing security..." : "Setting up your account...";
-    return <AppLoadingScreen message={message} />;
+    return (
+      <>
+        <StatusBar
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor="transparent"
+          translucent={true}
+        />
+        <AppLoadingScreen message={message} />
+      </>
+    );
   }
 
   // PIN is now optional - no mandatory setup screen needed
@@ -228,9 +238,16 @@ function RootLayoutNav() {
   if (isLoggedIn && isLocked && !isOnSecurityPage) {
     console.log('🔐 [Layout] App is LOCKED - showing PIN screen ONLY');
     return (
-      <View style={{ flex: 1 }}>
-        <BiometricSecurityLock isVisible={true} onUnlock={async () => unlockApp()} />
-      </View>
+      <>
+        <StatusBar
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor="transparent"
+          translucent={true}
+        />
+        <View style={{ flex: 1 }}>
+          <BiometricSecurityLock isVisible={true} onUnlock={async () => unlockApp()} />
+        </View>
+      </>
     );
   }
 
@@ -241,30 +258,36 @@ function RootLayoutNav() {
   let initialRoute = shouldTreatAsLoggedIn ? "(tabs)" : "auth/Login";
   
   return (
-    <Stack 
-      screenOptions={{ headerShown: false }}
-      initialRouteName={initialRoute}
-    >
-      <Stack.Screen name="auth/Login" />
-      <Stack.Screen name="auth/Register" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="profile/index" />
-      <Stack.Screen name="profile/personal" />
-      <Stack.Screen name="security/index" />
-      <Stack.Screen name="security/create-pin" />
-      <Stack.Screen name="notifications/index" />
-      <Stack.Screen name="payment/index" />
-      <Stack.Screen name="help/index" />
-      <Stack.Screen name="terms/index" />
-      <Stack.Screen name="credit-score/index" />
-      <Stack.Screen name="target/index" />
-      <Stack.Screen name="transactions/index" />
-      <Stack.Screen name="add-expense" />
-      <Stack.Screen name="add-income" />
-      <Stack.Screen name="import-csv" />
-      <Stack.Screen name="settings/index" />
-      <Stack.Screen name="CompleteProfile" />
-    </Stack>
+    <>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent={true}
+      />
+      <Stack
+        screenOptions={{ headerShown: false }}
+        initialRouteName={initialRoute}
+      >
+        <Stack.Screen name="auth/Login" />
+        <Stack.Screen name="auth/Register" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="profile/index" />
+        <Stack.Screen name="profile/personal" />
+        <Stack.Screen name="security/index" />
+        <Stack.Screen name="security/create-pin" />
+        <Stack.Screen name="notifications/index" />
+        <Stack.Screen name="payment/index" />
+        <Stack.Screen name="help/index" />
+        <Stack.Screen name="terms/index" />
+        <Stack.Screen name="credit-score/index" />
+        <Stack.Screen name="target/index" />
+        <Stack.Screen name="transactions/index" />
+        <Stack.Screen name="add-transaction" />
+        <Stack.Screen name="import-csv" />
+        <Stack.Screen name="settings/index" />
+        <Stack.Screen name="CompleteProfile" />
+      </Stack>
+    </>
   );
 }
 

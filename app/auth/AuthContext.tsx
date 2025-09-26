@@ -43,7 +43,7 @@ interface AuthContextType {
     identifier: string,
     password: string,
     rememberMe?: boolean
-  ) => Promise<{ success: boolean; error?: string; needsPinSetup?: boolean }>;
+  ) => Promise<{ success: boolean; error?: string; needsPinSetup?: boolean; needsEmailVerification?: boolean; email?: string; username?: string }>;
   loginWithApple: (
     identityToken: string,
     authorizationCode: string,
@@ -266,7 +266,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             
             try {
               // Restore the refresh token and try to get fresh tokens
-              await AsyncStorage.setItem('refreshToken', persistentSession.refreshToken);
+              await SecureStore.setItemAsync('refreshToken', persistentSession.refreshToken, { keychainService: 'expenzez-tokens' });
               
               // Try to refresh the token to get fresh access tokens
               const authAPI = require('../../services/api').authAPI;
@@ -498,8 +498,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         };
       }
     } catch (error: any) {
+      console.log('🔍 [AuthContext] Login error details:', error);
+
+      // Check if this is an email verification error
+      if (
+        error.statusCode === 403 ||
+        error.response?.status === 403 ||
+        error.isEmailNotVerified ||
+        error.response?.data?.error === 'UserNotConfirmedException' ||
+        error.response?.data?.message?.toLowerCase().includes('not confirmed') ||
+        error.response?.data?.message?.toLowerCase().includes('not verified') ||
+        error.message?.toLowerCase().includes('not verified')
+      ) {
+        console.log('🔍 [AuthContext] Email verification error detected, returning special flag');
+        return {
+          success: false,
+          error: error.message || 'Email address not verified. Please check your email and verify your account.',
+          needsEmailVerification: true,
+          email: identifier.includes("@") ? identifier : "",
+          username: !identifier.includes("@") ? identifier : ""
+        };
+      }
+
       const errorMessage =
-        error.response?.data?.message || "Login failed. Please try again.";
+        error.response?.data?.message || error.message || "Login failed. Please try again.";
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -532,12 +554,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const tokens = response?.tokens || response;
       if (response && tokens?.idToken && tokens?.accessToken) {
 
-        // Store Cognito tokens and user data
+        // Store Cognito tokens and user data - CRITICAL: Use SecureStore for tokens like regular login
         const storagePromises = [
           AsyncStorage.setItem("isLoggedIn", "true"),
-          AsyncStorage.setItem("accessToken", tokens.accessToken),
-          AsyncStorage.setItem("idToken", tokens.idToken),
-          AsyncStorage.setItem("refreshToken", tokens.refreshToken || ""),
+          SecureStore.setItemAsync("accessToken", tokens.accessToken, { keychainService: 'expenzez-tokens' }),
+          SecureStore.setItemAsync("idToken", tokens.idToken, { keychainService: 'expenzez-tokens' }),
+          SecureStore.setItemAsync("refreshToken", tokens.refreshToken || "", { keychainService: 'expenzez-tokens' }),
           AsyncStorage.setItem("user", JSON.stringify(response.user)),
         ];
 
@@ -647,9 +669,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Store Cognito tokens and user data
         const storagePromises = [
           AsyncStorage.setItem("isLoggedIn", "true"),
-          AsyncStorage.setItem("accessToken", responseData.accessToken),
-          AsyncStorage.setItem("idToken", responseData.idToken),
-          AsyncStorage.setItem("refreshToken", responseData.refreshToken || ""),
+          SecureStore.setItemAsync("accessToken", responseData.accessToken, { keychainService: 'expenzez-tokens' }),
+          SecureStore.setItemAsync("idToken", responseData.idToken, { keychainService: 'expenzez-tokens' }),
+          SecureStore.setItemAsync("refreshToken", responseData.refreshToken || "", { keychainService: 'expenzez-tokens' }),
           AsyncStorage.setItem("user", JSON.stringify(responseData.user)),
         ];
 
@@ -712,54 +734,105 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
+      console.log('🚨 SECURITY: Starting STRICT logout - clearing ALL user data...');
+
       // Clear persistent session and device trust
       await deviceManager.clearPersistentSession();
       await deviceManager.untrustDevice();
       setIsDeviceTrusted(false);
 
-      // Clear all auth and user-specific data
-      const itemsToRemove = [
-        "isLoggedIn",
-        "accessToken",
-        "idToken",
-        "refreshToken",
-        "user",
-        "accounts",
-        "transactions",
-        "profile",
-        "userBudget",
-        // Add any other keys you use for caching user data here
-      ];
-
-
-      // Remove each item individually
-      for (const key of itemsToRemove) {
-        try {
-          await AsyncStorage.removeItem(key);
-        } catch (error) {
-          // Silent error handling
-        }
-      }
-
-      // Also try to remove all keys to be extra sure
+      // 🚨 STRICT SECURITY: Clear ALL keys except absolute essentials
       try {
         const allKeys = await AsyncStorage.getAllKeys();
-        // Keep device-related keys for future logins
-        const keysToKeep = ['device_id', 'trusted_devices', 'device_registrations', 'persistent_session', 'remember_me'];
-        const keysToRemove = allKeys.filter(key => !keysToKeep.includes(key));
-        await AsyncStorage.multiRemove(keysToRemove);
-      } catch (error) {
-        // Silent error handling
+        console.log('📋 Found storage keys:', allKeys.length);
+
+        // Only preserve essential device identification keys
+        const essentialKeysToKeep = [
+          'device_id',
+          'deviceId',
+          'installationId',
+        ];
+
+        const keysToRemove = allKeys.filter(key => !essentialKeysToKeep.includes(key));
+
+        if (keysToRemove.length > 0) {
+          await AsyncStorage.multiRemove(keysToRemove);
+          console.log('🚨 SECURITY: Removed', keysToRemove.length, 'storage keys');
+          console.log('🔐 Preserved essential keys:', essentialKeysToKeep.filter(key => allKeys.includes(key)));
+        }
+
+        // Explicitly remove all known sensitive keys to ensure complete cleanup
+        const explicitSensitiveKeys = [
+          "isLoggedIn",
+          "accessToken",
+          "idToken",
+          "refreshToken",
+          "user",
+          "accounts",
+          "transactions",
+          "profile",
+          "userBudget",
+          "trusted_devices",
+          "device_registrations",
+          "persistent_session",
+          "remember_me",
+          "biometric_enabled",
+          "pin_hash",
+          "security_settings",
+          "notification_token",
+          "notification_preferences",
+          "banking_connections",
+          "banking_data",
+          "chat_history",
+          "ai_conversations",
+          "budget_data",
+          "spending_data",
+          "credit_score",
+          "financial_insights",
+          "cached_api_data",
+          "app_preferences",
+          "theme_preference",
+          "onboarding_completed",
+          "tutorial_completed",
+          "feature_flags",
+          "analytics_data",
+          "crash_reports",
+          "performance_logs"
+        ];
+
+        await AsyncStorage.multiRemove(explicitSensitiveKeys);
+        console.log('🚨 SECURITY: Explicitly cleared all sensitive data keys');
+
+      } catch (storageError) {
+        console.error('❌ Storage cleanup error:', storageError);
       }
 
-      // Update state
+      // Force clear any in-memory caches
+      try {
+        if ((global as any).__USER_CACHE__) {
+          (global as any).__USER_CACHE__ = null;
+        }
+        if ((global as any).__API_CACHE__) {
+          (global as any).__API_CACHE__ = null;
+        }
+        if ((global as any).__BANKING_CACHE__) {
+          (global as any).__BANKING_CACHE__ = null;
+        }
+        console.log('🧹 Cleared in-memory caches');
+      } catch (cacheError) {
+        console.warn('⚠️ Cache clear warning:', cacheError);
+      }
+
+      // Update state - clear everything
       setIsLoggedIn(false);
       setUser(null);
       setUserBudget(null);
       setNeedsPinSetup(false);
 
+      console.log('✅ STRICT LOGOUT COMPLETED - ALL user data cleared');
+
     } catch (error) {
-      // Silent error handling
+      console.error('❌ Logout error:', error);
     }
   };
 

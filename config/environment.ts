@@ -62,7 +62,7 @@ export const ENV_CONFIG: EnvironmentConfig = {
   environment,
   
   // API Configuration
-  apiBaseURL: 'https://0hjm0et5ud.execute-api.eu-west-2.amazonaws.com', // Use AWS API for all environments
+  apiBaseURL: 'https://0hjm0et5ud.execute-api.eu-west-2.amazonaws.com', // Always use AWS API Gateway
 
   // Website URLs
   websiteURL: environment === 'development'
@@ -117,3 +117,8 @@ export const logEnvironmentInfo = (): void => {
     });
   }
 };
+
+// Force log environment on every import for debugging API connection issues
+console.log('🔧 [DEBUG] Current API Base URL:', ENV_CONFIG.apiBaseURL);
+console.log('🔧 [DEBUG] Environment detected as:', ENV_CONFIG.environment);
+console.log('🔧 [DEBUG] __DEV__ flag:', __DEV__);

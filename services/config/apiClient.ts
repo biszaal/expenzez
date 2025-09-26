@@ -62,7 +62,8 @@ api.interceptors.request.use(
       '/auth/confirm-signup',
       '/auth/resend-verification',
       '/auth/forgot-password',
-      '/auth/confirm-forgot-password'
+      '/auth/confirm-forgot-password',
+      '/auth/apple-login'
     ];
     
     const isAllowedEndpoint = allowedWhenLoggedOut.some(endpoint => config.url?.includes(endpoint));
@@ -78,11 +79,12 @@ api.interceptors.request.use(
     // Don't add tokens to auth endpoints (they don't need/want them)
     const authEndpoints = [
       '/auth/login',
-      '/auth/register', 
+      '/auth/register',
       '/auth/confirm-signup',
       '/auth/resend-verification',
       '/auth/forgot-password',
-      '/auth/confirm-forgot-password'
+      '/auth/confirm-forgot-password',
+      '/auth/apple-login'
     ];
     
     const isAuthEndpoint = authEndpoints.some(endpoint => config.url?.includes(endpoint));

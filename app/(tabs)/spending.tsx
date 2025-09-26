@@ -16,6 +16,7 @@ import { PremiumGate } from "../../components/premium";
 import { TabLoadingScreen } from "../../components/ui";
 import { spacing } from "../../constants/theme";
 import { budgetAPI } from "../../services/api";
+import { useXP } from '../../hooks/useXP';
 import { transactionAPI } from "../../services/api/transactionAPI";
 import { getMerchantInfo } from "../../services/merchantService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -36,6 +37,7 @@ import { useRouter } from "expo-router";
 export default function SpendingPage() {
   const { isLoggedIn, hasBank, checkingBank } = useAuthGuard(undefined, true);
   const { colors } = useTheme();
+  const { awardXPSilently } = useXP();
   const router = useRouter();
 
   // State Management
@@ -67,20 +69,135 @@ export default function SpendingPage() {
       const merchantInfo = getMerchantInfo(txn.description || txn.merchant || "Unknown Merchant");
       const merchantName = merchantInfo.name;
 
+      // Enhanced expense detection logic
+      // 1. Check for debit transactions
+      // 2. Check for negative amounts
+      // 3. Exclude income categories explicitly
+      // 4. For positive amounts with credit type, check if category suggests it's an expense
+      const isIncomeCategory = category.toLowerCase().includes('income') ||
+                              category.toLowerCase().includes('salary') ||
+                              category.toLowerCase().includes('refund');
+
+      const categoryLower = category.toLowerCase();
+      const isExpenseCategory = !isIncomeCategory && (
+        // Exact matches
+        category === 'Food & Dining' ||
+        category === 'Shopping' ||
+        category === 'Transport' ||
+        category === 'Entertainment' ||
+        category === 'Bills & Utilities' ||
+        category === 'Health & Fitness' ||
+        category === 'Other' ||
+
+        // Flexible matches for common variations
+        categoryLower.includes('food') ||
+        categoryLower.includes('dining') ||
+        categoryLower.includes('restaurant') ||
+        categoryLower.includes('shop') ||
+        categoryLower.includes('retail') ||
+        categoryLower.includes('transport') ||
+        categoryLower.includes('travel') ||
+        categoryLower.includes('taxi') ||
+        categoryLower.includes('uber') ||
+        categoryLower.includes('entertainment') ||
+        categoryLower.includes('movie') ||
+        categoryLower.includes('game') ||
+        categoryLower.includes('bill') ||
+        categoryLower.includes('utilities') ||
+        categoryLower.includes('utility') ||
+        categoryLower.includes('electric') ||
+        categoryLower.includes('gas') ||
+        categoryLower.includes('health') ||
+        categoryLower.includes('fitness') ||
+        categoryLower.includes('gym') ||
+        categoryLower.includes('medical') ||
+        categoryLower.includes('expense') ||
+        categoryLower.includes('purchase') ||
+
+        // Catch remaining non-income categories
+        (categoryLower !== 'income' && categoryLower !== 'salary' && categoryLower !== 'refund')
+      );
+
       if (index < 3) { // Log first 3 transactions for debugging
-        console.log(`[Spending] Transaction ${index}: amount=${txn.amount}, type=${txn.type}, category=${category}, merchant=${merchantName}, isExpense=${txn.type === 'debit'}`);
+        console.log(`🐛 [Spending] Transaction ${index}:`, {
+          amount: txn.amount,
+          type: txn.type,
+          category: category,
+          merchant: merchantName,
+          isDebit: txn.type === 'debit',
+          isNegativeAmount: txn.amount < 0,
+          isIncomeCategory,
+          isExpenseCategory,
+          willBeCountedAsExpense: (txn.type === 'debit' || txn.amount < 0) || (txn.amount > 0 && isExpenseCategory),
+          originalTxn: txn
+        });
       }
-      // Only count debit transactions (money going out) as expenses
-      if (txn.type === 'debit') {
-        monthlySpentByCategory[category] =
-          (monthlySpentByCategory[category] || 0) + Math.abs(txn.amount);
-        monthlySpentByMerchant[merchantName] =
-          (monthlySpentByMerchant[merchantName] || 0) + Math.abs(txn.amount);
+
+      const isExpense = (txn.type === 'debit' || txn.amount < 0) ||
+                       (txn.amount > 0 && isExpenseCategory);
+
+      if (isExpense) {
+        const expenseAmount = Math.abs(txn.amount);
+        monthlySpentByCategory[category] = (monthlySpentByCategory[category] || 0) + expenseAmount;
+        monthlySpentByMerchant[merchantName] = (monthlySpentByMerchant[merchantName] || 0) + expenseAmount;
       }
     });
     
     console.log(`[Spending] Monthly spending by category:`, monthlySpentByCategory);
     console.log(`[Spending] Monthly spending by merchant:`, monthlySpentByMerchant);
+
+    // Debug: Show all unique categories found in transactions
+    const allCategories = Array.from(new Set(monthlyTransactions.map(tx => tx.category || "Other")));
+    console.log('🐛 [Spending] All unique categories in transactions:', allCategories);
+
+    // Debug: Show expense vs income breakdown
+    const expenseTransactions = monthlyTransactions.filter(tx => {
+      const category = tx.category || "Other";
+      const isIncomeCategory = category.toLowerCase().includes('income') ||
+                              category.toLowerCase().includes('salary') ||
+                              category.toLowerCase().includes('refund');
+      const categoryLower = category.toLowerCase();
+      const isExpenseCategory = !isIncomeCategory && (
+        // Exact matches
+        category === 'Food & Dining' ||
+        category === 'Shopping' ||
+        category === 'Transport' ||
+        category === 'Entertainment' ||
+        category === 'Bills & Utilities' ||
+        category === 'Health & Fitness' ||
+        category === 'Other' ||
+
+        // Flexible matches for common variations
+        categoryLower.includes('food') ||
+        categoryLower.includes('dining') ||
+        categoryLower.includes('restaurant') ||
+        categoryLower.includes('shop') ||
+        categoryLower.includes('retail') ||
+        categoryLower.includes('transport') ||
+        categoryLower.includes('travel') ||
+        categoryLower.includes('taxi') ||
+        categoryLower.includes('uber') ||
+        categoryLower.includes('entertainment') ||
+        categoryLower.includes('movie') ||
+        categoryLower.includes('game') ||
+        categoryLower.includes('bill') ||
+        categoryLower.includes('utilities') ||
+        categoryLower.includes('utility') ||
+        categoryLower.includes('electric') ||
+        categoryLower.includes('gas') ||
+        categoryLower.includes('health') ||
+        categoryLower.includes('fitness') ||
+        categoryLower.includes('gym') ||
+        categoryLower.includes('medical') ||
+        categoryLower.includes('expense') ||
+        categoryLower.includes('purchase') ||
+
+        // Catch remaining non-income categories
+        (categoryLower !== 'income' && categoryLower !== 'salary' && categoryLower !== 'refund')
+      );
+      return (tx.type === 'debit' || tx.amount < 0) || (tx.amount > 0 && isExpenseCategory);
+    });
+    console.log('🐛 [Spending] Total expenses detected:', expenseTransactions.length, 'out of', monthlyTransactions.length, 'transactions');
 
     const monthlyTotalSpent = Object.values(monthlySpentByCategory).reduce(
       (sum, amount) => sum + amount,
@@ -94,6 +211,7 @@ export default function SpendingPage() {
       monthlyTotalSpent,
     };
   }, [transactions, selectedMonth]);
+
 
   // Budget calculations
   const totalBudget = categoryData.reduce((sum, cat) => sum + (cat.defaultBudget || 0), 0);
@@ -193,8 +311,59 @@ export default function SpendingPage() {
 
     // Process current month spending by day
     currentTransactions.forEach((tx) => {
-      // Only count debit transactions (money going out) as expenses
-      if (tx.type === 'debit' && tx.date) {
+      if (!tx.date) return;
+
+      const category = tx.category || "Other";
+
+      // Use same enhanced expense detection logic as categories
+      const isIncomeCategory = category.toLowerCase().includes('income') ||
+                              category.toLowerCase().includes('salary') ||
+                              category.toLowerCase().includes('refund');
+
+      const categoryLower = category.toLowerCase();
+      const isExpenseCategory = !isIncomeCategory && (
+        // Exact matches
+        category === 'Food & Dining' ||
+        category === 'Shopping' ||
+        category === 'Transport' ||
+        category === 'Entertainment' ||
+        category === 'Bills & Utilities' ||
+        category === 'Health & Fitness' ||
+        category === 'Other' ||
+
+        // Flexible matches for common variations
+        categoryLower.includes('food') ||
+        categoryLower.includes('dining') ||
+        categoryLower.includes('restaurant') ||
+        categoryLower.includes('shop') ||
+        categoryLower.includes('retail') ||
+        categoryLower.includes('transport') ||
+        categoryLower.includes('travel') ||
+        categoryLower.includes('taxi') ||
+        categoryLower.includes('uber') ||
+        categoryLower.includes('entertainment') ||
+        categoryLower.includes('movie') ||
+        categoryLower.includes('game') ||
+        categoryLower.includes('bill') ||
+        categoryLower.includes('utilities') ||
+        categoryLower.includes('utility') ||
+        categoryLower.includes('electric') ||
+        categoryLower.includes('gas') ||
+        categoryLower.includes('health') ||
+        categoryLower.includes('fitness') ||
+        categoryLower.includes('gym') ||
+        categoryLower.includes('medical') ||
+        categoryLower.includes('expense') ||
+        categoryLower.includes('purchase') ||
+
+        // Catch remaining non-income categories
+        (categoryLower !== 'income' && categoryLower !== 'salary' && categoryLower !== 'refund')
+      );
+
+      const isExpense = (tx.type === 'debit' || tx.amount < 0) ||
+                       (tx.amount > 0 && isExpenseCategory);
+
+      if (isExpense) {
         const day = dayjs(tx.date).format("DD");
         currentMonthSpending[day] =
           (currentMonthSpending[day] || 0) + Math.abs(tx.amount);
@@ -203,8 +372,59 @@ export default function SpendingPage() {
 
     // Process previous month spending by day
     previousTransactions.forEach((tx) => {
-      // Only count debit transactions (money going out) as expenses
-      if (tx.type === 'debit' && tx.date) {
+      if (!tx.date) return;
+
+      const category = tx.category || "Other";
+
+      // Use same enhanced expense detection logic as categories
+      const isIncomeCategory = category.toLowerCase().includes('income') ||
+                              category.toLowerCase().includes('salary') ||
+                              category.toLowerCase().includes('refund');
+
+      const categoryLower = category.toLowerCase();
+      const isExpenseCategory = !isIncomeCategory && (
+        // Exact matches
+        category === 'Food & Dining' ||
+        category === 'Shopping' ||
+        category === 'Transport' ||
+        category === 'Entertainment' ||
+        category === 'Bills & Utilities' ||
+        category === 'Health & Fitness' ||
+        category === 'Other' ||
+
+        // Flexible matches for common variations
+        categoryLower.includes('food') ||
+        categoryLower.includes('dining') ||
+        categoryLower.includes('restaurant') ||
+        categoryLower.includes('shop') ||
+        categoryLower.includes('retail') ||
+        categoryLower.includes('transport') ||
+        categoryLower.includes('travel') ||
+        categoryLower.includes('taxi') ||
+        categoryLower.includes('uber') ||
+        categoryLower.includes('entertainment') ||
+        categoryLower.includes('movie') ||
+        categoryLower.includes('game') ||
+        categoryLower.includes('bill') ||
+        categoryLower.includes('utilities') ||
+        categoryLower.includes('utility') ||
+        categoryLower.includes('electric') ||
+        categoryLower.includes('gas') ||
+        categoryLower.includes('health') ||
+        categoryLower.includes('fitness') ||
+        categoryLower.includes('gym') ||
+        categoryLower.includes('medical') ||
+        categoryLower.includes('expense') ||
+        categoryLower.includes('purchase') ||
+
+        // Catch remaining non-income categories
+        (categoryLower !== 'income' && categoryLower !== 'salary' && categoryLower !== 'refund')
+      );
+
+      const isExpense = (tx.type === 'debit' || tx.amount < 0) ||
+                       (tx.amount > 0 && isExpenseCategory);
+
+      if (isExpense) {
         const day = dayjs(tx.date).format("DD");
         previousMonthSpending[day] =
           (previousMonthSpending[day] || 0) + Math.abs(tx.amount);
@@ -354,7 +574,7 @@ export default function SpendingPage() {
         setTransactions([]);
       }
 
-      // Load categories after transactions (so we have data to work with)
+      // Load categories after transactions (so we have data to work with) - will be updated when month changes
       const categoriesResponse = await generateCategoriesFromTransactions();
       setCategoryData(categoriesResponse);
 
@@ -368,8 +588,8 @@ export default function SpendingPage() {
     }
   }, []);
 
-  // Generate categories from transactions
-  const generateCategoriesFromTransactions = async () => {
+  // Generate categories from transactions with month-specific budgets
+  const generateCategoriesFromTransactions = async (selectedMonthData?: any) => {
     try {
       // Fetch budget preferences from database
       let categoryBudgets = {};
@@ -377,6 +597,15 @@ export default function SpendingPage() {
         const budgetPreferences = await budgetAPI.getBudgetPreferences();
         categoryBudgets = budgetPreferences?.categoryBudgets || {};
         console.log("✅ Category budgets loaded from database:", categoryBudgets);
+
+        // Award XP for budget review (checking spending against budgets)
+        if (Object.keys(categoryBudgets).length > 0) {
+          try {
+            await awardXPSilently('budget-review');
+          } catch (xpError) {
+            console.error('[SpendingTab] Error awarding budget review XP:', xpError);
+          }
+        }
       } catch (budgetError) {
         console.error("❌ Error fetching budget preferences:", budgetError);
         // Fallback to AsyncStorage if database fails
@@ -402,22 +631,47 @@ export default function SpendingPage() {
       ];
 
       defaultCategories.forEach((cat, index) => {
+        // Calculate dynamic budget based on actual spending patterns
+        let dynamicBudget = 300; // Default fallback
+
+        if (selectedMonthData?.monthlySpentByCategory) {
+          const actualSpending = selectedMonthData.monthlySpentByCategory[cat.name] || 0;
+
+          // If user has spending data for this category, suggest budget based on spending
+          if (actualSpending > 0) {
+            dynamicBudget = Math.max(actualSpending * 1.3, 100); // 30% buffer over actual spending
+          } else {
+            // No spending in this category - suggest smaller budget
+            dynamicBudget = 150;
+          }
+        }
+
         categoryMap.set(cat.name, {
           id: `category-${index}`,
           name: cat.name,
           icon: cat.icon,
           color: cat.color,
-          defaultBudget: categoryBudgets[cat.name] || 500,
+          defaultBudget: categoryBudgets[cat.name] || Math.round(dynamicBudget),
         });
       });
 
-      // Add "Other" category with consistent budget amount
+      // Add "Other" category with dynamic budget
+      let otherBudget = 200; // Default fallback
+      if (selectedMonthData?.monthlySpentByCategory) {
+        const actualOtherSpending = selectedMonthData.monthlySpentByCategory["Other"] || 0;
+        if (actualOtherSpending > 0) {
+          otherBudget = Math.max(actualOtherSpending * 1.3, 100);
+        } else {
+          otherBudget = 100; // Smaller default for "Other" category
+        }
+      }
+
       categoryMap.set("Other", {
         id: "category-other",
         name: "Other",
         icon: "Other",
         color: "#95A5A6",
-        defaultBudget: categoryBudgets["Other"] || 500, // Changed from 100 to 500 for consistency
+        defaultBudget: categoryBudgets["Other"] || Math.round(otherBudget),
       });
 
       return Array.from(categoryMap.values());
@@ -429,11 +683,32 @@ export default function SpendingPage() {
 
   // Category data with monthly spending
   const sortedCategoryData = useMemo(() => {
-    return categoryData.map((cat) => ({
+    const result = categoryData.map((cat) => ({
       ...cat,
       monthlySpent: monthlyData.monthlySpentByCategory[cat.name] || 0,
     })).sort((a, b) => (b.monthlySpent || 0) - (a.monthlySpent || 0));
+
+    // Debug: log category spending data
+    console.log('🐛 [Spending] Category spending data:', {
+      categoryCount: result.length,
+      monthlySpentByCategory: monthlyData.monthlySpentByCategory,
+      sortedCategories: result.slice(0, 3).map(c => ({ name: c.name, spent: c.monthlySpent }))
+    });
+
+    return result;
   }, [categoryData, monthlyData.monthlySpentByCategory]);
+
+  // Debug spending categories data flow
+  useEffect(() => {
+    console.log('🐛 [Spending] Debug info:', {
+      sortedCategoryDataLength: sortedCategoryData.length,
+      monthlyTransactionsLength: monthlyData.monthlyTransactions.length,
+      totalMonthlySpent: monthlyData.monthlyTotalSpent,
+      hasSpendingData: sortedCategoryData.some(c => (c.monthlySpent || 0) > 0),
+      firstCategory: sortedCategoryData[0],
+      firstTransaction: monthlyData.monthlyTransactions[0]
+    });
+  }, [sortedCategoryData, monthlyData]);
 
   // Merchant data with monthly spending
   const sortedMerchantData = useMemo(() => {
@@ -472,6 +747,22 @@ export default function SpendingPage() {
       }),
     ]).start();
   }, [monthlySpentPercentage, animatedProgress, animatedScale]);
+
+  // Regenerate categories with dynamic budgets when month changes
+  useEffect(() => {
+    if (transactions.length > 0) {
+      // Recalculate categories with month-specific budgets
+      const updateCategories = async () => {
+        try {
+          const categoriesResponse = await generateCategoriesFromTransactions(monthlyData);
+          setCategoryData(categoriesResponse);
+        } catch (error) {
+          console.error("❌ Error updating categories for month:", error);
+        }
+      };
+      updateCategories();
+    }
+  }, [selectedMonth, monthlyData]); // Regenerate when month or monthly data changes
 
   // Auto-select most recent month with data when transactions are loaded
   useEffect(() => {
@@ -600,7 +891,7 @@ export default function SpendingPage() {
               </Text>
               <TouchableOpacity
                 style={[styles.emptyStateButton, { backgroundColor: colors.primary[500] }]}
-                onPress={() => router.push('/add-expense')}
+                onPress={() => router.push('/add-transaction')}
                 activeOpacity={0.8}
               >
                 <Ionicons name="add" size={20} color="white" style={styles.emptyStateButtonIcon} />
@@ -705,15 +996,18 @@ export default function SpendingPage() {
 
             {/* Category List */}
             {spendingTab === "categories" && (
-              <SpendingCategoryListClean
-                sortedCategoryData={sortedCategoryData}
-                filteredTransactions={monthlyData.monthlyTransactions}
-                formatAmount={formatAmount}
-                currency="GBP"
-                onCategoryPress={(category) => {
-                  console.log('Category pressed:', category.name);
-                }}
-              />
+              <>
+
+                <SpendingCategoryListClean
+                  sortedCategoryData={sortedCategoryData}
+                  filteredTransactions={monthlyData.monthlyTransactions}
+                  formatAmount={formatAmount}
+                  currency="GBP"
+                  onCategoryPress={(category) => {
+                    console.log('Category pressed:', category.name);
+                  }}
+                />
+              </>
             )}
 
             {/* Merchant List */}

@@ -360,7 +360,7 @@ export default function TransactionsScreen() {
               styles.connectButton,
               { backgroundColor: colors.primary[500] },
             ]}
-            onPress={() => router.push("/add-expense")}
+            onPress={() => router.push("/add-transaction")}
           >
             <Text style={styles.connectButtonText}>Add Expense</Text>
             <Ionicons name="arrow-forward" size={16} color="white" />

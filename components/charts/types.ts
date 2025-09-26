@@ -51,6 +51,9 @@ export interface LineChartProps {
   showGrid?: boolean;
   showPoints?: boolean;
   curveType?: 'linear' | 'bezier';
+  // Theme-aware colors
+  gridColor?: string;
+  labelColor?: string;
 }
 
 export interface AnimationConfig {

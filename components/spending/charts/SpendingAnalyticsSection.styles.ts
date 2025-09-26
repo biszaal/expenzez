@@ -1,5 +1,5 @@
-import { StyleSheet } from 'react-native';
-import { spacing, borderRadius } from '../../../constants/theme';
+import { StyleSheet } from "react-native";
+import { spacing, borderRadius } from "../../../constants/theme";
 
 export const spendingAnalyticsSectionStyles = StyleSheet.create({
   premiumSpendingCardWrapper: {
@@ -7,13 +7,13 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   premiumSpendingCard: {
-    borderRadius: borderRadius['2xl'],
-    shadowColor: '#000',
+    borderRadius: borderRadius["2xl"],
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 3,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   premiumSpendingHeader: {
     paddingHorizontal: spacing.lg,
@@ -21,15 +21,15 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   premiumSpendingHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   premiumAnalyticsIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: spacing.md,
   },
   premiumSpendingHeaderText: {
@@ -37,12 +37,12 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
   },
   premiumSpendingTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 2,
   },
   premiumSpendingSubtitle: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 
   // Chart Section Styles
@@ -55,22 +55,22 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
     padding: spacing.md,
   },
   premiumChartTitleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: spacing.md,
   },
   premiumChartTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   premiumChartLegend: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   premiumChartLegendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   premiumChartLegendDot: {
     width: 8,
@@ -80,27 +80,26 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
   },
   premiumChartLegendText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 
   // Current Value Display Styles
   currentValueContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: spacing.md,
     paddingVertical: spacing.sm,
   },
   currentValue: {
     fontSize: 24,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
+    fontWeight: "700",
   },
   currentValueMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   currentValueLabel: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
     marginLeft: spacing.xs,
   },
 
@@ -108,36 +107,38 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
   enhancedChartContainer: {
     borderRadius: borderRadius.lg,
     padding: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
+
   animatedChartWrapper: {
-    width: '100%',
-    alignItems: 'center',
+    paddingLeft: spacing.sm,
+    width: "100%",
+    alignItems: "center",
   },
 
   // Empty Chart Styles
   premiumEmptyChart: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing['2xl'],
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing["2xl"],
     borderRadius: borderRadius.lg,
   },
   premiumEmptyChartIcon: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing.md,
   },
   premiumEmptyChartTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: spacing.xs,
   },
   premiumEmptyChartSubtitle: {
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

@@ -8,6 +8,15 @@
     "scheme": "expenzez",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "statusBarBackgroundColor": "#000000",
     "description": "Smart expense tracking with AI insights and comprehensive financial management for users.",
     "keywords": [
       "expense",

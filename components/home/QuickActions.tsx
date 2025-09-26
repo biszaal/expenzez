@@ -40,7 +40,7 @@ export const QuickActions: React.FC = () => {
 
         <TouchableOpacity
           style={styles.professionalQuickActionCard}
-          onPress={() => router.push("/add-expense")}
+          onPress={() => router.push("/add-transaction")}
           activeOpacity={0.85}
         >
           <View
@@ -48,32 +48,12 @@ export const QuickActions: React.FC = () => {
           >
             <View style={styles.professionalQuickActionIconContainer}>
               <View style={styles.professionalQuickActionIcon}>
-                <Ionicons name="remove-circle-outline" size={24} color="white" />
+                <Ionicons name="wallet-outline" size={24} color="white" />
               </View>
             </View>
             <View style={styles.professionalQuickActionText}>
-              <Text style={styles.professionalQuickActionTitle}>Add Expense</Text>
-              <Text style={styles.professionalQuickActionSubtitle}>Manual entry</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.professionalQuickActionCard}
-          onPress={() => router.push("/add-income")}
-          activeOpacity={0.85}
-        >
-          <View
-            style={[styles.professionalQuickActionGradient, SHADOWS.lg, { backgroundColor: '#22C55E' }]}
-          >
-            <View style={styles.professionalQuickActionIconContainer}>
-              <View style={styles.professionalQuickActionIcon}>
-                <Ionicons name="add-circle-outline" size={24} color="white" />
-              </View>
-            </View>
-            <View style={styles.professionalQuickActionText}>
-              <Text style={styles.professionalQuickActionTitle}>Add Income</Text>
-              <Text style={styles.professionalQuickActionSubtitle}>Manual entry</Text>
+              <Text style={styles.professionalQuickActionTitle}>Add Transaction</Text>
+              <Text style={styles.professionalQuickActionSubtitle}>Income or expense</Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -117,6 +97,7 @@ export const QuickActions: React.FC = () => {
             </View>
           </View>
         </TouchableOpacity>
+
       </View>
     </View>
   );

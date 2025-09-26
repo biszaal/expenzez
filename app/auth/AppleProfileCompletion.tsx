@@ -26,13 +26,22 @@ export default function AppleProfileCompletion() {
   // Get Apple user info from params
   const appleUser = params.user ? JSON.parse(params.user as string) : null;
 
+  // Auto-generate username from Apple email
+  const generateUsernameFromEmail = (email: string) => {
+    if (!email) return '';
+    const emailPrefix = email.split('@')[0];
+    return emailPrefix.replace(/[^a-zA-Z0-9]/g, '');
+  };
+
   const [formData, setFormData] = useState({
     // Pre-filled from Apple
     name: appleUser?.name || '',
     email: appleUser?.email || '',
-    
+
+    // Auto-generated username from email
+    username: appleUser?.email ? generateUsernameFromEmail(appleUser.email) : '',
+
     // Required fields to collect
-    username: '',
     phone: '',
     address: '',
     city: '',
@@ -210,7 +219,7 @@ export default function AppleProfileCompletion() {
                         Username *
                       </Typography>
                       <TextField
-                        placeholder="Choose a unique username"
+                        placeholder={appleUser?.email ? "Auto-generated from your Apple email" : "Choose a unique username"}
                         value={formData.username}
                         onChangeText={(value) => updateField('username', value)}
                         autoCapitalize="none"
