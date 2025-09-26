@@ -4,6 +4,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { Ionicons } from '@expo/vector-icons';
 import { Typography } from '../ui';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../app/auth/AuthContext';
 import { spacing, borderRadius, layout } from '../../constants/theme';
 
 interface AppleSignInButtonProps {
@@ -12,14 +13,21 @@ interface AppleSignInButtonProps {
   disabled?: boolean;
 }
 
-export const AppleSignInButton: React.FC<AppleSignInButtonProps> = ({ 
-  onPress, 
+export const AppleSignInButton: React.FC<AppleSignInButtonProps> = ({
+  onPress,
   type = 'sign-in',
-  disabled = false 
+  disabled = false
 }) => {
   const { isDark } = useTheme();
+  const { isLoggedIn } = useAuth();
   const [isChecking, setIsChecking] = React.useState(true);
   const [isAvailable, setIsAvailable] = React.useState(false);
+
+  // 🚨 SECURITY: Hide Apple Sign-In if user is already authenticated
+  if (isLoggedIn) {
+    console.log('🚨 [SECURITY] Apple Sign-In hidden - user already authenticated');
+    return null;
+  }
 
   React.useEffect(() => {
     // Only check availability on iOS devices

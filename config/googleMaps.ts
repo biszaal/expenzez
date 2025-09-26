@@ -1,6 +1,6 @@
 // Google Maps API Configuration
 export const GOOGLE_MAPS_CONFIG = {
-  API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || __DEV__ ? 'DEVELOPMENT_PLACEHOLDER_KEY' : '',
+  API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || 'DEVELOPMENT_PLACEHOLDER_KEY',
   
   // Google Places API endpoints
   PLACES_AUTOCOMPLETE_URL: 'https://maps.googleapis.com/maps/api/place/autocomplete/json',

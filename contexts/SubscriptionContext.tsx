@@ -49,12 +49,24 @@ interface SubscriptionContextType {
   daysUntilTrialExpires: number | null;
   refreshSubscription: () => Promise<void>;
   purchaseSubscription: (packageId: string) => Promise<boolean>;
+  purchaseWithOptions: (packageId: string, options?: {preferWeb?: boolean}) => Promise<{
+    success: boolean;
+    method: 'native' | 'web';
+    webUrl?: string;
+    error?: string;
+  }>;
   restorePurchases: () => Promise<boolean>;
   checkFeatureAccess: (feature: keyof SubscriptionFeatures) => boolean;
   incrementUsage: (type: 'aiChats' | 'goals' | 'budgets') => Promise<boolean>;
   getUsageDisplay: (type: 'aiChats' | 'goals' | 'budgets') => string;
   getOfferings: () => Promise<any[]>;
   startTrial: () => Promise<boolean>;
+  getSupportedPaymentMethods: () => {
+    nativePlatformPay: boolean;
+    webPayments: boolean;
+    platformName: string;
+    nativePayName: string;
+  };
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -190,8 +202,16 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const initializeRevenueCat = async () => {
     try {
-      // Initialize RevenueCat with user ID
-      await RevenueCatService.initialize(user?.username);
+      // Initialize RevenueCat with user ID using new error handling
+      const initResult = await RevenueCatService.initialize(user?.username);
+
+      if (!initResult.success) {
+        console.error('❌ [SubscriptionContext] RevenueCat initialization failed:', initResult.error);
+        // Continue with local subscription data, but log the issue
+        return;
+      }
+
+      console.log('✅ [SubscriptionContext] RevenueCat initialized successfully');
 
       // Load subscription status from RevenueCat
       await loadSubscriptionFromRevenueCat();
@@ -474,60 +494,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const purchaseSubscription = async (packageId: string): Promise<boolean> => {
     try {
-      // In development mode, simulate a successful purchase
-      if (process.env.NODE_ENV === 'development' || __DEV__) {
-        console.log('RevenueCat: Simulating successful purchase in development mode');
-
-        const isTrial = packageId === 'trial';
-        const trialEndDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days from now
-        const premiumEndDate = packageId === 'annual'
-          ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-        const updatedSubscription = {
-          ...subscription,
-          tier: isTrial ? 'premium-trial' : (packageId === 'annual' ? 'premium-annual' : 'premium-monthly') as SubscriptionTier,
-          isActive: true,
-          features: PREMIUM_FEATURES,
-          startDate: new Date().toISOString(),
-          trialEndDate: isTrial ? trialEndDate.toISOString() : null,
-          endDate: isTrial ? trialEndDate.toISOString() : premiumEndDate.toISOString(),
-        };
-
-        setSubscription(updatedSubscription);
-
-        // Save to backend/database for persistence (but don't fail the trial if this fails)
-        let backendSaveSucceeded = false;
-        try {
-          await saveSubscriptionToDatabase(updatedSubscription);
-          backendSaveSucceeded = true;
-          console.log('📊 Subscription trial activated and saved to database');
-        } catch (saveError: any) {
-          if (saveError.name === 'SUBSCRIPTION_SAVE_AUTH_FAILED') {
-            console.warn('⚠️ Subscription trial activated locally but database save failed due to authentication');
-            console.warn('🔄 Trial will work locally using backup storage, database sync will be retried later');
-          } else {
-            console.warn('⚠️ Subscription trial activated locally but failed to save to database:', saveError);
-            console.warn('🔄 Trial will work locally, database sync will be retried later');
-          }
-          // Don't throw - the trial activation should succeed even if database save fails
-        }
-
-        // Also save to AsyncStorage as backup for persistence
-        try {
-          const AsyncStorage = await import('@react-native-async-storage/async-storage');
-          await AsyncStorage.default.setItem('subscription_backup', JSON.stringify({
-            ...updatedSubscription,
-            backendSynced: backendSaveSucceeded,
-            lastUpdated: new Date().toISOString()
-          }));
-          console.log('💾 Subscription backup saved to local storage');
-        } catch (localSaveError) {
-          console.warn('⚠️ Failed to save subscription backup locally:', localSaveError);
-        }
-
-        return true;
-      }
+      console.log('🛒 Starting purchase for package:', packageId);
 
       const offerings = await RevenueCatService.getCurrentOffering();
       if (!offerings) {
@@ -569,12 +536,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const restorePurchases = async (): Promise<boolean> => {
     try {
-      // In development mode, simulate no previous purchases to restore
-      if (process.env.NODE_ENV === 'development' || __DEV__) {
-        console.log('RevenueCat: Simulating no purchases to restore in development mode');
-        return false;
-      }
-
+      console.log('🔄 Restoring purchases...');
       const result = await RevenueCatService.restorePurchases();
 
       if (result.success) {
@@ -632,6 +594,56 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error('Error getting offerings:', error);
       return [];
     }
+  };
+
+  // New method for enhanced purchase options with Apple/Google Pay support
+  const purchaseWithOptions = async (packageId: string, options?: {preferWeb?: boolean}) => {
+    try {
+      const userId = user?.username || user?.id || 'anonymous';
+
+      console.log('🛍️ [SubscriptionContext] Purchase with options:', {
+        packageId,
+        preferWeb: options?.preferWeb,
+        userId
+      });
+
+      const result = await RevenueCatService.purchaseWithOptions(packageId, {
+        preferWeb: options?.preferWeb,
+        userId
+      });
+
+      // If web purchase was successful, return web URL for user to complete purchase
+      if (result.success && result.method === 'web' && result.webUrl) {
+        console.log('🌐 [SubscriptionContext] Web purchase URL generated:', result.webUrl);
+        return result;
+      }
+
+      // If native purchase was successful, update local state
+      if (result.success && result.method === 'native') {
+        console.log('📱 [SubscriptionContext] Native purchase completed successfully');
+        await loadSubscriptionFromRevenueCat();
+        return { success: true, method: 'native' as const };
+      }
+
+      return {
+        success: false,
+        method: 'native' as const,
+        error: result.error || 'Purchase failed'
+      };
+
+    } catch (error: any) {
+      console.error('❌ [SubscriptionContext] Purchase with options failed:', error);
+      return {
+        success: false,
+        method: 'native' as const,
+        error: error?.message || 'Unknown purchase error'
+      };
+    }
+  };
+
+  // Get supported payment methods for current platform
+  const getSupportedPaymentMethods = () => {
+    return RevenueCatService.getSupportedPaymentMethods();
   };
 
   const checkFeatureAccess = (feature: keyof SubscriptionFeatures): boolean => {
@@ -707,12 +719,14 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
     daysUntilTrialExpires,
     refreshSubscription,
     purchaseSubscription,
+    purchaseWithOptions,
     restorePurchases,
     checkFeatureAccess,
     incrementUsage,
     getUsageDisplay,
     getOfferings,
     startTrial,
+    getSupportedPaymentMethods,
   };
 
   return (
@@ -742,12 +756,19 @@ export const useSubscription = (): SubscriptionContextType => {
       daysUntilTrialExpires: null,
       refreshSubscription: async () => {},
       purchaseSubscription: async () => false,
+      purchaseWithOptions: async () => ({ success: false, method: 'native' }),
       restorePurchases: async () => false,
       getOfferings: async () => [],
       checkFeatureAccess: () => false,
       incrementUsage: async () => false,
       getUsageDisplay: () => "0/0",
       startTrial: async () => false,
+      getSupportedPaymentMethods: () => ({
+        nativePlatformPay: true,
+        webPayments: false,
+        platformName: 'Unknown',
+        nativePayName: 'Platform Pay'
+      }),
     };
   }
   return context;

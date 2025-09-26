@@ -77,7 +77,22 @@ export default function Login() {
         // Debug: Log the result error for debugging
         console.log("Login failed with error:", result.error);
 
-        // Check if it's an email verification error before showing generic error
+        // Check if it's an email verification error using the new flag
+        if (result.needsEmailVerification) {
+          console.log("Detected email verification error, redirecting to EmailVerification page");
+          // Immediately redirect to email verification
+          router.replace({
+            pathname: "/auth/EmailVerification",
+            params: {
+              email: result.email || (identifier.includes("@") ? identifier : ""),
+              username: result.username || (!identifier.includes("@") ? identifier : ""),
+              message: "Please verify your email to complete login.",
+            },
+          });
+          return;
+        }
+
+        // Check if it's an email verification error from error message (fallback)
         if (
           result.error &&
           (result.error.toLowerCase().includes("not confirmed") ||
@@ -86,7 +101,7 @@ export default function Login() {
             result.error.toLowerCase().includes("email address not verified"))
         ) {
           console.log(
-            "Detected email verification error, redirecting to EmailVerification page"
+            "Detected email verification error from message, redirecting to EmailVerification page"
           );
           // Immediately redirect to email verification
           router.replace({
@@ -108,19 +123,22 @@ export default function Login() {
 
       // Check for email verification error first - redirect immediately
       if (
+        error.statusCode === 403 ||
         error.response?.status === 403 ||
+        error.isEmailNotVerified ||
         error.response?.data?.error === "UserNotConfirmedException" ||
-        error.response?.data?.message
-          ?.toLowerCase()
-          .includes("not confirmed") ||
+        error.response?.data?.message?.toLowerCase().includes("not confirmed") ||
         error.response?.data?.message?.toLowerCase().includes("not verified") ||
-        error.response?.data?.message?.toLowerCase().includes("verify")
+        error.response?.data?.message?.toLowerCase().includes("verify") ||
+        error.message?.toLowerCase().includes("not verified")
       ) {
         // Immediately redirect to email verification without showing error
+        console.log("Detected email verification error in catch block, redirecting");
         router.replace({
           pathname: "/auth/EmailVerification",
           params: {
             email: identifier.includes("@") ? identifier : "",
+            username: !identifier.includes("@") ? identifier : "",
             message: "Please verify your email to complete login.",
           },
         });
@@ -153,6 +171,12 @@ export default function Login() {
   const handleAppleLogin = async () => {
     try {
       setIsLoading(true);
+
+      // 🚨 SECURITY: Clear all existing tokens before Apple Sign-In to prevent data leakage
+      console.log('🚨 [Login] SECURITY: Clearing all tokens before Apple Sign-In');
+      const { tokenManager } = await import('../../services/tokenManager');
+      await tokenManager.clearAllTokens();
+
       const credential = await handleAppleSignIn();
       
       if (!credential) {

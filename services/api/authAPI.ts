@@ -13,15 +13,18 @@ export const authAPI = {
       }
       return { exists: false };
     } catch (error: any) {
-      // Handle network errors first (no response)
-      if (!error.response) {
-        console.error("Username check network error:", error.message);
+      // Handle transformed errors from API client (check for statusCode in error object)
+      const statusCode = error.statusCode || error.response?.status;
+
+      // Handle network errors (no status code and no response)
+      if (!statusCode && !error.response) {
+        console.log("Username check network error:", error.message);
         // For network errors, assume username is available but show warning
         return { exists: false, error: "Network error. Username availability unknown." };
       }
 
       // If main API returns 404, try the fallback auth API Gateway
-      if (error.response?.status === 404) {
+      if (statusCode === 404 || error.response?.status === 404) {
         try {
           const fallbackResponse = await axios.post(
             "https://a95uq2n8k7.execute-api.eu-west-2.amazonaws.com/auth/check-user-status",
@@ -40,8 +43,9 @@ export const authAPI = {
         } catch (fallbackError: any) {
           // Handle network errors in fallback
           if (!fallbackError.response) {
-            console.error("Username check fallback network error:", fallbackError.message);
-            return { exists: false, error: "Network error. Username availability unknown." };
+            console.log("Username check fallback network error:", fallbackError.message);
+            // Both APIs are down - allow registration to proceed but warn user
+            return { exists: false, error: "Cannot verify username availability. Proceeding with registration." };
           }
 
           // Handle specific error status codes from the checkUserStatus Lambda
@@ -59,13 +63,13 @@ export const authAPI = {
           console.error("Username check fallback error:", fallbackError);
           return { exists: false, error: "Unable to verify username availability" };
         }
-      } else if (error.response?.data?.error === "UserNotFoundException") {
+      } else if (error.response?.data?.error === "UserNotFoundException" || error.details?.originalError?.includes("UserNotFoundException")) {
         // User not found - username is available
         return { exists: false };
-      } else if (error.response?.status === 400 && error.response?.data?.message?.includes("username")) {
+      } else if ((statusCode === 400 || error.response?.status === 400) && (error.response?.data?.message?.includes("username") || error.message?.includes("username"))) {
         // Missing or invalid username parameter
         return { exists: false, error: "Invalid username format" };
-      } else if (error.response?.status >= 500) {
+      } else if ((statusCode >= 500 || error.response?.status >= 500)) {
         // Server error
         return { exists: false, error: "Server error. Please try again." };
       }
@@ -136,6 +140,52 @@ export const authAPI = {
         data: error.response?.data,
         url: error.config?.url,
       });
+
+      // Check if this is a 403 (likely email not verified) and suggest verification
+      if (error.response?.status === 403) {
+        const errorData = error.response?.data;
+        console.log("🔍 403 Error details:", errorData);
+
+        // If it's UserNotConfirmedException, provide helpful message
+        if (errorData?.error === 'UserNotConfirmedException' || errorData?.message?.includes('not verified')) {
+          const enhancedError = new Error('Email address not verified. Please check your email and verify your account.');
+          (enhancedError as any).response = error.response;
+          (enhancedError as any).statusCode = 403;
+          (enhancedError as any).isEmailNotVerified = true;
+          throw enhancedError;
+        }
+
+        // For any other 403 error, also check if it might be email verification related
+        const enhancedError = new Error(errorData?.message || 'Access denied. This may be due to email verification required.');
+        (enhancedError as any).response = error.response;
+        (enhancedError as any).statusCode = 403;
+        (enhancedError as any).isEmailNotVerified = true; // Assume 403 is email verification
+        throw enhancedError;
+      }
+
+      // If main API returns 404, try the dedicated auth API Gateway
+      if (error.response?.status === 404 || error.statusCode === 404) {
+        try {
+          // Use dedicated auth API Gateway for login
+          const authResponse = await axios.post(
+            "https://u5f7pmlt88.execute-api.eu-west-2.amazonaws.com/auth/login",
+            credentials,
+            {
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              timeout: 15000, // 15 second timeout for login
+            }
+          );
+          console.log('🔍 [authAPI] Fallback login successful');
+          return authResponse.data;
+        } catch (fallbackError: any) {
+          console.error("Login fallback failed:", fallbackError);
+          // Re-throw original error if fallback also fails
+          throw error;
+        }
+      }
+
       throw error;
     }
   },
@@ -146,8 +196,33 @@ export const authAPI = {
   },
 
   confirmSignUp: async (data: { username: string; code: string }) => {
-    const response = await api.post("/auth/confirm-signup", data);
-    return response.data;
+    try {
+      const response = await api.post("/auth/confirm-signup", data);
+      return response.data;
+    } catch (error: any) {
+      // If main API returns 404, try the dedicated auth API Gateway
+      if (error.response?.status === 404 || error.statusCode === 404) {
+        try {
+          // Use dedicated auth API Gateway for email confirmation
+          const authResponse = await axios.post(
+            "https://u5f7pmlt88.execute-api.eu-west-2.amazonaws.com/auth/confirm-signup",
+            data,
+            {
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              timeout: 15000, // 15 second timeout for verification
+            }
+          );
+          return authResponse.data;
+        } catch (fallbackError: any) {
+          console.error("Email confirmation fallback failed:", fallbackError);
+          // Re-throw original error if fallback also fails
+          throw error;
+        }
+      }
+      throw error;
+    }
   },
 
   resendVerification: async (data: { email?: string; username?: string }) => {

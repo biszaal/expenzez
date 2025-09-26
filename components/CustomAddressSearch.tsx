@@ -75,7 +75,17 @@ export default function CustomAddressSearch({
 
     try {
       setLoading(true);
-      
+
+      // Check if API key is available
+      if (!GOOGLE_MAPS_CONFIG.API_KEY || GOOGLE_MAPS_CONFIG.API_KEY === 'DEVELOPMENT_PLACEHOLDER_KEY') {
+        console.warn('Google Maps API key not configured. Address search disabled.');
+        onError('Address search is currently unavailable. Please enter your address manually.');
+        setSuggestions([]);
+        setShowSuggestions(false);
+        setLoading(false);
+        return;
+      }
+
       // Try multiple search strategies for better coverage (fixed types parameter)
       const searchStrategies = [
         {

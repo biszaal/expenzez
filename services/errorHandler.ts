@@ -486,7 +486,10 @@ class ErrorHandlerService {
     // Check if this is a development endpoint that's expected to fail
     const isSecurityEndpoint = context?.endpoint?.includes('/security/');
     const isNotificationEndpoint = context?.endpoint?.includes('/notifications/');
-    const isDevelopmentEndpoint = isSecurityEndpoint || isNotificationEndpoint;
+    const isUsernameCheckEndpoint = context?.endpoint?.includes('/auth/check-user-status');
+    const isEmailConfirmEndpoint = context?.endpoint?.includes('/auth/confirm-signup');
+    const isLoginEndpoint = context?.endpoint?.includes('/auth/login');
+    const isDevelopmentEndpoint = isSecurityEndpoint || isNotificationEndpoint || isUsernameCheckEndpoint || isEmailConfirmEndpoint || isLoginEndpoint;
     
     // Skip logging development endpoint errors in development (404s, timeouts)
     if (isDevelopmentEndpoint && (error.statusCode === 404 || error.code === 'REQUEST_TIMEOUT')) {

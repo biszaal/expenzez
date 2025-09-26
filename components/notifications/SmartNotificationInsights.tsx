@@ -139,7 +139,7 @@ export const SmartNotificationInsights: React.FC = () => {
           title: '📱 Quick Check-in',
           message: 'How has your spending been today? Track your expenses to stay on top of your budget.',
           actionText: 'Add Expense',
-          actionRoute: '/add-income',
+          actionRoute: '/add-transaction',
           priority: 'low',
           icon: 'add',
           color: colors.primary.main

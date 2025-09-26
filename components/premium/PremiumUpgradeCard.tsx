@@ -6,7 +6,6 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSubscription } from '../../contexts/SubscriptionContext';
@@ -41,12 +40,6 @@ export const PremiumUpgradeCard: React.FC<PremiumUpgradeCardProps> = ({
     }
   };
 
-  const getTrialText = () => {
-    if (isTrialActive && daysUntilTrialExpires) {
-      return `Trial ends in ${daysUntilTrialExpires} day${daysUntilTrialExpires !== 1 ? 's' : ''}`;
-    }
-    return "Start your free trial";
-  };
 
   const styles = createStyles(colors, compact);
 
@@ -57,18 +50,15 @@ export const PremiumUpgradeCard: React.FC<PremiumUpgradeCardProps> = ({
         onPress={handlePress}
         activeOpacity={0.8}
       >
-        <LinearGradient
-          colors={['rgba(245, 158, 11, 0.1)', 'rgba(245, 158, 11, 0.05)']}
-          style={styles.compactGradient}
-        >
+        <View style={styles.compactGradient}>
           <View style={styles.compactContent}>
-            <Ionicons name="diamond" size={20} color="#F59E0B" />
+            <Ionicons name="diamond" size={20} color={colors.primary.main} />
             <Text style={styles.compactText}>
               {feature ? `Premium: ${feature}` : 'Get Premium'}
             </Text>
-            <Ionicons name="arrow-forward" size={16} color="#F59E0B" />
+            <Ionicons name="arrow-forward" size={16} color={colors.primary.main} />
           </View>
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
     );
   }
@@ -79,22 +69,15 @@ export const PremiumUpgradeCard: React.FC<PremiumUpgradeCardProps> = ({
       onPress={handlePress}
       activeOpacity={0.8}
     >
-      <LinearGradient
-        colors={[colors.primary[500], colors.primary[600], colors.accent.main]}
-        style={styles.gradient}
-      >
+      <View style={styles.cardContent}>
         <View style={styles.content}>
           <View style={styles.iconContainer}>
-            <Ionicons name="diamond" size={32} color="white" />
+            <Ionicons name="diamond" size={32} color={colors.primary[600]} />
           </View>
 
           <View style={styles.textContainer}>
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.description}>{description}</Text>
-
-            {isTrialActive && (
-              <Text style={styles.trialText}>{getTrialText()}</Text>
-            )}
           </View>
 
           <View style={styles.actionContainer}>
@@ -103,15 +86,14 @@ export const PremiumUpgradeCard: React.FC<PremiumUpgradeCardProps> = ({
               <Text style={styles.savingsText}>Save 17% annually</Text>
             </View>
 
-            <View style={styles.upgradeButton}>
+            <TouchableOpacity style={styles.upgradeButton} onPress={handlePress}>
               <Text style={styles.upgradeButtonText}>
-                {isTrialActive ? 'Upgrade Now' : 'Try Free'}
+                {isTrialActive ? 'Upgrade' : 'Try Free →'}
               </Text>
-              <Ionicons name="arrow-forward" size={16} color="white" />
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
-      </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 };
@@ -129,13 +111,20 @@ const createStyles = (colors: any, compact: boolean) => StyleSheet.create({
     overflow: 'hidden',
   },
 
-  gradient: {
+  cardContent: {
+    backgroundColor: colors.background.primary,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    borderRadius: borderRadius.xl,
     padding: spacing.lg,
   },
 
   compactGradient: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
+    backgroundColor: colors.primary[50],
+    borderWidth: 1,
+    borderColor: colors.primary[200],
   },
 
   content: {
@@ -153,7 +142,7 @@ const createStyles = (colors: any, compact: boolean) => StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: colors.primary[50],
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -167,20 +156,20 @@ const createStyles = (colors: any, compact: boolean) => StyleSheet.create({
   title: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold as any,
-    color: 'white',
+    color: colors.text.primary,
     marginBottom: spacing.xs,
   },
 
   description: {
     fontSize: typography.sizes.base,
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: colors.text.secondary,
     lineHeight: 20,
     marginBottom: spacing.xs,
   },
 
   trialText: {
     fontSize: typography.sizes.sm,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: colors.text.tertiary,
     fontWeight: typography.weights.semibold as any,
   },
 
@@ -195,23 +184,20 @@ const createStyles = (colors: any, compact: boolean) => StyleSheet.create({
 
   priceText: {
     fontSize: typography.sizes.sm,
-    color: 'white',
+    color: colors.text.primary,
     fontWeight: typography.weights.semibold as any,
   },
 
   savingsText: {
     fontSize: typography.sizes.xs,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: colors.text.tertiary,
   },
 
   upgradeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: colors.primary[600],
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.lg,
-    gap: spacing.xs,
   },
 
   upgradeButtonText: {
@@ -223,7 +209,7 @@ const createStyles = (colors: any, compact: boolean) => StyleSheet.create({
   compactText: {
     fontSize: typography.sizes.base,
     fontWeight: typography.weights.semibold as any,
-    color: '#F59E0B',
+    color: colors.primary.main,
     flex: 1,
     marginLeft: spacing.sm,
   },
