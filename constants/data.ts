@@ -164,7 +164,7 @@ export const QUICK_ACTIONS = [
     subtitle: "Record income",
     icon: "arrow-up-circle-outline",
     color: "#10B981",
-    route: "/add-income",
+    route: "/add-transaction",
   },
   {
     id: "import-csv",

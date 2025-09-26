@@ -7,47 +7,73 @@ import Purchases, {
 } from 'react-native-purchases';
 import { Platform } from 'react-native';
 
+// RevenueCat API Keys - Replace with your actual keys from RevenueCat Dashboard
+// Get these from: https://app.revenuecat.com/apps -> Your App -> API Keys
 const REVENUECAT_API_KEY = {
-  ios: 'appl_YOUR_IOS_API_KEY', // Replace with actual iOS API key from RevenueCat dashboard
-  android: 'goog_YOUR_ANDROID_API_KEY' // Replace with actual Android API key from RevenueCat dashboard
+  // iOS API Key format: appl_xxxxxxxxxxxxxxxxxxxxxxxx
+  ios: process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY || 'appl_YOUR_IOS_API_KEY',
+  // Android API Key format: goog_xxxxxxxxxxxxxxxxxxxxxxxx
+  android: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY || 'goog_YOUR_ANDROID_API_KEY'
 };
 
-// Development mode flag
-const DEVELOPMENT_MODE = __DEV__ || !REVENUECAT_API_KEY.ios.startsWith('appl_') || !REVENUECAT_API_KEY.android.startsWith('goog_');
+// Development mode - automatically detect if using placeholder keys
+const DEVELOPMENT_MODE = __DEV__ ||
+  REVENUECAT_API_KEY.ios === 'appl_YOUR_IOS_API_KEY' ||
+  REVENUECAT_API_KEY.android === 'goog_YOUR_ANDROID_API_KEY';
 
 export class RevenueCatService {
   private static initialized = false;
 
-  static async initialize(userId?: string): Promise<void> {
-    if (this.initialized) return;
+  static async initialize(userId?: string): Promise<{success: boolean; error?: string}> {
+    if (this.initialized) return { success: true };
 
     try {
+      // Handle development mode
       if (DEVELOPMENT_MODE) {
-        console.log('RevenueCat: Running in development mode, using mock initialization');
+        console.log('🧪 [RevenueCat] Running in development mode with mock services');
+        console.log('💡 [RevenueCat] To use real payments, set EXPO_PUBLIC_REVENUECAT_IOS_API_KEY and EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY');
         this.initialized = true;
-        return;
+        return { success: true };
       }
 
       const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY.ios : REVENUECAT_API_KEY.android;
 
-      await Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+      // Validate API key format
+      const expectedPrefix = Platform.OS === 'ios' ? 'appl_' : 'goog_';
+      if (!apiKey.startsWith(expectedPrefix)) {
+        const error = `Invalid ${Platform.OS} API key format. Expected: ${expectedPrefix}xxxxxxxxx`;
+        console.error('❌ [RevenueCat]', error);
+        return { success: false, error };
+      }
+
+      // Configure RevenueCat
+      await Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.INFO);
       await Purchases.configure({ apiKey });
 
+      // Login user if provided
       if (userId) {
-        await Purchases.logIn(userId);
+        const loginResult = await this.logIn(userId);
+        if (!loginResult.success) {
+          console.warn('⚠️ [RevenueCat] User login failed, continuing anonymously:', loginResult.error);
+        }
       }
 
       this.initialized = true;
-      console.log('RevenueCat initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize RevenueCat:', error);
-      // In development, don't throw error to allow app to continue
+      console.log('✅ [RevenueCat] Initialized successfully for', Platform.OS);
+      return { success: true };
+
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Unknown initialization error';
+      console.error('❌ [RevenueCat] Initialization failed:', errorMessage);
+
+      // In development, allow app to continue with mock services
       if (DEVELOPMENT_MODE) {
-        console.log('RevenueCat: Continuing in development mode despite error');
+        console.log('🧪 [RevenueCat] Falling back to development mode');
         this.initialized = true;
-      } else {
-        throw error;
+        return { success: true };
       }
+
+      return { success: false, error: errorMessage };
     }
   }
 
@@ -68,13 +94,50 @@ export class RevenueCatService {
   static async getCurrentOffering(): Promise<PurchasesOffering | null> {
     try {
       if (DEVELOPMENT_MODE) {
-        console.log('RevenueCat: Returning mock current offering for development');
-        return null;
+        console.log('🧪 [RevenueCat] Returning mock current offering for development');
+        // Return mock offering for development
+        return {
+          identifier: 'default',
+          serverDescription: 'Default Offering',
+          metadata: {},
+          availablePackages: [
+            {
+              identifier: 'monthly',
+              packageType: 'MONTHLY',
+              product: {
+                identifier: 'premium-monthly',
+                description: 'Monthly Premium Subscription',
+                title: 'Premium Monthly',
+                price: 4.99,
+                priceString: '£4.99',
+                currencyCode: 'GBP',
+                introPrice: null,
+                discounts: []
+              },
+              offeringIdentifier: 'default'
+            },
+            {
+              identifier: 'annual',
+              packageType: 'ANNUAL',
+              product: {
+                identifier: 'premium-annual',
+                description: 'Annual Premium Subscription',
+                title: 'Premium Annual',
+                price: 49.99,
+                priceString: '£49.99',
+                currencyCode: 'GBP',
+                introPrice: null,
+                discounts: []
+              },
+              offeringIdentifier: 'default'
+            }
+          ]
+        } as any;
       }
       const offerings = await Purchases.getOfferings();
       return offerings.current;
     } catch (error) {
-      console.error('Failed to get current offering:', error);
+      console.error('❌ [RevenueCat] Failed to get current offering:', error);
       return null;
     }
   }
@@ -212,6 +275,129 @@ export class RevenueCatService {
 
   static removeCustomerInfoUpdateListener(callback: (customerInfo: CustomerInfo) => void): void {
     Purchases.removeCustomerInfoUpdateListener(callback);
+  }
+
+  /**
+   * Generate web purchase link for Apple/Google Pay support
+   * This allows users to purchase via web with lower fees (2.9% vs 15-30%)
+   */
+  static async generateWebPurchaseLink(packageIdentifier: string, userId?: string): Promise<{success: boolean; url?: string; error?: string}> {
+    try {
+      if (DEVELOPMENT_MODE) {
+        console.log('🧪 [RevenueCat] Mock web purchase link generated for:', packageIdentifier);
+        return {
+          success: true,
+          url: `https://pay.rev.cat/demo-purchase?package=${packageIdentifier}&user=${userId || 'anonymous'}`
+        };
+      }
+
+      // Note: In production, you would use RevenueCat's actual web purchase API
+      // For now, we'll construct the expected URL format based on RevenueCat docs
+      const baseUrl = 'https://pay.rev.cat';
+      const params = new URLSearchParams();
+
+      if (userId) params.append('user_id', userId);
+      params.append('package', packageIdentifier);
+
+      const webUrl = `${baseUrl}?${params.toString()}`;
+
+      console.log('🌐 [RevenueCat] Web purchase link generated:', webUrl);
+      return { success: true, url: webUrl };
+
+    } catch (error: any) {
+      console.error('❌ [RevenueCat] Failed to generate web purchase link:', error);
+      return { success: false, error: error?.message || 'Unknown error' };
+    }
+  }
+
+  /**
+   * Check if Apple Pay is available on device
+   */
+  static isApplePayAvailable(): boolean {
+    return Platform.OS === 'ios';
+  }
+
+  /**
+   * Check if Google Pay is available on device
+   */
+  static isGooglePayAvailable(): boolean {
+    return Platform.OS === 'android';
+  }
+
+  /**
+   * Get supported payment methods for current platform
+   */
+  static getSupportedPaymentMethods(): {
+    nativePlatformPay: boolean;
+    webPayments: boolean;
+    platformName: string;
+    nativePayName: string;
+  } {
+    const isIOS = Platform.OS === 'ios';
+
+    return {
+      nativePlatformPay: true, // StoreKit/Google Play always available
+      webPayments: true, // Web payments available via RevenueCat
+      platformName: isIOS ? 'iOS' : 'Android',
+      nativePayName: isIOS ? 'Apple Pay' : 'Google Pay'
+    };
+  }
+
+  /**
+   * Enhanced purchase flow that provides payment method options
+   */
+  static async purchaseWithOptions(packageIdentifier: string, options?: {
+    preferWeb?: boolean;
+    userId?: string;
+  }): Promise<{
+    success: boolean;
+    method: 'native' | 'web';
+    customerInfo?: CustomerInfo;
+    webUrl?: string;
+    error?: string;
+  }> {
+    try {
+      const { preferWeb = false, userId } = options || {};
+
+      // If web is preferred and available, generate web purchase link
+      if (preferWeb) {
+        const webResult = await this.generateWebPurchaseLink(packageIdentifier, userId);
+        if (webResult.success && webResult.url) {
+          return {
+            success: true,
+            method: 'web',
+            webUrl: webResult.url
+          };
+        }
+      }
+
+      // Fall back to native purchase
+      const offerings = await this.getCurrentOffering();
+      if (!offerings) {
+        return { success: false, method: 'native', error: 'No offerings available' };
+      }
+
+      const packageToPurchase = offerings.availablePackages.find(pkg => pkg.identifier === packageIdentifier);
+      if (!packageToPurchase) {
+        return { success: false, method: 'native', error: 'Package not found' };
+      }
+
+      const purchaseResult = await this.purchasePackage(packageToPurchase);
+
+      return {
+        success: purchaseResult.success,
+        method: 'native',
+        customerInfo: purchaseResult.customerInfo,
+        error: purchaseResult.error?.message
+      };
+
+    } catch (error: any) {
+      return {
+        success: false,
+        method: 'native',
+        error: error?.message || 'Unknown purchase error'
+      };
+    }
   }
 }
 

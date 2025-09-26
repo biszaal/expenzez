@@ -43,6 +43,8 @@ export const LineChart: React.FC<LineChartProps> = ({
   showGrid = true,
   showPoints = true,
   curveType = 'bezier',
+  gridColor = '#888',
+  labelColor = '#888',
 }) => {
   // Animation values
   const pathAnimationProgress = useSharedValue(0);
@@ -451,7 +453,7 @@ export const LineChart: React.FC<LineChartProps> = ({
                     x={dimensions.paddingHorizontal - 15}
                     y={y + 4}
                     fontSize={11}
-                    fill="#888"
+                    fill={labelColor}
                     textAnchor="end"
                     fontWeight="500"
                   >
@@ -471,7 +473,7 @@ export const LineChart: React.FC<LineChartProps> = ({
                       x={point.x}
                       y={dimensions.height - 8}
                       fontSize={10}
-                      fill="#888"
+                      fill={labelColor}
                       textAnchor="middle"
                       fontWeight="500"
                     >

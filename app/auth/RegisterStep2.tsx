@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity, Platform, StyleSheet } from "react-native";
+import { View, TouchableOpacity, Platform, StyleSheet, Modal } from "react-native";
 import { Button, Typography } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
 import { spacing, borderRadius } from "../../constants/theme";
@@ -20,14 +20,34 @@ export default function RegisterStep2({
 }: any) {
   const { colors } = useTheme();
   const [showDatePicker, setShowDatePicker] = useState(false);
-  
+  const [tempDate, setTempDate] = useState(values.dob ? new Date(values.dob) : new Date());
+
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || (values.dob ? new Date(values.dob) : new Date());
-    setShowDatePicker(false);
-    
-    // Format date as YYYY-MM-DD
-    const formattedDate = currentDate.toISOString().split('T')[0];
+    if (Platform.OS === 'android') {
+      // On Android, automatically close and save
+      const currentDate = selectedDate || tempDate;
+      setShowDatePicker(false);
+      const formattedDate = currentDate.toISOString().split('T')[0];
+      onChange("dob", formattedDate);
+    } else {
+      // On iOS, just update the temp date, don't close picker
+      if (selectedDate) {
+        setTempDate(selectedDate);
+      }
+    }
+  };
+
+  const handleDateConfirm = () => {
+    // Save the selected date
+    const formattedDate = tempDate.toISOString().split('T')[0];
     onChange("dob", formattedDate);
+    setShowDatePicker(false);
+  };
+
+  const handleDateCancel = () => {
+    // Reset to original date and close
+    setTempDate(values.dob ? new Date(values.dob) : new Date());
+    setShowDatePicker(false);
   };
 
   const handleNext = () => {
@@ -42,6 +62,12 @@ export default function RegisterStep2({
   maxDate.setFullYear(maxDate.getFullYear() - 13); // Minimum age 13
   const minDate = new Date();
   minDate.setFullYear(minDate.getFullYear() - 120); // Maximum age 120
+
+  // Update tempDate when showDatePicker is opened
+  const openDatePicker = () => {
+    setTempDate(values.dob ? new Date(values.dob) : new Date());
+    setShowDatePicker(true);
+  };
 
   return (
     <View style={styles.container}>
@@ -87,7 +113,7 @@ export default function RegisterStep2({
             Date of Birth
           </Typography>
           <TouchableOpacity
-            onPress={() => setShowDatePicker(true)}
+            onPress={openDatePicker}
             style={StyleSheet.flatten([styles.dateInput, {
               backgroundColor: colors.background.tertiary,
               borderColor: colors.border.medium,
@@ -158,13 +184,56 @@ export default function RegisterStep2({
       </View>
 
       {/* Date Picker Modal */}
-      {showDatePicker && (
+      {showDatePicker && Platform.OS === 'ios' && (
+        <Modal
+          visible={showDatePicker}
+          transparent={true}
+          animationType="slide"
+        >
+          <View style={styles.modalOverlay}>
+            <View style={StyleSheet.flatten([styles.modalContent, { backgroundColor: colors.background.primary }])}>
+              {/* Modal Header */}
+              <View style={StyleSheet.flatten([styles.modalHeader, { borderBottomColor: colors.border.light }])}>
+                <TouchableOpacity onPress={handleDateCancel}>
+                  <Typography variant="body" style={{ color: colors.primary.main }}>
+                    Cancel
+                  </Typography>
+                </TouchableOpacity>
+                <Typography variant="body" style={{ color: colors.text.primary }} weight="medium">
+                  Select Date
+                </Typography>
+                <TouchableOpacity onPress={handleDateConfirm}>
+                  <Typography variant="body" style={{ color: colors.primary.main }} weight="medium">
+                    Done
+                  </Typography>
+                </TouchableOpacity>
+              </View>
+
+              {/* Date Picker */}
+              <DateTimePicker
+                testID="dateTimePicker"
+                value={tempDate}
+                mode="date"
+                is24Hour={true}
+                display="spinner"
+                onChange={handleDateChange}
+                maximumDate={maxDate}
+                minimumDate={minDate}
+                style={styles.datePicker}
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Android Date Picker */}
+      {showDatePicker && Platform.OS === 'android' && (
         <DateTimePicker
           testID="dateTimePicker"
-          value={selectedDate}
+          value={tempDate}
           mode="date"
           is24Hour={true}
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          display="default"
           onChange={handleDateChange}
           maximumDate={maxDate}
           minimumDate={minDate}
@@ -290,5 +359,26 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingVertical: spacing.sm + 2,
     minHeight: 44,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '50%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+  },
+  datePicker: {
+    height: 200,
   },
 });

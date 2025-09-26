@@ -6,19 +6,14 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
-  Animated,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSubscription } from '../../contexts/SubscriptionContext';
 import { spacing, borderRadius, typography } from '../../constants/theme';
-
-const { width } = Dimensions.get('window');
 
 interface PremiumFeature {
   icon: string;
@@ -26,7 +21,6 @@ interface PremiumFeature {
   description: string;
   freeLimit?: string;
   premiumLimit: string;
-  gradient: string[];
 }
 
 const PREMIUM_FEATURES: PremiumFeature[] = [
@@ -36,7 +30,6 @@ const PREMIUM_FEATURES: PremiumFeature[] = [
     description: 'Get personalized financial advice, insights, and recommendations anytime',
     freeLimit: '3 chats/month',
     premiumLimit: 'Unlimited conversations',
-    gradient: ['#6366F1', '#8B5CF6'],
   },
   {
     icon: 'shield-outline',
@@ -44,7 +37,6 @@ const PREMIUM_FEATURES: PremiumFeature[] = [
     description: 'Biometric authentication, PIN protection, and advanced security monitoring',
     freeLimit: 'Basic security',
     premiumLimit: 'Advanced security suite',
-    gradient: ['#10B981', '#06B6D4'],
   },
   {
     icon: 'flag-outline',
@@ -52,7 +44,6 @@ const PREMIUM_FEATURES: PremiumFeature[] = [
     description: 'Set and track unlimited savings goals with smart progress tracking',
     freeLimit: '1 goal only',
     premiumLimit: 'Unlimited goals',
-    gradient: ['#F59E0B', '#EF4444'],
   },
   {
     icon: 'pie-chart-outline',
@@ -60,7 +51,6 @@ const PREMIUM_FEATURES: PremiumFeature[] = [
     description: 'Create unlimited budget categories with smart spending alerts',
     freeLimit: '1 budget category',
     premiumLimit: 'Unlimited budgets',
-    gradient: ['#8B5CF6', '#EC4899'],
   },
   {
     icon: 'analytics-outline',
@@ -68,7 +58,6 @@ const PREMIUM_FEATURES: PremiumFeature[] = [
     description: 'Detailed spending patterns, trends, and predictive analytics',
     freeLimit: 'Basic charts only',
     premiumLimit: 'Full analytics suite',
-    gradient: ['#06B6D4', '#10B981'],
   },
   {
     icon: 'pricetags-outline',
@@ -76,7 +65,6 @@ const PREMIUM_FEATURES: PremiumFeature[] = [
     description: 'Automatic smart categorization of all your transactions',
     freeLimit: 'Basic categories',
     premiumLimit: 'AI-powered categorization',
-    gradient: ['#10B981', '#059669'],
   },
 ];
 
@@ -110,48 +98,17 @@ export default function SubscriptionPlansScreen() {
     isTrialActive,
     daysUntilTrialExpires,
     purchaseSubscription,
-    restorePurchases,
-    getOfferings
+    restorePurchases
   } = useSubscription();
 
   const [selectedPlan, setSelectedPlan] = useState('premium-annual');
   const [purchasing, setPurchasing] = useState(false);
-  const [offerings, setOfferings] = useState<any[]>([]);
-  const [loadingOfferings, setLoadingOfferings] = useState(true);
   const showTrialButton = !isPremium && !isTrialActive;
-  const fadeAnim = useState(new Animated.Value(0))[0];
-  const slideAnim = useState(new Animated.Value(50))[0];
 
+  // Log subscription screen load
   useEffect(() => {
-    // Load offerings from RevenueCat
-    loadOfferings();
-
-    // Animation
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [getOfferings]);
-
-  const loadOfferings = async () => {
-    try {
-      setLoadingOfferings(true);
-      const revenueCatOfferings = await getOfferings();
-      setOfferings(revenueCatOfferings);
-    } catch (error) {
-      console.error('Error loading offerings:', error);
-    } finally {
-      setLoadingOfferings(false);
-    }
-  };
+    console.log('📱 [SubscriptionPlans] Subscription screen loaded');
+  }, []);
 
   const handleStartTrial = async () => {
     setPurchasing(true);
@@ -219,6 +176,9 @@ export default function SubscriptionPlansScreen() {
     try {
       // Map local plan ID to RevenueCat package ID
       const packageId = selectedPlan === 'premium-annual' ? 'annual' : 'monthly';
+
+      console.log('🛒 [SubscriptionPlans] Starting native purchase:', packageId);
+
       const success = await purchaseSubscription(packageId);
 
       if (success) {
@@ -240,7 +200,8 @@ export default function SubscriptionPlansScreen() {
           [{ text: 'Try Again' }]
         );
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ [SubscriptionPlans] Purchase error:', error);
       Alert.alert('Error', 'Failed to process purchase. Please try again.');
     } finally {
       setPurchasing(false);
@@ -269,20 +230,12 @@ export default function SubscriptionPlansScreen() {
     }
   };
 
-  const getTrialStatusColors = (): [string, string] => {
-    if (daysUntilTrialExpires <= 1) {
-      return [colors.error[100], colors.error[50]];
-    } else if (daysUntilTrialExpires <= 3) {
-      return [colors.warning[100], colors.warning[50]];
-    } else {
-      return [colors.primary[100], colors.primary[50]];
-    }
-  };
 
   const styles = createStyles(colors);
 
   return (
     <SafeAreaView style={styles.container}>
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -301,12 +254,7 @@ export default function SubscriptionPlansScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View
-          style={{
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }}
-        >
+        <View>
           {/* Hero Section */}
           <View style={styles.heroSection}>
             <View style={styles.heroContent}>
@@ -320,11 +268,8 @@ export default function SubscriptionPlansScreen() {
 
           {/* Current Status Banner */}
           {isPremium && !isTrialActive && (
-            <View style={styles.statusBanner}>
-              <LinearGradient
-                colors={[colors.success[100], colors.success[50]]}
-                style={styles.statusGradient}
-              >
+            <View style={[styles.statusBanner, { backgroundColor: colors.success[100] }]}>
+              <View style={styles.statusContent}>
                 <Ionicons name="checkmark-circle" size={24} color={colors.success[600]} />
                 <View style={styles.statusTextContainer}>
                   <Text style={[styles.statusText, { color: colors.success[700] }]}>
@@ -336,16 +281,15 @@ export default function SubscriptionPlansScreen() {
                     </Text>
                   )}
                 </View>
-              </LinearGradient>
+              </View>
             </View>
           )}
 
           {isTrialActive && (
-            <View style={styles.statusBanner}>
-              <LinearGradient
-                colors={getTrialStatusColors()}
-                style={styles.statusGradient}
-              >
+            <View style={[styles.statusBanner, {
+              backgroundColor: daysUntilTrialExpires <= 3 ? colors.error[100] : colors.warning[100]
+            }]}>
+              <View style={styles.statusContent}>
                 <Ionicons
                   name={daysUntilTrialExpires <= 3 ? "warning" : "time"}
                   size={24}
@@ -365,17 +309,14 @@ export default function SubscriptionPlansScreen() {
                      `${daysUntilTrialExpires} days remaining`} • {subscription.trialEndDate ? formatExpirationDate(subscription.trialEndDate) : 'No end date'}
                   </Text>
                 </View>
-              </LinearGradient>
+              </View>
             </View>
           )}
 
           {/* Urgent Trial Expiration Warning */}
           {isTrialActive && daysUntilTrialExpires <= 3 && (
-            <View style={styles.urgentBanner}>
-              <LinearGradient
-                colors={[colors.error[100], colors.error[50]]}
-                style={styles.statusGradient}
-              >
+            <View style={[styles.urgentBanner, { backgroundColor: colors.error[100] }]}>
+              <View style={styles.statusContent}>
                 <Ionicons name="flash" size={24} color={colors.error[600]} />
                 <View style={styles.statusTextContainer}>
                   <Text style={[styles.urgentText, { color: colors.error[700] }]}>
@@ -386,7 +327,7 @@ export default function SubscriptionPlansScreen() {
                     Upgrade now to continue unlimited access to all features.
                   </Text>
                 </View>
-              </LinearGradient>
+              </View>
             </View>
           )}
 
@@ -455,20 +396,9 @@ export default function SubscriptionPlansScreen() {
 
             <View style={styles.featuresGrid}>
               {PREMIUM_FEATURES.map((feature, index) => (
-                <Animated.View
+                <View
                   key={index}
-                  style={[
-                    styles.featureCard,
-                    {
-                      opacity: fadeAnim,
-                      transform: [{
-                        translateY: slideAnim.interpolate({
-                          inputRange: [0, 50],
-                          outputRange: [0, 20],
-                        })
-                      }]
-                    }
-                  ]}
+                  style={styles.featureCard}
                 >
                   <View style={styles.featureIcon}>
                     <Ionicons name={feature.icon as any} size={24} color={colors.primary[500]} />
@@ -494,13 +424,13 @@ export default function SubscriptionPlansScreen() {
                       </View>
                     </View>
                   </View>
-                </Animated.View>
+                </View>
               ))}
             </View>
           </View>
 
           <View style={styles.bottomSpacer} />
-        </Animated.View>
+        </View>
       </ScrollView>
 
       {/* Floating Action Buttons */}
@@ -508,39 +438,38 @@ export default function SubscriptionPlansScreen() {
         <View style={styles.floatingFooter}>
           {showTrialButton && (
             <TouchableOpacity
-              style={styles.trialButton}
+              style={[styles.trialButton, { backgroundColor: colors.primary[600] }]}
               onPress={handleStartTrial}
               disabled={purchasing}
               activeOpacity={0.8}
             >
-              <LinearGradient
-                colors={[colors.primary[600], colors.primary[700]]}
-                style={styles.buttonGradient}
-              >
+              <View style={styles.buttonContent}>
                 <Ionicons name="flash" size={20} color="white" />
                 <Text style={styles.trialButtonText}>
                   {purchasing ? 'Starting Trial...' : 'Start 14-Day Free Trial'}
                 </Text>
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
           )}
 
+          {/* Single Native Payment Button */}
           <TouchableOpacity
-            style={[styles.upgradeButton, !showTrialButton && styles.primaryButton]}
+            style={[
+              styles.upgradeButton,
+              !showTrialButton && styles.primaryButton,
+              { backgroundColor: colors.primary[600] }
+            ]}
             onPress={handlePurchase}
             disabled={purchasing || !selectedPlanData}
             activeOpacity={0.8}
           >
-            <LinearGradient
-              colors={[colors.primary[500], colors.primary[600]]}
-              style={styles.buttonGradient}
-            >
+            <View style={styles.buttonContent}>
               <Ionicons name="diamond" size={20} color="white" />
               <Text style={styles.upgradeButtonText}>
                 {purchasing ? 'Processing...' : `Get Premium - £${selectedPlanData?.price}/${selectedPlanData?.interval}`}
               </Text>
               <Ionicons name="arrow-forward" size={16} color="white" />
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
 
           <Text style={styles.disclaimerText}>
@@ -635,7 +564,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     overflow: 'hidden',
   },
 
-  statusGradient: {
+  statusContent: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
@@ -885,7 +814,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: spacing.md,
   },
 
-  buttonGradient: {
+  buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -970,4 +899,5 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: typography.sizes.sm,
     marginTop: spacing.xs,
   },
+
 });

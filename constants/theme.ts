@@ -1,6 +1,6 @@
-// Clean Purple-focused Theme
+// Clean Blue-focused Professional Theme
 export const lightColors = {
-  // Primary colors - Beautiful purple palette
+  // Primary colors - Professional purple palette
   primary: {
     50: "#FAF5FF",
     100: "#F3E8FF",
@@ -87,11 +87,11 @@ export const lightColors = {
     main: "#F59E0B", // Alias for 500
   },
 
-  // Clean background system with purple tints
+  // Clean background system with neutral tones
   background: {
     primary: "#FFFFFF",     // Pure white
-    secondary: "#FEFBFF",   // Very subtle purple tint
-    tertiary: "#FAF5FF",    // Light purple background
+    secondary: "#FAFAFA",   // Very subtle gray tint
+    tertiary: "#F4F4F5",    // Light gray background
     overlay: "rgba(139, 92, 246, 0.02)", // Subtle purple overlay
   },
 

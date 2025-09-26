@@ -42,6 +42,17 @@ export const SpendingCategoryListClean: React.FC<SpendingCategoryListCleanProps>
   const { colors } = useTheme();
   const styles = spendingCategoryListStyles;
 
+  // Debug logging to help identify the issue
+  React.useEffect(() => {
+    console.log('🐛 [SpendingCategoryListClean] Debug info:', {
+      categoryDataLength: sortedCategoryData.length,
+      transactionsLength: filteredTransactions.length,
+      categoriesWithSpending: sortedCategoryData.filter(c => (c.monthlySpent || 0) > 0),
+      sampleCategory: sortedCategoryData[0],
+      sampleTransaction: filteredTransactions[0]
+    });
+  }, [sortedCategoryData, filteredTransactions]);
+
   const renderCategoryIcon = (icon: string, color: string) => {
     return <CategoryIcon iconName={icon} color={color} size={24} />;
   };
@@ -81,9 +92,25 @@ export const SpendingCategoryListClean: React.FC<SpendingCategoryListCleanProps>
       {sortedCategoryData.map((category) => {
         const spent = category.monthlySpent || 0;
 
-        // Count transactions for this category
+        // Count transactions for this category with improved matching
         const categoryTransactions = filteredTransactions.filter(
-          (tx) => tx.category === category.name
+          (tx) => {
+            const txCategory = tx.category || "Other";
+            const categoryName = category.name;
+
+            // Try exact match first
+            if (txCategory === categoryName) return true;
+
+            // Try case-insensitive match
+            if (txCategory.toLowerCase() === categoryName.toLowerCase()) return true;
+
+            // Handle "Other" category specially - matches null, undefined, empty, or "Other"
+            if (categoryName === "Other" && (!txCategory || txCategory === "Other" || txCategory.trim() === "")) {
+              return true;
+            }
+
+            return false;
+          }
         );
 
         const txnCount = categoryTransactions.length;
@@ -171,9 +198,9 @@ export const SpendingCategoryListClean: React.FC<SpendingCategoryListCleanProps>
                           { color: colors.text.secondary },
                         ]}
                       >
-                        {merchants.length > 0
-                          ? merchants.join(', ')
-                          : `${txnCount} transaction${txnCount !== 1 ? 's' : ''}`
+                        {spent > 0
+                          ? `${txnCount} transaction${txnCount !== 1 ? 's' : ''}`
+                          : 'No spending this month'
                         }
                       </Text>
                       <Text
@@ -182,7 +209,12 @@ export const SpendingCategoryListClean: React.FC<SpendingCategoryListCleanProps>
                           { color: colors.text.secondary },
                         ]}
                       >
-                        {txnCount > 0 ? `avg ${formatAmount(avgAmount, currency)}` : 'No transactions'}
+                        {spent > 0 && txnCount > 0
+                          ? `avg ${formatAmount(avgAmount, currency)}`
+                          : spent > 0
+                            ? 'Multiple sources'
+                            : 'No transactions'
+                        }
                       </Text>
                     </View>
                   </View>

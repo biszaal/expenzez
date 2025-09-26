@@ -3,6 +3,7 @@ import {
   ScrollView,
   RefreshControl,
   StyleSheet,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -11,6 +12,7 @@ import dayjs from "dayjs";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useSecurity } from "../../contexts/SecurityContext";
 import { useSubscription } from "../../contexts/SubscriptionContext";
+import { useNotifications } from "../../contexts/NotificationContext";
 import { PremiumUpgradeCard } from "../../components/premium/PremiumUpgradeCard";
 import { budgetAPI } from "../../services/api";
 import { transactionAPI } from "../../services/api/transactionAPI";
@@ -21,14 +23,9 @@ import {
   HomeHeader,
   BalanceCard,
   QuickActions,
-  MonthSelector,
   MonthlyOverview,
   TransactionsList,
-  AIAssistantCard,
   UpcomingBillsCard,
-  AchievementProgressCard,
-  SavingsOpportunitiesCard,
-  GoalProgressCard,
   NotificationCard,
 } from "../../components/home";
 
@@ -61,6 +58,7 @@ export default function HomeScreen() {
   const { colors } = useTheme();
   const { isLocked } = useSecurity();
   const { isPremium } = useSubscription();
+  const { unreadCount } = useNotifications();
 
   // Core data state
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -76,12 +74,13 @@ export default function HomeScreen() {
 
   // Security and user preferences
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [showPremiumCard, setShowPremiumCard] = useState(true);
 
-  // Month selection for lazy loading
-  const [selectedMonth, setSelectedMonth] = useState(() => {
+  // Current month for calculations (no longer user-selectable)
+  const currentMonth = (() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  });
+  })();
 
   // Load data function
   const loadData = async (isRefresh = false) => {
@@ -210,12 +209,6 @@ export default function HomeScreen() {
     }
   }, [isLocked]);
 
-  // Reload data when selected month changes
-  useEffect(() => {
-    if (!isLocked && !isFirstLoad) {
-      loadData();
-    }
-  }, [selectedMonth]);
 
   // Helper functions for data transformations
   const getBankName = (institution: any) =>
@@ -239,20 +232,20 @@ export default function HomeScreen() {
     return "Evening";
   };
 
-  // Calculate spending for selected month (only expenses)
-  const calculateSelectedMonthSpent = () => {
+  // Calculate spending for current month (only expenses)
+  const calculateCurrentMonthSpent = () => {
     return transactions
       .filter(tx => {
         if (!tx.date) return false;
         const txDate = dayjs(tx.date);
-        const isSelectedMonth = txDate.format("YYYY-MM") === selectedMonth;
+        const isCurrentMonth = txDate.format("YYYY-MM") === currentMonth;
         const isExpense = tx.type === 'debit' || tx.amount < 0;
-        return isSelectedMonth && isExpense;
+        return isCurrentMonth && isExpense;
       })
       .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
   };
 
-  const thisMonthSpent = calculateSelectedMonthSpent();
+  const thisMonthSpent = calculateCurrentMonthSpent();
   const userBudget = 2000; // Default budget - could be loaded from user preferences
 
   if (loading) {
@@ -273,44 +266,43 @@ export default function HomeScreen() {
           />
         }
       >
-        <HomeHeader />
+        {/* Core Dashboard Section */}
+        <View style={styles.section}>
+          <HomeHeader />
+          <BalanceCard
+            totalBalance={totalBalance}
+            getTimeOfDay={getTimeOfDay}
+          />
+          <QuickActions />
+        </View>
 
-        <BalanceCard
-          totalBalance={totalBalance}
-          getTimeOfDay={getTimeOfDay}
-        />
+        {/* Contextual Cards Section */}
+        <View style={styles.section}>
+          {/* Show notifications only if there are unread notifications */}
+          {unreadCount > 0 && <NotificationCard />}
 
-        <QuickActions />
+          {/* Show premium upgrade occasionally, not always */}
+          {!isPremium && showPremiumCard && <PremiumUpgradeCard />}
 
-        <AchievementProgressCard />
+          <UpcomingBillsCard />
+        </View>
 
-        <GoalProgressCard />
+        {/* Financial Overview Section */}
+        <View style={styles.section}>
+          <MonthlyOverview
+            thisMonthSpent={thisMonthSpent}
+            userBudget={userBudget}
+          />
+        </View>
 
-        {!isPremium && <PremiumUpgradeCard />}
-
-        <NotificationCard />
-
-        <SavingsOpportunitiesCard />
-
-        <UpcomingBillsCard />
-
-        <MonthSelector
-          selectedMonth={selectedMonth}
-          onMonthChange={setSelectedMonth}
-        />
-
-        <AIAssistantCard />
-
-        <MonthlyOverview
-          thisMonthSpent={thisMonthSpent}
-          userBudget={userBudget}
-        />
-
-        <TransactionsList
-          transactions={transactions}
-          refreshingTransactions={fetchingData}
-          onRefreshTransactions={refreshData}
-        />
+        {/* Transactions Section */}
+        <View style={styles.section}>
+          <TransactionsList
+            transactions={transactions}
+            refreshingTransactions={fetchingData}
+            onRefreshTransactions={refreshData}
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -322,5 +314,8 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  section: {
+    marginBottom: SPACING.xl, // Add larger spacing between sections
   },
 });

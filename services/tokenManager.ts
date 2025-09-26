@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { SecureStorage } from './secureStorage';
+import { secureStorage } from './secureStorage';
 import { AppState, AppStateStatus } from 'react-native';
 import { deviceManager } from './deviceManager';
 
@@ -504,20 +504,49 @@ class TokenManager {
   }
 
   /**
-   * Clear all stored tokens
+   * Clear all stored tokens - SECURITY: Complete token cleanup
    */
   async clearAllTokens(): Promise<void> {
     try {
+      console.log('🚨 [TokenManager] SECURITY: Clearing all tokens and user data');
+
+      // Clear all token-related storage
       await AsyncStorage.multiRemove([
         'accessToken',
         'idToken',
         'refreshToken',
         'tokenExpiresAt',
         'isLoggedIn',
-        'user'
+        'user',
+        'accounts',
+        'transactions',
+        'profile',
+        'userBudget'
       ]);
-    } catch (_error) {
-      // Silently handle errors during token clearing
+
+      // Clear SecureStore tokens from BOTH keychains
+      try {
+        // Clear from default keychain
+        await SecureStore.deleteItemAsync('accessToken');
+        await SecureStore.deleteItemAsync('idToken');
+        await SecureStore.deleteItemAsync('refreshToken');
+
+        // 🚨 CRITICAL: Also clear from 'expenzez-tokens' keychain service
+        await SecureStore.deleteItemAsync('accessToken', { keychainService: 'expenzez-tokens' });
+        await SecureStore.deleteItemAsync('idToken', { keychainService: 'expenzez-tokens' });
+        await SecureStore.deleteItemAsync('refreshToken', { keychainService: 'expenzez-tokens' });
+
+        console.log('🚨 [TokenManager] SECURITY: Cleared tokens from both keychains');
+      } catch (secureError) {
+        console.warn('⚠️ [TokenManager] SecureStore clear warning:', secureError);
+      }
+
+      // Clear refresh promise
+      this.refreshPromise = null;
+
+      console.log('✅ [TokenManager] All tokens and user data cleared');
+    } catch (error) {
+      console.error('❌ [TokenManager] Error clearing tokens:', error);
     }
   }
 
