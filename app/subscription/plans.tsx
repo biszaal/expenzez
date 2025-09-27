@@ -258,7 +258,14 @@ export default function SubscriptionPlansScreen() {
           {/* Hero Section */}
           <View style={styles.heroSection}>
             <View style={styles.heroContent}>
-              <Ionicons name="diamond" size={60} color={colors.text.primary} />
+              <View style={styles.heroIconContainer}>
+                <Ionicons name="diamond" size={60} color={colors.primary[500]} />
+                <View style={styles.sparkleOverlay}>
+                  <Ionicons name="sparkles" size={20} color={colors.primary[400]} style={styles.sparkle1} />
+                  <Ionicons name="sparkles" size={16} color={colors.primary[300]} style={styles.sparkle2} />
+                  <Ionicons name="sparkles" size={14} color={colors.primary[200]} style={styles.sparkle3} />
+                </View>
+              </View>
               <Text style={styles.heroTitle}>Unlock Premium</Text>
               <Text style={styles.heroSubtitle}>
                 Take control of your financial future with unlimited access to all features
@@ -335,6 +342,9 @@ export default function SubscriptionPlansScreen() {
           {!isPremium && (
             <View style={styles.pricingSection}>
               <Text style={styles.sectionTitle}>Choose Your Plan</Text>
+              <Text style={styles.pricingSectionSubtitle}>
+                Start saving money today with smart financial insights
+              </Text>
 
               <View style={styles.pricingCards}>
                 {PRICING_PLANS.map((plan) => (
@@ -350,26 +360,35 @@ export default function SubscriptionPlansScreen() {
                   >
                     {plan.popular && (
                       <View style={styles.popularBadge}>
-                        <Text style={styles.popularBadgeText}>Most Popular</Text>
+                        <Ionicons name="star" size={12} color="white" style={{ marginRight: 4 }} />
+                        <Text style={styles.popularBadgeText}>Best Value</Text>
                       </View>
                     )}
 
                     <View style={styles.pricingCardHeader}>
                       <Text style={styles.planName}>{plan.name}</Text>
                       {plan.savings && (
-                        <Text style={styles.savingsText}>{plan.savings}</Text>
+                        <View style={styles.savingsContainer}>
+                          <Text style={styles.savingsText}>{plan.savings}</Text>
+                        </View>
                       )}
                     </View>
 
                     <View style={styles.priceContainer}>
-                      <Text style={styles.price}>£{plan.price}</Text>
+                      <Text style={styles.currencySymbol}>£</Text>
+                      <Text style={styles.price}>{plan.price}</Text>
                       <Text style={styles.priceInterval}>/{plan.interval}</Text>
                     </View>
 
                     {plan.originalPrice && (
-                      <Text style={styles.originalPrice}>
-                        Was £{plan.originalPrice}
-                      </Text>
+                      <View style={styles.originalPriceContainer}>
+                        <Text style={styles.originalPrice}>
+                          Was £{plan.originalPrice}
+                        </Text>
+                        <Text style={styles.savingsAmount}>
+                          Save £{(plan.originalPrice - plan.price).toFixed(2)}
+                        </Text>
+                      </View>
                     )}
 
                     <Text style={styles.monthlyEquivalent}>
@@ -378,7 +397,7 @@ export default function SubscriptionPlansScreen() {
 
                     {selectedPlan === plan.id && (
                       <View style={styles.selectedIndicator}>
-                        <Ionicons name="checkmark" size={20} color="white" />
+                        <Ionicons name="checkmark-circle" size={24} color={colors.primary[500]} />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -536,10 +555,45 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: borderRadius.xl,
     backgroundColor: colors.background.secondary,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.primary[100],
   },
 
   heroContent: {
     alignItems: 'center',
+  },
+
+  heroIconContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+
+  sparkleOverlay: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  sparkle1: {
+    position: 'absolute',
+    top: 10,
+    right: 15,
+  },
+
+  sparkle2: {
+    position: 'absolute',
+    bottom: 15,
+    left: 10,
+  },
+
+  sparkle3: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
   },
 
   heroTitle: {
@@ -596,6 +650,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     lineHeight: 22,
   },
 
+  pricingSectionSubtitle: {
+    fontSize: typography.sizes.base,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    lineHeight: 22,
+  },
+
   pricingCards: {
     flexDirection: 'row',
     gap: spacing.md,
@@ -609,15 +671,28 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.border.light,
     position: 'relative',
+    shadowColor: colors.primary[500],
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
 
   selectedPricingCard: {
     borderColor: colors.primary[500],
     backgroundColor: colors.primary[50],
+    shadowOpacity: 0.15,
+    elevation: 8,
+    transform: [{ scale: 1.02 }],
   },
 
   popularCard: {
     borderColor: colors.primary[600],
+    shadowOpacity: 0.1,
+    elevation: 5,
   },
 
   popularBadge: {
@@ -628,6 +703,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: borderRadius.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
   popularBadgeText: {
@@ -647,11 +724,18 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.text.primary,
   },
 
+  savingsContainer: {
+    backgroundColor: colors.success[100],
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+    marginTop: spacing.xs,
+  },
+
   savingsText: {
     fontSize: typography.sizes.sm,
-    fontWeight: '600' as any,
-    color: colors.success[600],
-    marginTop: spacing.xs,
+    fontWeight: '700' as any,
+    color: colors.success[700],
   },
 
   priceContainer: {
@@ -661,9 +745,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: spacing.xs,
   },
 
+  currencySymbol: {
+    fontSize: typography.sizes.lg,
+    fontWeight: '600' as any,
+    color: colors.text.primary,
+    marginRight: 2,
+  },
+
   price: {
-    fontSize: typography.sizes['2xl'],
-    fontWeight: '700' as any,
+    fontSize: typography.sizes['3xl'],
+    fontWeight: '800' as any,
     color: colors.text.primary,
   },
 
@@ -671,14 +762,27 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: typography.sizes.base,
     color: colors.text.secondary,
     marginLeft: spacing.xs,
+    fontWeight: '500' as any,
+  },
+
+  originalPriceContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
 
   originalPrice: {
     fontSize: typography.sizes.sm,
     color: colors.text.secondary,
     textDecorationLine: 'line-through',
-    textAlign: 'center',
-    marginBottom: spacing.xs,
+  },
+
+  savingsAmount: {
+    fontSize: typography.sizes.sm,
+    color: colors.success[600],
+    fontWeight: '600' as any,
   },
 
   monthlyEquivalent: {
@@ -691,12 +795,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     position: 'absolute',
     top: spacing.md,
     right: spacing.md,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.primary[500],
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.background.secondary,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: colors.primary[500],
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
 
   featuresSection: {

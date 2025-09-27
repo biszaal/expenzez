@@ -39,8 +39,17 @@ export default function Login() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [messageShown, setMessageShown] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // Handle incoming parameters from registration redirect
+  // Debug: Log when error message changes
+  useEffect(() => {
+    console.log("🔍 [Login] Error message state changed:", errorMessage);
+    if (errorMessage === "") {
+      console.log("🔍 [Login] Error message was CLEARED - stack trace:", new Error().stack);
+    }
+  }, [errorMessage]);
+
+  // Handle incoming parameters from registration redirect and login errors
   useEffect(() => {
     if (params.email) {
       setIdentifier(params.email as string);
@@ -55,13 +64,20 @@ export default function Login() {
   }, [params, messageShown]);
 
   const handleLogin = async () => {
+
     if (!identifier || !password) {
-      showError("Please fill in all fields");
+      setErrorMessage("Please fill in all fields");
       return;
     }
     setIsLoading(true);
     try {
-      const result = await login(identifier, password, rememberMe);
+      console.log("🔍 [Login] Attempting login with:", {
+        identifier: identifier.trim(),
+        passwordLength: password.length,
+        rememberMe
+      });
+      const result = await login(identifier.trim(), password, rememberMe);
+      console.log("🔍 [Login] AuthContext login result:", result);
       if (result.success) {
         // Optionally, auto-redirect to main app
         const idToken = await SecureStore.getItemAsync("idToken", { keychainService: 'expenzez-tokens' });
@@ -119,6 +135,7 @@ export default function Login() {
         showError(result.error || "Login failed. Please try again.");
       }
     } catch (error: any) {
+      console.log("🚨 [Login] EXCEPTION CAUGHT - AuthContext login threw an error instead of returning result");
       console.error("Login error details:", error);
 
       // Check for email verification error first - redirect immediately
@@ -152,18 +169,39 @@ export default function Login() {
         error?.toString().includes("Network Error") ||
         error?.toString().includes("timeout")
       ) {
-        showError(
+        setErrorMessage(
           "Unable to connect to server. Please check your internet connection or try again later."
         );
       } else {
-        // Check for other specific errors
-        const errorMessage =
-          error.response?.data?.message ||
-          error.message ||
-          "Login failed. Please try again.";
-        showError(errorMessage);
+        // Extract specific error message from various possible sources
+        let userErrorMessage = "Login failed. Please try again.";
+
+        if (error.response?.data?.message) {
+          // Backend specific error message (most detailed)
+          userErrorMessage = error.response.data.message;
+        } else if (error.message && error.message !== "API request failed") {
+          // Transformed error message from error handler
+          userErrorMessage = error.message;
+        } else if (error.response?.data?.error) {
+          // Fallback to error field
+          userErrorMessage = error.response.data.error;
+        }
+
+        // Handle specific login error scenarios with user-friendly messages
+        if (userErrorMessage.toLowerCase().includes("incorrect") || userErrorMessage.toLowerCase().includes("password")) {
+          userErrorMessage = "Incorrect username or password. Please try again.";
+        } else if (userErrorMessage.toLowerCase().includes("locked") || userErrorMessage.toLowerCase().includes("attempts")) {
+          userErrorMessage = "Account temporarily locked due to too many failed attempts. Please try again later.";
+        } else if (userErrorMessage.toLowerCase().includes("too many")) {
+          userErrorMessage = "Too many login attempts. Please wait a moment and try again.";
+        } else if (userErrorMessage.toLowerCase().includes("reset required")) {
+          userErrorMessage = "Password reset required. Please reset your password to continue.";
+        }
+
+        showError(userErrorMessage);
       }
     } finally {
+      console.log("🔍 [Login] Finally block executing, setting isLoading to false");
       setIsLoading(false);
     }
   };
@@ -240,8 +278,8 @@ export default function Login() {
       setIsLoading(false);
     }
   };
-  // Show full-screen loading during login process or navigation
-  if (isLoading || isNavigating) {
+  // Show full-screen loading only for navigation (success case)
+  if (isNavigating) {
     return (
       <View
         style={{
@@ -268,13 +306,13 @@ export default function Login() {
           variant="h2"
           style={{ color: "white", marginBottom: 10, textAlign: "center" }}
         >
-          {isNavigating ? "Success!" : "Signing you in..."}
+          Success!
         </Typography>
         <Typography
           variant="body"
           style={{ color: "rgba(255,255,255,0.8)", textAlign: "center" }}
         >
-          {isNavigating ? "Loading your dashboard..." : "Securing your connection..."}
+          Loading your dashboard...
         </Typography>
       </View>
     );
@@ -346,6 +384,7 @@ export default function Login() {
                 ])}
               >
                 <View style={styles.formContent}>
+
                   {/* Clean Input Fields */}
                   <View style={styles.inputContainer}>
                     <Typography
@@ -363,12 +402,14 @@ export default function Login() {
                       value={identifier}
                       onChangeText={setIdentifier}
                       autoCapitalize="none"
+                      editable={!isLoading}
                       style={StyleSheet.flatten([
                         styles.input,
                         {
-                          backgroundColor: colors.background.tertiary,
+                          backgroundColor: isLoading ? colors.background.secondary : colors.background.tertiary,
                           borderColor: colors.border.medium,
                           color: colors.text.primary,
+                          opacity: isLoading ? 0.6 : 1,
                         },
                       ])}
                     />
@@ -419,12 +460,14 @@ export default function Login() {
                       onChangeText={setPassword}
                       secureTextEntry={true}
                       autoCapitalize="none"
+                      editable={!isLoading}
                       style={StyleSheet.flatten([
                         styles.input,
                         {
-                          backgroundColor: colors.background.tertiary,
+                          backgroundColor: isLoading ? colors.background.secondary : colors.background.tertiary,
                           borderColor: colors.border.medium,
                           color: colors.text.primary,
+                          opacity: isLoading ? 0.6 : 1,
                         },
                       ])}
                     />
@@ -457,7 +500,7 @@ export default function Login() {
                     style={StyleSheet.flatten([
                       styles.loginButton,
                       {
-                        backgroundColor: colors.primary[500],
+                        backgroundColor: isLoading ? colors.primary[300] : colors.primary[500],
                       },
                     ])}
                   >
@@ -466,19 +509,31 @@ export default function Login() {
                       onPress={handleLogin}
                       disabled={isLoading}
                     >
-                      <Typography
-                        variant="body"
-                        weight="semibold"
-                        style={{ color: "white" }}
-                      >
-                        Sign In
-                      </Typography>
+                      {isLoading ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Typography
+                            variant="body"
+                            weight="semibold"
+                            style={{ color: "white" }}
+                          >
+                            Signing in...
+                          </Typography>
+                        </View>
+                      ) : (
+                        <Typography
+                          variant="body"
+                          weight="semibold"
+                          style={{ color: "white" }}
+                        >
+                          Sign In
+                        </Typography>
+                      )}
                     </TouchableOpacity>
                   </View>
 
                   {/* Apple Sign In */}
-                  <AppleSignInButton 
-                    onPress={handleAppleLogin} 
+                  <AppleSignInButton
+                    onPress={handleAppleLogin}
                     type="sign-in"
                     disabled={isLoading}
                   />
@@ -664,5 +719,16 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     lineHeight: 16,
+  },
+  errorBanner: {
+    padding: spacing.md,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    marginBottom: spacing.md,
+  },
+  errorBannerText: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });

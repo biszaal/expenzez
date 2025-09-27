@@ -21,6 +21,10 @@ const DEVELOPMENT_MODE = __DEV__ ||
   REVENUECAT_API_KEY.ios === 'appl_YOUR_IOS_API_KEY' ||
   REVENUECAT_API_KEY.android === 'goog_YOUR_ANDROID_API_KEY';
 
+// Mock state for development mode
+let mockTrialActive = false;
+let mockTrialExpirationDate: Date | null = null;
+
 export class RevenueCatService {
   private static initialized = false;
 
@@ -102,6 +106,21 @@ export class RevenueCatService {
           metadata: {},
           availablePackages: [
             {
+              identifier: 'trial',
+              packageType: 'CUSTOM',
+              product: {
+                identifier: 'premium-trial',
+                description: '14-Day Free Trial',
+                title: 'Premium Trial',
+                price: 0.00,
+                priceString: 'Free',
+                currencyCode: 'GBP',
+                introPrice: null,
+                discounts: []
+              },
+              offeringIdentifier: 'default'
+            },
+            {
               identifier: 'monthly',
               packageType: 'MONTHLY',
               product: {
@@ -146,7 +165,76 @@ export class RevenueCatService {
     try {
       if (DEVELOPMENT_MODE) {
         console.log('RevenueCat: Mock purchase successful in development mode');
-        return { success: true };
+
+        // Set mock trial state if purchasing trial package
+        if (packageToPurchase.identifier === 'trial') {
+          mockTrialActive = true;
+          mockTrialExpirationDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days from now
+          console.log('🧪 [RevenueCat] Mock trial activated until:', mockTrialExpirationDate);
+
+          // Save trial to backend database for persistence
+          try {
+            const { api } = require('./config/apiClient');
+            const trialData = {
+              tier: 'premium',
+              status: 'trialing',
+              startDate: new Date().toISOString(),
+              endDate: mockTrialExpirationDate.toISOString(),
+              trialStartDate: new Date().toISOString(),
+              trialEndDate: mockTrialExpirationDate.toISOString(),
+              features: [
+                'unlimited_transactions',
+                'advanced_analytics',
+                'unlimited_ai_chat',
+                'unlimited_goals',
+                'unlimited_budgets',
+                'credit_score_monitoring',
+                'bill_prediction',
+                'smart_notifications',
+                'biometric_auth',
+                'csv_import',
+                'data_export'
+              ]
+            };
+
+            await api.post('/subscription', trialData);
+            console.log('✅ [RevenueCat] Trial saved to backend database');
+
+            // Force refresh secure validation to sync across devices
+            try {
+              const { SecureSubscriptionService } = require('./secureSubscriptionService');
+              await SecureSubscriptionService.refreshSubscription();
+              console.log('🔒 [RevenueCat] Secure validation refreshed after trial activation');
+            } catch (secureError) {
+              console.warn('🔒 [RevenueCat] Secure validation refresh failed:', secureError);
+            }
+          } catch (error) {
+            console.warn('⚠️ [RevenueCat] Failed to save trial to backend:', error);
+            // Continue anyway, trial will work locally
+          }
+        }
+
+        // Return mock customerInfo for development mode
+        const mockCustomerInfo = {
+          originalAppUserId: 'mock-user-id',
+          allPurchaseDates: {},
+          allExpirationDates: {},
+          entitlements: {
+            active: {
+              premium: {
+                identifier: 'premium',
+                isActive: true,
+                willRenew: packageToPurchase.identifier !== 'trial', // Trial doesn't renew
+                latestPurchaseDate: new Date().toISOString(),
+                expirationDate: (mockTrialExpirationDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)).toISOString(),
+                store: 'APP_STORE',
+                productIdentifier: packageToPurchase.product.identifier
+              }
+            },
+            all: {}
+          }
+        };
+        return { success: true, customerInfo: mockCustomerInfo as any };
       }
       const { customerInfo } = await Purchases.purchasePackage(packageToPurchase);
       return { success: true, customerInfo };
@@ -186,8 +274,11 @@ export class RevenueCatService {
   static async isUserPremium(): Promise<boolean> {
     try {
       if (DEVELOPMENT_MODE) {
-        console.log('RevenueCat: Returning mock premium status (false) for development');
-        return false;
+        console.log('RevenueCat: Checking premium status in development mode');
+
+        // Get subscription status which already checks backend database
+        const subscriptionStatus = await this.getSubscriptionStatus();
+        return subscriptionStatus.isPremium;
       }
       const customerInfo = await this.getCustomerInfo();
       return customerInfo?.entitlements.active['premium'] !== undefined;
@@ -205,8 +296,65 @@ export class RevenueCatService {
   }> {
     try {
       if (DEVELOPMENT_MODE) {
-        console.log('RevenueCat: Returning mock subscription status for development');
-        return { isPremium: false, isTrialActive: false };
+        console.log('RevenueCat: Using secure subscription validation in development mode');
+
+        // Use secure subscription service for server-validated status
+        try {
+          // Temporarily disabled until Lambda deployment completes
+          // const { SecureSubscriptionService } = require('./secureSubscriptionService');
+          // const secureStatus = await SecureSubscriptionService.validateSubscription();
+
+          // Fallback to regular backend check for now
+          const { api } = require('./config/apiClient');
+          const response = await api.get('/subscription');
+          const backendSubscription = response.data?.subscription || response.data;
+
+          if (backendSubscription && backendSubscription.tier === 'premium' && backendSubscription.status === 'trialing') {
+            const trialEndDate = new Date(backendSubscription.trialEndDate || backendSubscription.endDate);
+            const now = new Date();
+
+            if (trialEndDate > now) {
+              console.log('🧪 [RevenueCat] Active trial found in backend database until:', trialEndDate);
+              // Update local mock state to match backend
+              mockTrialActive = true;
+              mockTrialExpirationDate = trialEndDate;
+
+              return {
+                isPremium: true,
+                isTrialActive: true,
+                expirationDate: trialEndDate,
+                willRenew: false
+              };
+            } else {
+              console.log('🧪 [RevenueCat] Trial in backend database has expired at:', trialEndDate);
+            }
+          }
+
+          console.log('🔒 [RevenueCat] No active subscription found in backend');
+          return { isPremium: false, isTrialActive: false };
+        } catch (error) {
+          console.log('🔒 [RevenueCat] Backend check failed, using fallback:', error.message);
+
+          // Fallback to local mock state
+          const now = Date.now();
+          const isTrialValid = mockTrialActive && mockTrialExpirationDate && mockTrialExpirationDate.getTime() > now;
+
+          if (isTrialValid) {
+            console.log('🧪 [RevenueCat] Fallback - mock trial is active until:', mockTrialExpirationDate);
+            return {
+              isPremium: true,
+              isTrialActive: true,
+              expirationDate: mockTrialExpirationDate,
+              willRenew: false
+            };
+          } else if (mockTrialActive && mockTrialExpirationDate && mockTrialExpirationDate.getTime() <= now) {
+            console.log('🧪 [RevenueCat] Fallback - mock trial has expired at:', mockTrialExpirationDate);
+            mockTrialActive = false;
+            mockTrialExpirationDate = null;
+          }
+
+          return { isPremium: false, isTrialActive: false };
+        }
       }
 
       const customerInfo = await this.getCustomerInfo();

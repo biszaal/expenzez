@@ -194,8 +194,8 @@ api.interceptors.response.use(
     
     const isAuthEndpoint = authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
     const isSecurityEndpoint = securityEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
-    
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint && !isSecurityEndpoint) {
       originalRequest._retry = true;
 
       try {

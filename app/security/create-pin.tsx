@@ -41,17 +41,18 @@ export default function CreatePinScreen() {
         router.replace('/(tabs)');
       }
 
-      // Do background updates after navigation to refresh UI state
+      // Do immediate updates after navigation to refresh UI state
+      // Use setImmediate equivalent for React Native to ensure it runs after navigation
       setTimeout(async () => {
         try {
-          console.log('🔐 [CreatePin] Running background security preference sync');
+          console.log('🔐 [CreatePin] Running immediate security preference sync');
           await syncSecurityPreferences();
           await checkSecurityStatus();
-          console.log('🔐 [CreatePin] Background security sync complete');
+          console.log('🔐 [CreatePin] Immediate security sync complete');
         } catch (error) {
-          console.error('🔐 [CreatePin] Background security sync error (non-critical):', error);
+          console.error('🔐 [CreatePin] Immediate security sync error (non-critical):', error);
         }
-      }, 500); // Longer delay to ensure server state is updated
+      }, 100); // Much shorter delay to update UI faster
 
     } catch (error) {
       console.error('🔐 [CreatePin] Error in PIN completion:', error);

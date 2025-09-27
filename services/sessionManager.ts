@@ -323,6 +323,20 @@ class SessionManager {
    * Show session expired dialog with restoration options
    */
   private showSessionExpiredDialog(sessionInfo: SessionInfo) {
+    // Don't show session expired dialogs on auth pages (login, register, etc.)
+    // This prevents alerts from showing when login fails or user is already on login page
+    try {
+      const { router } = require('expo-router');
+      const currentRoute = router?.state?.routes?.[router.state.index]?.name || '';
+      if (currentRoute.includes('auth') || currentRoute.includes('Login') || currentRoute.includes('Register')) {
+        console.log('📱 [SessionManager] Skipping session expired dialog on auth page:', currentRoute);
+        return;
+      }
+    } catch (error) {
+      // If we can't get the route, check if we're probably on an auth page by other means
+      console.log('📱 [SessionManager] Could not get route, proceeding with caution');
+    }
+
     if (sessionInfo.hasRememberMe && sessionInfo.canRefresh) {
       Alert.alert(
         '🔄 Session Expired',
