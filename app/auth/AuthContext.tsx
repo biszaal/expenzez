@@ -9,6 +9,7 @@ import { deviceManager } from "../../services/deviceManager";
 import { securityAPI } from "../../services/api/securityAPI";
 import { sessionManager } from "../../services/sessionManager";
 import { deviceAPI } from "../../services/api/deviceAPI";
+import { SecureSubscriptionService } from "../../services/secureSubscriptionService";
 
 interface User {
   id: string;
@@ -247,6 +248,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             // Let the API interceptors handle token refresh when needed
             setIsLoggedIn(true);
             setUser(JSON.parse(storedUser));
+
+            // Initialize secure subscription service for cross-device sync
+            // Temporarily disabled until Lambda deployment completes
+            try {
+              // await SecureSubscriptionService.initialize();
+              console.log('🔒 [AuthContext] Secure subscription service initialization skipped (Lambda deployment pending)');
+            } catch (error) {
+              console.warn('🔒 [AuthContext] Failed to initialize secure subscription service:', error);
+            }
           } else {
             await Promise.all([
               AsyncStorage.removeItem("isLoggedIn"),
@@ -499,6 +509,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     } catch (error: any) {
       console.log('🔍 [AuthContext] Login error details:', error);
+      console.log('🔍 [AuthContext] Error structure check:', {
+        message: error.message,
+        'response?.data?.message': error.response?.data?.message,
+        'response?.data': error.response?.data,
+        errorCode: error.code,
+        errorName: error.name
+      });
 
       // Check if this is an email verification error
       if (
@@ -740,6 +757,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await deviceManager.clearPersistentSession();
       await deviceManager.untrustDevice();
       setIsDeviceTrusted(false);
+
+      // Clear secure subscription cache
+      // Temporarily disabled until Lambda deployment completes
+      try {
+        // await SecureSubscriptionService.clearCache();
+        console.log('🔒 [AuthContext] Secure subscription cache clearing skipped (Lambda deployment pending)');
+      } catch (error) {
+        console.warn('🔒 [AuthContext] Failed to clear secure subscription cache:', error);
+      }
 
       // 🚨 STRICT SECURITY: Clear ALL keys except absolute essentials
       try {

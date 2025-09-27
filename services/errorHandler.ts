@@ -151,23 +151,46 @@ class ErrorHandlerService {
       return error;
     }
 
+    // PRIORITY: Handle ALL auth endpoint errors first to prevent session expiration triggers
+    if (context?.endpoint?.includes('/auth/')) {
+
+      // Extract any available error message
+      const errorMessage = error.response?.data?.message ||
+                          error.response?.data?.error ||
+                          error.message ||
+                          'Authentication request failed';
+
+      return new ExpenzezFrontendError(
+        'AUTH_ERROR',
+        errorMessage,
+        error.response?.status || 500,
+        {
+          originalError: error.message,
+          backendResponse: error.response?.data
+        },
+        context,
+        false, // Never trigger logout for auth endpoints
+        false
+      );
+    }
+
     // Handle API errors from backend
     if (error.response?.data?.error) {
       const apiError = error.response.data.error;
-      
+
       // Determine if this error should trigger logout
       const sessionExpirationCodes = [
         'AUTH_SESSION_EXPIRED',
-        'AUTH_TOKEN_EXPIRED', 
+        'AUTH_TOKEN_EXPIRED',
         'AUTH_REFRESH_FAILED',
         'TOKEN_EXPIRED',
         'SESSION_EXPIRED'
       ];
-      
-      const shouldLogout = apiError.requiresLogout || 
+
+      const shouldLogout = apiError.requiresLogout ||
                           sessionExpirationCodes.includes(apiError.code) ||
                           (error.response.status === 401 && !apiError.retryable);
-      
+
       return new ExpenzezFrontendError(
         apiError.code || FrontendErrorCodes.API_ERROR,
         apiError.message || 'API request failed',
@@ -183,6 +206,7 @@ class ErrorHandlerService {
         apiError.retryAfter
       );
     }
+
 
     // Handle network errors
     if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
