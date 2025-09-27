@@ -66,7 +66,35 @@ export default function ResetPasswordScreen() {
       router.replace("/auth/Login");
     } catch (error: any) {
       console.error("Reset password error:", error);
-      showError(error.response?.data?.message || "Failed to reset password");
+
+      // Extract specific error message from various possible sources
+      let errorMessage = "Failed to reset password";
+
+      if (error.response?.data?.message) {
+        // Backend specific error message (most detailed)
+        errorMessage = error.response.data.message;
+      } else if (error.message && error.message !== "API request failed") {
+        // Transformed error message from error handler
+        errorMessage = error.message;
+      } else if (error.response?.data?.error) {
+        // Fallback to error field
+        errorMessage = error.response.data.error;
+      }
+
+      // Handle specific scenarios with user-friendly messages
+      if (errorMessage.toLowerCase().includes("password") && errorMessage.toLowerCase().includes("used")) {
+        errorMessage = "This password has been used recently. Please choose a different password.";
+      } else if (errorMessage.toLowerCase().includes("requirements") || errorMessage.toLowerCase().includes("stronger")) {
+        errorMessage = "Password must be at least 8 characters with uppercase, lowercase, numbers, and special characters.";
+      } else if (errorMessage.toLowerCase().includes("confirmation code")) {
+        if (errorMessage.toLowerCase().includes("expired")) {
+          errorMessage = "Your confirmation code has expired. Please request a new password reset.";
+        } else {
+          errorMessage = "Invalid confirmation code. Please check the code in your email and try again.";
+        }
+      }
+
+      showError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +107,24 @@ export default function ResetPasswordScreen() {
       showSuccess("New reset code sent to your email!");
     } catch (error: any) {
       console.error("Resend code error:", error);
-      showError(error.response?.data?.message || "Failed to resend code");
+
+      // Extract specific error message
+      let errorMessage = "Failed to resend code";
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message && error.message !== "API request failed") {
+        errorMessage = error.message;
+      }
+
+      // Handle specific scenarios for resend
+      if (errorMessage.toLowerCase().includes("limit") || errorMessage.toLowerCase().includes("many")) {
+        errorMessage = "Too many requests. Please wait before requesting another code.";
+      } else if (errorMessage.toLowerCase().includes("user not found")) {
+        errorMessage = "Username not found. Please go back and verify your username.";
+      }
+
+      showError(errorMessage);
     } finally {
       setIsResendingCode(false);
     }

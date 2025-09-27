@@ -509,24 +509,24 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const result = await RevenueCatService.purchasePackage(packageToPurchase);
+      console.log('🔍 [SubscriptionContext] Purchase result:', {
+        success: result.success,
+        hasCustomerInfo: !!result.customerInfo,
+        customerInfo: result.customerInfo
+      });
 
       if (result.success && result.customerInfo) {
         // Update local subscription state
         await loadSubscriptionFromRevenueCat();
 
-        // Notify backend of successful purchase
-        try {
-          await api.post('/subscription/verify', {
-            customerInfo: result.customerInfo,
-            packageId
-          });
-        } catch (backendError) {
-          console.warn('Failed to notify backend of purchase:', backendError);
-        }
+        // Backend notification is now handled directly in RevenueCat service
+        // No need for separate /subscription/verify call since trial data is saved directly
 
+        console.log('🔍 [SubscriptionContext] Purchase successful, returning true');
         return true;
       }
 
+      console.log('🔍 [SubscriptionContext] Purchase failed condition check, returning false');
       return false;
     } catch (error) {
       console.error('Error purchasing subscription:', error);

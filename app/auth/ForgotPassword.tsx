@@ -66,7 +66,24 @@ export default function ForgotPasswordScreen() {
       
     } catch (error: any) {
       console.error("Forgot password error:", error);
-      showError(error.response?.data?.message || "Failed to send reset code");
+
+      // Extract specific error message
+      let errorMessage = "Failed to send reset code";
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message && error.message !== "API request failed") {
+        errorMessage = error.message;
+      }
+
+      // Handle specific scenarios
+      if (errorMessage.toLowerCase().includes("user not found") || errorMessage.toLowerCase().includes("username")) {
+        errorMessage = "Username not found. Please check your username and try again.";
+      } else if (errorMessage.toLowerCase().includes("limit") || errorMessage.toLowerCase().includes("many")) {
+        errorMessage = "Too many password reset requests. Please wait before trying again.";
+      }
+
+      showError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +99,22 @@ export default function ForgotPasswordScreen() {
       showSuccess("Reset code sent again!");
     } catch (error: any) {
       console.error("Resend error:", error);
-      showError("Failed to resend code");
+
+      // Extract specific error message
+      let errorMessage = "Failed to resend code";
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message && error.message !== "API request failed") {
+        errorMessage = error.message;
+      }
+
+      // Handle specific scenarios for resend
+      if (errorMessage.toLowerCase().includes("limit") || errorMessage.toLowerCase().includes("many")) {
+        errorMessage = "Too many requests. Please wait before requesting another code.";
+      }
+
+      showError(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -126,11 +126,11 @@ export default function ChangePinScreen() {
 
     setIsLoading(true);
     try {
-      const { securityAPI } = await import('../../services/api/securityAPI');
+      const { nativeSecurityAPI } = await import('../../services/api/nativeSecurityAPI');
       const { deviceManager } = await import('../../services/deviceManager');
-      
+
       const deviceId = await deviceManager.getDeviceId();
-      const result = await securityAPI.validatePin({
+      const result = await nativeSecurityAPI.validatePin({
         pin: pinToValidate,
         deviceId
       });
@@ -188,12 +188,15 @@ export default function ChangePinScreen() {
 
     setIsLoading(true);
     try {
-      const { securityAPI } = await import('../../services/api/securityAPI');
+      const { nativeSecurityAPI } = await import('../../services/api/nativeSecurityAPI');
       const { deviceManager } = await import('../../services/deviceManager');
-      
+
       const deviceId = await deviceManager.getDeviceId();
       const cleanOldPin = oldPin.trim().replace(/[^0-9]/g, '');
-      const result = await securityAPI.changePin(deviceId, cleanOldPin, cleanNewPin);
+      const result = await nativeSecurityAPI.setupPin({
+        pin: cleanNewPin,
+        deviceId
+      });
       
       if (result.success) {
         Alert.alert(
