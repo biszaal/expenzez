@@ -472,7 +472,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               deviceName: deviceInfo.deviceName,
               platform: deviceInfo.platform,
               appVersion: deviceInfo.appVersion,
-              rememberMe: rememberMe || false
+              rememberMe: rememberMe || false,
+              userEmail: responseData.user.email || (identifier.includes('@') ? identifier : 'test@expenzez.com') // Use user email, or identifier if it's an email, otherwise use test email
             });
 
             if (registrationResult.success) {
@@ -621,7 +622,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               deviceName: deviceInfo.deviceName,
               platform: deviceInfo.platform,
               appVersion: deviceInfo.appVersion,
-              rememberMe: rememberMe || false
+              rememberMe: rememberMe || false,
+              userEmail: response.user.email || email || 'test@expenzez.com' // Use user email or fallback to email parameter
             });
 
             if (registrationResult.success) {

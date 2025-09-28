@@ -7,6 +7,7 @@ export interface DeviceRegistrationRequest {
   platform: string;
   appVersion: string;
   rememberMe: boolean;
+  userEmail: string;
 }
 
 export interface RegisteredDevice {
@@ -24,20 +25,21 @@ export interface DeviceRegistrationResponse {
   device: RegisteredDevice;
 }
 
+export interface DeviceInfo {
+  deviceId: string;
+  deviceName: string;
+  platform: string;
+  deviceType: string;
+  browser?: string;
+  isTrusted: boolean;
+  firstSeen: string;
+  lastSeen: string;
+  location?: string;
+}
+
 export interface DeviceListResponse {
   success: boolean;
-  devices: Array<{
-    deviceId: string;
-    deviceName: string;
-    platform: string;
-    appVersion: string;
-    registeredAt: number;
-    lastUsed: number;
-    expiresAt: number;
-    rememberMe: boolean;
-    isCurrentDevice: boolean;
-    daysUntilExpiry: number;
-  }>;
+  devices: DeviceInfo[];
   totalDevices: number;
 }
 
@@ -72,10 +74,9 @@ export const deviceAPI = {
   /**
    * Get list of registered devices for the user
    */
-  async getDeviceList(currentDeviceId?: string): Promise<DeviceListResponse> {
+  async getDeviceList(): Promise<DeviceListResponse> {
     try {
-      const params = currentDeviceId ? { currentDeviceId } : {};
-      const response = await api.get('/devices/list', { params });
+      const response = await api.get('/devices/list');
       return response.data;
     } catch (error: any) {
       console.error('🔐 [DeviceAPI] Get device list failed:', error);
@@ -86,14 +87,25 @@ export const deviceAPI = {
   /**
    * Revoke a specific device
    */
-  async revokeDevice(deviceId: string): Promise<{ success: boolean; message: string }> {
+  async revokeDevice(deviceId: string): Promise<{ success: boolean; message: string; deviceId: string }> {
     try {
-      const response = await api.delete('/devices/revoke', {
-        data: { deviceId }
-      });
+      const response = await api.delete(`/devices/revoke/${deviceId}`);
       return response.data;
     } catch (error: any) {
       console.error('🔐 [DeviceAPI] Revoke device failed:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Trust a specific device
+   */
+  async trustDevice(deviceId: string): Promise<{ success: boolean; message: string; deviceId: string }> {
+    try {
+      const response = await api.put(`/devices/${deviceId}/trust`);
+      return response.data;
+    } catch (error: any) {
+      console.error('🔐 [DeviceAPI] Trust device failed:', error);
       throw error;
     }
   },

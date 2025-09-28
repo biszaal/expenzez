@@ -373,32 +373,6 @@ export default function SettingsPage() {
               />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.settingItem,
-                {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-              onPress={() => router.push("/(tabs)/banks" as any)}
-            >
-              <Ionicons
-                name="business-outline"
-                size={22}
-                color={colors.primary[500]}
-                style={{ marginRight: 14 }}
-              />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
-                Connected Banks
-              </Text>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.text.tertiary}
-              />
-            </TouchableOpacity>
 
             <TouchableOpacity
               style={[
