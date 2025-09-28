@@ -20,6 +20,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { enhancedSecurityAPI } from "../../services/api/enhancedSecurityAPI";
 import { nativeSecurityAPI } from "../../services/api/nativeSecurityAPI";
 import { deviceManager } from "../../services/deviceManager";
+import { deviceAPI, DeviceInfo } from "../../services/api/deviceAPI";
 import PinInput from "../../components/PinInput";
 import {
   spacing,
@@ -47,6 +48,9 @@ export default function SecurityScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPinVerification, setShowPinVerification] = useState(false);
   const [pinInput, setPinInput] = useState('');
+  const [devices, setDevices] = useState<DeviceInfo[]>([]);
+  const [loadingDevices, setLoadingDevices] = useState(false);
+  const [currentDeviceId, setCurrentDeviceId] = useState<string | null>(null);
 
   // Auto-verification effect
   React.useEffect(() => {
@@ -105,6 +109,8 @@ export default function SecurityScreen() {
       // Load all settings
       checkBiometricAvailability();
       loadBiometricSettings();
+      loadDevices();
+      loadCurrentDeviceId();
 
       // Use debounced check to prevent excessive API calls
       debouncedCheckSecurityStatus();
@@ -399,6 +405,90 @@ export default function SecurityScreen() {
     } finally {
       console.log('🔐 [Security] PIN verification completed, clearing loading');
       setIsLoading(false);
+    }
+  };
+
+  const loadCurrentDeviceId = async () => {
+    try {
+      const deviceId = await deviceManager.getDeviceId();
+      setCurrentDeviceId(deviceId);
+    } catch (error) {
+      console.error('Error getting current device ID:', error);
+    }
+  };
+
+  const loadDevices = async () => {
+    try {
+      setLoadingDevices(true);
+      const response = await deviceAPI.getDeviceList();
+      if (response.success) {
+        setDevices(response.devices);
+      }
+    } catch (error) {
+      console.error('Error loading devices:', error);
+      // Don't show error alert for now, just fail silently
+    } finally {
+      setLoadingDevices(false);
+    }
+  };
+
+  const handleRevokeDevice = async (deviceId: string, deviceName: string) => {
+    Alert.alert(
+      "Revoke Device",
+      `Are you sure you want to revoke access for "${deviceName}"? This device will need to log in again.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Revoke",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deviceAPI.revokeDevice(deviceId);
+              Alert.alert("Device Revoked", `"${deviceName}" has been revoked successfully.`);
+              await loadDevices(); // Reload the list
+            } catch (error) {
+              console.error('Error revoking device:', error);
+              Alert.alert("Error", "Failed to revoke device. Please try again.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleTrustDevice = async (deviceId: string, deviceName: string) => {
+    try {
+      await deviceAPI.trustDevice(deviceId);
+      Alert.alert("Device Trusted", `"${deviceName}" is now a trusted device.`);
+      await loadDevices(); // Reload the list
+    } catch (error) {
+      console.error('Error trusting device:', error);
+      Alert.alert("Error", "Failed to trust device. Please try again.");
+    }
+  };
+
+  const formatDeviceType = (device: DeviceInfo) => {
+    const parts = [];
+    if (device.platform) parts.push(device.platform);
+    if (device.deviceType) parts.push(device.deviceType);
+    if (device.browser) parts.push(device.browser);
+    return parts.join(' • ');
+  };
+
+  const formatLastSeen = (lastSeen: string) => {
+    const date = new Date(lastSeen);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString();
     }
   };
 
@@ -757,6 +847,147 @@ export default function SecurityScreen() {
           </View>
         </View>
         )}
+
+        {/* Trusted Devices Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+            Trusted Devices
+          </Text>
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: colors.background.primary },
+              shadows.sm,
+            ]}
+          >
+            {loadingDevices ? (
+              <View style={styles.loadingDevicesContainer}>
+                <ActivityIndicator size="small" color={colors.primary[500]} />
+                <Text style={[styles.loadingDevicesText, { color: colors.text.secondary }]}>
+                  Loading devices...
+                </Text>
+              </View>
+            ) : devices.length === 0 ? (
+              <View style={styles.emptyDevicesContainer}>
+                <Ionicons
+                  name="phone-portrait-outline"
+                  size={32}
+                  color={colors.gray[400]}
+                />
+                <Text style={[styles.emptyDevicesText, { color: colors.text.secondary }]}>
+                  No trusted devices found
+                </Text>
+                <Text style={[styles.emptyDevicesSubtext, { color: colors.gray[400] }]}>
+                  Enable &quot;Remember this device&quot; when logging in to see devices here
+                </Text>
+              </View>
+            ) : (
+              devices.map((device, index) => {
+                const isCurrentDevice = device.deviceId === currentDeviceId;
+                return (
+                  <View key={device.deviceId}>
+                    <View style={styles.deviceItem}>
+                      <View style={styles.deviceLeft}>
+                        <View
+                          style={[
+                            styles.deviceIcon,
+                            { backgroundColor: isCurrentDevice ? colors.success[100] : colors.primary[100] },
+                          ]}
+                        >
+                          <Ionicons
+                            name={
+                              device.platform === 'ios'
+                                ? 'phone-portrait'
+                                : device.platform === 'android'
+                                ? 'phone-portrait'
+                                : device.deviceType === 'desktop'
+                                ? 'desktop'
+                                : 'tablet-portrait'
+                            }
+                            size={20}
+                            color={isCurrentDevice ? colors.success[500] : colors.primary[500]}
+                          />
+                        </View>
+                        <View style={styles.deviceContent}>
+                          <View style={styles.deviceHeader}>
+                            <Text
+                              style={[
+                                styles.deviceName,
+                                { color: colors.text.primary },
+                              ]}
+                            >
+                              {device.deviceName}
+                              {isCurrentDevice && (
+                                <Text style={[styles.currentDeviceBadge, { color: colors.success[600] }]}>
+                                  {' '}• This device
+                                </Text>
+                              )}
+                            </Text>
+                            {device.isTrusted && (
+                              <View style={[styles.trustedBadge, { backgroundColor: colors.success[100] }]}>
+                                <Ionicons name="shield-checkmark" size={12} color={colors.success[600]} />
+                                <Text style={[styles.trustedBadgeText, { color: colors.success[600] }]}>
+                                  Trusted
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text
+                            style={[
+                              styles.deviceType,
+                              { color: colors.text.secondary },
+                            ]}
+                          >
+                            {formatDeviceType(device)}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.deviceLastSeen,
+                              { color: colors.gray[400] },
+                            ]}
+                          >
+                            Last seen: {formatLastSeen(device.lastSeen)}
+                          </Text>
+                          {device.location && (
+                            <Text
+                              style={[
+                                styles.deviceLocation,
+                                { color: colors.gray[400] },
+                              ]}
+                            >
+                              📍 {device.location}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                      <View style={styles.deviceActions}>
+                        {!device.isTrusted && (
+                          <TouchableOpacity
+                            style={[styles.deviceActionButton, { backgroundColor: colors.success[100] }]}
+                            onPress={() => handleTrustDevice(device.deviceId, device.deviceName)}
+                          >
+                            <Ionicons name="shield-checkmark" size={16} color={colors.success[600]} />
+                          </TouchableOpacity>
+                        )}
+                        {!isCurrentDevice && (
+                          <TouchableOpacity
+                            style={[styles.deviceActionButton, { backgroundColor: colors.error[100] }]}
+                            onPress={() => handleRevokeDevice(device.deviceId, device.deviceName)}
+                          >
+                            <Ionicons name="trash" size={16} color={colors.error[600]} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                    {index < devices.length - 1 && (
+                      <View style={[styles.deviceSeparator, { backgroundColor: colors.gray[200] }]} />
+                    )}
+                  </View>
+                );
+              })
+            )}
+          </View>
+        </View>
 
         {/* Security Info Section */}
         <View style={styles.section}>
@@ -1172,5 +1403,112 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing['2xl'],
+  },
+  // Device Management Styles
+  loadingDevicesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xl,
+  },
+  loadingDevicesText: {
+    fontSize: typography.fontSizes.sm,
+    marginLeft: spacing.sm,
+  },
+  emptyDevicesContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing['2xl'],
+    paddingHorizontal: spacing.lg,
+  },
+  emptyDevicesText: {
+    fontSize: typography.fontSizes.base,
+    fontWeight: '600',
+    marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  emptyDevicesSubtext: {
+    fontSize: typography.fontSizes.sm,
+    marginTop: spacing.xs,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  deviceItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+  },
+  deviceLeft: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flex: 1,
+  },
+  deviceIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  deviceContent: {
+    flex: 1,
+  },
+  deviceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  deviceName: {
+    fontSize: typography.fontSizes.base,
+    fontWeight: '600',
+    flex: 1,
+  },
+  currentDeviceBadge: {
+    fontSize: typography.fontSizes.sm,
+    fontWeight: '500',
+  },
+  trustedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    marginLeft: spacing.sm,
+  },
+  trustedBadgeText: {
+    fontSize: typography.fontSizes.xs,
+    fontWeight: '600',
+    marginLeft: spacing.xs,
+  },
+  deviceType: {
+    fontSize: typography.fontSizes.sm,
+    marginBottom: spacing.xs,
+  },
+  deviceLastSeen: {
+    fontSize: typography.fontSizes.xs,
+    marginBottom: spacing.xs,
+  },
+  deviceLocation: {
+    fontSize: typography.fontSizes.xs,
+  },
+  deviceActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  deviceActionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.sm,
+  },
+  deviceSeparator: {
+    height: 1,
+    marginHorizontal: spacing.lg,
   },
 });
