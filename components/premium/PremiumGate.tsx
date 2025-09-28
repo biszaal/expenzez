@@ -184,7 +184,7 @@ export const withPremiumGate = <P extends object>(
     allowTrialAccess?: boolean;
   }
 ) => {
-  return (props: P) => (
+  const WithPremiumGate = (props: P) => (
     <PremiumGate
       feature={feature}
       upgradeMessage={options?.upgradeMessage}
@@ -193,6 +193,10 @@ export const withPremiumGate = <P extends object>(
       <WrappedComponent {...props} />
     </PremiumGate>
   );
+
+  WithPremiumGate.displayName = `WithPremiumGate(${WrappedComponent.displayName || WrappedComponent.name})`;
+
+  return WithPremiumGate;
 };
 
 /**

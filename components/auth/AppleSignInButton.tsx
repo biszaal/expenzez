@@ -23,13 +23,14 @@ export const AppleSignInButton: React.FC<AppleSignInButtonProps> = ({
   const [isChecking, setIsChecking] = React.useState(true);
   const [isAvailable, setIsAvailable] = React.useState(false);
 
-  // 🚨 SECURITY: Hide Apple Sign-In if user is already authenticated
-  if (isLoggedIn) {
-    console.log('🚨 [SECURITY] Apple Sign-In hidden - user already authenticated');
-    return null;
-  }
-
   React.useEffect(() => {
+    // Skip initialization if user is already logged in
+    if (isLoggedIn) {
+      setIsChecking(false);
+      setIsAvailable(false);
+      return;
+    }
+
     // Only check availability on iOS devices
     if (Platform.OS !== 'ios') {
       setIsChecking(false);
@@ -50,7 +51,13 @@ export const AppleSignInButton: React.FC<AppleSignInButtonProps> = ({
     };
     
     checkAvailability();
-  }, []);
+  }, [isLoggedIn]);
+
+  // 🚨 SECURITY: Hide Apple Sign-In if user is already authenticated
+  if (isLoggedIn) {
+    console.log('🚨 [SECURITY] Apple Sign-In hidden - user already authenticated');
+    return null;
+  }
 
   // Only show on iOS devices
   if (Platform.OS !== 'ios') {
