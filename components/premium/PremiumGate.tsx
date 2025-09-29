@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSubscription, SubscriptionFeatures } from '../../contexts/SubscriptionContext';
+import { useRevenueCat } from '../../contexts/RevenueCatContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { UpgradePrompt } from './UpgradePrompt';
 import { styles } from './PremiumGate.styles';
@@ -66,13 +67,15 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
   allowTrialAccess = true,
 }) => {
   const { checkFeatureAccess, isPremium, isTrialActive, subscription } = useSubscription();
+  const { isPro: isRevenueCatPro } = useRevenueCat();
   const { colors } = useTheme();
   const router = useRouter();
 
   // Check if user has access to this feature
   const hasAccess = checkFeatureAccess(feature);
   const hasTrialAccess = allowTrialAccess && isTrialActive;
-  const canAccess = hasAccess || hasTrialAccess;
+  const hasRevenueCatAccess = isRevenueCatPro;
+  const canAccess = hasAccess || hasTrialAccess || hasRevenueCatAccess;
 
   // If user has access, render children normally
   if (canAccess) {
@@ -161,15 +164,17 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
  */
 export const useFeatureAccess = (feature: keyof SubscriptionFeatures) => {
   const { checkFeatureAccess, isPremium, isTrialActive } = useSubscription();
+  const { isPro: isRevenueCatPro } = useRevenueCat();
 
   const hasAccess = checkFeatureAccess(feature);
   const hasTrialAccess = isTrialActive;
+  const hasRevenueCatAccess = isRevenueCatPro;
 
   return {
-    hasAccess: hasAccess || hasTrialAccess,
-    isPremium,
+    hasAccess: hasAccess || hasTrialAccess || hasRevenueCatAccess,
+    isPremium: isPremium || isRevenueCatPro,
     isTrialActive,
-    requiresUpgrade: !hasAccess && !hasTrialAccess,
+    requiresUpgrade: !hasAccess && !hasTrialAccess && !hasRevenueCatAccess,
   };
 };
 

@@ -21,16 +21,20 @@ export interface ExpenseCategory {
 }
 
 export type ExpenseCategoryType =
-  | 'Food & Dining'
-  | 'Transportation'
-  | 'Shopping'
-  | 'Bills & Utilities'
-  | 'Entertainment'
-  | 'Health & Fitness'
-  | 'Banking & Finance'
-  | 'Travel'
-  | 'Income'
-  | 'Other';
+  | 'Revenue'
+  | 'Cost of Goods Sold'
+  | 'Operating Expenses'
+  | 'Salaries & Benefits'
+  | 'Marketing & Advertising'
+  | 'Technology & Software'
+  | 'Professional Services'
+  | 'Office & Administrative'
+  | 'Utilities & Rent'
+  | 'Travel & Entertainment'
+  | 'Equipment & Supplies'
+  | 'Insurance & Legal'
+  | 'Taxes & Compliance'
+  | 'Other Business Expenses';
 
 export interface ImportPreview {
   file: string;

@@ -61,7 +61,7 @@ export const ENV_CONFIG: EnvironmentConfig = {
   isDevelopment: environment === 'development',
   environment,
   
-  // API Configuration
+  // API Configuration - ALWAYS use production AWS API Gateway
   apiBaseURL: 'https://jvgwbst4og.execute-api.eu-west-2.amazonaws.com', // Production AWS API Gateway
 
   // Website URLs

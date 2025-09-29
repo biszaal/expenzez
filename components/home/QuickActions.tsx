@@ -6,9 +6,11 @@ import * as WebBrowser from 'expo-web-browser';
 import { DEEP_LINK_URLS } from '../../constants/config';
 import { SHADOWS } from '../../constants/Colors';
 import { styles } from './QuickActions.styles';
+import { useRevenueCat } from '../../contexts/RevenueCatContext';
 
 export const QuickActions: React.FC = () => {
   const router = useRouter();
+  const { isPro } = useRevenueCat();
 
   const handleConnectBank = async () => {
     // Navigate to bank selection screen instead of direct connection
@@ -74,6 +76,26 @@ export const QuickActions: React.FC = () => {
             <View style={styles.professionalQuickActionText}>
               <Text style={styles.professionalQuickActionTitle}>Analytics</Text>
               <Text style={styles.professionalQuickActionSubtitle}>Track spending</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.professionalQuickActionCard}
+          onPress={() => router.push("/import-csv")}
+          activeOpacity={0.85}
+        >
+          <View
+            style={[styles.professionalQuickActionGradient, SHADOWS.lg, { backgroundColor: '#F59E0B' }]}
+          >
+            <View style={styles.professionalQuickActionIconContainer}>
+              <View style={styles.professionalQuickActionIcon}>
+                <Ionicons name="document-text-outline" size={24} color="white" />
+              </View>
+            </View>
+            <View style={styles.professionalQuickActionText}>
+              <Text style={styles.professionalQuickActionTitle}>Import CSV</Text>
+              <Text style={styles.professionalQuickActionSubtitle}>Upload data</Text>
             </View>
           </View>
         </TouchableOpacity>

@@ -25,8 +25,7 @@ import {
   typography,
 } from "../../constants/theme";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
-import { getTransactions } from "../../services/dataSource";
-import BillTrackingAlgorithm, { DetectedBill, Transaction } from "../../services/billTrackingAlgorithm";
+import BillTrackingAlgorithm, { DetectedBill } from "../../services/billTrackingAlgorithm";
 import { autoBillDetection } from "../../services/automaticBillDetection";
 import { BillPreferencesAPI } from "../../services/api/billPreferencesAPI";
 import { BillDetailsModal } from "../../components/BillDetailsModal";
@@ -206,8 +205,12 @@ export default function BillsScreen() {
     };
   }, [bills]);
 
-  const billsByCategory = useMemo(() => {
-    return BillTrackingAlgorithm.getBillsByCategory(filteredBills);
+  const sortedBillsByCategory = useMemo(() => {
+    // First sort all bills by priority (important bills first)
+    const sortedBills = BillTrackingAlgorithm.getBillsByPriority(filteredBills);
+
+    // Then group them by category while preserving priority order
+    return BillTrackingAlgorithm.getBillsByCategory(sortedBills);
   }, [filteredBills]);
 
   const showBillDetails = (bill: DetectedBill) => {
@@ -663,7 +666,7 @@ export default function BillsScreen() {
                   </Text>
                 </Text>
 
-                {Object.entries(billsByCategory).map(([category, categoryBills]) => (
+                {Object.entries(sortedBillsByCategory).map(([category, categoryBills]) => (
                   <View key={category} style={styles.categoryGroup}>
                     {selectedCategory === "All" && (
                       <Text style={[styles.categoryGroupTitle, { color: colors.text.secondary }]}>
