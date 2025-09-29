@@ -681,12 +681,44 @@ export default function SpendingPage() {
     }
   };
 
+  // Helper function to map backend category names to frontend display names
+  const mapCategoryName = (backendCategory: string): string => {
+    const categoryMapping: Record<string, string> = {
+      'food': 'Food & Dining',
+      'shopping': 'Shopping',
+      'transport': 'Transport',
+      'entertainment': 'Entertainment',
+      'bills': 'Bills & Utilities',
+      'healthcare': 'Healthcare',
+      'education': 'Education',
+      'travel': 'Travel',
+      'groceries': 'Groceries',
+      'fuel': 'Fuel',
+      'subscriptions': 'Subscriptions',
+      'income': 'Income',
+      'other': 'Other'
+    };
+    return categoryMapping[backendCategory.toLowerCase()] || backendCategory;
+  };
+
   // Category data with monthly spending
   const sortedCategoryData = useMemo(() => {
-    const result = categoryData.map((cat) => ({
-      ...cat,
-      monthlySpent: monthlyData.monthlySpentByCategory[cat.name] || 0,
-    })).sort((a, b) => (b.monthlySpent || 0) - (a.monthlySpent || 0));
+    const result = categoryData.map((cat) => {
+      // Calculate spending by looking for both exact match and mapped categories
+      let spending = monthlyData.monthlySpentByCategory[cat.name] || 0;
+
+      // Also check for backend category names that map to this frontend category
+      Object.entries(monthlyData.monthlySpentByCategory || {}).forEach(([backendCat, amount]) => {
+        if (mapCategoryName(backendCat) === cat.name) {
+          spending += amount;
+        }
+      });
+
+      return {
+        ...cat,
+        monthlySpent: spending,
+      };
+    }).sort((a, b) => (b.monthlySpent || 0) - (a.monthlySpent || 0));
 
     // Debug: log category spending data
     console.log('🐛 [Spending] Category spending data:', {
@@ -782,10 +814,9 @@ export default function SpendingPage() {
         const mostRecentMonth = sortedMonths[0];
         
         // Only change selected month if current selection has no data
-        // BUT never auto-switch away from the current month
+        // Auto-switch to most recent month with data if current month is empty
         const currentMonthHasData = monthsWithData.has(selectedMonth);
-        const isCurrentMonth = dayjs(selectedMonth).isSame(dayjs(), 'month');
-        if (!currentMonthHasData && !isCurrentMonth) {
+        if (!currentMonthHasData) {
           setSelectedMonth(mostRecentMonth);
         }
       }
