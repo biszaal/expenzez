@@ -18,8 +18,9 @@ import { useTheme } from '../contexts/ThemeContext';
 import { transactionAPI } from '../services/api';
 import { autoBillDetection } from '../services/automaticBillDetection';
 import { ExpenseCategory, ImportPreview } from '../types/expense';
+import type { CSVTransaction } from '../services/api/transactionAPI';
 
-interface CSVTransaction {
+interface CSVTransactionPreview {
   id: string;
   date: string;
   description: string;
@@ -59,6 +60,7 @@ export default function CSVImportScreen() {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [allTransactions, setAllTransactions] = useState<CSVTransaction[]>([]);
+  const [previewTransactions, setPreviewTransactions] = useState<CSVTransactionPreview[]>([]);
 
   const validateCSVFormat = (csvText: string): { isValid: boolean; error?: string } => {
     // Check if file is empty or too small
@@ -108,12 +110,11 @@ export default function CSVImportScreen() {
     return { isValid: true };
   };
 
-  const parseCSV = (csvText: string): CSVTransaction[] => {
+  const parseCSV = (csvText: string): { transactions: CSVTransaction[], preview: CSVTransactionPreview[], errors: string[] } => {
     const lines = csvText.split('\n').filter(line => line.trim());
     const transactions: CSVTransaction[] = [];
+    const preview: CSVTransactionPreview[] = [];
     const errors: string[] = [];
-    let validRows = 0;
-    let invalidRows = 0;
 
     // Determine if first row is header
     const firstRow = lines[0].toLowerCase();
@@ -128,7 +129,6 @@ export default function CSVImportScreen() {
       // Validate minimum columns (Date, Description, Amount, Category, Type)
       if (columns.length < 5) {
         errors.push(`Row ${rowNumber}: Must have 5 columns: Date, Description, Amount, Category, Type`);
-        invalidRows++;
         continue;
       }
 
@@ -137,118 +137,62 @@ export default function CSVImportScreen() {
       const amountStr = columns[2];
       const categoryStr = columns[3];
       const typeStr = columns[4];
-      let amount = 0;
-      let type: 'debit' | 'credit' = 'debit';
-      let category = 'other';
 
-      // Validate date
+      // Basic validation only - let backend handle categorization
       if (!dateStr || !isValidDate(dateStr)) {
         errors.push(`Row ${rowNumber}: Invalid or missing date "${dateStr}"`);
-        invalidRows++;
         continue;
       }
 
-      // Validate description
       if (!description || description.length < 2) {
         errors.push(`Row ${rowNumber}: Description too short or missing`);
-        invalidRows++;
-        continue;
-      }
-
-      // Parse amount
-      if (!amountStr) {
-        errors.push(`Row ${rowNumber}: Amount is missing`);
-        invalidRows++;
         continue;
       }
 
       const rawAmount = parseFloat(amountStr.replace(/[£$,\s]/g, ''));
-      if (isNaN(rawAmount)) {
+      if (isNaN(rawAmount) || rawAmount === 0) {
         errors.push(`Row ${rowNumber}: Invalid amount "${amountStr}"`);
-        invalidRows++;
         continue;
       }
 
-      if (rawAmount === 0) {
-        errors.push(`Row ${rowNumber}: Amount cannot be zero`);
-        invalidRows++;
-        continue;
-      }
-
-      amount = Math.abs(rawAmount); // Store absolute value, sign will be handled by type
-
-      // Validate and parse type
       if (!typeStr || (typeStr.toLowerCase() !== 'debit' && typeStr.toLowerCase() !== 'credit')) {
         errors.push(`Row ${rowNumber}: Type must be "debit" or "credit", got "${typeStr}"`);
-        invalidRows++;
-        continue;
-      }
-      type = typeStr.toLowerCase() as 'debit' | 'credit';
-
-      // Validate and parse category
-      if (!categoryStr || categoryStr.length < 2) {
-        errors.push(`Row ${rowNumber}: Category is missing or too short`);
-        invalidRows++;
         continue;
       }
 
-      // Validate category is in allowed list
-      const validCategories = CSV_EXPENSE_CATEGORIES.map(c => c.id);
-      if (!validCategories.includes(categoryStr.toLowerCase())) {
-        errors.push(`Row ${rowNumber}: Invalid category "${categoryStr}". Valid categories: ${validCategories.join(', ')}`);
-        invalidRows++;
-        continue;
-      }
-      category = categoryStr.toLowerCase();
+      const type = typeStr.toLowerCase() as 'debit' | 'credit';
+      const amount = Math.abs(rawAmount);
 
-      // Validate amount limits
-      if (amount > 50000) {
-        errors.push(`Row ${rowNumber}: Amount £${amount.toFixed(2)} seems unusually large`);
-        invalidRows++;
-        continue;
-      }
-
-      // Create transaction
+      // Create transaction for backend (no category validation)
       transactions.push({
+        date: formatDate(dateStr),
+        description: description.trim(),
+        amount,
+        category: categoryStr || '', // Send original category, let backend auto-categorize if invalid
+        type,
+      });
+
+      // Create preview transaction with basic categorization for preview
+      const previewCategory = categorizeTransaction(description.trim());
+
+      preview.push({
         id: `csv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         date: formatDate(dateStr),
         description: description.trim(),
-        amount: type === 'debit' ? -amount : amount, // Negative for expenses, positive for income
+        amount: type === 'debit' ? -amount : amount,
         originalAmount: amount,
-        category,
+        category: previewCategory,
         type,
-        tags: type === 'debit' ? ['expense', 'csv-import'] : ['income', 'csv-import'],
+        tags: ['csv-import'],
         merchant: description.trim(),
         accountId: 'csv-import',
         bankName: 'CSV Import',
         accountType: 'Imported Account',
         isPending: false,
       });
-      validRows++;
     }
 
-    // Show validation summary if there are errors
-    if (invalidRows > 0) {
-      const maxErrors = 5;
-      const errorSummary = errors.slice(0, maxErrors).join('\n');
-      const moreErrors = errors.length > maxErrors ? `\n... and ${errors.length - maxErrors} more errors` : '';
-
-      Alert.alert(
-        'Import Validation',
-        `Found ${validRows} valid transactions and ${invalidRows} invalid rows.\n\nFirst few errors:\n${errorSummary}${moreErrors}\n\nDo you want to continue importing the valid transactions?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Import Valid Only',
-            onPress: () => {
-              // Continue with valid transactions
-            }
-          }
-        ]
-      );
-    }
-
-    return transactions;
+    return { transactions, preview, errors };
   };
 
   const isValidDate = (dateStr: string): boolean => {
@@ -263,14 +207,86 @@ export default function CSVImportScreen() {
   };
 
   const categorizeTransaction = (description: string): string => {
-    // Advanced keyword matching for transaction categorization
+    // Enhanced keyword matching for transaction categorization
     const desc = description.toLowerCase();
 
-    // Check for income keywords first
-    if (desc.includes('salary') || desc.includes('wage') || desc.includes('pay') || desc.includes('income') ||
-        desc.includes('deposit') || desc.includes('refund') || desc.includes('bonus') ||
-        desc.includes('interest') || desc.includes('freelance') || desc.includes('dividend')) {
+    // Check for income keywords first (but exclude rent payments)
+    if ((desc.includes('salary') || desc.includes('wage') || desc.includes('pay') || desc.includes('income') ||
+         desc.includes('deposit') || desc.includes('refund') || desc.includes('bonus') ||
+         desc.includes('interest') || desc.includes('freelance') || desc.includes('dividend')) &&
+        !desc.includes('rent')) {
       return 'income';
+    }
+
+    // Healthcare - specific patterns
+    if (desc.includes('fitness assessment') || desc.includes('month end fitness') || desc.includes('health assessment') ||
+        desc.includes('fitness') || desc.includes('health') || desc.includes('assessment') ||
+        desc.includes('hospital') || desc.includes('doctor') || desc.includes('medical') ||
+        desc.includes('pharmacy') || desc.includes('dentist') || desc.includes('optician') ||
+        desc.includes('boots') || desc.includes('nhs') || desc.includes('prescription')) {
+      return 'healthcare';
+    }
+
+    // Transport - specific patterns
+    if (desc.includes('equipment transport') || desc.includes('autumn equipment transport') ||
+        desc.includes('transport') || desc.includes('uber') || desc.includes('taxi') ||
+        desc.includes('bus') || desc.includes('train') || desc.includes('tfl') || desc.includes('oyster') ||
+        desc.includes('parking') || desc.includes('toll') || desc.includes('delivery')) {
+      return 'transport';
+    }
+
+    // Fuel
+    if (desc.includes('petrol') || desc.includes('diesel') || desc.includes('fuel') ||
+        desc.includes('shell') || desc.includes('bp') || desc.includes('esso') || desc.includes('texaco')) {
+      return 'fuel';
+    }
+
+    // Groceries - specific patterns
+    if (desc.includes('co-op weekly shop') || desc.includes('weekly shop') || desc.includes('tesco grocery') ||
+        desc.includes('grocery shopping') || desc.includes('grocery') || desc.includes('groceries') ||
+        desc.includes('supermarket') || desc.includes('tesco') || desc.includes('sainsbury') ||
+        desc.includes('asda') || desc.includes('morrisons') || desc.includes('co-op') ||
+        desc.includes('waitrose') || desc.includes('lidl') || desc.includes('aldi') || desc.includes('iceland')) {
+      return 'groceries';
+    }
+
+    // Food & Dining - specific patterns
+    if (desc.includes('last week of september dinner') || desc.includes('autumn harvest dinner') ||
+        desc.includes('september dinner') || desc.includes('harvest dinner') ||
+        desc.includes('dinner') || desc.includes('lunch') || desc.includes('breakfast') || desc.includes('meal') ||
+        desc.includes('restaurant') || desc.includes('cafe') || desc.includes('pub') ||
+        desc.includes('takeaway') || desc.includes('mcdonald') || desc.includes('kfc') ||
+        desc.includes('pizza') || desc.includes('burger') || desc.includes('subway') ||
+        desc.includes('starbucks') || desc.includes('costa') || desc.includes('nando') ||
+        desc.includes('deliveroo') || desc.includes('just eat') || desc.includes('uber eats')) {
+      return 'food';
+    }
+
+    // Shopping - specific patterns
+    if (desc.includes('premium autumn shop') || desc.includes('autumn sports equipment') ||
+        desc.includes('professional autumn collection') || desc.includes('professional camera upgrade') ||
+        desc.includes('camera upgrade') || desc.includes('sports equipment') || desc.includes('autumn collection') ||
+        desc.includes('shopping') || desc.includes('shop') || desc.includes('equipment') || desc.includes('upgrade') ||
+        desc.includes('camera') || desc.includes('collection') || desc.includes('professional') ||
+        desc.includes('amazon') || desc.includes('ebay') || desc.includes('argos') || desc.includes('currys') ||
+        desc.includes('john lewis') || desc.includes('marks') || desc.includes('next') ||
+        desc.includes('h&m') || desc.includes('zara') || desc.includes('clothing') || desc.includes('fashion')) {
+      return 'shopping';
+    }
+
+    // Subscriptions - specific patterns
+    if (desc.includes('audible monthly subscription') || desc.includes('monthly subscription') ||
+        desc.includes('audible') || desc.includes('subscription') || desc.includes('netflix') ||
+        desc.includes('spotify') || desc.includes('amazon prime') || desc.includes('disney') ||
+        desc.includes('youtube') || desc.includes('apple music') || desc.includes('monthly payment') ||
+        desc.includes('annual fee') || desc.includes('membership')) {
+      return 'subscriptions';
+    }
+
+    // Entertainment
+    if (desc.includes('entertainment') || desc.includes('cinema') || desc.includes('gym') ||
+        desc.includes('sport') || desc.includes('game') || desc.includes('playstation') || desc.includes('xbox')) {
+      return 'entertainment';
     }
 
     // Bills detection - comprehensive patterns
@@ -278,47 +294,21 @@ export default function CSVImportScreen() {
       return 'bills';
     }
 
-    // Check for other expense categories
-    if (desc.includes('supermarket') || desc.includes('grocery') || desc.includes('tesco') ||
-        desc.includes('sainsbury') || desc.includes('asda') || desc.includes('morrisons') ||
-        desc.includes('co-op') || desc.includes('waitrose') || desc.includes('lidl') ||
-        desc.includes('aldi') || desc.includes('iceland')) {
-      return 'groceries';
-    } else if (desc.includes('restaurant') || desc.includes('cafe') || desc.includes('pub') ||
-               desc.includes('takeaway') || desc.includes('mcdonald') || desc.includes('kfc') ||
-               desc.includes('pizza') || desc.includes('burger') || desc.includes('subway') ||
-               desc.includes('starbucks') || desc.includes('costa') || desc.includes('nando')) {
-      return 'food';
-    } else if (desc.includes('transport') || desc.includes('uber') || desc.includes('taxi') ||
-               desc.includes('bus') || desc.includes('train') || desc.includes('petrol') ||
-               desc.includes('fuel') || desc.includes('tfl') || desc.includes('oyster') ||
-               desc.includes('parking') || desc.includes('toll')) {
-      return 'transport';
-    } else if (desc.includes('shopping') || desc.includes('amazon') || desc.includes('ebay') ||
-               desc.includes('clothing') || desc.includes('fashion') || desc.includes('argos') ||
-               desc.includes('currys') || desc.includes('john lewis') || desc.includes('marks') ||
-               desc.includes('next') || desc.includes('h&m') || desc.includes('zara')) {
-      return 'shopping';
-    } else if (desc.includes('entertainment') || desc.includes('cinema') || desc.includes('netflix') ||
-               desc.includes('spotify') || desc.includes('gym') || desc.includes('sport') ||
-               desc.includes('amazon prime') || desc.includes('disney') || desc.includes('subscription') ||
-               desc.includes('youtube') || desc.includes('apple music') || desc.includes('fitness')) {
-      return 'entertainment';
-    } else if (desc.includes('hospital') || desc.includes('doctor') || desc.includes('medical') ||
-               desc.includes('pharmacy') || desc.includes('dentist') || desc.includes('optician') ||
-               desc.includes('boots') || desc.includes('nhs') || desc.includes('prescription')) {
-      return 'healthcare';
-    } else if (desc.includes('education') || desc.includes('school') || desc.includes('university') ||
-               desc.includes('college') || desc.includes('course') || desc.includes('tuition') ||
-               desc.includes('books') || desc.includes('student')) {
+    // Education
+    if (desc.includes('education') || desc.includes('school') || desc.includes('university') ||
+        desc.includes('college') || desc.includes('course') || desc.includes('tuition') ||
+        desc.includes('books') || desc.includes('student')) {
       return 'education';
-    } else if (desc.includes('travel') || desc.includes('hotel') || desc.includes('flight') ||
-               desc.includes('airline') || desc.includes('booking') || desc.includes('expedia') ||
-               desc.includes('airbnb') || desc.includes('holiday')) {
-      return 'travel';
-    } else {
-      return 'other';
     }
+
+    // Travel
+    if (desc.includes('travel') || desc.includes('hotel') || desc.includes('flight') ||
+        desc.includes('airline') || desc.includes('booking') || desc.includes('expedia') ||
+        desc.includes('airbnb') || desc.includes('holiday')) {
+      return 'travel';
+    }
+
+    return 'other';
   };
 
   const isBillTransaction = (description: string): boolean => {
@@ -470,33 +460,44 @@ export default function CSVImportScreen() {
       }
 
       // Parse CSV
-      const transactions = parseCSV(csvText);
+      const parseResult = parseCSV(csvText);
 
-      if (transactions.length === 0) {
+      if (parseResult.transactions.length === 0) {
         Alert.alert('No Data', 'No valid transactions found in the CSV file. Please check the format.');
         setLoading(false);
         return;
       }
 
+      // Show errors if any, but don't block import
+      if (parseResult.errors.length > 0) {
+        const errorSummary = parseResult.errors.slice(0, 3).join('\n');
+        const moreErrors = parseResult.errors.length > 3 ? `\n... and ${parseResult.errors.length - 3} more errors` : '';
+        Alert.alert(
+          'Some rows have issues',
+          `${parseResult.errors.length} rows were skipped due to format issues:\n\n${errorSummary}${moreErrors}\n\nContinuing with ${parseResult.transactions.length} valid transactions.`
+        );
+      }
+
       // Store all transactions for later import
-      setAllTransactions(transactions);
+      setAllTransactions(parseResult.transactions);
+      setPreviewTransactions(parseResult.preview);
 
       // Create preview
-      const sortedTransactions = transactions.sort((a, b) =>
+      const sortedPreview = parseResult.preview.sort((a, b) =>
         new Date(b.date).getTime() - new Date(a.date).getTime()
       );
 
-      const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
-      const dates = transactions.map(t => new Date(t.date));
+      const totalAmount = parseResult.preview.reduce((sum, t) => sum + t.amount, 0);
+      const dates = parseResult.preview.map(t => new Date(t.date));
       const startDate = new Date(Math.min(...dates.map(d => d.getTime())));
       const endDate = new Date(Math.max(...dates.map(d => d.getTime())));
 
       setImportPreview({
         file: selectedFile || 'Unknown file',
-        totalTransactions: transactions.length,
+        totalTransactions: parseResult.transactions.length,
         successfulImports: 0, // Will be updated after import
-        errors: [], // No errors at preview stage
-        transactions: sortedTransactions.slice(0, 10), // Show first 10 for preview
+        errors: parseResult.errors,
+        transactions: sortedPreview.slice(0, 10), // Show first 10 for preview
         totalAmount,
         dateRange: {
           start: startDate.toLocaleDateString(),
@@ -558,52 +559,43 @@ export default function CSVImportScreen() {
     try {
       setImporting(true);
 
-      // Import all transactions to database only
-      let successCount = 0;
-      let failedCount = 0;
-      const errors: string[] = [];
+      // Use backend CSV import with auto-categorization
+      const result = await transactionAPI.importCsvTransactions(allTransactions);
 
-      for (const transaction of allTransactions) {
-        try {
-          // CSVTransaction is now compatible with Expense interface
-          await transactionAPI.createTransaction(transaction);
-          successCount++;
+      const { summary } = result;
+      const expenseCount = previewTransactions.filter(t => t.amount < 0).length;
+      const incomeCount = previewTransactions.filter(t => t.amount > 0).length;
 
-        } catch (error: any) {
-          failedCount++;
-          const errorMsg = `Failed to import "${transaction.description}": ${error.message}`;
-          errors.push(errorMsg);
-          console.error(`❌ ${errorMsg}`);
+      let summaryMessage = `Import completed with auto-categorization:\n• ${summary.imported} transactions saved to database\n• ${expenseCount} expenses\n• ${incomeCount} income entries`;
+
+      if (summary.autoCategorized > 0) {
+        summaryMessage += `\n• ${summary.autoCategorized} transactions auto-categorized`;
+
+        if (summary.keywordCategorized > 0) {
+          summaryMessage += `\n  - ${summary.keywordCategorized} by keyword matching`;
+        }
+
+        if (summary.aiCategorized > 0) {
+          summaryMessage += `\n  - ${summary.aiCategorized} by AI analysis`;
         }
       }
 
-      const expenseCount = allTransactions.filter(t => t.amount < 0).length;
-      const incomeCount = allTransactions.filter(t => t.amount > 0).length;
-      const billCount = allTransactions.filter(t => t.category === 'bills').length;
-
-      let summaryMessage = `Import completed:\n• ${successCount} transactions saved to database\n• ${expenseCount} expenses\n• ${incomeCount} income entries`;
-
-      if (billCount > 0) {
-        summaryMessage += `\n• ${billCount} bills detected automatically`;
-      }
-
-      if (failedCount > 0) {
-        summaryMessage += `\n• ${failedCount} failed to import`;
+      if (summary.failed > 0) {
+        summaryMessage += `\n• ${summary.failed} failed to import`;
 
         // Show first few errors
-        if (errors.length > 0) {
+        if (result.errors.length > 0) {
           const maxErrors = 3;
-          const errorSummary = errors.slice(0, maxErrors).join('\n');
-          const moreErrors = errors.length > maxErrors ? `\n... and ${errors.length - maxErrors} more errors` : '';
+          const errorSummary = result.errors.slice(0, maxErrors).join('\n');
+          const moreErrors = result.errors.length > maxErrors ? `\n... and ${result.errors.length - maxErrors} more errors` : '';
           console.warn(`Import errors:\n${errorSummary}${moreErrors}`);
         }
       }
 
       // Trigger automatic bill detection for recurring patterns
-      if (successCount > 0) {
+      if (summary.imported > 0) {
         // Run bill detection in background (don't block the success alert)
-        // Use refreshAfterTransactionChanges for better performance tracking
-        autoBillDetection.refreshAfterTransactionChanges(successCount)
+        autoBillDetection.refreshAfterTransactionChanges(summary.imported)
           .then(detectedBills => {
             if (detectedBills.length > 0) {
               console.log(`[CSV Import] Detected ${detectedBills.length} bills after import`);
@@ -613,11 +605,11 @@ export default function CSVImportScreen() {
             console.warn('[CSV Import] Background bill detection failed:', error);
           });
 
-        summaryMessage += `\n\n💡 Check the Bills tab to see any recurring payments detected from your data.`;
+        summaryMessage += `\n\n✨ Transactions were automatically categorized based on their descriptions.\n💡 Check the Bills tab to see any recurring payments detected from your data.`;
       }
 
       Alert.alert(
-        successCount > 0 ? 'Import Successful' : 'Import Failed',
+        summary.imported > 0 ? 'Import Successful' : 'Import Failed',
         summaryMessage,
         [
           {
@@ -626,7 +618,7 @@ export default function CSVImportScreen() {
               router.replace('/');
             },
           },
-          ...(successCount > 0 ? [{
+          ...(summary.imported > 0 ? [{
             text: 'View Bills',
             onPress: () => {
               router.replace('/(tabs)/bills');
@@ -635,9 +627,9 @@ export default function CSVImportScreen() {
         ]
       );
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error importing CSV:', error);
-      Alert.alert('Error', 'Failed to import transactions. Please check your connection and try again.');
+      Alert.alert('Error', `Failed to import transactions: ${error.message || 'Please check your connection and try again.'}`);
     } finally {
       setImporting(false);
     }
@@ -663,7 +655,7 @@ export default function CSVImportScreen() {
             Import Bank Statement
           </Text>
           <Text style={[styles.instructions, { color: colors.text.secondary }]}>
-            Upload a CSV file from your bank statement to automatically import both expenses and income transactions. Files are validated for accuracy and security.
+            Upload a CSV file from your bank statement to automatically import both expenses and income transactions. Invalid categories will be automatically categorized using AI-powered keyword matching.
           </Text>
 
           <View style={styles.formatInfo}>
@@ -680,7 +672,7 @@ export default function CSVImportScreen() {
               • Type: &quot;credit&quot; for income, &quot;debit&quot; for expenses
             </Text>
             <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Category: food, transport, shopping, etc.
+              • Category: Any text - invalid ones get auto-categorized
             </Text>
 
             <Text style={[styles.formatTitle, { color: colors.text.primary, marginTop: 12 }]}>
