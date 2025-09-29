@@ -16,11 +16,9 @@ const DEEP_LINK_URLS = {
   AUTH_CALLBACK: `${APP_SCHEME}://auth/callback`,
 };
 
-// API Configuration
+// API Configuration - ALWAYS use current production AWS API Gateway
 const API_CONFIG = {
-  BASE_URL: isProduction 
-    ? 'https://a95uq2n8k7.execute-api.eu-west-2.amazonaws.com' 
-    : 'https://a95uq2n8k7.execute-api.eu-west-2.amazonaws.com', // Use production API for dev too
+  BASE_URL: 'https://jvgwbst4og.execute-api.eu-west-2.amazonaws.com', // Current production AWS API Gateway
   TIMEOUT: 30000, // 30 seconds
 };
 

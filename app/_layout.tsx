@@ -12,6 +12,7 @@ import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
 import { NotificationProvider } from "../contexts/NotificationContext";
 import { NetworkProvider } from "../contexts/NetworkContext";
 import { SubscriptionProvider } from "../contexts/SubscriptionContext";
+import { RevenueCatProvider } from "../contexts/RevenueCatContext";
 import BiometricSecurityLock from "../components/BiometricSecurityLock";
 import { AppLoadingScreen } from "../components/ui/AppLoadingScreen";
 import PinSetupScreen from "./auth/PinSetup";
@@ -284,6 +285,7 @@ function RootLayoutNav() {
         <Stack.Screen name="transactions/index" />
         <Stack.Screen name="add-transaction" />
         <Stack.Screen name="import-csv" />
+        <Stack.Screen name="premium/index" />
         <Stack.Screen name="settings/index" />
         <Stack.Screen name="CompleteProfile" />
       </Stack>
@@ -296,15 +298,17 @@ export default function RootLayout() {
     <ErrorBoundary>
       <ThemeProvider>
         <NetworkProvider>
-          <AuthProvider>
-            <SubscriptionProvider>
-              <SecurityProvider>
-                <NotificationProvider>
-                  <RootLayoutNav />
-                </NotificationProvider>
-              </SecurityProvider>
-            </SubscriptionProvider>
-          </AuthProvider>
+          <RevenueCatProvider>
+            <AuthProvider>
+              <SubscriptionProvider>
+                <SecurityProvider>
+                  <NotificationProvider>
+                    <RootLayoutNav />
+                  </NotificationProvider>
+                </SecurityProvider>
+              </SubscriptionProvider>
+            </AuthProvider>
+          </RevenueCatProvider>
         </NetworkProvider>
       </ThemeProvider>
     </ErrorBoundary>
