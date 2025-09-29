@@ -50,6 +50,30 @@ export interface GetTransactionsParams {
   type?: 'debit' | 'credit';
 }
 
+export interface CSVTransaction {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  originalAmount: number;
+  category: string;
+  type: 'debit' | 'credit';
+}
+
+export interface CSVImportResponse {
+  message: string;
+  imported: number;
+  failed: number;
+  errors?: string[];
+  summary?: {
+    imported: number;
+    failed: number;
+    autoCategorized?: number;
+    keywordCategorized?: number;
+    aiCategorized?: number;
+  };
+}
+
 
 export const transactionAPI = {
   createTransaction: async (data: TransactionCreateData): Promise<TransactionCreateResponse> => {
@@ -69,6 +93,14 @@ export const transactionAPI = {
 
     const url = queryParams.toString() ? `/transactions?${queryParams.toString()}` : '/transactions';
     const response = await api.get(url);
+    return response.data;
+  },
+
+  // CSV Import with auto-categorization
+  importCsvTransactions: async (transactions: CSVTransaction[]): Promise<CSVImportResponse> => {
+    const response = await api.post('/transactions/import-csv', {
+      transactions
+    });
     return response.data;
   },
 
