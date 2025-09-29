@@ -23,11 +23,21 @@ export class MerchantClassifier {
     'mcdonalds', 'burger king', 'kfc', 'subway', 'starbucks', 'costa', 'nandos',
     'pizza hut', 'dominos', 'papa johns', 'restaurant', 'cafe', 'bistro', 'diner',
     'takeaway', 'delivery', 'ubereats', 'deliveroo', 'just eat', 'doordash',
+    'acai bowl', 'juice', 'coffee', 'pastry', 'smoothie', 'tea', 'bakery',
+    'artisan coffee', 'coffee shop', 'juice bar', 'smoothie bar',
 
     // Retail Stores
     'amazon', 'argos', 'john lewis', 'next', 'primark', 'h&m', 'zara', 'uniqlo',
     'boots', 'superdrug', 'currys', 'pc world', 'dixons', 'carphone warehouse',
     'target', 'walmart', 'costco', 'best buy', 'home depot', 'lowes',
+
+    // Beauty & Personal Care
+    'hair', 'beauty', 'salon', 'barbershop', 'nail', 'spa', 'massage', 'facial',
+    'beauty session', 'hair and beauty', 'beauty parlour', 'beauty treatment',
+
+    // Transport & Travel (one-time purchases, not recurring)
+    'airport express', 'train ticket', 'bus ticket', 'taxi', 'uber', 'lyft',
+    'airline', 'flight', 'booking', 'travel', 'holiday', 'hotel',
 
     // Gas Stations
     'shell', 'bp', 'esso', 'texaco', 'chevron', 'exxon', 'mobil', 'petrol', 'fuel',
@@ -171,8 +181,14 @@ export class MerchantClassifier {
     if (this.matchesAny(merchant, ['grocery', 'aldi', 'tesco', 'sainsbury', 'asda', 'morrisons', 'lidl', 'iceland', 'coop'])) {
       return 'Groceries';
     }
-    if (this.matchesAny(merchant, ['restaurant', 'cafe', 'mcdonald', 'burger', 'pizza', 'starbucks', 'costa'])) {
+    if (this.matchesAny(merchant, ['restaurant', 'cafe', 'mcdonald', 'burger', 'pizza', 'starbucks', 'costa', 'coffee', 'juice', 'acai', 'pastry', 'bakery'])) {
       return 'Dining';
+    }
+    if (this.matchesAny(merchant, ['hair', 'beauty', 'salon', 'spa', 'massage', 'facial', 'nail'])) {
+      return 'Beauty';
+    }
+    if (this.matchesAny(merchant, ['airport', 'train', 'bus', 'taxi', 'uber', 'travel', 'flight', 'hotel'])) {
+      return 'Travel';
     }
     if (this.matchesAny(merchant, ['amazon', 'argos', 'john lewis', 'next', 'primark', 'shop', 'store'])) {
       return 'Shopping';
