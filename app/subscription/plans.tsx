@@ -103,7 +103,7 @@ export default function SubscriptionPlansScreen() {
 
   const [selectedPlan, setSelectedPlan] = useState('premium-annual');
   const [purchasing, setPurchasing] = useState(false);
-  const showTrialButton = !isPremium && !isTrialActive;
+  const showTrialButton = false; // Disable separate trial button - trials handled through regular purchase flow
 
   // Log subscription screen load
   useEffect(() => {
@@ -113,28 +113,15 @@ export default function SubscriptionPlansScreen() {
   const handleStartTrial = async () => {
     setPurchasing(true);
     try {
-      // Use the trial package for RevenueCat (you can create a trial package in RevenueCat dashboard)
-      const success = await purchaseSubscription('trial');
-      if (success) {
-        Alert.alert(
-          '🎉 Free Trial Started!',
-          'Welcome to Premium! You now have 14 days of unlimited access to all features.',
-          [
-            {
-              text: 'Start Exploring',
-              onPress: () => router.push('/(tabs)'),
-              style: 'default'
-            }
-          ]
-        );
-      } else {
-        Alert.alert(
-          'Trial Not Available',
-          'Unable to start the free trial. Please try again or contact support.',
-          [{ text: 'OK' }]
-        );
-      }
+      // Use RevenueCat to start trial - this will go through Apple's payment system
+      // and set up automatic recurring subscription after trial ends
+      const success = await handlePurchase(); // Use the same purchase flow as regular subscription
+
+      // No need for separate trial logic - RevenueCat handles trial period automatically
+      // if your subscription products in App Store Connect are configured with free trials
+
     } catch (error) {
+      console.error('❌ [SubscriptionPlans] Trial error:', error);
       Alert.alert('Error', 'Failed to start trial. Please try again.');
     } finally {
       setPurchasing(false);
@@ -174,8 +161,8 @@ export default function SubscriptionPlansScreen() {
   const handlePurchase = async () => {
     setPurchasing(true);
     try {
-      // Map local plan ID to RevenueCat package ID
-      const packageId = selectedPlan === 'premium-annual' ? 'annual' : 'monthly';
+      // Map local plan ID to RevenueCat package ID (must match App Store Connect product IDs)
+      const packageId = selectedPlan === 'premium-annual' ? 'expenzez_premium_annual' : 'expenzez_premium_monthly';
 
       console.log('🛒 [SubscriptionPlans] Starting native purchase:', packageId);
 
@@ -485,14 +472,14 @@ export default function SubscriptionPlansScreen() {
             <View style={styles.buttonContent}>
               <Ionicons name="diamond" size={20} color="white" />
               <Text style={styles.upgradeButtonText}>
-                {purchasing ? 'Processing...' : `Get Premium - £${selectedPlanData?.price}/${selectedPlanData?.interval}`}
+                {purchasing ? 'Processing...' : `Start 14-Day Free Trial - £${selectedPlanData?.price}/${selectedPlanData?.interval}`}
               </Text>
               <Ionicons name="arrow-forward" size={16} color="white" />
             </View>
           </TouchableOpacity>
 
           <Text style={styles.disclaimerText}>
-            Cancel anytime. No hidden fees. 30-day money-back guarantee.
+            Free for 14 days, then auto-renews at £{selectedPlanData?.price}/{selectedPlanData?.interval}. Cancel anytime in Settings.
           </Text>
         </View>
       )}

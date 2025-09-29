@@ -636,6 +636,98 @@ export class BillTrackingAlgorithm {
   }
 
   /**
+   * Get bill priority score (higher = more important)
+   */
+  static getBillPriority(bill: DetectedBill): number {
+    let priority = 0;
+
+    // Category-based priority (most important bills first)
+    switch (bill.category.toLowerCase()) {
+      case 'utilities':
+      case 'housing':
+      case 'insurance':
+        priority += 100; // Essential bills
+        break;
+      case 'financial':
+      case 'transportation':
+        priority += 80; // Important bills
+        break;
+      case 'health':
+        priority += 70; // Health-related bills
+        break;
+      case 'subscriptions':
+        priority += 40; // Lower priority but still bills
+        break;
+      default:
+        priority += 30; // Other bills
+    }
+
+    // Amount-based priority (higher amounts = higher priority)
+    const monthlyAmount = this.getMonthlyAmount(bill);
+    if (monthlyAmount > 500) priority += 30;
+    else if (monthlyAmount > 200) priority += 20;
+    else if (monthlyAmount > 100) priority += 10;
+    else if (monthlyAmount > 50) priority += 5;
+
+    // Frequency-based priority (more frequent = more important to track)
+    switch (bill.frequency) {
+      case 'weekly':
+        priority += 15;
+        break;
+      case 'monthly':
+        priority += 10;
+        break;
+      case 'quarterly':
+        priority += 5;
+        break;
+      case 'yearly':
+        priority += 2;
+        break;
+    }
+
+    // Due date urgency (bills due soon get higher priority)
+    const daysUntilDue = dayjs(bill.nextDueDate).diff(dayjs(), 'days');
+    if (daysUntilDue <= 3) priority += 25; // Due very soon
+    else if (daysUntilDue <= 7) priority += 15; // Due this week
+    else if (daysUntilDue <= 14) priority += 10; // Due soon
+
+    // Confidence boost (higher confidence = more reliable bill)
+    priority += bill.confidence * 10;
+
+    return priority;
+  }
+
+  /**
+   * Get monthly equivalent amount for a bill
+   */
+  static getMonthlyAmount(bill: DetectedBill): number {
+    switch (bill.frequency) {
+      case 'weekly': return bill.amount * 4.33;
+      case 'monthly': return bill.amount;
+      case 'quarterly': return bill.amount / 3;
+      case 'yearly': return bill.amount / 12;
+      default: return bill.amount;
+    }
+  }
+
+  /**
+   * Get bills sorted by priority (important bills first)
+   */
+  static getBillsByPriority(bills: DetectedBill[]): DetectedBill[] {
+    return [...bills].sort((a, b) => {
+      const priorityA = this.getBillPriority(a);
+      const priorityB = this.getBillPriority(b);
+
+      if (priorityA !== priorityB) {
+        return priorityB - priorityA; // Higher priority first
+      }
+
+      // If same priority, sort by amount (higher amounts first)
+      return this.getMonthlyAmount(b) - this.getMonthlyAmount(a);
+    });
+  }
+
+  /**
    * Get bills by category
    */
   static getBillsByCategory(bills: DetectedBill[]): { [category: string]: DetectedBill[] } {
