@@ -62,7 +62,7 @@ export const ENV_CONFIG: EnvironmentConfig = {
   environment,
   
   // API Configuration
-  apiBaseURL: 'https://0hjm0et5ud.execute-api.eu-west-2.amazonaws.com', // Always use AWS API Gateway
+  apiBaseURL: 'https://jvgwbst4og.execute-api.eu-west-2.amazonaws.com', // Production AWS API Gateway
 
   // Website URLs
   websiteURL: environment === 'development'
