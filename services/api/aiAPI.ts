@@ -5,6 +5,8 @@ import { transactionAPI } from "./transactionAPI";
 import { goalsAPI, GoalsResponse } from "./goalsAPI";
 import { achievementAPI, AchievementResponse } from "./achievementAPI";
 import { savingsInsightsAPI, SavingsInsightsResponse } from "./savingsInsightsAPI";
+import { BillsAPI } from "./billsAPI";
+import SubscriptionOptimizer from "../subscriptionOptimizer";
 
 export const aiService = {
   // AI Assistant functionality
@@ -39,6 +41,24 @@ export const aiService = {
 
         // Set account info for manual mode
         financialContext.accounts = [{ name: "Manual Entry", type: "Manual Account" }];
+
+        // 💰 SUBSCRIPTION OPTIMIZATION: Analyze recurring bills for duplicates
+        try {
+          const bills = await BillsAPI.getBills();
+          if (bills.length > 0) {
+            const subscriptionAnalysis = await SubscriptionOptimizer.analyzeBillsWithPreferences(bills);
+            if (subscriptionAnalysis.length > 0) {
+              financialContext.subscriptionOptimization = {
+                hasDuplicates: true,
+                opportunities: subscriptionAnalysis,
+                summary: SubscriptionOptimizer.generateAISummary(bills)
+              };
+            }
+          }
+        } catch (billError) {
+          console.log("AI subscription analysis warning:", billError);
+          // Continue without subscription analysis
+        }
 
       } catch (contextError) {
         console.log("AI context gathering error:", contextError);
@@ -118,6 +138,68 @@ export const aiService = {
             fallbackResponse += "Try the 50/30/20 rule: 50% for needs, 30% for wants, and 20% for savings and debt repayment.";
           } else {
             fallbackResponse = "To help with budgeting, I need to see your transaction data. Add expenses manually or import CSV data to get personalized budget recommendations.";
+          }
+        } else if (lowerMessage.includes('subscription') || lowerMessage.includes('duplicate') || lowerMessage.includes('cancel')) {
+          // Check for subscription optimization opportunities
+          try {
+            const bills = await BillsAPI.getBills();
+            if (bills.length > 0) {
+              const duplicates = await SubscriptionOptimizer.analyzeBillsWithPreferences(bills);
+              if (duplicates.length > 0) {
+                const topSaving = duplicates[0];
+                fallbackResponse = `💰 I found ${duplicates.length} way${duplicates.length > 1 ? 's' : ''} to save money on subscriptions!\n\n`;
+                fallbackResponse += `**${topSaving.category}**: You're paying £${topSaving.totalMonthlyCost.toFixed(2)}/month for ${topSaving.subscriptions.length} services. `;
+                fallbackResponse += `${topSaving.recommendation}\n\n`;
+                fallbackResponse += `💵 Potential savings: £${topSaving.potentialAnnualSavings.toFixed(2)}/year\n\n`;
+                fallbackResponse += "Ask me 'How do I cancel [service name]?' for step-by-step instructions, or say 'I want to keep all my subscriptions' if you prefer.";
+              } else {
+                fallbackResponse = "Great news! I didn't find any duplicate subscriptions. Your subscriptions appear to be optimized. Keep tracking your bills to ensure you're not paying for unused services.";
+              }
+            } else {
+              fallbackResponse = "I can help you analyze subscriptions once you add some recurring bills. Go to the Bills tab to add your subscriptions, and I'll analyze them for potential savings.";
+            }
+          } catch (error) {
+            fallbackResponse = "I can analyze your subscriptions for duplicates and suggest cancellations to save money. Add your recurring bills in the Bills tab, and I'll help you optimize your spending!";
+          }
+        } else if (lowerMessage.includes('how do i cancel') || lowerMessage.includes('how to cancel')) {
+          // Extract service name from message
+          const serviceMatch = lowerMessage.match(/cancel\s+(.+)/);
+          if (serviceMatch) {
+            const serviceName = serviceMatch[1].replace(/\?/g, '').trim();
+            const guide = SubscriptionOptimizer.generateCancellationGuide(serviceName);
+            fallbackResponse = `📱 **How to Cancel ${guide.service}**\n\n`;
+            fallbackResponse += `⏱️ Average time: ${guide.averageTime}\n\n`;
+            fallbackResponse += guide.steps.join('\n');
+            if (guide.warning) {
+              fallbackResponse += `\n\n⚠️ ${guide.warning}`;
+            }
+          } else {
+            fallbackResponse = "Which subscription would you like to cancel? Just ask me 'How do I cancel Netflix?' or mention any other service, and I'll provide step-by-step instructions.";
+          }
+        } else if (lowerMessage.includes('keep all') || lowerMessage.includes('keep my subscription') || lowerMessage.includes('don\'t cancel')) {
+          // User wants to keep all their subscriptions
+          try {
+            const bills = await BillsAPI.getBills();
+            const duplicates = await SubscriptionOptimizer.analyzeBillsWithPreferences(bills);
+
+            if (duplicates.length > 0) {
+              // Save preference for each duplicate category
+              for (const duplicate of duplicates) {
+                const subscriptionNames = duplicate.subscriptions.map(s => s.name);
+                await SubscriptionOptimizer.saveUserPreference(
+                  duplicate.category,
+                  subscriptionNames,
+                  'keep_all'
+                );
+              }
+
+              fallbackResponse = `✅ Understood! I've noted that you want to keep all your subscriptions. I won't suggest canceling them again for the next 90 days.\n\n`;
+              fallbackResponse += `If you change your mind later, just ask me "Analyze my subscriptions" and I'll check again.`;
+            } else {
+              fallbackResponse = "I don't have any cancellation recommendations active right now. If you want to review your subscriptions, just ask me 'Analyze my subscriptions'.";
+            }
+          } catch (error) {
+            fallbackResponse = "I've noted your preference. If you'd like me to analyze your subscriptions in the future, just ask!";
           }
         } else {
           // Generic financial advice fallback for manual input mode
