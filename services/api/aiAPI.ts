@@ -196,7 +196,7 @@ export const aiService = {
               fallbackResponse = `✅ Understood! I've noted that you want to keep all your subscriptions. I won't suggest canceling them again for the next 90 days.\n\n`;
               fallbackResponse += `If you change your mind later, just ask me "Analyze my subscriptions" and I'll check again.`;
             } else {
-              fallbackResponse = "I don't have any cancellation recommendations active right now. If you want to review your subscriptions, just ask me 'Analyze my subscriptions'.";
+              fallbackResponse = "I don\'t have any cancellation recommendations active right now. If you want to review your subscriptions, just ask me 'Analyze my subscriptions'.";
             }
           } catch (error) {
             fallbackResponse = "I've noted your preference. If you'd like me to analyze your subscriptions in the future, just ask!";

@@ -223,7 +223,7 @@ export class SubscriptionOptimizer {
 
     const reasons = [
       `You're currently subscribed to ${count} different ${category.toLowerCase()} services.`,
-      categoryInfo?.averageUsage || 'Most people don't actively use all their subscriptions.',
+      categoryInfo?.averageUsage || 'Most people don\'t actively use all their subscriptions.',
       `Keeping ${keepService} and canceling the others could free up significant funds without impacting your lifestyle.`
     ];
 
@@ -242,7 +242,7 @@ export class SubscriptionOptimizer {
       ? cancel.join(' and ')
       : cancel.slice(0, -1).join(', ') + ', and ' + cancel[cancel.length - 1];
 
-    return `Consider canceling ${cancelList} and keeping ${keep}. You'll still have access to ${category.toLowerCase()} content while significantly reducing costs.`;
+    return `Consider canceling ${cancelList} and keeping ${keep}. You\'ll still have access to ${category.toLowerCase()} content while significantly reducing costs.`;
   }
 
   /**
@@ -433,7 +433,7 @@ export class SubscriptionOptimizer {
           '5. Your access continues until the end of your billing period'
         ],
         averageTime: '2 minutes',
-        warning: 'Netflix does not provide refunds. You\'ll have access until the end of your current billing period.'
+        warning: 'Netflix does not provide refunds. You will have access until the end of your current billing period.'
       },
       disney: {
         service: 'Disney+',
@@ -484,7 +484,7 @@ export class SubscriptionOptimizer {
       steps: [
         '1. Check your email for the subscription confirmation',
         '2. Look for cancellation links or account management options',
-        '3. Sign in to the service\'s website or app',
+        '3. Sign in to the service website or app',
         '4. Navigate to Account Settings or Subscription Management',
         '5. Look for "Cancel" or "Manage Subscription" options',
         '6. Follow the cancellation prompts'
