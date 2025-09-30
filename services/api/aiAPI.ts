@@ -18,8 +18,8 @@ export const aiService = {
       let financialContext: any = {};
 
       try {
-        // Get recent transactions from manual entries (last 20 for context)
-        const transactionsResponse = await transactionAPI.getTransactions({ limit: 20 });
+        // Get all transactions for comprehensive analysis
+        const transactionsResponse = await transactionAPI.getTransactions({ limit: 1000 });
         financialContext.recentTransactions = transactionsResponse.transactions || [];
 
         // Calculate total balance from transaction data
@@ -96,7 +96,7 @@ export const aiService = {
         // Use manual transaction data for context
         let financialContext: any = {};
         try {
-          const transactionsResponse = await transactionAPI.getTransactions({ limit: 20 });
+          const transactionsResponse = await transactionAPI.getTransactions({ limit: 1000 });
           financialContext.recentTransactions = transactionsResponse.transactions || [];
 
           // Calculate balance from manual transaction data
