@@ -69,6 +69,14 @@ export const aiService = {
         message,
         financialContext
       });
+
+      // Check if backend returned success but no actual answer
+      if (response.data && !response.data.answer && !response.data.response && !response.data.message) {
+        console.log('⚠️ [AI] Backend returned success but no answer field, using fallback');
+        // Treat as if endpoint returned 404 - trigger fallback
+        throw { response: { status: 404 } };
+      }
+
       return response.data;
     } catch (error: any) {
       // Enhanced fallback for when AI endpoints might not be available
