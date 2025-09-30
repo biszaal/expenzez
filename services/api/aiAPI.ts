@@ -70,9 +70,15 @@ export const aiService = {
         financialContext
       });
 
-      // Check if backend returned success but no actual answer
-      if (response.data && !response.data.answer && !response.data.response && !response.data.message) {
-        console.log('⚠️ [AI] Backend returned success but no answer field, using fallback');
+      console.log('📥 [AI] Backend response:', JSON.stringify(response.data));
+
+      // Check if backend returned success but no actual answer OR returned generic error message
+      const hasNoAnswer = !response.data.answer && !response.data.response && !response.data.message;
+      const isGenericError = response.data.answer === "Sorry, I couldn't generate an answer." ||
+                            response.data.answer === "Sorry, I could not generate an answer.";
+
+      if (response.data && (hasNoAnswer || isGenericError)) {
+        console.log('⚠️ [AI] Backend returned generic error or no answer, using fallback');
         // Treat as if endpoint returned 404 - trigger fallback
         throw { response: { status: 404 } };
       }
