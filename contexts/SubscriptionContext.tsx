@@ -685,11 +685,17 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
     const updatedSubscription = { ...subscription, usage: updatedUsage };
     setSubscription(updatedSubscription);
 
-    // Update usage tracking in backend
+    // Update usage tracking in backend (optional - silently fail if endpoint not available)
     try {
       await api.post('/subscription/usage', { type, usage: updatedUsage });
-    } catch (error) {
-      console.warn('Failed to sync usage with backend:', error);
+    } catch (error: any) {
+      // Silently fail for 404 (endpoint not implemented) or 401 (auth issues)
+      if (error?.response?.status === 404 || error?.response?.status === 401) {
+        // Usage tracking endpoint not available - continue without backend sync
+        console.log('📊 [Usage] Backend sync skipped (endpoint unavailable)');
+      } else {
+        console.warn('Failed to sync usage with backend:', error);
+      }
     }
 
     return true;
