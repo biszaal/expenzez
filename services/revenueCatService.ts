@@ -106,46 +106,45 @@ export class RevenueCatService {
           metadata: {},
           availablePackages: [
             {
-              identifier: 'trial',
-              packageType: 'CUSTOM',
-              product: {
-                identifier: 'premium-trial',
-                description: '14-Day Free Trial',
-                title: 'Premium Trial',
-                price: 0.00,
-                priceString: 'Free',
-                currencyCode: 'GBP',
-                introPrice: null,
-                discounts: []
-              },
-              offeringIdentifier: 'default'
-            },
-            {
-              identifier: 'monthly',
+              identifier: 'expenzez_premium_monthly',
               packageType: 'MONTHLY',
               product: {
-                identifier: 'premium-monthly',
-                description: 'Monthly Premium Subscription',
+                identifier: 'expenzez_premium_monthly',
+                description: 'Monthly Premium Subscription with 14-day free trial',
                 title: 'Premium Monthly',
                 price: 4.99,
                 priceString: '£4.99',
                 currencyCode: 'GBP',
-                introPrice: null,
+                introPrice: {
+                  price: 0,
+                  priceString: 'Free',
+                  period: 'P14D',
+                  cycles: 1,
+                  periodUnit: 'DAY',
+                  periodNumberOfUnits: 14
+                },
                 discounts: []
               },
               offeringIdentifier: 'default'
             },
             {
-              identifier: 'annual',
+              identifier: 'expenzez_premium_annual',
               packageType: 'ANNUAL',
               product: {
-                identifier: 'premium-annual',
-                description: 'Annual Premium Subscription',
+                identifier: 'expenzez_premium_annual',
+                description: 'Annual Premium Subscription with 14-day free trial',
                 title: 'Premium Annual',
                 price: 49.99,
                 priceString: '£49.99',
                 currencyCode: 'GBP',
-                introPrice: null,
+                introPrice: {
+                  price: 0,
+                  priceString: 'Free',
+                  period: 'P14D',
+                  cycles: 1,
+                  periodUnit: 'DAY',
+                  periodNumberOfUnits: 14
+                },
                 discounts: []
               },
               offeringIdentifier: 'default'
