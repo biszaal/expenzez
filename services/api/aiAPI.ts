@@ -76,9 +76,10 @@ export const aiService = {
       const hasNoAnswer = !response.data.answer && !response.data.response && !response.data.message;
       const isGenericError = response.data.answer === "Sorry, I couldn't generate an answer." ||
                             response.data.answer === "Sorry, I could not generate an answer.";
+      const isSuccessOnly = response.data.message === "Success" && !response.data.answer && !response.data.response;
 
-      if (response.data && (hasNoAnswer || isGenericError)) {
-        console.log('⚠️ [AI] Backend returned generic error or no answer, using fallback');
+      if (response.data && (hasNoAnswer || isGenericError || isSuccessOnly)) {
+        console.log('⚠️ [AI] Backend returned generic error or no answer (Success only), using fallback');
         // Treat as if endpoint returned 404 - trigger fallback
         throw { response: { status: 404 } };
       }
