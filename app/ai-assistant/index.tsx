@@ -220,9 +220,19 @@ export default function AIAssistantScreen() {
       
       // Get AI insight (with fallback support)
       const res = await aiService.getAIInsight(messageToSend);
+      console.log('🤖 [AI Assistant] Response:', JSON.stringify(res));
+
+      // Handle different response formats from backend
+      let responseContent = res.answer || res.response || res.message || res.content;
+
+      // If response is an object with nested answer
+      if (!responseContent && typeof res === 'object') {
+        responseContent = res.data?.answer || res.data?.response || res.data?.message;
+      }
+
       const aiMessage: Message = {
         role: "assistant",
-        content: res.answer || "Sorry, I couldn't generate an answer.",
+        content: responseContent || "Sorry, I couldn't generate an answer.",
       };
       
       setMessages((prev) => [...prev, aiMessage]);
