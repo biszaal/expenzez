@@ -139,6 +139,44 @@ export const aiService = {
           } else {
             fallbackResponse = "I can analyze your spending patterns once you add some transactions. Use 'Add Expense' or 'Import CSV' to get detailed spending insights.";
           }
+        } else if (lowerMessage.includes('expense') || lowerMessage.includes('expenses')) {
+          if (hasFinancialData) {
+            // Analyze expenses in detail
+            const expenses = recentTransactions.filter((tx: any) => tx.amount < 0);
+            const totalExpenses = expenses.reduce((sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount)), 0);
+            const avgExpense = expenses.length > 0 ? totalExpenses / expenses.length : 0;
+
+            // Calculate current month expenses
+            const currentMonth = new Date().toISOString().substring(0, 7);
+            const currentMonthExpenses = expenses.filter((tx: any) => tx.date?.startsWith(currentMonth));
+            const currentMonthTotal = currentMonthExpenses.reduce((sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount)), 0);
+
+            // Categorize expenses
+            const categories: Record<string, number> = {};
+            expenses.forEach((tx: any) => {
+              const category = tx.category || 'Other';
+              categories[category] = (categories[category] || 0) + Math.abs(parseFloat(tx.amount));
+            });
+
+            const topCategories = Object.entries(categories)
+              .sort(([,a], [,b]) => b - a)
+              .slice(0, 3)
+              .map(([cat, amount]) => `${cat}: £${amount.toFixed(2)}`);
+
+            fallbackResponse = `📊 **Expense Analysis** (${recentTransactions.length} transactions)\n\n`;
+            fallbackResponse += `💰 **Total Expenses**: £${totalExpenses.toFixed(2)}\n`;
+            fallbackResponse += `📅 **This Month**: £${currentMonthTotal.toFixed(2)} (${currentMonthExpenses.length} transactions)\n`;
+            fallbackResponse += `📈 **Average Expense**: £${avgExpense.toFixed(2)}\n\n`;
+            fallbackResponse += `**Top Categories:**\n${topCategories.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\n`;
+
+            if (currentMonthTotal > totalExpenses * 0.3) {
+              fallbackResponse += `⚠️ **Insight**: Your spending this month is quite high (${((currentMonthTotal / totalExpenses) * 100).toFixed(0)}% of total). Consider reviewing your recent purchases.`;
+            } else {
+              fallbackResponse += `✅ **Insight**: Your spending looks consistent. Keep tracking to maintain good financial habits!`;
+            }
+          } else {
+            fallbackResponse = "I can analyze your expenses once you add some transactions. Use 'Add Expense' or 'Import CSV' to get detailed spending insights.";
+          }
         } else if (lowerMessage.includes('transaction') || lowerMessage.includes('payment')) {
           if (hasFinancialData) {
             fallbackResponse = `I can see your ${recentTransactions.length} manually entered transactions. `;
