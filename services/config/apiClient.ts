@@ -219,6 +219,7 @@ api.interceptors.response.use(
           const gracefulDegradationEndpoints = [
             '/notifications/preferences',
             '/notifications/history',
+            '/subscription/usage', // Usage tracking - non-critical, can fail silently
           ];
 
           // Special handling for subscription endpoint - only GET requests should degrade gracefully
@@ -307,6 +308,18 @@ api.interceptors.response.use(
     if (isSecurityEndpoint && (error.response?.status === 401 || error.response?.status === 400)) {
       console.log(`[API] Security endpoint ${originalRequest.url} returned ${error.response?.status} - this is expected for wrong PIN, not triggering logout`);
       return Promise.reject(error); // Pass through raw error without error handler
+    }
+
+    // For graceful degradation endpoints (like usage tracking), fail silently
+    const gracefulDegradationEndpoints = [
+      '/notifications/preferences',
+      '/notifications/history',
+      '/subscription/usage',
+    ];
+    const isGracefulEndpoint = gracefulDegradationEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
+    if (isGracefulEndpoint && (error.response?.status === 401 || error.response?.status === 404)) {
+      console.log(`[API] Optional endpoint ${originalRequest.url} failed (${error.response?.status}) - continuing without this feature`);
+      return Promise.reject(error); // Pass through without error handler noise
     }
 
     // Don't spam console with errors if user is already logged out
