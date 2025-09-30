@@ -195,6 +195,20 @@ api.interceptors.response.use(
     const isAuthEndpoint = authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
     const isSecurityEndpoint = securityEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
 
+    // Check for optional/graceful degradation endpoints first - these should fail silently
+    const optionalEndpoints = [
+      '/notifications/preferences',
+      '/notifications/history',
+      '/subscription/usage', // Usage tracking - non-critical, can fail silently
+    ];
+    const isOptionalEndpoint = optionalEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
+
+    // For optional endpoints, fail silently without token refresh or error handler
+    if (isOptionalEndpoint && (error.response?.status === 401 || error.response?.status === 404)) {
+      console.log(`[API] Optional endpoint ${originalRequest.url} failed (${error.response?.status}) - continuing without this feature`);
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint && !isSecurityEndpoint) {
       originalRequest._retry = true;
 
@@ -308,18 +322,6 @@ api.interceptors.response.use(
     if (isSecurityEndpoint && (error.response?.status === 401 || error.response?.status === 400)) {
       console.log(`[API] Security endpoint ${originalRequest.url} returned ${error.response?.status} - this is expected for wrong PIN, not triggering logout`);
       return Promise.reject(error); // Pass through raw error without error handler
-    }
-
-    // For graceful degradation endpoints (like usage tracking), fail silently
-    const gracefulDegradationEndpoints = [
-      '/notifications/preferences',
-      '/notifications/history',
-      '/subscription/usage',
-    ];
-    const isGracefulEndpoint = gracefulDegradationEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
-    if (isGracefulEndpoint && (error.response?.status === 401 || error.response?.status === 404)) {
-      console.log(`[API] Optional endpoint ${originalRequest.url} failed (${error.response?.status}) - continuing without this feature`);
-      return Promise.reject(error); // Pass through without error handler noise
     }
 
     // Don't spam console with errors if user is already logged out
