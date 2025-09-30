@@ -200,11 +200,12 @@ api.interceptors.response.use(
       '/notifications/preferences',
       '/notifications/history',
       '/subscription/usage', // Usage tracking - non-critical, can fail silently
+      '/insights/savings-opportunities', // Savings insights - optional feature
     ];
     const isOptionalEndpoint = optionalEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
 
     // For optional endpoints, fail silently without token refresh or error handler
-    if (isOptionalEndpoint && (error.response?.status === 401 || error.response?.status === 404)) {
+    if (isOptionalEndpoint && (error.response?.status === 401 || error.response?.status === 404 || error.response?.status === 503)) {
       console.log(`[API] Optional endpoint ${originalRequest.url} failed (${error.response?.status}) - continuing without this feature`);
       return Promise.reject(error);
     }
