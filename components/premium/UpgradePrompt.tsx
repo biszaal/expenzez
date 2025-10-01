@@ -82,31 +82,26 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   const featureList = features || defaultFeatures;
 
   const handleStartTrial = async () => {
-    setIsStartingTrial(true);
-    try {
-      const success = await startTrial();
-      if (success) {
-        Alert.alert(
-          'Trial Started!',
-          'Enjoy 14 days of Premium features. We\'ll remind you before your trial ends.',
-          [{ text: 'Get Started', onPress: onClose }]
-        );
-      } else {
-        Alert.alert(
-          'Trial Unavailable',
-          'You may have already used your free trial. Upgrade to Premium to access all features.',
-          [{ text: 'View Plans', onPress: handleUpgrade }]
-        );
-      }
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        'Failed to start trial. Please try again.',
-        [{ text: 'OK' }]
-      );
-    } finally {
-      setIsStartingTrial(false);
-    }
+    // Redirect to plans page where user must verify payment method through Apple
+    // Apple requires Face ID/Touch ID authentication which confirms payment will be charged after trial
+    Alert.alert(
+      'Start Your Free Trial',
+      'You\'ll get 14 days of Premium features absolutely free. After the trial, you\'ll be charged unless you cancel. Payment verification required via Apple.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Continue',
+          onPress: () => {
+            router.push('/subscription/plans');
+            if (onClose) onClose();
+          },
+          style: 'default'
+        }
+      ]
+    );
   };
 
   const handleUpgrade = () => {

@@ -526,10 +526,21 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
         return true;
       }
 
+      // Log detailed error information for debugging
+      if (result.error) {
+        console.error('🔍 [SubscriptionContext] Purchase failed with error:', {
+          code: result.error.code,
+          message: result.error.message,
+          userCancelled: result.error.userCancelled,
+          underlyingError: result.error.underlyingErrorMessage,
+          userFriendlyMessage: (result as any).userFriendlyMessage
+        });
+      }
+
       console.log('🔍 [SubscriptionContext] Purchase failed condition check, returning false');
       return false;
     } catch (error) {
-      console.error('Error purchasing subscription:', error);
+      console.error('❌ [SubscriptionContext] Error purchasing subscription:', error);
       return false;
     }
   };
