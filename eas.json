@@ -33,7 +33,7 @@
       },
       "ios": {
         "enterpriseProvisioning": "universal",
-        "resourceClass": "m-large",
+        "resourceClass": "m-medium",
         "simulator": false
       },
       "android": {
