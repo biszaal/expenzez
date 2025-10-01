@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Animated,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { notificationAPI, aiService } from "../../services/api";
@@ -303,36 +304,52 @@ export default function AIAssistantScreen() {
   const handleClearChat = async () => {
     if (loading) return;
 
-    try {
-      console.log("🗑️ Clearing chat history from server...");
-      const clearResult = await aiService.clearAIChatHistory();
+    Alert.alert(
+      "Clear Chat History",
+      "This will permanently delete all your chat history with the AI assistant. This action cannot be undone. Are you sure?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              console.log("🗑️ Clearing chat history from server...");
+              const clearResult = await aiService.clearAIChatHistory();
 
-      // Only clear locally if server clear succeeded
-      if (clearResult.success || clearResult.deletedCount >= 0) {
-        console.log("✅ Chat history cleared successfully on server");
-        setMessages([
-          {
-            role: "assistant",
-            content:
-              "Hi! I'm your AI finance assistant. Ask me anything about your spending, budgets, or financial goals!",
+              // Only clear locally if server clear succeeded
+              if (clearResult.success || clearResult.deletedCount >= 0) {
+                console.log("✅ Chat history cleared successfully on server");
+                setMessages([
+                  {
+                    role: "assistant",
+                    content:
+                      "Hi! I'm your AI finance assistant. Ask me anything about your spending, budgets, or financial goals!",
+                  },
+                ]);
+
+                if (scrollViewRef.current) {
+                  setTimeout(
+                    () => scrollViewRef.current?.scrollToEnd({ animated: true }),
+                    100
+                  );
+                }
+              } else if (clearResult.fallback) {
+                console.warn("⚠️ Chat history not cleared on server:", clearResult.message);
+                // Don't clear locally if server clear failed
+                Alert.alert("Error", "Failed to clear chat history on server. Please try again.");
+              }
+            } catch (error) {
+              console.error("❌ Failed to clear chat history:", error);
+              Alert.alert("Error", "Failed to clear chat history. Please check your connection and try again.");
+            }
           },
-        ]);
-
-        if (scrollViewRef.current) {
-          setTimeout(
-            () => scrollViewRef.current?.scrollToEnd({ animated: true }),
-            100
-          );
-        }
-      } else if (clearResult.fallback) {
-        console.warn("⚠️ Chat history not cleared on server:", clearResult.message);
-        // Don't clear locally if server clear failed
-        alert("Failed to clear chat history on server. Please try again.");
-      }
-    } catch (error) {
-      console.error("❌ Failed to clear chat history:", error);
-      alert("Failed to clear chat history. Please check your connection and try again.");
-    }
+        },
+      ]
+    );
   };
 
   return (
