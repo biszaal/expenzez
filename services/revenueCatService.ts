@@ -236,10 +236,41 @@ export class RevenueCatService {
         return { success: true, customerInfo: mockCustomerInfo as any };
       }
       const { customerInfo } = await Purchases.purchasePackage(packageToPurchase);
+      console.log('✅ [RevenueCat] Purchase successful:', {
+        hasCustomerInfo: !!customerInfo,
+        entitlements: customerInfo?.entitlements.active
+      });
       return { success: true, customerInfo };
-    } catch (error) {
-      console.error('Purchase failed:', error);
-      return { success: false, error: error as PurchasesError };
+    } catch (error: any) {
+      console.error('❌ [RevenueCat] Purchase failed:', {
+        message: error.message,
+        code: error.code,
+        userCancelled: error.userCancelled,
+        underlyingErrorMessage: error.underlyingErrorMessage
+      });
+
+      // Enhanced error messaging
+      let userFriendlyMessage = 'Purchase failed. Please try again.';
+
+      if (error.userCancelled) {
+        userFriendlyMessage = 'Purchase was cancelled.';
+      } else if (error.code === '6' || error.message?.includes('ProductNotAvailableForPurchaseError')) {
+        userFriendlyMessage = 'This product is not available for purchase. Please check your App Store Connect configuration.';
+      } else if (error.code === '7' || error.message?.includes('InvalidAppleSubscriptionKeyError')) {
+        userFriendlyMessage = 'Invalid subscription configuration. Please contact support.';
+      } else if (error.code === '8' || error.message?.includes('ConfigurationError')) {
+        userFriendlyMessage = 'App configuration error. Please ensure RevenueCat is properly set up.';
+      } else if (error.message?.includes('network') || error.message?.includes('Network')) {
+        userFriendlyMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error.message?.includes('SKErrorDomain')) {
+        userFriendlyMessage = 'App Store connection error. Please try again in a few moments.';
+      }
+
+      return {
+        success: false,
+        error: error as PurchasesError,
+        userFriendlyMessage
+      };
     }
   }
 
