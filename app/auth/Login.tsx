@@ -328,7 +328,7 @@ export default function Login() {
         style={StyleSheet.flatten([
           styles.container,
           {
-            backgroundColor: isLoading ? "#FF0000" : colors.background.primary,
+            backgroundColor: colors.background.primary,
           },
         ])}
       >
@@ -362,7 +362,7 @@ export default function Login() {
                   ])}
                   align="center"
                 >
-                  {isLoading ? "LOADING TEST ACTIVE!" : "Welcome Back"}
+                  Welcome Back
                 </Typography>
                 <Typography
                   variant="body"
