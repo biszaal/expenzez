@@ -198,7 +198,7 @@ export const LevelUpCelebration: React.FC<LevelUpCelebrationProps> = ({
             </Text>
 
             <Text style={styles.achievedText}>
-              Congratulations! You've reached a new level in your financial journey.
+              Congratulations! You&apos;ve reached a new level in your financial journey.
             </Text>
 
             {pointsEarned > 0 && (
