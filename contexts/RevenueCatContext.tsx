@@ -24,11 +24,8 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   useEffect(() => {
     const initRevenueCat = async () => {
       try {
-        // Skip RevenueCat initialization in development if no API keys are set
-        const debugApiKey = process.env.EXPO_PUBLIC_REVENUECAT_DEBUG_API_KEY || 'appl_YOUR_DEBUG_API_KEY';
-        const prodApiKey = process.env.EXPO_PUBLIC_REVENUECAT_PRODUCTION_API_KEY || 'appl_YOUR_PRODUCTION_API_KEY';
-
-        const apiKey = __DEV__ ? debugApiKey : prodApiKey;
+        // Use production iOS API key for all builds
+        const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY || 'appl_yfPFpbhaPCTmblZKDJMHMyRKhKH';
 
         // Skip initialization if using placeholder keys
         if (apiKey.includes('YOUR_') || apiKey.includes('appl_YOUR')) {
@@ -37,8 +34,8 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
           return;
         }
 
-        // Configure RevenueCat
-        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+        // Configure RevenueCat (use INFO level for production)
+        Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.INFO);
 
         // Initialize with your API key
         await Purchases.configure({
