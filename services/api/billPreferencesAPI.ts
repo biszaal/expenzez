@@ -1,4 +1,4 @@
-import api from '../api';
+import { api } from '../config/apiClient';
 
 export interface BillPreference {
   userId: string;
