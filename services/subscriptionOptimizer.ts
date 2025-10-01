@@ -203,16 +203,18 @@ export class SubscriptionOptimizer {
    * Convert any frequency to monthly cost
    */
   private static convertToMonthly(amount: number, frequency: string): number {
+    // Bills are stored as negative amounts for expenses, so use absolute value
+    const absAmount = Math.abs(amount);
     const freq = frequency.toLowerCase();
 
-    if (freq.includes('month')) return amount;
-    if (freq.includes('year') || freq.includes('annual')) return amount / 12;
-    if (freq.includes('week')) return amount * 4.33; // Average weeks per month
-    if (freq.includes('day')) return amount * 30;
-    if (freq.includes('quarter')) return amount / 3;
+    if (freq.includes('month')) return absAmount;
+    if (freq.includes('year') || freq.includes('annual')) return absAmount / 12;
+    if (freq.includes('week')) return absAmount * 4.33; // Average weeks per month
+    if (freq.includes('day')) return absAmount * 30;
+    if (freq.includes('quarter')) return absAmount / 3;
 
     // Default to monthly if unknown
-    return amount;
+    return absAmount;
   }
 
   /**
