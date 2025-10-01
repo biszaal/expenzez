@@ -16,16 +16,7 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "statusBarBackgroundColor": "#000000",
     "description": "Smart expense tracking with AI insights and comprehensive financial management for users.",
-    "keywords": [
-      "expense",
-      "finance",
-      "budget",
-      "money",
-      "AI"
-    ],
-    "privacy": "public",
     "ios": {
       "supportsTablet": true,
       "buildNumber": "1",
@@ -67,7 +58,6 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "usesCleartextTraffic": false,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
