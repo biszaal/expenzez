@@ -364,7 +364,7 @@ export default function UpcomingBillsScreen() {
               No upcoming bills
             </Text>
             <Text style={[styles.emptyDescription, { color: colors.text.secondary }]}>
-              You don't have any bills due in the next 30 days.
+              You don&apos;t have any bills due in the next 30 days.
             </Text>
           </View>
         )}
@@ -436,7 +436,7 @@ export default function UpcomingBillsScreen() {
                     No longer active
                   </Text>
                   <Text style={[styles.exclusionOptionDesc, { color: colors.text.tertiary }]}>
-                    I don't pay this bill anymore
+                    I don&apos;t pay this bill anymore
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -453,7 +453,7 @@ export default function UpcomingBillsScreen() {
                     Incorrect detection
                   </Text>
                   <Text style={[styles.exclusionOptionDesc, { color: colors.text.tertiary }]}>
-                    This shouldn't be tracked as a bill
+                    This shouldn&apos;t be tracked as a bill
                   </Text>
                 </View>
               </TouchableOpacity>
