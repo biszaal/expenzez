@@ -64,7 +64,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
     try {
       const { customerInfo } = await Purchases.purchasePackage(packageToPurchase);
       setCustomerInfo(customerInfo);
-      return customerInfo.entitlements.active['pro'] !== undefined;
+      return customerInfo.entitlements.active['premium'] !== undefined;
     } catch (error: any) {
       console.error('Error purchasing package:', error);
       if (error.userCancelled) {
@@ -78,14 +78,14 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
     try {
       const info = await Purchases.restorePurchases();
       setCustomerInfo(info);
-      return info.entitlements.active['pro'] !== undefined;
+      return info.entitlements.active['premium'] !== undefined;
     } catch (error) {
       console.error('Error restoring purchases:', error);
       return false;
     }
   };
 
-  const isPro = customerInfo?.entitlements.active['pro'] !== undefined;
+  const isPro = customerInfo?.entitlements.active['premium'] !== undefined;
 
   const value: RevenueCatContextType = {
     customerInfo,

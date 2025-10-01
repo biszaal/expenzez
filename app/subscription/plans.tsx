@@ -181,12 +181,9 @@ export default function SubscriptionPlansScreen() {
           ]
         );
       } else {
-        // Check for detailed error message from RevenueCat
-        const errorMessage = (error as any)?.userFriendlyMessage || 'There was an issue processing your purchase. Please try again.';
-
         Alert.alert(
           'Purchase Failed',
-          errorMessage,
+          'There was an issue processing your purchase. Please try again.',
           [{ text: 'Try Again' }]
         );
       }

@@ -160,7 +160,7 @@ export class RevenueCatService {
     }
   }
 
-  static async purchasePackage(packageToPurchase: PurchasesPackage): Promise<{success: boolean, customerInfo?: CustomerInfo, error?: PurchasesError}> {
+  static async purchasePackage(packageToPurchase: PurchasesPackage): Promise<{success: boolean, customerInfo?: CustomerInfo, error?: PurchasesError, userFriendlyMessage?: string}> {
     try {
       if (DEVELOPMENT_MODE) {
         console.log('RevenueCat: Mock purchase successful in development mode');
