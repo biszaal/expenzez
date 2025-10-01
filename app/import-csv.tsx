@@ -808,7 +808,8 @@ export default function CSVImportScreen() {
       const fileName = "expenzez-template.csv";
       const file = new FileSystem.File(FileSystem.Paths.document, fileName);
 
-      await file.write(csvContent);
+      // Write content to file using the writeAsStringAsync from legacy (recommended for simple string writes)
+      await FileSystem.writeAsStringAsync(file.uri, csvContent);
 
       // Check if sharing is available
       if (await Sharing.isAvailableAsync()) {
