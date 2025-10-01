@@ -1,4 +1,4 @@
-import api from '../api';
+import { api } from '../config/apiClient';
 import { DetectedBill } from '../billTrackingAlgorithm';
 
 export interface SavedBill extends DetectedBill {
