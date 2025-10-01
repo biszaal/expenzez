@@ -311,7 +311,31 @@ export const authAPI = {
     email?: string | null;
     fullName?: { givenName?: string | null; familyName?: string | null } | null;
   }) => {
-    const response = await api.post("/auth/apple-login", credentials);
-    return response.data;
+    try {
+      const response = await api.post("/auth/apple-login", credentials);
+      return response.data;
+    } catch (error: any) {
+      // If main API fails, try direct API Gateway endpoint
+      if (error.response?.status === 404 || error.response?.status === 403 || !error.response) {
+        console.log('🍎 [AuthAPI] Main API failed, trying direct Apple Login endpoint');
+        try {
+          const directResponse = await axios.post(
+            "https://jvgwbst4og.execute-api.eu-west-2.amazonaws.com/auth/apple-login",
+            credentials,
+            {
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              timeout: 30000,
+            }
+          );
+          return directResponse.data;
+        } catch (fallbackError: any) {
+          console.error('🍎 [AuthAPI] Direct Apple Login also failed:', fallbackError);
+          throw error; // Throw original error
+        }
+      }
+      throw error;
+    }
   },
 };
