@@ -1,5 +1,11 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 import { SPACING } from '../../constants/Colors';
+
+const screenWidth = Dimensions.get('window').width;
+const cardPadding = SPACING.lg * 2; // Total horizontal padding (left + right)
+const cardGap = SPACING.md; // Gap between cards
+const availableWidth = screenWidth - cardPadding - cardGap;
+const cardWidth = availableWidth / 2; // Each card takes exactly half of available width
 
 export const styles = StyleSheet.create({
   professionalQuickActionsWrapper: {
@@ -9,12 +15,11 @@ export const styles = StyleSheet.create({
   professionalQuickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: SPACING.md,
+    justifyContent: 'space-between',
+    rowGap: SPACING.md,
   },
   professionalQuickActionCard: {
-    flex: 1,
-    minWidth: '47%',
-    maxWidth: '50%',
+    width: cardWidth,
   },
   professionalQuickActionGradient: {
     borderRadius: 16,

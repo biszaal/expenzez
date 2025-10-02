@@ -177,6 +177,16 @@ export default function BillsScreen() {
     }
   }, [authLoggedIn, router]);
 
+  // Clear data when user logs out
+  useEffect(() => {
+    if (!isLoggedIn) {
+      // Clear all user-specific data
+      setBills([]);
+      setSelectedBill(null);
+      setBillToExclude(null);
+    }
+  }, [isLoggedIn]);
+
   useEffect(() => {
     // Load bills using manual transaction data from DynamoDB
     if (isLoggedIn) {

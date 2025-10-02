@@ -53,11 +53,43 @@ export default function AccountScreen() {
   const [showExport, setShowExport] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingsGoalsLoading, setSavingsGoalsLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  // Clear data when user logs out
+  useEffect(() => {
+    if (!isLoggedIn || !user) {
+      console.log('🔄 [Account] User logged out, clearing all data');
+      setProfile(null);
+      setSavingsGoals([]);
+      setLoading(false);
+      setCurrentUserId(null);
+    }
+  }, [isLoggedIn, user]);
+
+  // Fetch data when logged in - triggers on user change
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
+        const userId = user?.id || user?.email || user?.username;
+        console.log('📥 [Account] Fetching profile data for user:', userId);
+
+        // Clear AsyncStorage cache before fetching
+        try {
+          const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+          const keys = await AsyncStorage.getAllKeys();
+          const cacheKeys = keys.filter(key =>
+            key.includes('profile') ||
+            key.includes('@expenzez_cache_/api/profile') ||
+            key.includes('user_data')
+          );
+          if (cacheKeys.length > 0) {
+            await AsyncStorage.multiRemove(cacheKeys);
+            console.log('🧹 [Account] Cleared cache keys:', cacheKeys.length);
+          }
+        } catch (cacheError) {
+          console.warn('⚠️ [Account] Cache clear warning:', cacheError);
+        }
 
         // Fetch profile data
         const profileData = await getProfile().catch((err) => {
@@ -67,7 +99,10 @@ export default function AccountScreen() {
 
         // Set profile data
         if (profileData) {
+          console.log('✅ [Account] Loaded profile:', profileData.email);
           setProfile(profileData);
+        } else {
+          console.log('⚠️ [Account] No profile data returned');
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -77,10 +112,16 @@ export default function AccountScreen() {
       }
     };
 
-    if (isLoggedIn) {
+    if (isLoggedIn && user) {
+      // Clear old data immediately
+      setProfile(null);
+      setSavingsGoals([]);
+
+      // Fetch new data
+      console.log('🔄 [Account] User detected, fetching data for:', user.email);
       fetchUserData();
     }
-  }, [isLoggedIn, showError]);
+  }, [isLoggedIn, user?.id, user?.email, user?.username, showError]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -99,6 +140,7 @@ export default function AccountScreen() {
 
   // Get user display name
   const getUserDisplayName = () => {
+    console.log('📝 [Account] getUserDisplayName - profile:', profile, 'user:', user);
     if (profile?.firstName && profile?.lastName) {
       return `${profile.firstName} ${profile.lastName}`;
     }
@@ -116,6 +158,7 @@ export default function AccountScreen() {
 
   // Get user email
   const getUserEmail = () => {
+    console.log('📧 [Account] getUserEmail - profile:', profile?.email, 'user:', user?.email);
     if (profile?.email) {
       return profile.email;
     }
@@ -293,6 +336,7 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView
+      key={user?.id || user?.email || user?.username || 'default'}
       style={[
         styles.container,
         { backgroundColor: colors.background.secondary },

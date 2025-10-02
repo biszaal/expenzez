@@ -824,6 +824,16 @@ export default function SpendingPage() {
   }, [transactions, selectedMonth]);
 
   // Initial data fetch
+  // Clear data when user logs out
+  useEffect(() => {
+    if (!isLoggedIn) {
+      // Clear all user-specific data
+      setTransactions([]);
+      setCategoryData([]);
+      setError(null);
+    }
+  }, [isLoggedIn]);
+
   useEffect(() => {
     if (isLoggedIn) {
       // Always fetch data when logged in, regardless of bank connection status

@@ -420,6 +420,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const responseData = response.data || response;
       if (responseData && responseData.idToken && responseData.accessToken) {
 
+        // 🚨 CRITICAL: Clear old user data BEFORE storing new user data
+        console.log('🧹 [Login] Clearing old user data before storing new user...');
+        await AsyncStorage.removeItem("user");
+        await AsyncStorage.removeItem("profile");
+
         // Store Cognito tokens and user data
         const storagePromises = [
           AsyncStorage.setItem("isLoggedIn", "true"),
@@ -434,7 +439,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Small delay to ensure AsyncStorage write is complete
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        // Update state
+        // 🚨 CRITICAL: Clear old state FIRST to force re-render
+        console.log('🔄 [Login] Clearing old state before setting new user...');
+        setUser(null);
+        setIsLoggedIn(false);
+
+        // Wait a tick to ensure state is cleared
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // Update state with new user
+        console.log('✅ [Login] Setting new user state:', responseData.user);
         setIsLoggedIn(true);
         setUser(responseData.user);
         setHasLoadedAuthState(true); // Mark that we've handled auth state
@@ -572,6 +586,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const tokens = response?.tokens || response;
       if (response && tokens?.idToken && tokens?.accessToken) {
 
+        // 🚨 CRITICAL: Clear old user data BEFORE storing new user data
+        console.log('🧹 [AppleLogin] Clearing old user data before storing new user...');
+        await AsyncStorage.removeItem("user");
+        await AsyncStorage.removeItem("profile");
+
         // Store Cognito tokens and user data - CRITICAL: Use SecureStore for tokens like regular login
         const storagePromises = [
           AsyncStorage.setItem("isLoggedIn", "true"),
@@ -586,7 +605,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Small delay to ensure AsyncStorage write is complete
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        // Update state
+        // 🚨 CRITICAL: Clear old state FIRST to force re-render
+        console.log('🔄 [AppleLogin] Clearing old state before setting new user...');
+        setUser(null);
+        setIsLoggedIn(false);
+
+        // Wait a tick to ensure state is cleared
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // Update state with new user
+        console.log('✅ [AppleLogin] Setting new user state:', response.user);
         setIsLoggedIn(true);
         setUser(response.user);
         setHasLoadedAuthState(true);
@@ -678,12 +706,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       const loginPayload = { email, password };
       const response = await authAPI.login(loginPayload);
-      
+
 
       // Check if we have a successful response with tokens
       // Handle both direct response and nested response.data structure
       const responseData = response.data || response;
       if (responseData && responseData.idToken && responseData.accessToken) {
+
+        // 🚨 CRITICAL: Clear old user data BEFORE storing new user data
+        console.log('🧹 [AutoLogin] Clearing old user data before storing new user...');
+        await AsyncStorage.removeItem("user");
+        await AsyncStorage.removeItem("profile");
 
         // Store Cognito tokens and user data
         const storagePromises = [
@@ -696,7 +729,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         await Promise.all(storagePromises);
 
-        // Update state
+        // 🚨 CRITICAL: Clear old state FIRST to force re-render
+        console.log('🔄 [AutoLogin] Clearing old state before setting new user...');
+        setUser(null);
+        setIsLoggedIn(false);
+
+        // Wait a tick to ensure state is cleared
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // Update state with new user
+        console.log('✅ [AutoLogin] Setting new user state:', responseData.user);
         setIsLoggedIn(true);
         setUser(responseData.user);
 
