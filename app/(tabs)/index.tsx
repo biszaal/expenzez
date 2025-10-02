@@ -13,6 +13,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useSecurity } from "../../contexts/SecurityContext";
 import { useSubscription } from "../../contexts/SubscriptionContext";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { useAuth } from "../auth/AuthContext";
 import { PremiumUpgradeCard } from "../../components/premium/PremiumUpgradeCard";
 import { budgetAPI } from "../../services/api";
 import { transactionAPI } from "../../services/api/transactionAPI";
@@ -59,6 +60,7 @@ export default function HomeScreen() {
   const { isLocked } = useSecurity();
   const { isPremium } = useSubscription();
   const { unreadCount } = useNotifications();
+  const { isLoggedIn, user } = useAuth();
 
   // Core data state
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -203,11 +205,23 @@ export default function HomeScreen() {
   };
 
   // Initial load
+  // Clear data when user logs out or changes
   useEffect(() => {
-    if (!isLocked) {
+    if (!isLoggedIn || !user) {
+      // Clear all user-specific data
+      setTransactions([]);
+      setAccounts([]);
+      setTotalBalance(0);
+      setError(null);
+      setWarning(null);
+    }
+  }, [isLoggedIn, user]);
+
+  useEffect(() => {
+    if (!isLocked && isLoggedIn) {
       loadData();
     }
-  }, [isLocked]);
+  }, [isLocked, isLoggedIn]);
 
 
   // Helper functions for data transformations

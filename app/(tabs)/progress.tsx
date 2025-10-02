@@ -137,6 +137,17 @@ export default function ProgressScreen() {
   }, [user?.id, isLoggedIn, awardXPSilently]);
 
   // Initial load - retry when user becomes available
+  // Clear data when user logs out
+  useEffect(() => {
+    if (!isLoggedIn || !user) {
+      // Clear all user-specific data
+      setAchievementData(null);
+      setXpData(null);
+      setError(null);
+      setCelebrationAchievement(null);
+    }
+  }, [isLoggedIn, user]);
+
   useEffect(() => {
     loadAchievementData();
   }, [loadAchievementData]); // Re-run when loadAchievementData changes (which includes user.id and isLoggedIn)
