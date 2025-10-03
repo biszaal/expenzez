@@ -534,18 +534,16 @@ export default function SpendingPage() {
 
       // Load manual transactions from DynamoDB
       try {
-        // Fetch current + previous month for comparison chart
-        const prevMonth = dayjs(selectedMonth).subtract(1, 'month').format('YYYY-MM');
+        // Fetch last 12 months to have all months available in month picker
+        const startDate = dayjs().subtract(12, 'months').startOf('month').format('YYYY-MM-DD');
+        const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
 
-        const startDate = `${prevMonth}-01`;
-        const endDate = dayjs(selectedMonth).endOf('month').format('YYYY-MM-DD');
-
-        console.log(`🔄 [Spending] Fetching transactions for ${selectedMonth} + ${prevMonth} (${startDate} to ${endDate})...`);
+        console.log(`🔄 [Spending] Fetching last 12 months (${startDate} to ${endDate})...`);
 
         const transactionsResponse = await transactionAPI.getTransactions({
           startDate,
           endDate,
-          limit: 400, // ~200 per month for 2 months
+          limit: 2400, // ~200 per month for 12 months
           useCache: true
         });
 
