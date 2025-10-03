@@ -48,6 +48,7 @@ export default function SpendingPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(dayjs().format("YYYY-MM"));
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Animation values
   const animatedProgress = useMemo(() => new Animated.Value(0), []);
@@ -550,14 +551,28 @@ export default function SpendingPage() {
 
       // Load manual transactions from DynamoDB first
       try {
-        // Only fetch selected month's transactions for better performance
-        const startDate = `${selectedMonth}-01`;
-        const endDate = dayjs(selectedMonth).endOf('month').format('YYYY-MM-DD');
-        console.log(`🔄 [Spending] Fetching transactions for ${selectedMonth} (${startDate} to ${endDate})...`);
+        let startDate: string;
+        let endDate: string;
+        let limit: number;
+
+        if (isInitialLoad) {
+          // Initial load: Fetch last 6 months to find months with data
+          startDate = dayjs().subtract(6, 'months').startOf('month').format('YYYY-MM-DD');
+          endDate = dayjs().endOf('month').format('YYYY-MM-DD');
+          limit = 600; // ~100 per month for 6 months
+          console.log(`🔄 [Spending] Initial load - fetching last 6 months (${startDate} to ${endDate})...`);
+        } else {
+          // Subsequent loads: Only fetch selected month for better performance
+          startDate = `${selectedMonth}-01`;
+          endDate = dayjs(selectedMonth).endOf('month').format('YYYY-MM-DD');
+          limit = 200; // Limit per month
+          console.log(`🔄 [Spending] Fetching transactions for ${selectedMonth} (${startDate} to ${endDate})...`);
+        }
+
         const transactionsResponse = await transactionAPI.getTransactions({
           startDate,
           endDate,
-          limit: 200, // Limit per month
+          limit,
           useCache: true // Use caching for better performance
         });
 
@@ -593,8 +608,11 @@ export default function SpendingPage() {
       setError(`${errorMessage}. Please check your connection and try again.`);
     } finally {
       setLoading(false);
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
     }
-  }, [selectedMonth]);
+  }, [selectedMonth, isInitialLoad]);
 
   // Generate categories from transactions with month-specific budgets
   const generateCategoriesFromTransactions = async (selectedMonthData?: any) => {
