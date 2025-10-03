@@ -18,6 +18,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
 import { TabLoadingScreen } from "../../components/ui";
+import { EmptyState } from "../../components/ui/EmptyState";
 import {
   spacing,
   borderRadius,
@@ -481,6 +482,45 @@ export default function BillsScreen() {
     );
   };
 
+  // Calculate urgency based on days until due
+  const getBillUrgency = (dueDate: string) => {
+    const daysUntilDue = dayjs(dueDate).diff(dayjs(), 'days');
+
+    if (daysUntilDue < 0) {
+      return {
+        level: 'overdue',
+        color: colors.error?.[500] || '#EF4444',
+        bgColor: colors.error?.[500] + '15' || '#EF444415',
+        text: 'Overdue',
+        daysText: `${Math.abs(daysUntilDue)}d ago`
+      };
+    } else if (daysUntilDue <= 3) {
+      return {
+        level: 'urgent',
+        color: colors.error?.[500] || '#EF4444',
+        bgColor: colors.error?.[500] + '15' || '#EF444415',
+        text: 'Due Soon',
+        daysText: daysUntilDue === 0 ? 'Today' : `${daysUntilDue}d left`
+      };
+    } else if (daysUntilDue <= 7) {
+      return {
+        level: 'soon',
+        color: colors.warning?.[500] || '#F59E0B',
+        bgColor: colors.warning?.[500] + '15' || '#F59E0B15',
+        text: 'This Week',
+        daysText: `${daysUntilDue}d left`
+      };
+    } else {
+      return {
+        level: 'normal',
+        color: colors.success?.[500] || '#10B981',
+        bgColor: colors.success?.[500] + '15' || '#10B98115',
+        text: 'Upcoming',
+        daysText: `${daysUntilDue}d left`
+      };
+    }
+  };
+
   if (!authLoggedIn) {
     return null;
   }
@@ -653,20 +693,17 @@ export default function BillsScreen() {
 
             {/* Bills List */}
             {filteredBills.length === 0 ? (
-              <View style={styles.emptyBillsState}>
-                <View style={[styles.emptyBillsIcon, { backgroundColor: colors.primary[100] }]}>
-                  <Ionicons name="receipt-outline" size={32} color={colors.primary[500]} />
-                </View>
-                <Text style={[styles.emptyBillsTitle, { color: colors.text.primary }]}>
-                  No Bills Found
-                </Text>
-                <Text style={[styles.emptyBillsSubtitle, { color: colors.text.secondary }]}>
-                  {selectedCategory === "All" 
+              <EmptyState
+                type="bills"
+                description={
+                  selectedCategory === "All"
                     ? "We couldn't detect any recurring bills. Make sure you have enough transaction history."
                     : `No bills found in the ${selectedCategory} category.`
-                  }
-                </Text>
-              </View>
+                }
+                onAction={() => router.push("/transactions")}
+                secondaryActionLabel="How It Works"
+                onSecondaryAction={() => Alert.alert("Bill Tracking", "Our AI automatically detects recurring payments from your transactions. Bills are grouped by merchant and frequency patterns.")}
+              />
             ) : (
               <View style={styles.billsSection}>
                 <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
@@ -683,84 +720,97 @@ export default function BillsScreen() {
                         {category}
                       </Text>
                     )}
-                    {categoryBills.map((bill) => (
-                      <TouchableOpacity
-                        key={bill.id}
-                        style={[styles.billCard, { backgroundColor: colors.background.primary, ...shadows.sm }]}
-                        onPress={() => showBillDetails(bill)}
-                        onLongPress={() => showBillManagement(bill)}
-                        delayLongPress={500}
-                      >
-                        <View style={styles.billCardContent}>
-                          <View style={[styles.billIcon, { backgroundColor: categories.find(c => c.name === bill.category)?.color + '20' || colors.primary[100] }]}>
-                            <MaterialCommunityIcons
-                              name={
-                                bill.category === 'Subscriptions' ? 'play-circle-outline' :
-                                bill.category === 'Utilities' ? 'flash-outline' :
-                                bill.category === 'Insurance' ? 'shield-outline' :
-                                bill.category === 'Housing' ? 'home-outline' :
-                                bill.category === 'Transportation' ? 'car-outline' :
-                                'receipt'
-                              }
-                              size={24}
-                              color={categories.find(c => c.name === bill.category)?.color || colors.primary[500]}
-                            />
-                          </View>
-                          
-                          <View style={styles.billDetails}>
-                            <View style={styles.billHeader}>
-                              <Text style={[styles.billName, { color: colors.text.primary }]}>
-                                {bill.name}
-                              </Text>
-                              <View style={styles.billHeaderRight}>
-                                <View style={styles.billAmountContainer}>
-                                  <Text style={[styles.billAmount, { color: colors.text.primary }]}>
-                                    £{Math.abs(bill.amount).toFixed(2)}
+                    {categoryBills.map((bill) => {
+                      const urgency = getBillUrgency(bill.nextDueDate);
+
+                      return (
+                        <TouchableOpacity
+                          key={bill.id}
+                          style={[styles.billCard, { backgroundColor: colors.background.primary, ...shadows.sm }]}
+                          onPress={() => showBillDetails(bill)}
+                          onLongPress={() => showBillManagement(bill)}
+                          delayLongPress={500}
+                        >
+                          {/* Urgency Indicator Bar */}
+                          <View style={[styles.urgencyBar, { backgroundColor: urgency.color }]} />
+
+                          <View style={styles.billCardContent}>
+                            <View style={[styles.billIcon, { backgroundColor: categories.find(c => c.name === bill.category)?.color + '20' || colors.primary[100] }]}>
+                              <MaterialCommunityIcons
+                                name={
+                                  bill.category === 'Subscriptions' ? 'play-circle-outline' :
+                                  bill.category === 'Utilities' ? 'flash-outline' :
+                                  bill.category === 'Insurance' ? 'shield-outline' :
+                                  bill.category === 'Housing' ? 'home-outline' :
+                                  bill.category === 'Transportation' ? 'car-outline' :
+                                  'receipt'
+                                }
+                                size={24}
+                                color={categories.find(c => c.name === bill.category)?.color || colors.primary[500]}
+                              />
+                            </View>
+
+                            <View style={styles.billDetails}>
+                              <View style={styles.billHeader}>
+                                <Text style={[styles.billName, { color: colors.text.primary }]}>
+                                  {bill.name}
+                                </Text>
+                                <View style={styles.billHeaderRight}>
+                                  <View style={styles.billAmountContainer}>
+                                    <Text style={[styles.billAmount, { color: colors.text.primary }]}>
+                                      £{Math.abs(bill.amount).toFixed(2)}
+                                    </Text>
+                                    <Text style={[styles.billFrequency, { color: colors.text.tertiary }]}>
+                                      /{bill.frequency === 'monthly' ? 'mo' : bill.frequency === 'yearly' ? 'yr' : bill.frequency === 'weekly' ? 'wk' : 'qtr'}
+                                    </Text>
+                                  </View>
+                                  <TouchableOpacity
+                                    style={[styles.billMenuButton, { backgroundColor: colors.background.secondary }]}
+                                    onPress={(e) => {
+                                      e.stopPropagation();
+                                      showBillManagement(bill);
+                                    }}
+                                  >
+                                    <Ionicons
+                                      name="ellipsis-vertical"
+                                      size={16}
+                                      color={colors.text.secondary}
+                                    />
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+
+                              <View style={styles.billMeta}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                                  <Text style={[styles.billBank, { color: colors.text.secondary }]}>
+                                    {bill.bankName} • {dayjs(bill.nextDueDate).format('MMM DD')}
                                   </Text>
-                                  <Text style={[styles.billFrequency, { color: colors.text.tertiary }]}>
-                                    /{bill.frequency === 'monthly' ? 'mo' : bill.frequency === 'yearly' ? 'yr' : bill.frequency === 'weekly' ? 'wk' : 'qtr'}
+                                  <View style={[styles.urgencyBadge, { backgroundColor: urgency.bgColor }]}>
+                                    <Text style={[styles.urgencyText, { color: urgency.color }]}>
+                                      {urgency.daysText}
+                                    </Text>
+                                  </View>
+                                </View>
+                                <View style={styles.billStatus}>
+                                  <View
+                                    style={[
+                                      styles.statusDot,
+                                      {
+                                        backgroundColor: bill.status === 'active'
+                                          ? colors.success?.[500] || colors.primary[500]
+                                          : bill.status === 'cancelled'
+                                          ? colors.error?.[500] || '#EF4444'
+                                          : colors.warning?.[500] || '#F59E0B'
+                                      }
+                                    ]}
+                                  />
+                                  <Text style={[styles.statusText, { color: colors.text.tertiary }]}>
+                                    {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
                                   </Text>
                                 </View>
-                                <TouchableOpacity
-                                  style={[styles.billMenuButton, { backgroundColor: colors.background.secondary }]}
-                                  onPress={(e) => {
-                                    e.stopPropagation();
-                                    showBillManagement(bill);
-                                  }}
-                                >
-                                  <Ionicons
-                                    name="ellipsis-vertical"
-                                    size={16}
-                                    color={colors.text.secondary}
-                                  />
-                                </TouchableOpacity>
-                              </View>
-                            </View>
-                            
-                            <View style={styles.billMeta}>
-                              <Text style={[styles.billBank, { color: colors.text.secondary }]}>
-                                {bill.bankName} • Next: {dayjs(bill.nextDueDate).format('MMM DD')}
-                              </Text>
-                              <View style={styles.billStatus}>
-                                <View
-                                  style={[
-                                    styles.statusDot,
-                                    {
-                                      backgroundColor: bill.status === 'active' 
-                                        ? colors.success?.[500] || colors.primary[500]
-                                        : bill.status === 'cancelled' 
-                                        ? colors.error?.[500] || '#EF4444'
-                                        : colors.warning?.[500] || '#F59E0B'
-                                    }
-                                  ]}
-                                />
-                                <Text style={[styles.statusText, { color: colors.text.tertiary }]}>
-                                  {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
-                                </Text>
                               </View>
                             </View>
                           </View>
-                        </View>
                         
                         <View style={[styles.confidenceBar, { backgroundColor: colors.background.secondary }]}>
                           <View
@@ -778,7 +828,8 @@ export default function BillsScreen() {
                           />
                         </View>
                       </TouchableOpacity>
-                    ))}
+                      );
+                    })}
                   </View>
                 ))}
               </View>
@@ -1127,6 +1178,25 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius["2xl"],
     marginBottom: spacing.md,
     overflow: "hidden",
+    position: "relative",
+  },
+  urgencyBar: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    borderTopLeftRadius: borderRadius["2xl"],
+    borderBottomLeftRadius: borderRadius["2xl"],
+  },
+  urgencyBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  urgencyText: {
+    fontSize: 11,
+    fontWeight: "600",
   },
   billCardContent: {
     flexDirection: "row",

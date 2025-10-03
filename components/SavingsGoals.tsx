@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAlert } from '../hooks/useAlert';
+import { EmptyState } from './ui/EmptyState';
 import {
   spacing,
   borderRadius,
@@ -278,21 +279,10 @@ export default function SavingsGoals({
         contentContainerStyle={styles.goalsContent}
       >
         {goals.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="trophy-outline" size={64} color={colors.text.tertiary} />
-            <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
-              No Savings Goals Yet
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.text.secondary }]}>
-              Create your first savings goal to start tracking your progress
-            </Text>
-            <TouchableOpacity
-              style={[styles.emptyButton, { backgroundColor: colors.primary[500] }]}
-              onPress={() => setShowCreateModal(true)}
-            >
-              <Text style={styles.emptyButtonText}>Create Your First Goal</Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            type="savings"
+            onAction={() => setShowCreateModal(true)}
+          />
         ) : (
           goals.map((goal) => {
             const categoryInfo = getCategoryInfo(goal.category);
