@@ -17,6 +17,7 @@ import { useAuth } from "../auth/AuthContext";
 import { PremiumUpgradeCard } from "../../components/premium/PremiumUpgradeCard";
 import { budgetAPI, balanceAPI } from "../../services/api";
 import { transactionAPI } from "../../services/api/transactionAPI";
+import { Alert } from "react-native";
 import { SPACING } from "../../constants/Colors";
 import { APP_STRINGS } from "../../constants/strings";
 import { TabLoadingScreen } from "../../components/ui";
@@ -74,6 +75,7 @@ export default function HomeScreen() {
   const [fetchingData, setFetchingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
+  const [balanceRefreshing, setBalanceRefreshing] = useState(false);
 
   // Security and user preferences
   const [isFirstLoad, setIsFirstLoad] = useState(true);
@@ -106,35 +108,53 @@ export default function HomeScreen() {
         return;
       }
 
-      // 📱 MANUAL INPUT MODE: Load balance and recent transactions in parallel
+      // 📱 MANUAL INPUT MODE: Load balance and recent transactions
       console.log("📱 MANUAL INPUT MODE: Loading balance summary and recent transactions...");
 
-      // Fetch balance summary and recent transactions in parallel for speed
-      const [balanceSummary, transactionResponse] = await Promise.all([
-        balanceAPI.getSummary({ useCache: true }).catch((error) => {
-          console.error("❌ Error loading balance summary:", error);
-          return { balance: 0, totalCredit: 0, totalDebit: 0, transactionCount: 0, firstTransactionDate: null, lastTransactionDate: null, monthsWithData: [] };
-        }),
-        transactionAPI.getTransactions({
-          startDate: dayjs().subtract(2, 'months').startOf('month').format('YYYY-MM-DD'),
-          endDate: dayjs().endOf('month').format('YYYY-MM-DD'),
-          limit: 200, // Last 2 months for display
-          useCache: true
-        }).catch((error) => {
-          console.error("❌ Error loading recent transactions:", error);
-          return { transactions: [], summary: { totalAmount: 0, creditTotal: 0, debitTotal: 0, count: 0 } };
-        })
-      ]);
+      // Try to fetch balance summary first
+      let balanceSummary;
+      let useFallbackBalance = false;
 
-      console.log("✅ Balance summary loaded:", balanceSummary);
-      console.log("✅ Recent transactions loaded:", transactionResponse.transactions?.length || 0);
+      try {
+        balanceSummary = await balanceAPI.getSummary({ useCache: true });
+        console.log("✅ Balance summary loaded from API:", balanceSummary);
+      } catch (error: any) {
+        console.warn("⚠️ Balance summary endpoint not available (will deploy soon), using fallback calculation");
+        useFallbackBalance = true;
+        balanceSummary = { balance: 0, totalCredit: 0, totalDebit: 0, transactionCount: 0, firstTransactionDate: null, lastTransactionDate: null, monthsWithData: [] };
+      }
+
+      // Fetch transactions (always needed for display and fallback calculation)
+      const transactionResponse = await transactionAPI.getTransactions({
+        startDate: dayjs().subtract(6, 'months').startOf('month').format('YYYY-MM-DD'),
+        endDate: dayjs().endOf('month').format('YYYY-MM-DD'),
+        limit: 1000, // Load more for fallback balance calculation
+        useCache: true
+      }).catch((error) => {
+        console.error("❌ Error loading transactions:", error);
+        return { transactions: [], summary: { totalAmount: 0, creditTotal: 0, debitTotal: 0, count: 0 } };
+      });
+
+      console.log("✅ Transactions loaded:", transactionResponse.transactions?.length || 0);
 
       // Create empty accounts array for manual mode
       setAccounts([]);
 
-      // 📱 Use balance from summary (server-calculated, accurate)
-      setTotalBalance(balanceSummary.balance);
-      console.log(`✅ Total balance set from summary: ${balanceSummary.balance}`);
+      // Calculate balance
+      let finalBalance = balanceSummary.balance;
+
+      if (useFallbackBalance && transactionResponse.transactions && transactionResponse.transactions.length > 0) {
+        // Fallback: Calculate balance client-side from all loaded transactions
+        finalBalance = transactionResponse.transactions.reduce((sum: number, tx: any) => {
+          const amount = parseFloat(tx.amount) || 0;
+          return sum + amount;
+        }, 0);
+        console.log(`✅ Balance calculated client-side (fallback): ${finalBalance} from ${transactionResponse.transactions.length} transactions`);
+      } else {
+        console.log(`✅ Balance from server summary: ${finalBalance}`);
+      }
+
+      setTotalBalance(finalBalance);
 
       const transactionsData = {
         success: true,
@@ -193,6 +213,32 @@ export default function HomeScreen() {
   const refreshData = async () => {
     console.log("🔄 [HomePage] Manual refresh triggered");
     await loadData(true);
+  };
+
+  // Handle balance refresh (manual refresh button)
+  const handleRefreshBalance = async () => {
+    try {
+      setBalanceRefreshing(true);
+      console.log("🔄 [HomePage] Manual balance refresh triggered");
+
+      const result = await balanceAPI.refreshBalance();
+      setTotalBalance(result.balance);
+
+      Alert.alert(
+        "Balance Refreshed",
+        `Balance updated successfully. ${result.transactionCount} transactions processed.`,
+        [{ text: "OK" }]
+      );
+    } catch (error: any) {
+      console.error("❌ Balance refresh error:", error);
+      Alert.alert(
+        "Refresh Failed",
+        "Failed to refresh balance. Please try again.",
+        [{ text: "OK" }]
+      );
+    } finally {
+      setBalanceRefreshing(false);
+    }
   };
 
   // Initial load
@@ -281,6 +327,8 @@ export default function HomeScreen() {
           <BalanceCard
             totalBalance={totalBalance}
             getTimeOfDay={getTimeOfDay}
+            onRefresh={handleRefreshBalance}
+            isRefreshing={balanceRefreshing}
           />
           <QuickActions />
         </View>

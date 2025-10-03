@@ -519,25 +519,23 @@ export default function SpendingPage() {
       setLoading(true);
       setError(null);
 
-      // Load balance summary to get available months (fast, cached)
-      const balanceSummary = await balanceAPI.getSummary({ useCache: true }).catch(() => ({
-        balance: 0,
-        totalCredit: 0,
-        totalDebit: 0,
-        transactionCount: 0,
-        firstTransactionDate: null,
-        lastTransactionDate: null,
-        monthsWithData: []
-      }));
+      // Try to load balance summary to get available months
+      let balanceSummary;
+      let useTransactionsForMonths = false;
 
-      setAvailableMonths(balanceSummary.monthsWithData);
-      console.log("✅ [Spending] Available months:", balanceSummary.monthsWithData);
+      try {
+        balanceSummary = await balanceAPI.getSummary({ useCache: true });
+        setAvailableMonths(balanceSummary.monthsWithData);
+        console.log("✅ [Spending] Available months from API:", balanceSummary.monthsWithData);
+      } catch (error) {
+        console.warn("⚠️ [Spending] Balance summary endpoint not available, will extract months from transactions");
+        useTransactionsForMonths = true;
+      }
 
       // Load manual transactions from DynamoDB
       try {
         // Fetch current + previous month for comparison chart
         const prevMonth = dayjs(selectedMonth).subtract(1, 'month').format('YYYY-MM');
-        const monthsToFetch = [selectedMonth, prevMonth];
 
         const startDate = `${prevMonth}-01`;
         const endDate = dayjs(selectedMonth).endOf('month').format('YYYY-MM-DD');
@@ -555,6 +553,20 @@ export default function SpendingPage() {
           console.log("✅ [Spending] Loaded manual transactions:", transactionsResponse.transactions.length);
           console.log("📝 [Spending] Sample transactions:", transactionsResponse.transactions.slice(0, 2));
           setTransactions(transactionsResponse.transactions);
+
+          // If balance summary API failed, extract months from transactions
+          if (useTransactionsForMonths && transactionsResponse.transactions.length > 0) {
+            const monthsSet = new Set<string>();
+            transactionsResponse.transactions.forEach((tx: any) => {
+              if (tx.date) {
+                const monthKey = tx.date.substring(0, 7); // YYYY-MM
+                monthsSet.add(monthKey);
+              }
+            });
+            const extractedMonths = Array.from(monthsSet).sort().reverse(); // Newest first
+            setAvailableMonths(extractedMonths);
+            console.log("✅ [Spending] Extracted months from transactions:", extractedMonths);
+          }
         } else {
           console.log("ℹ️ [Spending] No transactions available - response:", transactionsResponse);
           setTransactions([]);
