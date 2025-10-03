@@ -17,7 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
-import { TabLoadingScreen } from "../../components/ui";
+import { BillsSkeleton } from "../../components/ui/SkeletonLoader";
 import { EmptyState } from "../../components/ui/EmptyState";
 import {
   spacing,
@@ -527,7 +527,11 @@ export default function BillsScreen() {
 
   // Show loading screen during initial load
   if (loading && bills.length === 0) {
-    return <TabLoadingScreen message="Analyzing your bills..." />;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+        <BillsSkeleton />
+      </SafeAreaView>
+    );
   }
 
   // Manual input mode - no need to check for bank connections
