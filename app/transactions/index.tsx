@@ -17,6 +17,7 @@ import { useAlert } from "../../hooks/useAlert";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { TransactionSkeleton } from "../../components/ui/SkeletonLoader";
 import { transactionAPI } from "../../services/api/transactionAPI";
 import { getMerchantInfo } from "../../services/merchantService";
 import MonthFilter from "../../components/ui/MonthFilter";
@@ -58,7 +59,7 @@ export default function TransactionsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [selectedMonth, setSelectedMonth] = useState<string>(dayjs().format("YYYY-MM")); // Default to current month
   const [lastUpdated, setLastUpdated] = useState(dayjs().format("HH:mm"));
 
   const fetchTransactions = async (showRefresh = false) => {
@@ -66,8 +67,17 @@ export default function TransactionsScreen() {
       if (showRefresh) setRefreshing(true);
       else setLoading(true);
 
-      console.log(`[Transactions] Fetching transactions...`);
-      const transactionsResponse = await transactionAPI.getTransactions({ limit: 1000 });
+      // Only fetch selected month's transactions for better performance
+      const startDate = selectedMonth ? `${selectedMonth}-01` : undefined;
+      const endDate = selectedMonth ? dayjs(selectedMonth).endOf('month').format('YYYY-MM-DD') : undefined;
+
+      console.log(`[Transactions] Fetching transactions for ${selectedMonth || 'all time'}...`);
+      const transactionsResponse = await transactionAPI.getTransactions({
+        startDate,
+        endDate,
+        limit: 200, // Limit per month
+        useCache: true
+      });
       console.log(`[Transactions] API Response:`, transactionsResponse);
 
       if (transactionsResponse?.transactions && transactionsResponse.transactions.length > 0) {
@@ -144,7 +154,7 @@ export default function TransactionsScreen() {
     if (isLoggedIn) {
       fetchTransactions();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, selectedMonth]); // Refetch when month changes
 
   useEffect(() => {
     if (merchant) {
@@ -306,6 +316,33 @@ export default function TransactionsScreen() {
 
   if (!authLoggedIn || checkingBank) {
     return null;
+  }
+
+  // Show skeleton loader during initial load
+  if (loading && transactions.length === 0) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: colors.background.secondary }]}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
+              ALL TRANSACTIONS
+            </Text>
+          </View>
+          <View style={styles.menuButton} />
+        </View>
+        <ScrollView style={styles.scrollView}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <TransactionSkeleton key={i} />
+          ))}
+        </ScrollView>
+      </SafeAreaView>
+    );
   }
 
   if (transactions.length === 0 && !loading) {

@@ -112,9 +112,14 @@ export default function HomeScreen() {
       // Load manual transactions from the transaction API (DynamoDB) for selected month
       let transactionsData;
       try {
-        console.log(`🔍 Loading ALL transactions (temporarily removing date filter for testing)...`);
+        // Only fetch current month's transactions for better performance
+        const startDate = `${currentMonth}-01`;
+        const endDate = dayjs(currentMonth).endOf('month').format('YYYY-MM-DD');
+        console.log(`🔍 Loading transactions for ${currentMonth} (${startDate} to ${endDate})...`);
         const transactionResponse = await transactionAPI.getTransactions({
-          limit: 1000 // Load all transactions
+          startDate,
+          endDate,
+          limit: 100 // Limit per month
         });
         transactionsData = {
           success: true,
