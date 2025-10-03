@@ -43,6 +43,23 @@ export const balanceAPI = {
   },
 
   /**
+   * Refresh balance - recalculates balance from all transactions and caches it in the database
+   * Use this when user manually requests a balance refresh (e.g., via refresh button)
+   */
+  refreshBalance: async (): Promise<{ balance: number; lastUpdated: string; transactionCount: number }> => {
+    const response = await api.post('/transactions/refresh-balance');
+
+    // Invalidate local cache after refresh
+    await clearCachedData('balance_summary');
+
+    return {
+      balance: response.data.balance,
+      lastUpdated: response.data.lastUpdated,
+      transactionCount: response.data.transactionCount,
+    };
+  },
+
+  /**
    * Invalidate balance cache - call this when a new transaction is created
    */
   invalidateCache: async (): Promise<void> => {

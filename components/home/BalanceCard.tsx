@@ -9,11 +9,15 @@ import { SHADOWS } from "../../constants/Colors";
 interface BalanceCardProps {
   totalBalance: number;
   getTimeOfDay: () => string;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const BalanceCard: React.FC<BalanceCardProps> = ({
   totalBalance,
   getTimeOfDay,
+  onRefresh,
+  isRefreshing = false,
 }) => {
   const { user } = useAuth();
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
@@ -68,6 +72,21 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
             <Text style={styles.professionalBalanceLabel}>Monthly Balance</Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {onRefresh && (
+              <TouchableOpacity
+                onPress={onRefresh}
+                style={styles.professionalBalanceIcon}
+                activeOpacity={0.7}
+                disabled={isRefreshing}
+              >
+                <Ionicons
+                  name="refresh-outline"
+                  size={22}
+                  color="white"
+                  style={isRefreshing ? { opacity: 0.5 } : undefined}
+                />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               onPress={toggleBalanceVisibility}
               style={styles.professionalBalanceIcon}
