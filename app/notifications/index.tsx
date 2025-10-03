@@ -123,6 +123,8 @@ export default function NotificationsScreen() {
     { id: 'security', title: 'Security', icon: 'shield-checkmark-outline', count: notifications.filter(n => n.type === 'security').length },
   ];
 
+  const styles = createStyles(colors);
+
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
@@ -130,8 +132,6 @@ export default function NotificationsScreen() {
       </SafeAreaView>
     );
   }
-
-  const styles = createStyles(colors);
 
   return (
     <SafeAreaView style={styles.container}>

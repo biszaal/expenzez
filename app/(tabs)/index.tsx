@@ -16,16 +16,9 @@ import { useNotifications } from "../../contexts/NotificationContext";
 import { useAuth } from "../auth/AuthContext";
 import { PremiumUpgradeCard } from "../../components/premium/PremiumUpgradeCard";
 import { budgetAPI } from "../../services/api";
-import * as BalanceAPIModule from "../../services/api/balanceAPI";
 import { transactionAPI } from "../../services/api/transactionAPI";
+import { balanceAPI } from "../../services/api/balanceAPI";
 import { Alert } from "react-native";
-
-// Debug logging
-console.log("🔍 [DEBUG] BalanceAPIModule:", BalanceAPIModule);
-console.log("🔍 [DEBUG] balanceAPI:", BalanceAPIModule.balanceAPI);
-console.log("🔍 [DEBUG] refreshBalance:", BalanceAPIModule.balanceAPI?.refreshBalance);
-
-const balanceAPI = BalanceAPIModule.balanceAPI;
 import { SPACING } from "../../constants/Colors";
 import { APP_STRINGS } from "../../constants/strings";
 import { TabLoadingScreen } from "../../components/ui";
@@ -229,12 +222,12 @@ export default function HomeScreen() {
       setBalanceRefreshing(true);
       console.log("🔄 [HomePage] Manual balance refresh triggered");
 
-      const result = await balanceAPI.refreshBalance();
-      setTotalBalance(result.balance);
+      // For now, just reload the data since backend endpoint isn't deployed yet
+      await loadData(true);
 
       Alert.alert(
         "Balance Refreshed",
-        `Balance updated successfully. ${result.transactionCount} transactions processed.`,
+        "Balance updated successfully from transactions.",
         [{ text: "OK" }]
       );
     } catch (error: any) {

@@ -354,11 +354,27 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Helper function to format timestamp
   const formatTimestamp = (timestamp: number): string => {
+    // Validate timestamp
+    if (!timestamp || typeof timestamp !== 'number' || isNaN(timestamp)) {
+      return "Recently";
+    }
+
     const now = Date.now();
     const diff = now - timestamp;
+
+    // Handle negative diff (future timestamps) or invalid calculations
+    if (diff < 0 || isNaN(diff)) {
+      return "Recently";
+    }
+
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
-    
+
+    // Validate calculations
+    if (isNaN(hours) || isNaN(days)) {
+      return "Recently";
+    }
+
     if (hours < 1) {
       return "Just now";
     } else if (hours < 24) {
@@ -411,14 +427,23 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const markAsRead = async (id: string) => {
+    // Update UI immediately for better UX
     setNotifications(prev =>
       prev.map(notification =>
         notification.id === id ? { ...notification, read: true } : notification
       )
     );
-    
-    // Persist read state to AsyncStorage
-    await persistReadState(id, true);
+
+    // Persist to backend database
+    try {
+      const { notificationAPI } = await import("../services/api");
+      await notificationAPI.markAsRead(id);
+      console.log(`[NotificationContext] Marked notification ${id} as read in database`);
+    } catch (error: any) {
+      console.error("[NotificationContext] Error marking notification as read in backend:", error);
+      // Still persist locally as fallback
+      await persistReadState(id, true);
+    }
   };
 
   const markAllAsRead = async () => {
@@ -449,14 +474,28 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const clearNotifications = async () => {
+    // Update UI immediately for better UX
     setNotifications([]);
-    
-    // Clear persisted read states from AsyncStorage
+
+    // Clear from backend database
     try {
+      const { notificationAPI } = await import("../services/api");
+      const result = await notificationAPI.clearAll();
+      console.log(`[NotificationContext] Cleared ${result.deleted || 0} notifications from database`);
+
+      // Also clear local cache
       const storageKey = `notification_read_states_${user?.id}`;
       await AsyncStorage.removeItem(storageKey);
-    } catch (error) {
-      console.error("[NotificationContext] Error clearing notification cache:", error);
+    } catch (error: any) {
+      console.error("[NotificationContext] Error clearing notifications from backend:", error);
+
+      // If backend fails, still clear local cache
+      try {
+        const storageKey = `notification_read_states_${user?.id}`;
+        await AsyncStorage.removeItem(storageKey);
+      } catch (localError) {
+        console.error("[NotificationContext] Error clearing local notification cache:", localError);
+      }
     }
   };
 
