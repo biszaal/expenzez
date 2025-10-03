@@ -108,6 +108,30 @@ export const notificationAPI = {
     }
   },
 
+  // Mark notification as read
+  markAsRead: async (notificationId: string) => {
+    try {
+      const response = await api.post('/notifications/mark-read', {
+        notificationId,
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('Error marking notification as read:', error);
+      throw error;
+    }
+  },
+
+  // Clear all notifications
+  clearAll: async () => {
+    try {
+      const response = await api.delete('/notifications/clear');
+      return response.data;
+    } catch (error: any) {
+      console.error('Error clearing notifications:', error);
+      throw error;
+    }
+  },
+
   // Monthly AI Reports
   getMonthlyReport: async (reportMonth: string = 'latest') => {
     try {
