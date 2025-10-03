@@ -20,6 +20,7 @@ import { transactionAPI } from "../../services/api/transactionAPI";
 import { SPACING } from "../../constants/Colors";
 import { APP_STRINGS } from "../../constants/strings";
 import { TabLoadingScreen } from "../../components/ui";
+import { DashboardSkeleton } from "../../components/ui/SkeletonLoader";
 import {
   HomeHeader,
   BalanceCard,
@@ -263,7 +264,11 @@ export default function HomeScreen() {
   const userBudget = 2000; // Default budget - could be loaded from user preferences
 
   if (loading) {
-    return <TabLoadingScreen />;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+        <DashboardSkeleton />
+      </SafeAreaView>
+    );
   }
 
   return (
