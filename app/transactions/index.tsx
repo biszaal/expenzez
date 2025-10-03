@@ -59,23 +59,37 @@ export default function TransactionsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState<string>(dayjs().format("YYYY-MM")); // Default to current month
+  const [selectedMonth, setSelectedMonth] = useState<string>(""); // Empty initially to load all recent
   const [lastUpdated, setLastUpdated] = useState(dayjs().format("HH:mm"));
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const fetchTransactions = async (showRefresh = false) => {
     try {
       if (showRefresh) setRefreshing(true);
       else setLoading(true);
 
-      // Only fetch selected month's transactions for better performance
-      const startDate = selectedMonth ? `${selectedMonth}-01` : undefined;
-      const endDate = selectedMonth ? dayjs(selectedMonth).endOf('month').format('YYYY-MM-DD') : undefined;
+      let startDate: string | undefined;
+      let endDate: string | undefined;
+      let limit: number;
 
-      console.log(`[Transactions] Fetching transactions for ${selectedMonth || 'all time'}...`);
+      if (isInitialLoad || !selectedMonth) {
+        // Initial load or no month selected: Fetch last 6 months
+        startDate = dayjs().subtract(6, 'months').startOf('month').format('YYYY-MM-DD');
+        endDate = dayjs().endOf('month').format('YYYY-MM-DD');
+        limit = 600; // ~100 per month for 6 months
+        console.log(`[Transactions] Initial load - fetching last 6 months (${startDate} to ${endDate})...`);
+      } else {
+        // Subsequent loads: Only fetch selected month
+        startDate = `${selectedMonth}-01`;
+        endDate = dayjs(selectedMonth).endOf('month').format('YYYY-MM-DD');
+        limit = 200;
+        console.log(`[Transactions] Fetching transactions for ${selectedMonth}...`);
+      }
+
       const transactionsResponse = await transactionAPI.getTransactions({
         startDate,
         endDate,
-        limit: 200, // Limit per month
+        limit,
         useCache: true
       });
       console.log(`[Transactions] API Response:`, transactionsResponse);
@@ -136,6 +150,9 @@ export default function TransactionsScreen() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
     }
   };
 

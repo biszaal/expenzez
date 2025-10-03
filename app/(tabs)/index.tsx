@@ -109,17 +109,17 @@ export default function HomeScreen() {
       // 📱 MANUAL INPUT MODE: Load manual transactions from DynamoDB
       console.log("📱 MANUAL INPUT MODE: Loading manual expense data from DynamoDB...");
 
-      // Load manual transactions from the transaction API (DynamoDB) for selected month
+      // Load manual transactions from the transaction API (DynamoDB) for recent months
       let transactionsData;
       try {
-        // Only fetch current month's transactions for better performance
-        const startDate = `${currentMonth}-01`;
-        const endDate = dayjs(currentMonth).endOf('month').format('YYYY-MM-DD');
-        console.log(`🔍 Loading transactions for ${currentMonth} (${startDate} to ${endDate})...`);
+        // Load last 6 months of transactions to ensure we show data even if current month is empty
+        const startDate = dayjs().subtract(6, 'months').startOf('month').format('YYYY-MM-DD');
+        const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
+        console.log(`🔍 Loading recent transactions (last 6 months: ${startDate} to ${endDate})...`);
         const transactionResponse = await transactionAPI.getTransactions({
           startDate,
           endDate,
-          limit: 100 // Limit per month
+          limit: 300 // ~50 per month for 6 months
         });
         transactionsData = {
           success: true,
