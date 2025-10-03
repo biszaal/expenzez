@@ -15,7 +15,7 @@ import { useSubscription } from "../../contexts/SubscriptionContext";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { useAuth } from "../auth/AuthContext";
 import { PremiumUpgradeCard } from "../../components/premium/PremiumUpgradeCard";
-import { budgetAPI } from "../../services/api";
+import { budgetAPI, balanceAPI } from "../../services/api";
 import { transactionAPI } from "../../services/api/transactionAPI";
 import { SPACING } from "../../constants/Colors";
 import { APP_STRINGS } from "../../constants/strings";
@@ -106,55 +106,40 @@ export default function HomeScreen() {
         return;
       }
 
-      // 📱 MANUAL INPUT MODE: Load manual transactions from DynamoDB
-      console.log("📱 MANUAL INPUT MODE: Loading manual expense data from DynamoDB...");
+      // 📱 MANUAL INPUT MODE: Load balance and recent transactions in parallel
+      console.log("📱 MANUAL INPUT MODE: Loading balance summary and recent transactions...");
 
-      // Load manual transactions from the transaction API (DynamoDB) for recent months
-      let transactionsData;
-      try {
-        // Load last 6 months of transactions to ensure we show data even if current month is empty
-        const startDate = dayjs().subtract(6, 'months').startOf('month').format('YYYY-MM-DD');
-        const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
-        console.log(`🔍 Loading recent transactions (last 6 months: ${startDate} to ${endDate})...`);
-        const transactionResponse = await transactionAPI.getTransactions({
-          startDate,
-          endDate,
-          limit: 300 // ~50 per month for 6 months
-        });
-        transactionsData = {
-          success: true,
-          transactions: transactionResponse.transactions || []
-        };
-        console.log("✅ Loaded manual transactions from DynamoDB:", transactionResponse.transactions?.length || 0);
-      } catch (error) {
-        console.error("❌ Error loading manual transactions:", error);
-        transactionsData = { success: false, transactions: [] };
-      }
+      // Fetch balance summary and recent transactions in parallel for speed
+      const [balanceSummary, transactionResponse] = await Promise.all([
+        balanceAPI.getSummary({ useCache: true }).catch((error) => {
+          console.error("❌ Error loading balance summary:", error);
+          return { balance: 0, totalCredit: 0, totalDebit: 0, transactionCount: 0, firstTransactionDate: null, lastTransactionDate: null, monthsWithData: [] };
+        }),
+        transactionAPI.getTransactions({
+          startDate: dayjs().subtract(2, 'months').startOf('month').format('YYYY-MM-DD'),
+          endDate: dayjs().endOf('month').format('YYYY-MM-DD'),
+          limit: 200, // Last 2 months for display
+          useCache: true
+        }).catch((error) => {
+          console.error("❌ Error loading recent transactions:", error);
+          return { transactions: [], summary: { totalAmount: 0, creditTotal: 0, debitTotal: 0, count: 0 } };
+        })
+      ]);
 
-      console.log("✅ Manual mode data loaded:", { transactionsData });
+      console.log("✅ Balance summary loaded:", balanceSummary);
+      console.log("✅ Recent transactions loaded:", transactionResponse.transactions?.length || 0);
 
       // Create empty accounts array for manual mode
       setAccounts([]);
 
-      // 📱 MANUAL INPUT MODE: Calculate balance from transaction data
-      let total = 0;
+      // 📱 Use balance from summary (server-calculated, accurate)
+      setTotalBalance(balanceSummary.balance);
+      console.log(`✅ Total balance set from summary: ${balanceSummary.balance}`);
 
-      if (transactionsData.success && transactionsData.transactions && transactionsData.transactions.length > 0) {
-        // Calculate total balance by summing all transactions (positive = income, negative = expenses)
-        total = transactionsData.transactions.reduce((sum: number, tx: any) => {
-          const amount = parseFloat(tx.amount) || 0;
-          return sum + amount;
-        }, 0);
-
-        console.log(`📱 Total balance calculated from ${transactionsData.transactions.length} transactions: ${total}`);
-      } else {
-        // No transactions - start at 0
-        total = 0;
-        console.log(`📱 No transaction data available, balance set to 0`);
-      }
-
-      setTotalBalance(total);
-      console.log(`✅ Total balance set: ${total}`);
+      const transactionsData = {
+        success: true,
+        transactions: transactionResponse.transactions || []
+      };
 
       // Handle transactions
       let allTransactions: Transaction[] = [];
