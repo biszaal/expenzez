@@ -54,8 +54,8 @@ export const QuickActions: React.FC = () => {
               </View>
             </View>
             <View style={styles.professionalQuickActionText}>
-              <Text style={styles.professionalQuickActionTitle}>Add Transaction</Text>
-              <Text style={styles.professionalQuickActionSubtitle}>Income or expense</Text>
+              <Text style={styles.professionalQuickActionTitle}>Add Entry</Text>
+              <Text style={styles.professionalQuickActionSubtitle}>Quick input</Text>
             </View>
           </View>
         </TouchableOpacity>

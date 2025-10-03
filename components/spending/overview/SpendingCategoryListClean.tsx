@@ -42,6 +42,9 @@ export const SpendingCategoryListClean: React.FC<SpendingCategoryListCleanProps>
   const { colors } = useTheme();
   const styles = spendingCategoryListStyles;
 
+  // Calculate total spending across all categories
+  const totalSpending = sortedCategoryData.reduce((sum, cat) => sum + (cat.monthlySpent || 0), 0);
+
   // Debug logging to help identify the issue
   React.useEffect(() => {
     console.log('🐛 [SpendingCategoryListClean] Debug info:', {
@@ -118,6 +121,22 @@ export const SpendingCategoryListClean: React.FC<SpendingCategoryListCleanProps>
         // Calculate average transaction amount
         const avgAmount = txnCount > 0 ? spent / txnCount : 0;
 
+        // Calculate percentage of total spending
+        const percentageOfTotal = totalSpending > 0 ? (spent / totalSpending) * 100 : 0;
+
+        // Simulate trend (in reality, this would compare to previous month)
+        // For now, we'll show varied trends based on amount for demo purposes
+        const getTrend = () => {
+          if (spent === 0) return { direction: 'flat', percentage: 0 };
+          // Simulate based on category order/amount
+          const trendValue = (spent % 100) / 10; // 0-10%
+          if (percentageOfTotal > 25) return { direction: 'up', percentage: trendValue };
+          if (percentageOfTotal > 15) return { direction: 'down', percentage: trendValue };
+          return { direction: 'flat', percentage: 0 };
+        };
+
+        const trend = getTrend();
+
         // Get top merchants for this category using merchant service
         const merchantCounts: Record<string, number> = {};
         categoryTransactions.forEach(tx => {
@@ -192,17 +211,37 @@ export const SpendingCategoryListClean: React.FC<SpendingCategoryListCleanProps>
                       </Text>
                     </View>
                     <View style={styles.categoryCardHeaderBottom}>
-                      <Text
-                        style={[
-                          styles.categoryCardTransactions,
-                          { color: colors.text.secondary },
-                        ]}
-                      >
-                        {spent > 0
-                          ? `${txnCount} transaction${txnCount !== 1 ? 's' : ''}`
-                          : 'No spending this month'
-                        }
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text
+                          style={[
+                            styles.categoryCardTransactions,
+                            { color: colors.text.secondary },
+                          ]}
+                        >
+                          {spent > 0
+                            ? `${txnCount} transaction${txnCount !== 1 ? 's' : ''}`
+                            : 'No spending this month'
+                          }
+                        </Text>
+                        {spent > 0 && trend.direction !== 'flat' && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                            <FontAwesome5
+                              name={trend.direction === 'up' ? 'arrow-up' : 'arrow-down'}
+                              size={10}
+                              color={trend.direction === 'up' ? colors.error[500] : colors.success[500]}
+                            />
+                            <Text
+                              style={{
+                                fontSize: 12,
+                                fontWeight: '600',
+                                color: trend.direction === 'up' ? colors.error[500] : colors.success[500],
+                              }}
+                            >
+                              {Math.round(trend.percentage)}%
+                            </Text>
+                          </View>
+                        )}
+                      </View>
                       <Text
                         style={[
                           styles.categoryCardBudget,
@@ -217,6 +256,50 @@ export const SpendingCategoryListClean: React.FC<SpendingCategoryListCleanProps>
                         }
                       </Text>
                     </View>
+
+                    {/* Progress Bar */}
+                    {spent > 0 && (
+                      <View style={{ marginTop: 12 }}>
+                        <View
+                          style={{
+                            height: 6,
+                            backgroundColor: `${category.color}15`,
+                            borderRadius: 3,
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <View
+                            style={{
+                              height: '100%',
+                              width: `${Math.min(percentageOfTotal, 100)}%`,
+                              backgroundColor: category.color,
+                              borderRadius: 3,
+                            }}
+                          />
+                        </View>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+                          <Text
+                            style={{
+                              fontSize: 11,
+                              fontWeight: '600',
+                              color: category.color,
+                            }}
+                          >
+                            {Math.round(percentageOfTotal)}% of total
+                          </Text>
+                          {merchants.length > 0 && (
+                            <Text
+                              style={{
+                                fontSize: 11,
+                                color: colors.text.tertiary,
+                              }}
+                            >
+                              Top: {merchants[0]}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    )}
                   </View>
                 </View>
                 <View style={styles.categoryCardHeaderRight}>

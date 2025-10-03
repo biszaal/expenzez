@@ -24,7 +24,7 @@ export const styles = StyleSheet.create({
   professionalQuickActionGradient: {
     borderRadius: 16,
     padding: SPACING.lg,
-    minHeight: 100,
+    height: 120,
     justifyContent: 'space-between',
   },
   professionalQuickActionIconContainer: {

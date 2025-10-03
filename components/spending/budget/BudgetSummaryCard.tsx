@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Animated } from 'react-native';
+import { View, Text, Animated, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import dayjs from 'dayjs';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -41,9 +42,83 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
   const { colors } = useTheme();
   const styles = budgetSummaryCardStyles;
 
+  // Calculate warning level
+  const getWarningLevel = () => {
+    if (totalBudget === 0) return null;
+    const percentage = monthlySpentPercentage;
+    if (percentage > 150) return 'critical'; // Over 150%
+    if (percentage > 100) return 'warning';  // Over 100%
+    if (percentage > 80) return 'caution';   // 80-100%
+    return null;
+  };
+
+  const warningLevel = getWarningLevel();
+
+  const getWarningMessage = () => {
+    const overAmount = Math.abs(displayLeftToSpend);
+    if (monthlySpentPercentage > 150) {
+      return `You're significantly over budget by ${formatAmount(overAmount, currency)}. Consider reviewing your spending categories.`;
+    }
+    if (monthlySpentPercentage > 100) {
+      return `You've exceeded your budget by ${formatAmount(overAmount, currency)}. Review your expenses to get back on track.`;
+    }
+    if (monthlySpentPercentage > 80) {
+      return `You're approaching your budget limit. ${formatAmount(displayLeftToSpend, currency)} remaining.`;
+    }
+    return null;
+  };
+
+  const warningMessage = getWarningMessage();
+
   return (
     <View style={styles.simpleBudgetContainer}>
       <View style={[styles.simpleBudgetCard, { backgroundColor: colors.background.primary }]}>
+        {/* Warning Alert Banner */}
+        {warningLevel && warningMessage && (
+          <View style={[{
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            padding: 12,
+            borderRadius: 12,
+            marginBottom: 16,
+            gap: 12,
+            backgroundColor: warningLevel === 'critical'
+              ? `${colors.error[500]}15`
+              : warningLevel === 'warning'
+              ? `${colors.error[500]}10`
+              : `${colors.warning[500]}10`,
+          }]}>
+            <Ionicons
+              name={warningLevel === 'critical' ? "alert-circle" : "warning"}
+              size={24}
+              color={warningLevel === 'critical' || warningLevel === 'warning'
+                ? colors.error[500]
+                : colors.warning[500]
+              }
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={{
+                fontSize: 14,
+                fontWeight: '600',
+                color: warningLevel === 'critical' || warningLevel === 'warning'
+                  ? colors.error[500]
+                  : colors.warning[500],
+                marginBottom: 4,
+              }}>
+                {warningLevel === 'critical' ? 'Critical Budget Alert' :
+                 warningLevel === 'warning' ? 'Budget Exceeded' : 'Budget Warning'}
+              </Text>
+              <Text style={{
+                fontSize: 13,
+                lineHeight: 18,
+                color: colors.text.secondary,
+              }}>
+                {warningMessage}
+              </Text>
+            </View>
+          </View>
+        )}
+
         <Text style={[styles.simpleBudgetTitle, { color: colors.text.primary }]}>
           {dayjs(selectedMonth).format("MMMM YYYY")} Budget
         </Text>
