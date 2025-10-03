@@ -15,9 +15,17 @@ import { useSubscription } from "../../contexts/SubscriptionContext";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { useAuth } from "../auth/AuthContext";
 import { PremiumUpgradeCard } from "../../components/premium/PremiumUpgradeCard";
-import { budgetAPI, balanceAPI } from "../../services/api";
+import { budgetAPI } from "../../services/api";
+import * as BalanceAPIModule from "../../services/api/balanceAPI";
 import { transactionAPI } from "../../services/api/transactionAPI";
 import { Alert } from "react-native";
+
+// Debug logging
+console.log("🔍 [DEBUG] BalanceAPIModule:", BalanceAPIModule);
+console.log("🔍 [DEBUG] balanceAPI:", BalanceAPIModule.balanceAPI);
+console.log("🔍 [DEBUG] refreshBalance:", BalanceAPIModule.balanceAPI?.refreshBalance);
+
+const balanceAPI = BalanceAPIModule.balanceAPI;
 import { SPACING } from "../../constants/Colors";
 import { APP_STRINGS } from "../../constants/strings";
 import { TabLoadingScreen } from "../../components/ui";
