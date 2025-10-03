@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../app/auth/AuthContext';
 import { styles } from './BalanceCard.styles';
@@ -17,6 +18,38 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
 }) => {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const [isBalanceHidden, setIsBalanceHidden] = useState(false);
+
+  // Load balance visibility preference
+  useEffect(() => {
+    const loadPreference = async () => {
+      try {
+        const preference = await AsyncStorage.getItem('balanceHidden');
+        if (preference !== null) {
+          setIsBalanceHidden(preference === 'true');
+        }
+      } catch (error) {
+        console.error('Error loading balance visibility preference:', error);
+      }
+    };
+    loadPreference();
+  }, []);
+
+  // Toggle balance visibility
+  const toggleBalanceVisibility = async () => {
+    try {
+      const newValue = !isBalanceHidden;
+      setIsBalanceHidden(newValue);
+      await AsyncStorage.setItem('balanceHidden', newValue.toString());
+    } catch (error) {
+      console.error('Error saving balance visibility preference:', error);
+    }
+  };
+
+  // Format balance display
+  const displayBalance = isBalanceHidden
+    ? '£••••••.••'
+    : `£${totalBalance.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <View style={styles.professionalBalanceWrapper}>
@@ -32,14 +65,27 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
               Monthly Balance
             </Text>
           </View>
-          <View style={styles.professionalBalanceIcon}>
-            <Ionicons name="wallet-outline" size={26} color="white" />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity
+              onPress={toggleBalanceVisibility}
+              style={styles.professionalBalanceIcon}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isBalanceHidden ? "eye-off-outline" : "eye-outline"}
+                size={22}
+                color="white"
+              />
+            </TouchableOpacity>
+            <View style={styles.professionalBalanceIcon}>
+              <Ionicons name="wallet-outline" size={26} color="white" />
+            </View>
           </View>
         </View>
-        
+
         <View style={styles.professionalBalanceMain}>
           <Text style={styles.professionalBalanceAmount}>
-            £{totalBalance.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {displayBalance}
           </Text>
           <View style={styles.professionalBalanceMetrics}>
             {totalBalance > 0 && (
