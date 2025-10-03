@@ -1,5 +1,6 @@
 // Centralized data source for manual input mode
 import { profileAPI } from "./api";
+import { cachedApiCall, CACHE_TTL } from "./config/apiCache";
 
 // Helper function to extract merchant name from transaction description
 function extractMerchantFromDescription(description: string): string {
@@ -293,10 +294,22 @@ const getSampleNotifications = () => {
   ];
 };
 
-export const getProfile = async () => {
+export const getProfile = async (options: { useCache?: boolean; forceRefresh?: boolean } = { useCache: true, forceRefresh: false }) => {
   try {
-    const response = await profileAPI.getProfile();
-    return response.profile;
+    if (options.useCache) {
+      return await cachedApiCall(
+        'user_profile',
+        async () => {
+          const response = await profileAPI.getProfile();
+          return response.profile;
+        },
+        CACHE_TTL.VERY_LONG, // 24 hours - profile changes infrequently
+        options.forceRefresh
+      );
+    } else {
+      const response = await profileAPI.getProfile();
+      return response.profile;
+    }
   } catch (error) {
     console.error("Error loading profile:", error);
     return {
@@ -311,10 +324,22 @@ export const getProfile = async () => {
   }
 };
 
-export const getCreditScore = async () => {
+export const getCreditScore = async (options: { useCache?: boolean; forceRefresh?: boolean } = { useCache: true, forceRefresh: false }) => {
   try {
-    const response = await profileAPI.getCreditScore();
-    return response.creditScore;
+    if (options.useCache) {
+      return await cachedApiCall(
+        'credit_score',
+        async () => {
+          const response = await profileAPI.getCreditScore();
+          return response.creditScore;
+        },
+        CACHE_TTL.LONG, // 30 minutes - credit score updates moderately
+        options.forceRefresh
+      );
+    } else {
+      const response = await profileAPI.getCreditScore();
+      return response.creditScore;
+    }
   } catch (error) {
     console.error("Error loading credit score:", error);
     return {

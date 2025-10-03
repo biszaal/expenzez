@@ -1,4 +1,5 @@
 import { api } from '../config/apiClient';
+import { cachedApiCall, CACHE_TTL, clearCachedData } from '../config/apiCache';
 
 export interface Transaction {
   id: string;
@@ -78,13 +79,23 @@ export interface CSVImportResponse {
 export const transactionAPI = {
   createTransaction: async (data: TransactionCreateData): Promise<TransactionCreateResponse> => {
     const response = await api.post('/transactions', data);
+
+    // Invalidate transaction cache after creating new transaction
+    await clearCachedData('transactions_all');
+
     return response.data;
   },
 
-  getTransactions: async (params: GetTransactionsParams = {}): Promise<TransactionsResponse> => {
+  getTransactions: async (
+    params: GetTransactionsParams = {},
+    options: { useCache?: boolean; forceRefresh?: boolean } = { useCache: true, forceRefresh: false }
+  ): Promise<TransactionsResponse> => {
     const queryParams = new URLSearchParams();
 
-    if (params.limit !== undefined) queryParams.append('limit', params.limit.toString());
+    // Default limit to 50 for faster initial load
+    const limit = params.limit !== undefined ? params.limit : 50;
+    queryParams.append('limit', limit.toString());
+
     if (params.startKey) queryParams.append('startKey', params.startKey);
     if (params.category) queryParams.append('category', params.category);
     if (params.startDate) queryParams.append('startDate', params.startDate);
@@ -92,8 +103,24 @@ export const transactionAPI = {
     if (params.type) queryParams.append('type', params.type);
 
     const url = queryParams.toString() ? `/transactions?${queryParams.toString()}` : '/transactions';
-    const response = await api.get(url);
-    return response.data;
+
+    // Generate cache key based on params
+    const cacheKey = `transactions_${JSON.stringify(params)}`;
+
+    if (options.useCache) {
+      return cachedApiCall(
+        cacheKey,
+        async () => {
+          const response = await api.get(url);
+          return response.data;
+        },
+        CACHE_TTL.SHORT, // 30 seconds for transactions
+        options.forceRefresh
+      );
+    } else {
+      const response = await api.get(url);
+      return response.data;
+    }
   },
 
   // CSV Import with auto-categorization
