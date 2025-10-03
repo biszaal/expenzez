@@ -15,7 +15,7 @@ import { useSubscription } from "../../contexts/SubscriptionContext";
 import { PremiumGate } from "../../components/premium";
 import { SpendingSkeleton } from "../../components/ui/SkeletonLoader";
 import { spacing } from "../../constants/theme";
-import { budgetAPI } from "../../services/api";
+import { budgetAPI, balanceAPI } from "../../services/api";
 import { useXP } from '../../hooks/useXP';
 import { transactionAPI } from "../../services/api/transactionAPI";
 import { getMerchantInfo } from "../../services/merchantService";
@@ -48,7 +48,7 @@ export default function SpendingPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(dayjs().format("YYYY-MM"));
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
 
   // Animation values
   const animatedProgress = useMemo(() => new Animated.Value(0), []);
@@ -235,58 +235,28 @@ export default function SpendingPage() {
 
   const displayLeftToSpend = totalBudget - monthlyData.monthlyTotalSpent;
 
-  // Month selection options - only show months that have data
+  // Month selection options - use available months from balance summary
   const months = useMemo(() => {
-    const monthsArray = [];
-    
-    if (transactions.length === 0) {
-      // No transactions - only show current month
+    if (availableMonths.length === 0) {
+      // No months available yet - show current month
       const currentMonth = dayjs();
-      monthsArray.push({
+      return [{
         id: 0,
         name: currentMonth.format('MMM YYYY'),
         value: currentMonth.format('YYYY-MM')
-      });
-    } else {
-      // Get unique months from transactions
-      const monthsWithData = new Set<string>();
-      
-      transactions.forEach(transaction => {
-        if (transaction.date) {
-          const txMonth = dayjs(transaction.date).format('YYYY-MM');
-          monthsWithData.add(txMonth);
-        }
-      });
-      
-      // Convert to array and sort (newest first)
-      const sortedMonths = Array.from(monthsWithData).sort((a, b) => b.localeCompare(a));
-      
-      // Create month objects
-      sortedMonths.forEach((monthValue, index) => {
-        const month = dayjs(monthValue);
-        monthsArray.push({
-          id: index,
-          name: month.format('MMM YYYY'),
-          value: monthValue
-        });
-      });
-      
-      // Always ensure current month is included (in case no transactions this month)
-      const currentMonthValue = dayjs().format('YYYY-MM');
-      const hasCurrentMonth = monthsArray.some(m => m.value === currentMonthValue);
-      
-      if (!hasCurrentMonth) {
-        const currentMonth = dayjs();
-        monthsArray.unshift({
-          id: monthsArray.length,
-          name: currentMonth.format('MMM YYYY'),
-          value: currentMonthValue
-        });
-      }
+      }];
     }
-    
-    return monthsArray;
-  }, [transactions]);
+
+    // Convert available months to month objects
+    return availableMonths.map((monthValue, index) => {
+      const month = dayjs(monthValue);
+      return {
+        id: index,
+        name: month.format('MMM YYYY'),
+        value: monthValue
+      };
+    });
+  }, [availableMonths]);
 
   // Calculate cumulative daily spending for chart (original implementation)
   const dailySpendingData = useMemo(() => {
@@ -549,31 +519,36 @@ export default function SpendingPage() {
       setLoading(true);
       setError(null);
 
-      // Load manual transactions from DynamoDB first
-      try {
-        let startDate: string;
-        let endDate: string;
-        let limit: number;
+      // Load balance summary to get available months (fast, cached)
+      const balanceSummary = await balanceAPI.getSummary({ useCache: true }).catch(() => ({
+        balance: 0,
+        totalCredit: 0,
+        totalDebit: 0,
+        transactionCount: 0,
+        firstTransactionDate: null,
+        lastTransactionDate: null,
+        monthsWithData: []
+      }));
 
-        if (isInitialLoad) {
-          // Initial load: Fetch last 6 months to find months with data
-          startDate = dayjs().subtract(6, 'months').startOf('month').format('YYYY-MM-DD');
-          endDate = dayjs().endOf('month').format('YYYY-MM-DD');
-          limit = 600; // ~100 per month for 6 months
-          console.log(`🔄 [Spending] Initial load - fetching last 6 months (${startDate} to ${endDate})...`);
-        } else {
-          // Subsequent loads: Only fetch selected month for better performance
-          startDate = `${selectedMonth}-01`;
-          endDate = dayjs(selectedMonth).endOf('month').format('YYYY-MM-DD');
-          limit = 200; // Limit per month
-          console.log(`🔄 [Spending] Fetching transactions for ${selectedMonth} (${startDate} to ${endDate})...`);
-        }
+      setAvailableMonths(balanceSummary.monthsWithData);
+      console.log("✅ [Spending] Available months:", balanceSummary.monthsWithData);
+
+      // Load manual transactions from DynamoDB
+      try {
+        // Fetch current + previous month for comparison chart
+        const prevMonth = dayjs(selectedMonth).subtract(1, 'month').format('YYYY-MM');
+        const monthsToFetch = [selectedMonth, prevMonth];
+
+        const startDate = `${prevMonth}-01`;
+        const endDate = dayjs(selectedMonth).endOf('month').format('YYYY-MM-DD');
+
+        console.log(`🔄 [Spending] Fetching transactions for ${selectedMonth} + ${prevMonth} (${startDate} to ${endDate})...`);
 
         const transactionsResponse = await transactionAPI.getTransactions({
           startDate,
           endDate,
-          limit,
-          useCache: true // Use caching for better performance
+          limit: 400, // ~200 per month for 2 months
+          useCache: true
         });
 
         if (transactionsResponse && transactionsResponse.transactions) {
@@ -608,11 +583,8 @@ export default function SpendingPage() {
       setError(`${errorMessage}. Please check your connection and try again.`);
     } finally {
       setLoading(false);
-      if (isInitialLoad) {
-        setIsInitialLoad(false);
-      }
     }
-  }, [selectedMonth, isInitialLoad]);
+  }, [selectedMonth]);
 
   // Generate categories from transactions with month-specific budgets
   const generateCategoriesFromTransactions = async (selectedMonthData?: any) => {

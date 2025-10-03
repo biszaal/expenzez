@@ -10,6 +10,7 @@ export { profileAPI } from './profileAPI';
 export { notificationAPI } from './notificationAPI';
 export { securityAPI } from './securityAPI';
 export { transactionAPI } from './transactionAPI';
+export { balanceAPI } from './balanceAPI';
 export { achievementAPI } from './achievementAPI';
 export { savingsInsightsAPI } from './savingsInsightsAPI';
 export { goalsAPI } from './goalsAPI';

@@ -59,9 +59,8 @@ export default function TransactionsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState<string>(""); // Empty initially to load all recent
+  const [selectedMonth, setSelectedMonth] = useState<string>(""); // Empty = show all
   const [lastUpdated, setLastUpdated] = useState(dayjs().format("HH:mm"));
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const fetchTransactions = async (showRefresh = false) => {
     try {
@@ -72,18 +71,18 @@ export default function TransactionsScreen() {
       let endDate: string | undefined;
       let limit: number;
 
-      if (isInitialLoad || !selectedMonth) {
-        // Initial load or no month selected: Fetch last 6 months
-        startDate = dayjs().subtract(6, 'months').startOf('month').format('YYYY-MM-DD');
-        endDate = dayjs().endOf('month').format('YYYY-MM-DD');
-        limit = 600; // ~100 per month for 6 months
-        console.log(`[Transactions] Initial load - fetching last 6 months (${startDate} to ${endDate})...`);
-      } else {
-        // Subsequent loads: Only fetch selected month
+      if (selectedMonth) {
+        // Fetch specific month
         startDate = `${selectedMonth}-01`;
         endDate = dayjs(selectedMonth).endOf('month').format('YYYY-MM-DD');
         limit = 200;
         console.log(`[Transactions] Fetching transactions for ${selectedMonth}...`);
+      } else {
+        // No month selected: Fetch last 3 months
+        startDate = dayjs().subtract(3, 'months').startOf('month').format('YYYY-MM-DD');
+        endDate = dayjs().endOf('month').format('YYYY-MM-DD');
+        limit = 600; // ~200 per month for 3 months
+        console.log(`[Transactions] Fetching last 3 months (${startDate} to ${endDate})...`);
       }
 
       const transactionsResponse = await transactionAPI.getTransactions({
@@ -150,9 +149,6 @@ export default function TransactionsScreen() {
     } finally {
       setLoading(false);
       setRefreshing(false);
-      if (isInitialLoad) {
-        setIsInitialLoad(false);
-      }
     }
   };
 
