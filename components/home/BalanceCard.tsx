@@ -16,7 +16,6 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   totalBalance,
   getTimeOfDay,
 }) => {
-  const { colors } = useTheme();
   const { user } = useAuth();
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
 
