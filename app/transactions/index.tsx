@@ -16,6 +16,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
+import { EmptyState } from "../../components/ui/EmptyState";
 import { transactionAPI } from "../../services/api/transactionAPI";
 import { getMerchantInfo } from "../../services/merchantService";
 import MonthFilter from "../../components/ui/MonthFilter";
@@ -337,45 +338,12 @@ export default function TransactionsScreen() {
           <View style={styles.menuButton} />
         </View>
 
-        <View style={styles.emptyState}>
-          <View
-            style={[styles.emptyIcon, { backgroundColor: colors.primary[100] }]}
-          >
-            <Ionicons
-              name="receipt-outline"
-              size={48}
-              color={colors.primary[500]}
-            />
-          </View>
-          <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
-            No Transactions Yet
-          </Text>
-          <Text
-            style={[styles.emptySubtitle, { color: colors.text.secondary }]}
-          >
-            Add expenses manually or import from CSV to get started
-          </Text>
-          <TouchableOpacity
-            style={[
-              styles.connectButton,
-              { backgroundColor: colors.primary[500] },
-            ]}
-            onPress={() => router.push("/add-transaction")}
-          >
-            <Text style={styles.connectButtonText}>Add Expense</Text>
-            <Ionicons name="arrow-forward" size={16} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.connectButton,
-              { backgroundColor: colors.background.secondary, marginTop: 12 },
-            ]}
-            onPress={() => router.push("/import-csv")}
-          >
-            <Text style={[styles.connectButtonText, { color: colors.primary[500] }]}>Import CSV</Text>
-            <Ionicons name="document-text-outline" size={16} color={colors.primary[500]} />
-          </TouchableOpacity>
-        </View>
+        <EmptyState
+          type="transactions"
+          onAction={() => router.push("/add-transaction")}
+          secondaryActionLabel="Import CSV"
+          onSecondaryAction={() => router.push("/import-csv")}
+        />
       </SafeAreaView>
     );
   }
@@ -638,20 +606,15 @@ export default function TransactionsScreen() {
             {/* Empty State */}
             {groupedTransactions.length === 0 &&
               pendingTransactions.length === 0 && (
-                <View style={styles.emptyTransactions}>
-                  <Ionicons
-                    name="receipt-outline"
-                    size={48}
-                    color={colors.text.tertiary}
-                  />
-                  <Text
-                    style={[styles.emptyText, { color: colors.text.secondary }]}
-                  >
-                    {searchQuery
-                      ? "No matching transactions found"
-                      : "No transactions for this month"}
-                  </Text>
-                </View>
+                <EmptyState
+                  type="transactions"
+                  title={searchQuery ? "No matches found" : "No transactions"}
+                  description={
+                    searchQuery
+                      ? "Try adjusting your search or filter criteria"
+                      : "No transactions for this period"
+                  }
+                />
               )}
           </View>
         )}

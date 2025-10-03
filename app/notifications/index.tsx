@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { TabLoadingScreen } from '../../components/ui';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { NotificationCard, NotificationCategories, SmartNotificationInsights } from '../../components/notifications';
 import { SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/Colors';
 
@@ -211,22 +212,16 @@ export default function NotificationsScreen() {
               />
             ))
           ) : (
-            <View style={styles.emptyState}>
-              <Ionicons
-                name={selectedCategory === 'all' ? 'notifications-outline' : categories.find(c => c.id === selectedCategory)?.icon as any}
-                size={48}
-                color={colors.text.tertiary}
-              />
-              <Text style={styles.emptyTitle}>
-                No {selectedCategory === 'all' ? '' : categories.find(c => c.id === selectedCategory)?.title?.toLowerCase() + ' '}notifications
-              </Text>
-              <Text style={styles.emptyText}>
-                {selectedCategory === 'all'
+            <EmptyState
+              type="notifications"
+              iconName={selectedCategory === 'all' ? 'notifications-off-outline' : categories.find(c => c.id === selectedCategory)?.icon as any}
+              title={`No ${selectedCategory === 'all' ? '' : categories.find(c => c.id === selectedCategory)?.title?.toLowerCase() + ' '}notifications`}
+              description={
+                selectedCategory === 'all'
                   ? "You're all caught up! New notifications will appear here."
                   : `No ${categories.find(c => c.id === selectedCategory)?.title?.toLowerCase()} notifications yet.`
-                }
-              </Text>
-            </View>
+              }
+            />
           )}
         </View>
 
