@@ -550,8 +550,16 @@ export default function SpendingPage() {
 
       // Load manual transactions from DynamoDB first
       try {
-        console.log("🔄 [Spending] Fetching manual transactions from DynamoDB...");
-        const transactionsResponse = await transactionAPI.getTransactions({ limit: 2000 });
+        // Only fetch selected month's transactions for better performance
+        const startDate = `${selectedMonth}-01`;
+        const endDate = dayjs(selectedMonth).endOf('month').format('YYYY-MM-DD');
+        console.log(`🔄 [Spending] Fetching transactions for ${selectedMonth} (${startDate} to ${endDate})...`);
+        const transactionsResponse = await transactionAPI.getTransactions({
+          startDate,
+          endDate,
+          limit: 200, // Limit per month
+          useCache: true // Use caching for better performance
+        });
 
         if (transactionsResponse && transactionsResponse.transactions) {
           console.log("✅ [Spending] Loaded manual transactions:", transactionsResponse.transactions.length);
@@ -586,7 +594,7 @@ export default function SpendingPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedMonth]);
 
   // Generate categories from transactions with month-specific budgets
   const generateCategoriesFromTransactions = async (selectedMonthData?: any) => {
@@ -839,7 +847,7 @@ export default function SpendingPage() {
       // Always fetch data when logged in, regardless of bank connection status
       fetchData();
     }
-  }, [isLoggedIn, fetchData]);
+  }, [isLoggedIn, selectedMonth, fetchData]);
 
   // Loading state - show loading during data fetch or bank check
   if (loading || checkingBank) {
