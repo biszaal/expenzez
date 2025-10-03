@@ -14,6 +14,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useSubscription } from "../../contexts/SubscriptionContext";
 import { PremiumGate } from "../../components/premium";
 import { TabLoadingScreen } from "../../components/ui";
+import { TransactionSkeleton } from "../../components/ui/SkeletonLoader";
 import { spacing } from "../../constants/theme";
 import { budgetAPI } from "../../services/api";
 import { useXP } from '../../hooks/useXP';
