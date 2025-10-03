@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { TabLoadingScreen } from '../../components/ui';
+import { NotificationsSkeleton } from '../../components/ui/SkeletonLoader';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { NotificationCard, NotificationCategories, SmartNotificationInsights } from '../../components/notifications';
 import { SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/Colors';
@@ -124,7 +124,11 @@ export default function NotificationsScreen() {
   ];
 
   if (loading) {
-    return <TabLoadingScreen message="Loading notifications..." />;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+        <NotificationsSkeleton />
+      </SafeAreaView>
+    );
   }
 
   const styles = createStyles(colors);

@@ -13,8 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useSubscription } from "../../contexts/SubscriptionContext";
 import { PremiumGate } from "../../components/premium";
-import { TabLoadingScreen } from "../../components/ui";
-import { TransactionSkeleton } from "../../components/ui/SkeletonLoader";
+import { SpendingSkeleton } from "../../components/ui/SkeletonLoader";
 import { spacing } from "../../constants/theme";
 import { budgetAPI } from "../../services/api";
 import { useXP } from '../../hooks/useXP';
@@ -844,7 +843,11 @@ export default function SpendingPage() {
 
   // Loading state - show loading during data fetch or bank check
   if (loading || checkingBank) {
-    return <TabLoadingScreen message="Loading spending data..." />;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+        <SpendingSkeleton />
+      </SafeAreaView>
+    );
   }
 
   // Error state

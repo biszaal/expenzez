@@ -18,7 +18,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useSubscription } from "../../contexts/SubscriptionContext";
 import { useAlert } from "../../hooks/useAlert";
-import { TabLoadingScreen } from "../../components/ui";
+import { ProfileSkeleton } from "../../components/ui/SkeletonLoader";
 import {
   spacing,
   borderRadius,
@@ -356,7 +356,11 @@ export default function AccountScreen() {
   }
 
   if (loading) {
-    return <TabLoadingScreen message="Loading account details..." />;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+        <ProfileSkeleton />
+      </SafeAreaView>
+    );
   }
 
   return (
