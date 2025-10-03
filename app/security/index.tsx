@@ -22,6 +22,7 @@ import { nativeSecurityAPI } from "../../services/api/nativeSecurityAPI";
 import { deviceManager } from "../../services/deviceManager";
 import { deviceAPI, DeviceInfo } from "../../services/api/deviceAPI";
 import PinInput from "../../components/PinInput";
+import { EmptyState } from "../../components/ui/EmptyState";
 import {
   spacing,
   borderRadius,
@@ -868,22 +869,41 @@ export default function SecurityScreen() {
                 </Text>
               </View>
             ) : devices.length === 0 ? (
-              <View style={styles.emptyDevicesContainer}>
-                <Ionicons
-                  name="phone-portrait-outline"
-                  size={32}
-                  color={colors.gray[400]}
-                />
-                <Text style={[styles.emptyDevicesText, { color: colors.text.secondary }]}>
-                  No trusted devices found
-                </Text>
-                <Text style={[styles.emptyDevicesSubtext, { color: colors.gray[400] }]}>
-                  Enable &quot;Remember this device&quot; when logging in to see devices here
-                </Text>
-              </View>
+              <EmptyState
+                type="devices"
+              />
             ) : (
               devices.map((device, index) => {
                 const isCurrentDevice = device.deviceId === currentDeviceId;
+
+                // Enhanced device icon logic
+                const getDeviceIcon = () => {
+                  // iOS devices
+                  if (device.platform === 'ios') {
+                    if (device.deviceType === 'tablet') return 'tablet-portrait';
+                    if (device.deviceType === 'desktop') return 'desktop';
+                    return 'phone-portrait';
+                  }
+                  // Android devices
+                  if (device.platform === 'android') {
+                    if (device.deviceType === 'tablet') return 'tablet-landscape';
+                    return 'phone-portrait-outline';
+                  }
+                  // Other devices
+                  if (device.deviceType === 'desktop') return 'desktop-outline';
+                  if (device.deviceType === 'tablet') return 'tablet-landscape-outline';
+                  return 'hardware-chip-outline';
+                };
+
+                // Trust level color
+                const getTrustColor = () => {
+                  if (isCurrentDevice) return colors.success;
+                  if (device.isTrusted) return colors.primary;
+                  return colors.gray;
+                };
+
+                const trustColors = getTrustColor();
+
                 return (
                   <View key={device.deviceId}>
                     <View style={styles.deviceItem}>
@@ -891,21 +911,17 @@ export default function SecurityScreen() {
                         <View
                           style={[
                             styles.deviceIcon,
-                            { backgroundColor: isCurrentDevice ? colors.success[100] : colors.primary[100] },
+                            {
+                              backgroundColor: trustColors[100],
+                              borderWidth: 2,
+                              borderColor: trustColors[200],
+                            },
                           ]}
                         >
                           <Ionicons
-                            name={
-                              device.platform === 'ios'
-                                ? 'phone-portrait'
-                                : device.platform === 'android'
-                                ? 'phone-portrait'
-                                : device.deviceType === 'desktop'
-                                ? 'desktop'
-                                : 'tablet-portrait'
-                            }
-                            size={20}
-                            color={isCurrentDevice ? colors.success[500] : colors.primary[500]}
+                            name={getDeviceIcon() as any}
+                            size={22}
+                            color={trustColors[600]}
                           />
                         </View>
                         <View style={styles.deviceContent}>

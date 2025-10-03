@@ -83,6 +83,41 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
     fontWeight: "500",
   },
 
+  // Mini Stats Cards
+  miniStatsContainer: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  miniStatCard: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: spacing.sm,
+    borderRadius: borderRadius.lg,
+    gap: spacing.sm,
+  },
+  miniStatIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  miniStatContent: {
+    flex: 1,
+  },
+  miniStatValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  miniStatLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+
   // Current Value Display Styles
   currentValueContainer: {
     alignItems: "center",
