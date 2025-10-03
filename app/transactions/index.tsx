@@ -67,23 +67,12 @@ export default function TransactionsScreen() {
       if (showRefresh) setRefreshing(true);
       else setLoading(true);
 
-      let startDate: string | undefined;
-      let endDate: string | undefined;
-      let limit: number;
+      // Always fetch last 12 months to have all months available in filter
+      const startDate = dayjs().subtract(12, 'months').startOf('month').format('YYYY-MM-DD');
+      const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
+      const limit = 2400; // ~200 per month for 12 months
 
-      if (selectedMonth) {
-        // Fetch specific month
-        startDate = `${selectedMonth}-01`;
-        endDate = dayjs(selectedMonth).endOf('month').format('YYYY-MM-DD');
-        limit = 200;
-        console.log(`[Transactions] Fetching transactions for ${selectedMonth}...`);
-      } else {
-        // No month selected: Fetch last 3 months
-        startDate = dayjs().subtract(3, 'months').startOf('month').format('YYYY-MM-DD');
-        endDate = dayjs().endOf('month').format('YYYY-MM-DD');
-        limit = 600; // ~200 per month for 3 months
-        console.log(`[Transactions] Fetching last 3 months (${startDate} to ${endDate})...`);
-      }
+      console.log(`[Transactions] Fetching last 12 months (${startDate} to ${endDate})...`);
 
       const transactionsResponse = await transactionAPI.getTransactions({
         startDate,
@@ -167,7 +156,7 @@ export default function TransactionsScreen() {
     if (isLoggedIn) {
       fetchTransactions();
     }
-  }, [isLoggedIn, selectedMonth]); // Refetch when month changes
+  }, [isLoggedIn]); // Only fetch on login, filter client-side when month changes
 
   useEffect(() => {
     if (merchant) {
