@@ -36,11 +36,11 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
           return;
         }
 
-        // Use production iOS API key for all builds
-        const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY || 'appl_yfPFpbhaPCTmblZKDJMHMyRKhKH';
+        // Use production iOS API key from environment variables
+        const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;
 
-        // Skip initialization if using placeholder keys
-        if (apiKey.includes('YOUR_') || apiKey.includes('appl_YOUR')) {
+        // Skip initialization if API key is not configured
+        if (!apiKey || apiKey.includes('YOUR_') || apiKey.includes('appl_YOUR')) {
           console.warn('RevenueCat: Skipping initialization - no valid API key provided');
           setLoading(false);
           return;
