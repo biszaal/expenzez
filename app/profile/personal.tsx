@@ -40,14 +40,44 @@ export default function PersonalInformationScreen() {
   useEffect(() => {
     const fetchProfile = async () => {
       setLoading(true);
-      const data = await getProfile();
-      setFormData(data);
+      try {
+        const data = await getProfile();
+        if (data) {
+          setFormData(data);
+        } else {
+          // If profile is null, create default empty profile
+          setFormData({
+            firstName: "",
+            lastName: "",
+            email: "",
+            phone: "",
+            address: "",
+            city: "",
+            country: "",
+            dateOfBirth: "",
+          });
+        }
+      } catch (error) {
+        console.error("Error loading profile:", error);
+        // Create default empty profile on error
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          address: "",
+          city: "",
+          country: "",
+          dateOfBirth: "",
+        });
+      }
       setLoading(false);
     };
     fetchProfile();
   }, []);
 
-  if (loading || !formData) return <Text>Loading...</Text>;
+  if (loading) return <Text style={{ padding: 20, textAlign: 'center' }}>Loading...</Text>;
+  if (!formData) return <Text style={{ padding: 20, textAlign: 'center' }}>Unable to load profile</Text>;
 
   // Handle form field changes
   const handleFieldChange = (field: string, value: string) => {
