@@ -113,7 +113,7 @@ export const NotificationCard: React.FC = () => {
         <View style={styles.notificationsList}>
           {recentNotifications.map((notification, index) => (
             <TouchableOpacity
-              key={notification.id}
+              key={notification.id || `notification-${index}`}
               style={[
                 styles.notificationItem,
                 index < recentNotifications.length - 1 && styles.notificationItemBorder,

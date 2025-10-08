@@ -301,6 +301,10 @@ export const getProfile = async (options: { useCache?: boolean; forceRefresh?: b
         'user_profile',
         async () => {
           const response = await profileAPI.getProfile();
+          if (!response || !response.profile) {
+            console.warn('⚠️ Profile API returned null or empty response');
+            return null;
+          }
           return response.profile;
         },
         CACHE_TTL.VERY_LONG, // 24 hours - profile changes infrequently
@@ -308,6 +312,10 @@ export const getProfile = async (options: { useCache?: boolean; forceRefresh?: b
       );
     } else {
       const response = await profileAPI.getProfile();
+      if (!response || !response.profile) {
+        console.warn('⚠️ Profile API returned null or empty response');
+        return null;
+      }
       return response.profile;
     }
   } catch (error) {
