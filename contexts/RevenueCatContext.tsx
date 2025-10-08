@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import Purchases, { CustomerInfo, PurchasesPackage, LOG_LEVEL, PurchasesOffering } from 'react-native-purchases';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 interface RevenueCatContextType {
   customerInfo: CustomerInfo | null;
@@ -24,6 +26,16 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   useEffect(() => {
     const initRevenueCat = async () => {
       try {
+        // Detect if running in Expo Go
+        const isExpoGo = Constants.appOwnership === 'expo';
+
+        // Skip RevenueCat in Expo Go to prevent initialization errors
+        if (isExpoGo) {
+          console.log('🧪 [RevenueCat] Running in Expo Go - skipping initialization');
+          setLoading(false);
+          return;
+        }
+
         // Use production iOS API key for all builds
         const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY || 'appl_yfPFpbhaPCTmblZKDJMHMyRKhKH';
 
@@ -42,6 +54,8 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
           apiKey: apiKey,
         });
 
+        console.log('✅ [RevenueCat] Initialized successfully');
+
         // Get customer info
         const info = await Purchases.getCustomerInfo();
         setCustomerInfo(info);
@@ -51,8 +65,9 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
         setOfferings(offerings.current);
 
         setLoading(false);
-      } catch (error) {
-        console.error('Error initializing RevenueCat:', error);
+      } catch (error: any) {
+        // Don't let RevenueCat errors block the app
+        console.warn('⚠️ [RevenueCat] Initialization failed, continuing without RevenueCat:', error.message);
         setLoading(false);
       }
     };
@@ -66,9 +81,9 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
       setCustomerInfo(customerInfo);
       return customerInfo.entitlements.active['premium'] !== undefined;
     } catch (error: any) {
-      console.error('Error purchasing package:', error);
+      console.warn('[RevenueCat] Purchase error:', error.message);
       if (error.userCancelled) {
-        console.log('User cancelled purchase');
+        console.log('[RevenueCat] User cancelled purchase');
       }
       return false;
     }
@@ -79,8 +94,8 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
       const info = await Purchases.restorePurchases();
       setCustomerInfo(info);
       return info.entitlements.active['premium'] !== undefined;
-    } catch (error) {
-      console.error('Error restoring purchases:', error);
+    } catch (error: any) {
+      console.warn('[RevenueCat] Restore error:', error.message);
       return false;
     }
   };
