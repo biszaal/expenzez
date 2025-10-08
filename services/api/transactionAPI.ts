@@ -49,6 +49,7 @@ export interface GetTransactionsParams {
   startDate?: string;
   endDate?: string;
   type?: 'debit' | 'credit';
+  useCache?: boolean;
 }
 
 export interface CSVTransaction {

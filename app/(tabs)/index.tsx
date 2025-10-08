@@ -146,7 +146,7 @@ export default function HomeScreen() {
 
       if (useFallbackBalance && transactionResponse.transactions && transactionResponse.transactions.length > 0) {
         // Fallback: Calculate balance client-side from all loaded transactions
-        finalBalance = transactionResponse.transactions.reduce((sum: number, tx: any) => {
+        finalBalance = (transactionResponse.transactions as any[]).reduce((sum: number, tx: any): number => {
           const amount = parseFloat(tx.amount) || 0;
           return sum + amount;
         }, 0);
@@ -179,6 +179,7 @@ export default function HomeScreen() {
           originalAmount: Math.abs(tx.amount || 0),
           accountType: tx.accountType || "Manual Account",
           isPending: tx.isPending || false,
+          currency: tx.currency || "GBP",
         }));
       }
 
