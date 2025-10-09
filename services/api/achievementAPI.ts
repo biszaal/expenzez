@@ -77,7 +77,13 @@ export const achievementAPI = {
 
       return response.data;
     } catch (error: any) {
-      console.error('❌ [AchievementAPI] Error fetching user achievements:', error);
+      // 404 is expected - this feature is optional and not yet deployed
+      if (error.response?.status === 404 || error.statusCode === 404) {
+        console.log('🔄 [AchievementAPI] Achievements endpoint not available (404), using fallback data');
+      } else {
+        // Only log non-404 errors as actual errors
+        console.error('❌ [AchievementAPI] Error fetching user achievements:', error);
+      }
 
       // Generate dynamic fallback data using the gamification engine
       try {

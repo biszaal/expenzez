@@ -95,25 +95,10 @@ export const nativeSecurityAPI = {
       }
     } catch (error: any) {
       console.error('🔐 [NativeSecurityAPI] ❌ PIN setup failed:', error);
-
-      // Fallback: Try local storage only
-      try {
-        console.log('🔐 [NativeSecurityAPI] Attempting fallback to local PIN storage...');
-        await nativeCryptoStorage.storePinHash(request.pin);
-        await nativeCryptoStorage.setSecuritySettings({
-          securityEnabled: true,
-          biometricEnabled: request.biometricEnabled || false,
-        });
-        await nativeCryptoStorage.createSession(request.deviceId);
-        console.log('🔐 [NativeSecurityAPI] ⚠️ Fallback successful - PIN stored locally only');
-        return { success: true };
-      } catch (fallbackError: any) {
-        console.error('🔐 [NativeSecurityAPI] ❌ Fallback also failed:', fallbackError);
-        return {
-          success: false,
-          error: error.message || 'Failed to set up PIN'
-        };
-      }
+      return {
+        success: false,
+        error: error.message || 'Failed to set up PIN. Please check your internet connection.'
+      };
     }
   },
 

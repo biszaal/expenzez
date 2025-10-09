@@ -181,56 +181,86 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const registerForPushNotifications = async (): Promise<boolean> => {
     try {
+      console.log("[NotificationContext] 🔔 Starting push notification registration...");
+
       if (!Device.isDevice) {
+        console.log("[NotificationContext] ⚠️ Not a physical device, skipping push notifications");
         return false;
       }
 
       // Check existing permissions
+      console.log("[NotificationContext] 📋 Checking notification permissions...");
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
+      console.log("[NotificationContext] Current permission status:", existingStatus);
+
       // Request permissions if not already granted
       if (existingStatus !== 'granted') {
+        console.log("[NotificationContext] 🔔 Requesting notification permissions...");
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
+        console.log("[NotificationContext] Permission request result:", status);
       }
 
       if (finalStatus !== 'granted') {
+        console.error("[NotificationContext] ❌ Notification permissions not granted:", finalStatus);
+        setError("Notification permissions not granted. Please enable in iOS Settings.");
         return false;
       }
 
       // Get the token
+      console.log("[NotificationContext] 🎫 Getting Expo push token...");
       const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: "849d0f63-bfaa-4d69-aa89-818904092d8b",
+        projectId: "abdbfccb-cbc1-4be7-8fcc-76ac70f61747",
       });
-      
-      const token = tokenData.data;
 
-      // Register token with backend
-      const success = await registerTokenWithBackend(token);
-      
+      const token = tokenData.data;
+      console.log("[NotificationContext] ✅ Received Expo push token:", token.substring(0, 50) + "...");
+
+      // Register token with backend (with retries)
+      console.log("[NotificationContext] 📤 Registering token with backend...");
+      let success = await registerTokenWithBackend(token);
+
+      // Retry once if failed
+      if (!success) {
+        console.log("[NotificationContext] ⚠️ First registration attempt failed, retrying in 2 seconds...");
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        success = await registerTokenWithBackend(token);
+      }
+
       if (success) {
+        console.log("[NotificationContext] ✅ Token successfully registered!");
         setExpoPushToken(token);
         setIsTokenRegistered(true);
-        
+
         // Store token locally
         await AsyncStorage.setItem("expoPushToken", token);
-        
+
         return true;
+      } else {
+        console.error("[NotificationContext] ❌ Failed to register token after retry");
+        setError("Failed to register notification token with server. Notifications may not work.");
+        return false;
       }
-      
-      return false;
+
     } catch (error: any) {
-      console.error("[NotificationContext] Error registering for push notifications:", error);
-      setError("Failed to register for push notifications");
+      console.error("[NotificationContext] ❌ Error registering for push notifications:", error);
+      console.error("[NotificationContext] ❌ Error stack:", error.stack);
+      setError("Failed to register for push notifications: " + error.message);
       return false;
     }
   };
 
   const registerTokenWithBackend = async (token: string): Promise<boolean> => {
     try {
-      console.log("[NotificationContext] Attempting to register token with backend...");
-      
+      console.log("[NotificationContext] ========================================");
+      console.log("[NotificationContext] 🔔 Attempting to register token with backend...");
+      console.log("[NotificationContext] Token:", token.substring(0, 50) + "...");
+      console.log("[NotificationContext] User:", user?.username || user?.id || 'unknown');
+      console.log("[NotificationContext] Logged in:", isLoggedIn);
+      console.log("[NotificationContext] ========================================");
+
       const response = await notificationAPI.registerToken({
         token,
         platform: Platform.OS as 'ios' | 'android',
@@ -241,17 +271,32 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       });
 
-      console.log("[NotificationContext] Token registration response:", response);
-      return response.success || false;
+      console.log("[NotificationContext] ✅ Token registration response:", JSON.stringify(response, null, 2));
+
+      if (response.success) {
+        console.log("[NotificationContext] ✅ Token successfully registered in backend!");
+        return true;
+      } else {
+        console.error("[NotificationContext] ❌ Backend returned success: false");
+        return false;
+      }
     } catch (error: any) {
-      console.error("[NotificationContext] Error registering token with backend:", error);
-      
+      console.error("[NotificationContext] ❌ Error registering token with backend:", error);
+      console.error("[NotificationContext] ❌ Error details:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+      });
+
       // If it's a 401 error, the user might need to re-authenticate
       if (error.response?.status === 401) {
-        console.log("[NotificationContext] Authentication error during token registration. Will retry after login.");
+        console.log("[NotificationContext] ⚠️ Authentication error during token registration. Will retry after login.");
         setError("Authentication required for notifications. Please log in again.");
+      } else {
+        setError(`Failed to register push token: ${error.message}`);
       }
-      
+
       return false;
     }
   };

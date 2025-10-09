@@ -43,7 +43,13 @@ export const savingsInsightsAPI = {
 
       return response.data;
     } catch (error: any) {
-      console.error('❌ [SavingsInsightsAPI] Error fetching savings opportunities:', error);
+      // 404 is expected - this feature is optional and not yet deployed
+      if (error.response?.status === 404 || error.statusCode === 404) {
+        console.log('🔄 [SavingsInsightsAPI] Savings insights endpoint not available (404), using fallback data');
+      } else {
+        // Only log non-404 errors as actual errors
+        console.error('❌ [SavingsInsightsAPI] Error fetching savings opportunities:', error);
+      }
 
       // Provide fallback data for development
       const fallbackData: SavingsInsightsResponse = {
@@ -56,7 +62,6 @@ export const savingsInsightsAPI = {
         lastUpdated: new Date().toISOString()
       };
 
-      console.log('🔄 [SavingsInsightsAPI] Using fallback data for development');
       return fallbackData;
     }
   },
