@@ -151,6 +151,9 @@ class ErrorHandlerService {
       return error;
     }
 
+    // Check if this error should suppress logging (for optional endpoints)
+    const suppressLogging = error.suppressErrorLogging === true || error.isOptionalEndpoint === true;
+
     // PRIORITY: Handle ALL auth endpoint errors first to prevent session expiration triggers
     if (context?.endpoint?.includes('/auth/')) {
 
@@ -278,8 +281,8 @@ class ErrorHandlerService {
             false
           );
         }
-        
-        return new ExpenzezFrontendError(
+
+        const transformedError = new ExpenzezFrontendError(
           'RESOURCE_NOT_FOUND',
           'The requested resource was not found',
           404,
@@ -288,6 +291,13 @@ class ErrorHandlerService {
           false,
           false
         );
+
+        // Preserve suppressErrorLogging flag for optional endpoints
+        if (suppressLogging) {
+          (transformedError as any).suppressErrorLogging = true;
+        }
+
+        return transformedError;
       }
       
       if (status === 429) {
@@ -504,6 +514,11 @@ class ErrorHandlerService {
 
   // Log error with structured format
   private logError(error: ExpenzezFrontendError, context?: ErrorContext): void {
+    // Don't log if error has suppressErrorLogging flag (for optional endpoints)
+    if ((error as any).suppressErrorLogging === true) {
+      return;
+    }
+
     // Don't log expected behaviors as errors
     const isExpectedBehavior = error.details?.expectedBehavior === true;
     

@@ -111,13 +111,14 @@ export const enhancedSecurityAPI = {
         appLockEnabled: true,
       });
 
+      // Store local preference regardless of server success (for offline support)
+      const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+      await AsyncStorage.setItem('@expenzez_app_lock_preference', 'true');
+      await AsyncStorage.setItem('@expenzez_security_enabled', 'true');
+      console.log('🔐 [Enhanced Security] ✅ App lock preference stored locally');
+
       if (!prefUpdateSuccess) {
         console.log('🔐 [Enhanced Security] ⚠️ Server update failed, using offline mode');
-        // In development/offline mode, we still succeed locally
-        // The local PIN system will handle the security state
-        const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-        await AsyncStorage.setItem('@expenzez_app_lock_preference', 'true');
-        console.log('🔐 [Enhanced Security] ✅ App lock preference stored locally');
         return { success: true, needsPinSetup: false }; // PIN already created locally
       }
 
@@ -137,6 +138,7 @@ export const enhancedSecurityAPI = {
       try {
         const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
         await AsyncStorage.setItem('@expenzez_app_lock_preference', 'true');
+        await AsyncStorage.setItem('@expenzez_security_enabled', 'true');
         console.log('🔐 [Enhanced Security] ✅ Fallback: App lock preference stored locally');
         return { success: true, needsPinSetup: false };
       } catch (fallbackError) {
@@ -158,15 +160,17 @@ export const enhancedSecurityAPI = {
         appLockEnabled: false,
       });
 
+      // Update local preference regardless of server success (for offline support)
+      const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+      await AsyncStorage.setItem('@expenzez_app_lock_preference', 'false');
+      await AsyncStorage.setItem('@expenzez_security_enabled', 'false');
+      console.log('🔐 [Enhanced Security] ✅ App lock preference disabled locally');
+
       if (success) {
         console.log('🔐 [Enhanced Security] ✅ App lock disabled across all devices');
         return true;
       } else {
-        console.log('🔐 [Enhanced Security] ⚠️ Server disable failed, using offline mode');
-        // In development/offline mode, we still succeed locally
-        const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-        await AsyncStorage.setItem('@expenzez_app_lock_preference', 'false');
-        console.log('🔐 [Enhanced Security] ✅ App lock preference disabled locally');
+        console.log('🔐 [Enhanced Security] ⚠️ Server disable failed, but using local offline mode');
         return true;
       }
     } catch (error: any) {
@@ -175,6 +179,7 @@ export const enhancedSecurityAPI = {
       try {
         const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
         await AsyncStorage.setItem('@expenzez_app_lock_preference', 'false');
+        await AsyncStorage.setItem('@expenzez_security_enabled', 'false');
         console.log('🔐 [Enhanced Security] ✅ Fallback: App lock preference disabled locally');
         return true;
       } catch (fallbackError) {

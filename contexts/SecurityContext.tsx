@@ -70,24 +70,25 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
         isLoggedIn
       });
 
-      // If security is enabled (legacy OR preference) and we don't have a fresh app start indicator, start locked
+      // ALWAYS clear session on app startup to force fresh authentication
+      // This ensures PIN is required every time the app is opened
+      console.log('🔐 [SecurityContext] App startup - clearing all sessions to force fresh PIN entry');
+      try {
+        await nativeSecurityAPI.clearSession();
+        await AsyncStorage.removeItem('@expenzez_last_unlock');
+        console.log('🔐 [SecurityContext] ✅ All sessions cleared on app startup');
+      } catch (clearError) {
+        console.warn('🔐 [SecurityContext] Could not clear session on startup:', clearError);
+      }
+
+      // If security is enabled (legacy OR preference) and user is logged in, start locked
       const shouldStartLocked = (storedSecurityEnabled === 'true' || appLockPreference === 'true') && isLoggedIn;
 
       if (shouldStartLocked) {
         console.log('🔐 [SecurityContext] Security enabled on app startup - starting locked for PIN entry');
         setIsLocked(true);
         setIsSecurityEnabled(true);
-
-        // Clear any existing unlock session to force PIN entry on app restart
-        try {
-          await nativeSecurityAPI.clearSession();
-          // Also clear the local session storage to ensure PIN is required
-          await AsyncStorage.removeItem('@expenzez_last_unlock');
-          await AsyncStorage.setItem(APP_LOCKED_KEY, "true");
-          console.log('🔐 [SecurityContext] Cleared unlock session and local session storage on app startup');
-        } catch (clearError) {
-          console.warn('🔐 [SecurityContext] Could not clear session on startup:', clearError);
-        }
+        await AsyncStorage.setItem(APP_LOCKED_KEY, "true");
       }
 
       // Step 2: Initialize the secure security API with better error handling
