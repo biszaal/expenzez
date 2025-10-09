@@ -665,7 +665,7 @@ export default function SecurityScreen() {
                         { color: colors.warning[700] },
                       ]}
                     >
-                      Set up PIN for this device
+                      Create PIN for This Device
                     </Text>
                     <Text
                       style={[
@@ -673,7 +673,7 @@ export default function SecurityScreen() {
                         { color: colors.warning[600] },
                       ]}
                     >
-                      App lock is enabled but this device needs a PIN
+                      App Lock is enabled on your account. Set up a PIN on this device to unlock the app.
                     </Text>
                   </View>
                 </View>
