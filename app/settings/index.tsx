@@ -436,6 +436,41 @@ export default function SettingsPage() {
             </TouchableOpacity>
           </View>
 
+          {/* About */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              About
+            </Text>
+            <View
+              style={[
+                styles.aboutContainer,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+            >
+              <View style={styles.aboutItem}>
+                <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
+                  App Version
+                </Text>
+                <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
+                  1.0.0
+                </Text>
+              </View>
+              <View style={[styles.aboutDivider, { backgroundColor: colors.border.light }]} />
+              <View style={styles.aboutItem}>
+                <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
+                  Company
+                </Text>
+                <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
+                  Biszaal Tech Ltd.
+                </Text>
+              </View>
+            </View>
+          </View>
+
           {/* Sign Out */}
           <View style={styles.section}>
             <TouchableOpacity
@@ -453,8 +488,8 @@ export default function SettingsPage() {
                   "Are you sure you want to sign out?",
                   [
                     { text: "Cancel", style: "cancel" },
-                    { 
-                      text: "Sign Out", 
+                    {
+                      text: "Sign Out",
                       style: "destructive",
                       onPress: async () => {
                         try {
@@ -589,5 +624,29 @@ const styles = StyleSheet.create({
   settingValueText: {
     fontSize: 15,
     marginRight: 8,
+  },
+  aboutContainer: {
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  aboutItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  aboutLabel: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  aboutValue: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  aboutDivider: {
+    height: 1,
+    marginHorizontal: 20,
   },
 });
