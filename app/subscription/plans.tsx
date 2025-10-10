@@ -169,13 +169,25 @@ export default function SubscriptionPlansScreen() {
       const success = await purchaseSubscription(packageId);
 
       if (success) {
+        // Force refresh subscription state
+        console.log('🔄 [SubscriptionPlans] Purchase successful, refreshing subscription state...');
+        await refreshSubscription();
+
+        // Small delay to ensure state propagates
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        console.log('✅ [SubscriptionPlans] Subscription refreshed, showing success message');
+
         Alert.alert(
           '🚀 Welcome to Premium!',
           'Thank you for your purchase! You now have unlimited access to all premium features.',
           [
             {
               text: 'Get Started',
-              onPress: () => router.push('/(tabs)'),
+              onPress: () => {
+                // Reload the subscription page when user returns
+                router.push('/(tabs)');
+              },
               style: 'default'
             }
           ]

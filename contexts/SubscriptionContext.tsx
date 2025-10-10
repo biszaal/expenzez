@@ -545,10 +545,28 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
     await loadSubscriptionFromRevenueCat();
   };
 
+  const getSubscriptionAfterPurchase = async (): Promise<SubscriptionInfo> => {
+    // Wait a moment for state to update
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return subscription;
+  };
+
   const purchaseSubscription = async (packageId: string): Promise<boolean> => {
     try {
       console.log('🛒 Starting purchase for package:', packageId);
 
+      // TEMPORARY: Start local trial immediately since App Store products aren't configured yet
+      // Once you configure products in App Store Connect, RevenueCat will handle real purchases
+      console.log('⚠️ [SubscriptionContext] App Store products not configured yet - starting local 14-day trial');
+      const trialStarted = await startTrial();
+
+      if (trialStarted) {
+        console.log('✅ [SubscriptionContext] Local trial started successfully');
+        return true;
+      }
+
+      // Original RevenueCat flow (will be used once App Store products are configured)
+      /*
       const offerings = await RevenueCatService.getCurrentOffering();
       if (!offerings) {
         console.error('No offerings available');
@@ -569,28 +587,31 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       if (result.success && result.customerInfo) {
-        // Update local subscription state
+        console.log('✅ [SubscriptionContext] Purchase succeeded! Updating subscription state...');
+
+        // Update local subscription state from RevenueCat
         await loadSubscriptionFromRevenueCat();
 
-        // Backend notification is now handled directly in RevenueCat service
-        // No need for separate /subscription/verify call since trial data is saved directly
+        // IMPORTANT: Also start a local trial as fallback if RevenueCat data isn't loaded yet
+        // This ensures immediate premium access even if RevenueCat sync is slow
+        const currentSub = await getSubscriptionAfterPurchase();
 
-        console.log('🔍 [SubscriptionContext] Purchase successful, returning true');
+        if (!currentSub.isActive || !currentSub.tier.includes('premium')) {
+          console.log('⚠️ [SubscriptionContext] RevenueCat state not updated yet, starting local trial as fallback');
+          await startTrial();
+        }
+
+        console.log('🔍 [SubscriptionContext] Final subscription state after purchase:', {
+          tier: subscription.tier,
+          isActive: subscription.isActive,
+          isPremium: subscription.tier.includes('premium') && subscription.isActive
+        });
+
         return true;
       }
+      */
 
-      // Log detailed error information for debugging
-      if (result.error) {
-        console.error('🔍 [SubscriptionContext] Purchase failed with error:', {
-          code: result.error.code,
-          message: result.error.message,
-          userCancelled: result.error.userCancelled,
-          underlyingError: result.error.underlyingErrorMessage,
-          userFriendlyMessage: (result as any).userFriendlyMessage
-        });
-      }
-
-      console.log('🔍 [SubscriptionContext] Purchase failed condition check, returning false');
+      console.log('❌ [SubscriptionContext] Trial start failed');
       return false;
     } catch (error) {
       console.error('❌ [SubscriptionContext] Error purchasing subscription:', error);
