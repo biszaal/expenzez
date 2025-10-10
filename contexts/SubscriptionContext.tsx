@@ -176,10 +176,11 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [isLoggedIn, user]);
 
-  // Check for monthly usage reset
+  // Check for monthly usage reset and trial expiration
   useEffect(() => {
     checkAndResetMonthlyUsage();
-  }, [subscription.usage.lastResetDate]);
+    checkAndExpireTrial();
+  }, [subscription.usage.lastResetDate, subscription.trialEndDate]);
 
   const initializeSubscription = async () => {
     try {
@@ -488,6 +489,34 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const checkAndExpireTrial = () => {
+    if (!isTrialActive || !subscription.trialEndDate) return;
+
+    const now = new Date();
+    const trialEnd = new Date(subscription.trialEndDate);
+
+    // Check if trial has expired
+    if (now >= trialEnd) {
+      console.log('⏰ Trial has expired, reverting to free tier');
+      const expiredSubscription: SubscriptionInfo = {
+        tier: 'expired-trial',
+        isActive: false,
+        startDate: null,
+        endDate: null,
+        trialEndDate: null,
+        features: FREE_TIER_FEATURES,
+        usage: FREE_TIER_USAGE,
+      };
+
+      setSubscription(expiredSubscription);
+
+      // Update database
+      saveSubscriptionToDatabase(expiredSubscription).catch(error => {
+        console.error('Failed to save expired trial status:', error);
+      });
+    }
+  };
+
   const refreshSubscription = async () => {
     await loadSubscriptionFromRevenueCat();
   };
@@ -564,7 +593,9 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const startTrial = async (): Promise<boolean> => {
     try {
-      // Simulate starting a 14-day trial
+      console.log('🎯 [SubscriptionContext] Starting 14-day free trial...');
+
+      // IMPORTANT: Trial is always 14 days as advertised in Settings
       const trialStartDate = new Date().toISOString();
       const trialEndDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(); // 14 days from now
 
@@ -587,12 +618,34 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
       };
 
       setSubscription(trialSubscription);
-      await saveSubscriptionToDatabase(trialSubscription);
 
-      console.log('✅ Trial started successfully');
+      // Save to database
+      try {
+        await saveSubscriptionToDatabase(trialSubscription);
+        console.log('✅ Trial saved to database successfully');
+      } catch (saveError: any) {
+        console.error('❌ Failed to save trial to database:', saveError);
+        // Continue anyway - local trial is active
+      }
+
+      // Also save to AsyncStorage as backup
+      try {
+        const AsyncStorage = await import('@react-native-async-storage/async-storage');
+        await AsyncStorage.default.setItem('subscription_backup', JSON.stringify({
+          ...trialSubscription,
+          backendSynced: false,
+          lastUpdated: new Date().toISOString()
+        }));
+        console.log('✅ Trial backed up to AsyncStorage');
+      } catch (storageError) {
+        console.warn('⚠️ Failed to backup trial to AsyncStorage:', storageError);
+      }
+
+      console.log('✅ 14-day trial started successfully');
+      console.log('📅 Trial ends:', trialEndDate);
       return true;
     } catch (error) {
-      console.error('Error starting trial:', error);
+      console.error('❌ Error starting trial:', error);
       return false;
     }
   };
