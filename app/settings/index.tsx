@@ -436,6 +436,123 @@ export default function SettingsPage() {
             </TouchableOpacity>
           </View>
 
+          {/* Subscription Information */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              Subscription
+            </Text>
+            <View
+              style={[
+                styles.aboutContainer,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+            >
+              <View style={styles.aboutItem}>
+                <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
+                  Auto-Renewable Subscription
+                </Text>
+                <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
+                  Expenzez Premium
+                </Text>
+              </View>
+              <View style={[styles.aboutDivider, { backgroundColor: colors.border.light }]} />
+              <View style={styles.aboutItem}>
+                <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
+                  Monthly Plan
+                </Text>
+                <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
+                  £4.99/month
+                </Text>
+              </View>
+              <View style={[styles.aboutDivider, { backgroundColor: colors.border.light }]} />
+              <View style={styles.aboutItem}>
+                <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
+                  Annual Plan
+                </Text>
+                <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
+                  £49.99/year
+                </Text>
+              </View>
+              <View style={[styles.aboutDivider, { backgroundColor: colors.border.light }]} />
+              <View style={styles.aboutItem}>
+                <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
+                  Free Trial
+                </Text>
+                <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
+                  14 days
+                </Text>
+              </View>
+            </View>
+            <Text style={[styles.subscriptionNote, { color: colors.text.secondary }]}>
+              Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Payment charged to App Store account. Manage subscriptions in App Store settings.
+            </Text>
+          </View>
+
+          {/* Legal */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              Legal
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+              onPress={() => Linking.openURL("https://expenzez.com/privacy")}
+            >
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={22}
+                color={colors.primary[500]}
+                style={{ marginRight: 14 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text.primary }]}>
+                Privacy Policy
+              </Text>
+              <Ionicons
+                name="open-outline"
+                size={20}
+                color={colors.text.tertiary}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+              onPress={() => Linking.openURL("https://expenzez.com/terms")}
+            >
+              <Ionicons
+                name="document-text-outline"
+                size={22}
+                color={colors.primary[500]}
+                style={{ marginRight: 14 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text.primary }]}>
+                Terms of Use (EULA)
+              </Text>
+              <Ionicons
+                name="open-outline"
+                size={20}
+                color={colors.text.tertiary}
+              />
+            </TouchableOpacity>
+          </View>
+
           {/* About */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
@@ -648,5 +765,11 @@ const styles = StyleSheet.create({
   aboutDivider: {
     height: 1,
     marginHorizontal: 20,
+  },
+  subscriptionNote: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 12,
+    paddingHorizontal: 4,
   },
 });
