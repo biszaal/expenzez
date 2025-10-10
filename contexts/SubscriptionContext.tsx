@@ -238,6 +238,30 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
       if (subscriptionData && subscriptionData.tier) {
         const backendSubscription = createSubscriptionFromBackendAPI(subscriptionData);
 
+        // MIGRATION: Fix any 30-day trials to be 14 days
+        if (backendSubscription.tier === 'premium-trial' && backendSubscription.trialEndDate) {
+          const trialEnd = new Date(backendSubscription.trialEndDate);
+          const trialStart = new Date(backendSubscription.startDate || Date.now());
+          const trialDays = Math.ceil((trialEnd.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
+
+          console.log(`🔍 Detected ${trialDays}-day trial from backend`);
+
+          // If trial is longer than 14 days, recalculate to 14 days
+          if (trialDays > 14) {
+            console.log('⚠️ Migrating 30-day trial to 14-day trial');
+            const correctedTrialEnd = new Date(trialStart.getTime() + 14 * 24 * 60 * 60 * 1000);
+            backendSubscription.trialEndDate = correctedTrialEnd.toISOString();
+
+            // Save corrected trial to backend
+            try {
+              await saveSubscriptionToDatabase(backendSubscription);
+              console.log('✅ Migrated trial to 14 days and saved to backend');
+            } catch (saveError) {
+              console.warn('⚠️ Failed to save migrated trial:', saveError);
+            }
+          }
+        }
+
         // Only update if backend has a premium subscription or if we don't have one locally
         if ((backendSubscription.isActive && backendSubscription.tier.includes('premium')) ||
             (!subscription.isActive && subscription.tier === 'free')) {

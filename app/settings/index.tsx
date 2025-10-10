@@ -5,12 +5,14 @@ import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Switch, Alert, Li
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme, ColorScheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../auth/AuthContext";
+import { useSubscription } from "../../contexts/SubscriptionContext";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { colors, colorScheme, setColorScheme, isDark } = useTheme();
   const { logout } = useAuth();
+  const { subscription, isTrialActive, daysUntilTrialExpires } = useSubscription();
 
   // Local state for settings
   const [currency, setCurrency] = useState("GBP");
@@ -483,7 +485,9 @@ export default function SettingsPage() {
                   Free Trial
                 </Text>
                 <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
-                  14 days
+                  {isTrialActive
+                    ? `${daysUntilTrialExpires} day${daysUntilTrialExpires !== 1 ? 's' : ''} left`
+                    : '14 days'}
                 </Text>
               </View>
             </View>
