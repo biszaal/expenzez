@@ -214,4 +214,36 @@ export const enhancedSecurityAPI = {
       console.error('🔐 [Enhanced Security] ❌ Error in PIN setup completion:', error);
     }
   },
+
+  /**
+   * Sync PIN from server to local device (for cross-device PIN sync)
+   */
+  syncPinFromServer: async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      console.log('🔄 [Enhanced Security] Syncing PIN from server to local device');
+      
+      // Get device ID
+      const deviceId = await deviceManager.getDeviceId();
+      
+      // Call server to get the PIN for this device
+      const response = await api.get('/security/sync-pin', {
+        params: { deviceId }
+      });
+      
+      if (response.data.success && response.data.pin) {
+        // Store the PIN locally
+        await AsyncStorage.setItem('@expenzez_app_password', response.data.pin);
+        await AsyncStorage.setItem('@expenzez_has_pin', 'true');
+        
+        console.log('✅ [Enhanced Security] PIN synced from server successfully');
+        return { success: true };
+      } else {
+        console.log('⚠️ [Enhanced Security] No PIN available on server for this device');
+        return { success: false, error: 'No PIN available on server' };
+      }
+    } catch (error: any) {
+      console.error('❌ [Enhanced Security] Error syncing PIN from server:', error);
+      return { success: false, error: error.message || 'Sync failed' };
+    }
+  },
 };
