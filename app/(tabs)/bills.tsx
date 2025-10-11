@@ -30,6 +30,8 @@ import BillTrackingAlgorithm, { DetectedBill } from "../../services/billTracking
 import { autoBillDetection } from "../../services/automaticBillDetection";
 import { BillPreferencesAPI } from "../../services/api/billPreferencesAPI";
 import { BillDetailsModal } from "../../components/BillDetailsModal";
+import { EnhancedBillsHeader } from "../../components/bills/EnhancedBillsHeader";
+import { EnhancedBillsList } from "../../components/bills/EnhancedBillsList";
 import dayjs from "dayjs";
 
 const { width } = Dimensions.get("window");
@@ -551,45 +553,14 @@ export default function BillsScreen() {
           />
         }
       >
-        {/* Premium Header */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-                Bills
-              </Text>
-              <Text style={[styles.headerSubtitle, { color: colors.text.secondary }]}>
-                AI-powered bill tracking
-              </Text>
-            </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={[styles.upcomingButton, { backgroundColor: colors.primary[500], ...shadows.sm }]}
-                onPress={() => router.push("/upcoming-bills")}
-              >
-                <Ionicons name="calendar" size={16} color="white" />
-                <Text style={[styles.upcomingButtonText, { color: "white" }]}>
-                  Upcoming
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.transactionsButton, { backgroundColor: colors.background.primary, ...shadows.sm }]}
-                onPress={() => router.push("/transactions")}
-              >
-                <Ionicons name="list-outline" size={16} color={colors.primary[500]} />
-                <Text style={[styles.transactionsButtonText, { color: colors.primary[500] }]}>
-                  Transactions
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.helpButton, { backgroundColor: colors.background.primary, ...shadows.sm }]}
-                onPress={() => Alert.alert("Bill Tracking", "Our AI automatically detects recurring payments from your transactions. Bills are grouped by merchant and frequency patterns.")}
-              >
-                <Ionicons name="information-circle-outline" size={20} color={colors.primary[500]} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+        {/* Enhanced Header */}
+        <EnhancedBillsHeader
+          totalBills={stats.totalBills}
+          monthlyTotal={stats.monthlyTotal}
+          upcomingCount={stats.upcomingCount}
+          onRefresh={onRefresh}
+          isRefreshing={refreshing}
+        />
 
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -598,247 +569,13 @@ export default function BillsScreen() {
             </Text>
           </View>
         ) : (
-          <>
-            {/* Stats Cards */}
-            <View style={styles.statsContainer}>
-              <View style={styles.statsRow}>
-                <View style={[styles.statCard, { backgroundColor: colors.background.primary, ...shadows.sm }]}>
-                  <LinearGradient
-                    colors={[colors.primary[100], colors.primary[50]]}
-                    style={styles.statIconContainer}
-                  >
-                    <Ionicons name="calendar-outline" size={20} color={colors.primary[500]} />
-                  </LinearGradient>
-                  <Text style={[styles.statValue, { color: colors.text.primary }]}>
-                    £{Math.abs(stats.monthlyTotal).toFixed(0)}
-                  </Text>
-                  <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
-                    Monthly Total
-                  </Text>
-                </View>
-
-                <View style={[styles.statCard, { backgroundColor: colors.background.primary, ...shadows.sm }]}>
-                  <LinearGradient
-                    colors={[colors.warning?.[100] || colors.primary[100], colors.warning?.[50] || colors.primary[50]]}
-                    style={styles.statIconContainer}
-                  >
-                    <Ionicons name="time-outline" size={20} color={colors.warning?.[500] || colors.primary[500]} />
-                  </LinearGradient>
-                  <Text style={[styles.statValue, { color: colors.text.primary }]}>
-                    {stats.upcomingCount}
-                  </Text>
-                  <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
-                    Due This Week
-                  </Text>
-                </View>
-
-                <View style={[styles.statCard, { backgroundColor: colors.background.primary, ...shadows.sm }]}>
-                  <LinearGradient
-                    colors={[colors.success?.[100] || colors.primary[100], colors.success?.[50] || colors.primary[50]]}
-                    style={styles.statIconContainer}
-                  >
-                    <Ionicons name="checkmark-circle-outline" size={20} color={colors.success?.[500] || colors.primary[500]} />
-                  </LinearGradient>
-                  <Text style={[styles.statValue, { color: colors.text.primary }]}>
-                    {stats.activeBills}
-                  </Text>
-                  <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
-                    Active Bills
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Category Filter */}
-            <View style={styles.categorySection}>
-              <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-                Categories
-              </Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryScroll}
-              >
-                {categories.map((category) => (
-                  <TouchableOpacity
-                    key={category.name}
-                    style={[
-                      styles.categoryChip,
-                      {
-                        backgroundColor: selectedCategory === category.name
-                          ? category.color
-                          : colors.background.primary,
-                      },
-                      shadows.sm
-                    ]}
-                    onPress={() => setSelectedCategory(category.name)}
-                  >
-                    <Ionicons
-                      name={category.icon as any}
-                      size={16}
-                      color={selectedCategory === category.name ? "white" : category.color}
-                    />
-                    <Text
-                      style={[
-                        styles.categoryChipText,
-                        {
-                          color: selectedCategory === category.name
-                            ? "white"
-                            : colors.text.primary,
-                        },
-                      ]}
-                    >
-                      {category.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* Bills List */}
-            {filteredBills.length === 0 ? (
-              <EmptyState
-                type="bills"
-                description={
-                  selectedCategory === "All"
-                    ? "We couldn't detect any recurring bills. Make sure you have enough transaction history."
-                    : `No bills found in the ${selectedCategory} category.`
-                }
-                onAction={() => router.push("/transactions")}
-                secondaryActionLabel="How It Works"
-                onSecondaryAction={() => Alert.alert("Bill Tracking", "Our AI automatically detects recurring payments from your transactions. Bills are grouped by merchant and frequency patterns.")}
-              />
-            ) : (
-              <View style={styles.billsSection}>
-                <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-                  {selectedCategory === "All" ? "All Bills" : selectedCategory}
-                  <Text style={[styles.billCount, { color: colors.text.secondary }]}>
-                    {" "}({filteredBills.length})
-                  </Text>
-                </Text>
-
-                {Object.entries(sortedBillsByCategory).map(([category, categoryBills]) => (
-                  <View key={category} style={styles.categoryGroup}>
-                    {selectedCategory === "All" && (
-                      <Text style={[styles.categoryGroupTitle, { color: colors.text.secondary }]}>
-                        {category}
-                      </Text>
-                    )}
-                    {categoryBills.map((bill) => {
-                      const urgency = getBillUrgency(bill.nextDueDate);
-
-                      return (
-                        <TouchableOpacity
-                          key={bill.id}
-                          style={[styles.billCard, { backgroundColor: colors.background.primary, ...shadows.sm }]}
-                          onPress={() => showBillDetails(bill)}
-                          onLongPress={() => showBillManagement(bill)}
-                          delayLongPress={500}
-                        >
-                          {/* Urgency Indicator Bar */}
-                          <View style={[styles.urgencyBar, { backgroundColor: urgency.color }]} />
-
-                          <View style={styles.billCardContent}>
-                            <View style={[styles.billIcon, { backgroundColor: categories.find(c => c.name === bill.category)?.color + '20' || colors.primary[100] }]}>
-                              <MaterialCommunityIcons
-                                name={
-                                  bill.category === 'Subscriptions' ? 'play-circle-outline' :
-                                  bill.category === 'Utilities' ? 'flash-outline' :
-                                  bill.category === 'Insurance' ? 'shield-outline' :
-                                  bill.category === 'Housing' ? 'home-outline' :
-                                  bill.category === 'Transportation' ? 'car-outline' :
-                                  'receipt'
-                                }
-                                size={24}
-                                color={categories.find(c => c.name === bill.category)?.color || colors.primary[500]}
-                              />
-                            </View>
-
-                            <View style={styles.billDetails}>
-                              <View style={styles.billHeader}>
-                                <Text style={[styles.billName, { color: colors.text.primary }]}>
-                                  {bill.name}
-                                </Text>
-                                <View style={styles.billHeaderRight}>
-                                  <View style={styles.billAmountContainer}>
-                                    <Text style={[styles.billAmount, { color: colors.text.primary }]}>
-                                      £{Math.abs(bill.amount).toFixed(2)}
-                                    </Text>
-                                    <Text style={[styles.billFrequency, { color: colors.text.tertiary }]}>
-                                      /{bill.frequency === 'monthly' ? 'mo' : bill.frequency === 'yearly' ? 'yr' : bill.frequency === 'weekly' ? 'wk' : 'qtr'}
-                                    </Text>
-                                  </View>
-                                  <TouchableOpacity
-                                    style={[styles.billMenuButton, { backgroundColor: colors.background.secondary }]}
-                                    onPress={(e) => {
-                                      e.stopPropagation();
-                                      showBillManagement(bill);
-                                    }}
-                                  >
-                                    <Ionicons
-                                      name="ellipsis-vertical"
-                                      size={16}
-                                      color={colors.text.secondary}
-                                    />
-                                  </TouchableOpacity>
-                                </View>
-                              </View>
-
-                              <View style={styles.billMeta}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                                  <Text style={[styles.billBank, { color: colors.text.secondary }]}>
-                                    {bill.bankName} • {dayjs(bill.nextDueDate).format('MMM DD')}
-                                  </Text>
-                                  <View style={[styles.urgencyBadge, { backgroundColor: urgency.bgColor }]}>
-                                    <Text style={[styles.urgencyText, { color: urgency.color }]}>
-                                      {urgency.daysText}
-                                    </Text>
-                                  </View>
-                                </View>
-                                <View style={styles.billStatus}>
-                                  <View
-                                    style={[
-                                      styles.statusDot,
-                                      {
-                                        backgroundColor: bill.status === 'active'
-                                          ? colors.success?.[500] || colors.primary[500]
-                                          : bill.status === 'cancelled'
-                                          ? colors.error?.[500] || '#EF4444'
-                                          : colors.warning?.[500] || '#F59E0B'
-                                      }
-                                    ]}
-                                  />
-                                  <Text style={[styles.statusText, { color: colors.text.tertiary }]}>
-                                    {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
-                                  </Text>
-                                </View>
-                              </View>
-                            </View>
-                          </View>
-                        
-                        <View style={[styles.confidenceBar, { backgroundColor: colors.background.secondary }]}>
-                          <View
-                            style={[
-                              styles.confidenceFill,
-                              {
-                                width: `${bill.confidence * 100}%`,
-                                backgroundColor: bill.confidence > 0.8 
-                                  ? colors.success?.[500] || colors.primary[500]
-                                  : bill.confidence > 0.6 
-                                  ? colors.warning?.[500] || '#F59E0B'
-                                  : colors.error?.[500] || '#EF4444'
-                              }
-                            ]}
-                          />
-                        </View>
-                      </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                ))}
-              </View>
-            )}
-          </>
+          <EnhancedBillsList
+            bills={bills}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            onBillPress={showBillDetails}
+            onBillLongPress={showBillManagement}
+          />
         )}
       </ScrollView>
 
