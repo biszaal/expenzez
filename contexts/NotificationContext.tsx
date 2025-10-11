@@ -273,7 +273,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
       console.log("[NotificationContext] ✅ Token registration response:", JSON.stringify(response, null, 2));
 
-      if (response.success) {
+      // Check if registration was successful based on response structure
+      if (response.success === true || response.tokenId || response.message?.includes('successfully')) {
         console.log("[NotificationContext] ✅ Token successfully registered in backend!");
         return true;
       } else {

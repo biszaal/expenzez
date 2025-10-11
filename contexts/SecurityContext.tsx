@@ -418,6 +418,26 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
           console.log('🔐 [SecurityContext] Enabling security - PIN source:', hasPinOnServer ? 'SERVER' : 'LOCAL');
           setIsSecurityEnabled(true);
           
+          // IMPROVED CROSS-DEVICE PIN SYNC: If server has PIN but local doesn't, sync it
+          if (hasPinOnServer && !hasLocalPin) {
+            console.log('🔄 [SecurityContext] Server has PIN but local doesn\'t - syncing PIN from server');
+            try {
+              // Sync PIN from server to local storage
+              const syncResult = await enhancedSecurityAPI.syncPinFromServer();
+              if (syncResult.success) {
+                console.log('✅ [SecurityContext] PIN synced from server successfully');
+                // Update local PIN flag
+                await AsyncStorage.setItem('@expenzez_has_pin', 'true');
+              } else {
+                console.log('⚠️ [SecurityContext] PIN sync failed, will require setup on this device');
+                setNeedsPinSetup(true);
+              }
+            } catch (error) {
+              console.error('❌ [SecurityContext] Error syncing PIN from server:', error);
+              setNeedsPinSetup(true);
+            }
+          }
+          
           // Use session-based locking: if no recent unlock session, require PIN
           const lastUnlockTime = await AsyncStorage.getItem('@expenzez_last_unlock');
           const now = Date.now();
