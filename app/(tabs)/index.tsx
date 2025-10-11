@@ -10,10 +10,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from "expo-secure-store";
 import dayjs from "dayjs";
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useSecurity } from "../../contexts/SecurityContext";
 import { useSubscription } from "../../contexts/SubscriptionContext";
@@ -41,8 +41,10 @@ import {
 import { EnhancedBalanceCard } from "../../components/home/EnhancedBalanceCard";
 import { EnhancedQuickActions } from "../../components/home/EnhancedQuickActions";
 import { EnhancedFinancialOverview } from "../../components/home/EnhancedFinancialOverview";
+import { EnhancedHomeHeader } from "../../components/home/EnhancedHomeHeader";
+import { EnhancedTransactionsList } from "../../components/home/EnhancedTransactionsList";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 interface Transaction {
   id: string;
@@ -97,7 +99,7 @@ export default function HomeScreen() {
   // Current month for calculations (no longer user-selectable)
   const currentMonth = (() => {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   })();
 
   // Load data function
@@ -113,7 +115,9 @@ export default function HomeScreen() {
       }
 
       // Check authentication first
-      const accessToken = await SecureStore.getItemAsync("accessToken", { keychainService: 'expenzez-tokens' });
+      const accessToken = await SecureStore.getItemAsync("accessToken", {
+        keychainService: "expenzez-tokens",
+      });
       if (!accessToken) {
         setWarning(APP_STRINGS.HOME.LOGIN_WARNING);
         setLoading(false);
@@ -122,7 +126,9 @@ export default function HomeScreen() {
       }
 
       // 📱 MANUAL INPUT MODE: Load balance and recent transactions
-      console.log("📱 MANUAL INPUT MODE: Loading balance summary and recent transactions...");
+      console.log(
+        "📱 MANUAL INPUT MODE: Loading balance summary and recent transactions..."
+      );
 
       // Try to fetch balance summary first
       let balanceSummary;
@@ -132,23 +138,49 @@ export default function HomeScreen() {
         balanceSummary = await balanceAPI.getSummary({ useCache: true });
         console.log("✅ Balance summary loaded from API:", balanceSummary);
       } catch (error: any) {
-        console.warn("⚠️ Balance summary endpoint not available (will deploy soon), using fallback calculation");
+        console.warn(
+          "⚠️ Balance summary endpoint not available (will deploy soon), using fallback calculation"
+        );
         useFallbackBalance = true;
-        balanceSummary = { balance: 0, totalCredit: 0, totalDebit: 0, transactionCount: 0, firstTransactionDate: null, lastTransactionDate: null, monthsWithData: [] };
+        balanceSummary = {
+          balance: 0,
+          totalCredit: 0,
+          totalDebit: 0,
+          transactionCount: 0,
+          firstTransactionDate: null,
+          lastTransactionDate: null,
+          monthsWithData: [],
+        };
       }
 
       // Fetch transactions (always needed for display and fallback calculation)
-      const transactionResponse = await transactionAPI.getTransactions({
-        startDate: dayjs().subtract(6, 'months').startOf('month').format('YYYY-MM-DD'),
-        endDate: dayjs().endOf('month').format('YYYY-MM-DD'),
+      const transactionResponse = await transactionAPI
+        .getTransactions({
+          startDate: dayjs()
+            .subtract(6, "months")
+            .startOf("month")
+            .format("YYYY-MM-DD"),
+          endDate: dayjs().endOf("month").format("YYYY-MM-DD"),
         limit: 1000, // Load more for fallback balance calculation
-        useCache: true
-      }).catch((error) => {
+          useCache: true,
+        })
+        .catch((error) => {
         console.error("❌ Error loading transactions:", error);
-        return { transactions: [], summary: { totalAmount: 0, creditTotal: 0, debitTotal: 0, count: 0 } };
-      });
+          return {
+            transactions: [],
+            summary: {
+              totalAmount: 0,
+              creditTotal: 0,
+              debitTotal: 0,
+              count: 0,
+            },
+          };
+        });
 
-      console.log("✅ Transactions loaded:", transactionResponse.transactions?.length || 0);
+      console.log(
+        "✅ Transactions loaded:",
+        transactionResponse.transactions?.length || 0
+      );
 
       // Create empty accounts array for manual mode
       setAccounts([]);
@@ -156,13 +188,22 @@ export default function HomeScreen() {
       // Calculate balance
       let finalBalance = balanceSummary.balance;
 
-      if (useFallbackBalance && transactionResponse.transactions && transactionResponse.transactions.length > 0) {
+      if (
+        useFallbackBalance &&
+        transactionResponse.transactions &&
+        transactionResponse.transactions.length > 0
+      ) {
         // Fallback: Calculate balance client-side from all loaded transactions
-        finalBalance = (transactionResponse.transactions as any[]).reduce((sum: number, tx: any): number => {
+        finalBalance = (transactionResponse.transactions as any[]).reduce(
+          (sum: number, tx: any): number => {
           const amount = parseFloat(tx.amount) || 0;
           return sum + amount;
-        }, 0);
-        console.log(`✅ Balance calculated client-side (fallback): ${finalBalance} from ${transactionResponse.transactions.length} transactions`);
+          },
+          0
+        );
+        console.log(
+          `✅ Balance calculated client-side (fallback): ${finalBalance} from ${transactionResponse.transactions.length} transactions`
+        );
       } else {
         console.log(`✅ Balance from server summary: ${finalBalance}`);
       }
@@ -171,13 +212,20 @@ export default function HomeScreen() {
 
       const transactionsData = {
         success: true,
-        transactions: transactionResponse.transactions || []
+        transactions: transactionResponse.transactions || [],
       };
 
       // Handle transactions
       let allTransactions: Transaction[] = [];
-      if (transactionsData.success && transactionsData.transactions && transactionsData.transactions.length > 0) {
-        console.log("[Home] Sample transaction data:", transactionsData.transactions.slice(0, 2));
+      if (
+        transactionsData.success &&
+        transactionsData.transactions &&
+        transactionsData.transactions.length > 0
+      ) {
+        console.log(
+          "[Home] Sample transaction data:",
+          transactionsData.transactions.slice(0, 2)
+        );
         allTransactions = transactionsData.transactions.map((tx: any) => ({
           id: tx.id || `tx_${Date.now()}_${Math.random()}`,
           amount: tx.amount || 0,
@@ -209,9 +257,10 @@ export default function HomeScreen() {
       if (allTransactions.length > 0) {
         setWarning(null);
       } else {
-        setWarning("No transactions found. Add expenses manually or import CSV data to get started.");
+        setWarning(
+          "No transactions found. Add expenses manually or import CSV data to get started."
+        );
       }
-
     } catch (error) {
       console.error("❌ Error loading data:", error);
       setError("Failed to load transaction data. Please try again.");
@@ -274,7 +323,6 @@ export default function HomeScreen() {
     }
   }, [isLocked, isLoggedIn]);
 
-
   // Helper functions for data transformations
   const getBankName = (institution: any) =>
     typeof institution === "object" && institution !== null
@@ -300,11 +348,11 @@ export default function HomeScreen() {
   // Calculate spending for current month (only expenses)
   const calculateCurrentMonthSpent = () => {
     return transactions
-      .filter(tx => {
+      .filter((tx) => {
         if (!tx.date) return false;
         const txDate = dayjs(tx.date);
         const isCurrentMonth = txDate.format("YYYY-MM") === currentMonth;
-        const isExpense = tx.type === 'debit' || tx.amount < 0;
+        const isExpense = tx.type === "debit" || tx.amount < 0;
         return isCurrentMonth && isExpense;
       })
       .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
@@ -315,14 +363,21 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <SafeAreaView
+        style={[
+          styles.container,
+          { backgroundColor: colors.background.primary },
+        ]}
+      >
         <DashboardSkeleton />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -335,97 +390,34 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Enhanced Header Section */}
-        <View style={styles.enhancedHeaderSection}>
-          <HomeHeader />
-          
-          {/* Welcome Message with Time-based Greeting */}
-          <View style={styles.welcomeSection}>
-            <Text style={[styles.welcomeText, { color: colors.text.primary }]}>
-              {user?.name ? `Welcome back, ${user.name.split(" ")[0]}!` : `Good ${getTimeOfDay().toLowerCase()}`}
-            </Text>
-            <Text style={[styles.welcomeSubtext, { color: colors.text.secondary }]}>
-              Here's your financial overview
-            </Text>
-          </View>
-        </View>
+        {/* Enhanced Header */}
+        <EnhancedHomeHeader />
 
-        {/* Enhanced Balance Card */}
-        <EnhancedBalanceCard
+        {/* Balance Card Section */}
+        <View style={styles.balanceSection}>
+          <EnhancedBalanceCard
             totalBalance={totalBalance}
             getTimeOfDay={getTimeOfDay}
             onRefresh={handleRefreshBalance}
             isRefreshing={balanceRefreshing}
           />
-
-        {/* Enhanced Quick Actions */}
-        <EnhancedQuickActions />
-
-        {/* Enhanced Financial Overview */}
-        <EnhancedFinancialOverview
-          thisMonthSpent={thisMonthSpent}
-          userBudget={userBudget}
-        />
-
-        {/* Enhanced Transactions Section */}
-        <View style={styles.enhancedTransactionsSection}>
-          <View style={styles.transactionsHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>Recent Transactions</Text>
-            <TouchableOpacity 
-              style={[styles.viewAllButton, { backgroundColor: colors.primary[500] }]}
-              onPress={() => router.push("/transactions")}
-            >
-              <Text style={styles.viewAllButtonText}>View All</Text>
-              <Ionicons name="arrow-forward" size={16} color="white" />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={[styles.transactionsCard, { backgroundColor: colors.background.secondary }]}>
-            {transactions.slice(0, 5).map((tx, idx) => (
-              <View key={tx.id} style={[
-                styles.transactionItem,
-                idx < 4 && { borderBottomWidth: 1, borderBottomColor: colors.background.primary }
-              ]}>
-                <View style={[styles.transactionIcon, { 
-                  backgroundColor: tx.amount >= 0 ? colors.success[100] : colors.error[100] 
-                }]}>
-                  <Ionicons
-                    name={tx.amount >= 0 ? "arrow-up-circle" : "arrow-down-circle"}
-                    size={24}
-                    color={tx.amount >= 0 ? colors.success[600] : colors.error[600]}
-                  />
-                </View>
-                <View style={styles.transactionContent}>
-                  <Text style={[styles.transactionTitle, { color: colors.text.primary }]} numberOfLines={1}>
-                    {tx.description}
-                  </Text>
-                  <Text style={[styles.transactionDate, { color: colors.text.secondary }]}>
-                    {new Date(tx.date).toLocaleDateString()}
-                  </Text>
-                </View>
-                <Text style={[styles.transactionAmount, {
-                  color: tx.amount >= 0 ? colors.success[600] : colors.error[600]
-                }]}>
-                  £{Math.abs(tx.amount).toFixed(2)}
-                </Text>
-              </View>
-            ))}
-            
-            {transactions.length === 0 && (
-              <View style={styles.emptyState}>
-                <View style={[styles.emptyIcon, { backgroundColor: colors.background.primary }]}>
-                  <Ionicons name="receipt-outline" size={32} color={colors.text.tertiary} />
-                </View>
-                <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
-                  No transactions yet
-                </Text>
-                <Text style={[styles.emptySubtitle, { color: colors.text.secondary }]}>
-                  Add your first expense to get started
-                </Text>
-              </View>
-            )}
-          </View>
         </View>
+
+        {/* Quick Actions Section */}
+        <View style={styles.quickActionsSection}>
+          <EnhancedQuickActions />
+        </View>
+
+        {/* Financial Overview Section */}
+        <View style={styles.overviewSection}>
+          <EnhancedFinancialOverview
+            thisMonthSpent={thisMonthSpent}
+            userBudget={userBudget}
+          />
+        </View>
+
+        {/* Enhanced Transactions List */}
+        <EnhancedTransactionsList transactions={transactions} />
 
         {/* Contextual Cards Section */}
         <View style={styles.contextualSection}>
@@ -448,96 +440,96 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: SPACING.xl,
   },
-  
-  // Enhanced Header Section
-  enhancedHeaderSection: {
+
+  // Header Section
+  headerSection: {
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   welcomeSection: {
     marginTop: 16,
   },
   welcomeText: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 4,
   },
   welcomeSubtext: {
     fontSize: 16,
-    fontWeight: '400',
+    fontWeight: "400",
   },
-  
-  // Enhanced Balance Section
-  enhancedBalanceSection: {
+
+  // Balance Section
+  balanceSection: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   balanceGradientCard: {
     borderRadius: 20,
     padding: 24,
-    position: 'relative',
-    overflow: 'hidden',
+    position: "relative",
+    overflow: "hidden",
   },
   balanceCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 20,
   },
   balanceCardHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   balanceIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   balanceCardTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
+    fontWeight: "600",
+    color: "white",
     marginBottom: 2,
   },
   balanceCardSubtitle: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: "rgba(255, 255, 255, 0.8)",
   },
   balanceCardActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   balanceActionButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   balanceAmountContainer: {
     marginBottom: 16,
   },
   balanceAmount: {
     fontSize: 32,
-    fontWeight: '800',
-    color: 'white',
+    fontWeight: "800",
+    color: "white",
     marginBottom: 8,
   },
   balanceChangeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   balanceChangeIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(16, 185, 129, 0.2)",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -545,146 +537,146 @@ const styles = StyleSheet.create({
   },
   balanceChangeText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#10B981',
+    fontWeight: "600",
+    color: "#10B981",
     marginLeft: 4,
   },
   balanceChangeLabel: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: "rgba(255, 255, 255, 0.7)",
   },
   balanceDecoration1: {
-    position: 'absolute',
+    position: "absolute",
     top: -20,
     right: -20,
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
   balanceDecoration2: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -30,
     right: 20,
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
-  
-  // Enhanced Quick Actions Section
-  enhancedQuickActionsSection: {
+
+  // Quick Actions Section
+  quickActionsSection: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 16,
   },
   quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   quickActionCard: {
     width: (width - 64) / 2,
     height: 120,
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   quickActionGradient: {
     flex: 1,
     padding: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   quickActionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
+    fontWeight: "600",
+    color: "white",
     marginTop: 8,
     marginBottom: 2,
   },
   quickActionSubtitle: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: "rgba(255, 255, 255, 0.8)",
   },
-  
-  // Enhanced Overview Section
-  enhancedOverviewSection: {
+
+  // Overview Section
+  overviewSection: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   overviewCard: {
     borderRadius: 16,
     padding: 20,
   },
   overviewStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   overviewStat: {
     flex: 1,
   },
   overviewStatHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   overviewStatLabel: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   overviewStatBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EF4444',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EF4444",
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
   },
   overviewStatBadgeText: {
     fontSize: 10,
-    fontWeight: '600',
-    color: 'white',
+    fontWeight: "600",
+    color: "white",
     marginLeft: 2,
   },
   overviewStatValue: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 8,
   },
   overviewProgressBar: {
     height: 4,
     borderRadius: 2,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   overviewProgressFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: 2,
   },
   overviewDivider: {
     width: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: "#E5E7EB",
     marginHorizontal: 16,
   },
-  
-  // Enhanced Transactions Section
-  enhancedTransactionsSection: {
+
+  // Transactions Section
+  transactionsSection: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  transactionsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   viewAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -692,24 +684,24 @@ const styles = StyleSheet.create({
   },
   viewAllButtonText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: 'white',
+    fontWeight: "600",
+    color: "white",
   },
   transactionsCard: {
     borderRadius: 16,
     padding: 16,
   },
   transactionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 12,
   },
   transactionIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   transactionContent: {
@@ -717,7 +709,7 @@ const styles = StyleSheet.create({
   },
   transactionTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 2,
   },
   transactionDate: {
@@ -725,30 +717,30 @@ const styles = StyleSheet.create({
   },
   transactionAmount: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   emptyState: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 32,
   },
   emptyIcon: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
   },
   emptySubtitle: {
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
-  
+
   // Contextual Section
   contextualSection: {
     paddingHorizontal: 20,
