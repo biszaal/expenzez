@@ -17,6 +17,7 @@ import { Header, Section, ListItem, Button } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 import { getProfile } from "../../services/dataSource";
+import { useAuth } from "../../app/auth/AuthContext";
 
 /**
  * Personal Information Screen
@@ -31,6 +32,7 @@ export default function PersonalInformationScreen() {
   const { isLoggedIn } = useAuthGuard();
   const { showSuccess, showError } = useAlert();
   const { colors } = useTheme();
+  const { user } = useAuth();
 
   // Form state
   const [isEditing, setIsEditing] = useState(false);
@@ -41,12 +43,38 @@ export default function PersonalInformationScreen() {
     const fetchProfile = async () => {
       setLoading(true);
       try {
+        console.log("🔍 [Personal] Fetching profile data...");
         const data = await getProfile();
+        console.log("📊 [Personal] Profile API response:", JSON.stringify(data, null, 2));
+        
         if (data) {
-          setFormData(data);
+          // Map the API response to form fields
+          const mappedData = {
+            firstName: data.firstName || data.givenName || data.first_name || "",
+            lastName: data.lastName || data.familyName || data.last_name || "",
+            email: data.email || "",
+            phone: data.phone || data.phoneNumber || data.phone_number || "",
+            address: data.address || "",
+            city: data.city || "",
+            country: data.country || "",
+            dateOfBirth: data.dateOfBirth || data.date_of_birth || data.birthDate || "",
+          };
+          
+          console.log("✅ [Personal] Mapped profile data:", JSON.stringify(mappedData, null, 2));
+          setFormData(mappedData);
         } else {
-          // If profile is null, create default empty profile
-          setFormData({
+          console.log("⚠️ [Personal] No profile data returned, using user data as fallback");
+          // If profile is null, try to use user data from AuthContext
+          const userData = user ? {
+            firstName: user.name?.split(' ')[0] || "",
+            lastName: user.name?.split(' ').slice(1).join(' ') || "",
+            email: user.email || "",
+            phone: "",
+            address: "",
+            city: "",
+            country: "",
+            dateOfBirth: "",
+          } : {
             firstName: "",
             lastName: "",
             email: "",
@@ -55,12 +83,24 @@ export default function PersonalInformationScreen() {
             city: "",
             country: "",
             dateOfBirth: "",
-          });
+          };
+          
+          console.log("👤 [Personal] Using user data as fallback:", JSON.stringify(userData, null, 2));
+          setFormData(userData);
         }
       } catch (error) {
-        console.error("Error loading profile:", error);
-        // Create default empty profile on error
-        setFormData({
+        console.error("❌ [Personal] Error loading profile:", error);
+        // Try to use user data as fallback on error
+        const userData = user ? {
+          firstName: user.name?.split(' ')[0] || "",
+          lastName: user.name?.split(' ').slice(1).join(' ') || "",
+          email: user.email || "",
+          phone: "",
+          address: "",
+          city: "",
+          country: "",
+          dateOfBirth: "",
+        } : {
           firstName: "",
           lastName: "",
           email: "",
@@ -69,12 +109,15 @@ export default function PersonalInformationScreen() {
           city: "",
           country: "",
           dateOfBirth: "",
-        });
+        };
+        
+        console.log("🔄 [Personal] Using user data as fallback after error:", JSON.stringify(userData, null, 2));
+        setFormData(userData);
       }
       setLoading(false);
     };
     fetchProfile();
-  }, []);
+  }, [user]);
 
   if (loading) return <Text style={{ padding: 20, textAlign: 'center' }}>Loading...</Text>;
   if (!formData) return <Text style={{ padding: 20, textAlign: 'center' }}>Unable to load profile</Text>;
