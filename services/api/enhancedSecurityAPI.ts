@@ -31,19 +31,30 @@ export const enhancedSecurityAPI = {
    */
   getSecurityPreferences: async (): Promise<UserSecurityPreferences | null> => {
     try {
-      console.log('🔐 [Enhanced Security] Getting security preferences from server...');
+      console.log(
+        "🔐 [Enhanced Security] Getting security preferences from server..."
+      );
 
-      const response = await api.get('/security/preferences');
+      const response = await api.get("/security/preferences");
 
       if (response.status === 200 && response.data.success) {
-        console.log('🔐 [Enhanced Security] ✅ Got preferences:', response.data.preferences);
+        console.log(
+          "🔐 [Enhanced Security] ✅ Got preferences:",
+          response.data.preferences
+        );
         return response.data.preferences;
       }
 
-      console.log('🔐 [Enhanced Security] ❌ Failed to get preferences:', response.data);
+      console.log(
+        "🔐 [Enhanced Security] ❌ Failed to get preferences:",
+        response.data
+      );
       return null;
     } catch (error: any) {
-      console.log('🔐 [Enhanced Security] ⚠️ Server error getting preferences:', error.message);
+      console.log(
+        "🔐 [Enhanced Security] ⚠️ Server error getting preferences:",
+        error.message
+      );
       return null;
     }
   },
@@ -55,19 +66,30 @@ export const enhancedSecurityAPI = {
     preferences: Partial<UserSecurityPreferences>
   ): Promise<boolean> => {
     try {
-      console.log('🔐 [Enhanced Security] Updating security preferences:', preferences);
+      console.log(
+        "🔐 [Enhanced Security] Updating security preferences:",
+        preferences
+      );
 
-      const response = await api.put('/security/preferences', preferences);
+      const response = await api.put("/security/preferences", preferences);
 
       if (response.status === 200 && response.data.success) {
-        console.log('🔐 [Enhanced Security] ✅ Preferences updated successfully');
+        console.log(
+          "🔐 [Enhanced Security] ✅ Preferences updated successfully"
+        );
         return true;
       }
 
-      console.log('🔐 [Enhanced Security] ❌ Failed to update preferences:', response.data);
+      console.log(
+        "🔐 [Enhanced Security] ❌ Failed to update preferences:",
+        response.data
+      );
       return false;
     } catch (error: any) {
-      console.log('🔐 [Enhanced Security] ⚠️ Server error updating preferences:', error.message);
+      console.log(
+        "🔐 [Enhanced Security] ⚠️ Server error updating preferences:",
+        error.message
+      );
       return false;
     }
   },
@@ -78,12 +100,15 @@ export const enhancedSecurityAPI = {
   getSecurityStatus: async (): Promise<SecurityStatus | null> => {
     try {
       const deviceId = await deviceManager.getDeviceId();
-      console.log('🔐 [Enhanced Security] Getting security status for device:', deviceId);
+      console.log(
+        "🔐 [Enhanced Security] Getting security status for device:",
+        deviceId
+      );
 
       const response = await api.get(`/security/status/${deviceId}`);
 
       if (response.status === 200 && response.data.success) {
-        console.log('🔐 [Enhanced Security] ✅ Got security status:', {
+        console.log("🔐 [Enhanced Security] ✅ Got security status:", {
           appLockEnabled: response.data.status.preferences.appLockEnabled,
           hasDevicePIN: response.data.status.hasDevicePIN,
           needsPinSetup: response.data.status.needsPinSetup,
@@ -91,10 +116,16 @@ export const enhancedSecurityAPI = {
         return response.data.status;
       }
 
-      console.log('🔐 [Enhanced Security] ❌ Failed to get status:', response.data);
+      console.log(
+        "🔐 [Enhanced Security] ❌ Failed to get status:",
+        response.data
+      );
       return null;
     } catch (error: any) {
-      console.log('🔐 [Enhanced Security] ⚠️ Server error getting status:', error.message);
+      console.log(
+        "🔐 [Enhanced Security] ⚠️ Server error getting status:",
+        error.message
+      );
       return null;
     }
   },
@@ -102,23 +133,33 @@ export const enhancedSecurityAPI = {
   /**
    * Enable app lock (syncs preference across devices, prompts PIN setup if needed)
    */
-  enableAppLock: async (): Promise<{ success: boolean; needsPinSetup: boolean }> => {
+  enableAppLock: async (): Promise<{
+    success: boolean;
+    needsPinSetup: boolean;
+  }> => {
     try {
-      console.log('🔐 [Enhanced Security] Enabling app lock...');
+      console.log("🔐 [Enhanced Security] Enabling app lock...");
 
       // First, update the preference across all devices
-      const prefUpdateSuccess = await enhancedSecurityAPI.updateSecurityPreferences({
-        appLockEnabled: true,
-      });
+      const prefUpdateSuccess =
+        await enhancedSecurityAPI.updateSecurityPreferences({
+          appLockEnabled: true,
+        });
 
       // Store local preference regardless of server success (for offline support)
-      const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-      await AsyncStorage.setItem('@expenzez_app_lock_preference', 'true');
-      await AsyncStorage.setItem('@expenzez_security_enabled', 'true');
-      console.log('🔐 [Enhanced Security] ✅ App lock preference stored locally');
+      const AsyncStorage = (
+        await import("@react-native-async-storage/async-storage")
+      ).default;
+      await AsyncStorage.setItem("@expenzez_app_lock_preference", "true");
+      await AsyncStorage.setItem("@expenzez_security_enabled", "true");
+      console.log(
+        "🔐 [Enhanced Security] ✅ App lock preference stored locally"
+      );
 
       if (!prefUpdateSuccess) {
-        console.log('🔐 [Enhanced Security] ⚠️ Server update failed, using offline mode');
+        console.log(
+          "🔐 [Enhanced Security] ⚠️ Server update failed, using offline mode"
+        );
         return { success: true, needsPinSetup: false }; // PIN already created locally
       }
 
@@ -126,23 +167,38 @@ export const enhancedSecurityAPI = {
       const status = await enhancedSecurityAPI.getSecurityStatus();
 
       if (!status) {
-        console.log('🔐 [Enhanced Security] ⚠️ Could not get status, assuming PIN setup complete');
+        console.log(
+          "🔐 [Enhanced Security] ⚠️ Could not get status, assuming PIN setup complete"
+        );
         return { success: true, needsPinSetup: false };
       }
 
-      console.log('🔐 [Enhanced Security] ✅ App lock enabled, PIN setup needed:', status.needsPinSetup);
+      console.log(
+        "🔐 [Enhanced Security] ✅ App lock enabled, PIN setup needed:",
+        status.needsPinSetup
+      );
       return { success: true, needsPinSetup: status.needsPinSetup };
     } catch (error: any) {
-      console.error('🔐 [Enhanced Security] ❌ Error enabling app lock:', error);
+      console.error(
+        "🔐 [Enhanced Security] ❌ Error enabling app lock:",
+        error
+      );
       // Fallback to local storage in case of any error
       try {
-        const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-        await AsyncStorage.setItem('@expenzez_app_lock_preference', 'true');
-        await AsyncStorage.setItem('@expenzez_security_enabled', 'true');
-        console.log('🔐 [Enhanced Security] ✅ Fallback: App lock preference stored locally');
+        const AsyncStorage = (
+          await import("@react-native-async-storage/async-storage")
+        ).default;
+        await AsyncStorage.setItem("@expenzez_app_lock_preference", "true");
+        await AsyncStorage.setItem("@expenzez_security_enabled", "true");
+        console.log(
+          "🔐 [Enhanced Security] ✅ Fallback: App lock preference stored locally"
+        );
         return { success: true, needsPinSetup: false };
       } catch (fallbackError) {
-        console.error('🔐 [Enhanced Security] ❌ Fallback also failed:', fallbackError);
+        console.error(
+          "🔐 [Enhanced Security] ❌ Fallback also failed:",
+          fallbackError
+        );
         return { success: false, needsPinSetup: false };
       }
     }
@@ -153,7 +209,7 @@ export const enhancedSecurityAPI = {
    */
   disableAppLock: async (): Promise<boolean> => {
     try {
-      console.log('🔐 [Enhanced Security] Disabling app lock...');
+      console.log("🔐 [Enhanced Security] Disabling app lock...");
 
       // Only update the preference - keep device PINs for user privacy
       const success = await enhancedSecurityAPI.updateSecurityPreferences({
@@ -161,29 +217,47 @@ export const enhancedSecurityAPI = {
       });
 
       // Update local preference regardless of server success (for offline support)
-      const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-      await AsyncStorage.setItem('@expenzez_app_lock_preference', 'false');
-      await AsyncStorage.setItem('@expenzez_security_enabled', 'false');
-      console.log('🔐 [Enhanced Security] ✅ App lock preference disabled locally');
+      const AsyncStorage = (
+        await import("@react-native-async-storage/async-storage")
+      ).default;
+      await AsyncStorage.setItem("@expenzez_app_lock_preference", "false");
+      await AsyncStorage.setItem("@expenzez_security_enabled", "false");
+      console.log(
+        "🔐 [Enhanced Security] ✅ App lock preference disabled locally"
+      );
 
       if (success) {
-        console.log('🔐 [Enhanced Security] ✅ App lock disabled across all devices');
+        console.log(
+          "🔐 [Enhanced Security] ✅ App lock disabled across all devices"
+        );
         return true;
       } else {
-        console.log('🔐 [Enhanced Security] ⚠️ Server disable failed, but using local offline mode');
+        console.log(
+          "🔐 [Enhanced Security] ⚠️ Server disable failed, but using local offline mode"
+        );
         return true;
       }
     } catch (error: any) {
-      console.error('🔐 [Enhanced Security] ❌ Error disabling app lock:', error);
+      console.error(
+        "🔐 [Enhanced Security] ❌ Error disabling app lock:",
+        error
+      );
       // Fallback to local storage in case of any error
       try {
-        const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-        await AsyncStorage.setItem('@expenzez_app_lock_preference', 'false');
-        await AsyncStorage.setItem('@expenzez_security_enabled', 'false');
-        console.log('🔐 [Enhanced Security] ✅ Fallback: App lock preference disabled locally');
+        const AsyncStorage = (
+          await import("@react-native-async-storage/async-storage")
+        ).default;
+        await AsyncStorage.setItem("@expenzez_app_lock_preference", "false");
+        await AsyncStorage.setItem("@expenzez_security_enabled", "false");
+        console.log(
+          "🔐 [Enhanced Security] ✅ Fallback: App lock preference disabled locally"
+        );
         return true;
       } catch (fallbackError) {
-        console.error('🔐 [Enhanced Security] ❌ Fallback also failed:', fallbackError);
+        console.error(
+          "🔐 [Enhanced Security] ❌ Fallback also failed:",
+          fallbackError
+        );
         return false;
       }
     }
@@ -197,7 +271,10 @@ export const enhancedSecurityAPI = {
       const status = await enhancedSecurityAPI.getSecurityStatus();
       return status?.needsPinSetup || false;
     } catch (error: any) {
-      console.error('🔐 [Enhanced Security] ❌ Error checking PIN setup status:', error);
+      console.error(
+        "🔐 [Enhanced Security] ❌ Error checking PIN setup status:",
+        error
+      );
       return false;
     }
   },
@@ -207,43 +284,15 @@ export const enhancedSecurityAPI = {
    */
   onPinSetupComplete: async (): Promise<void> => {
     try {
-      console.log('🔐 [Enhanced Security] PIN setup completed on this device');
+      console.log("🔐 [Enhanced Security] PIN setup completed on this device");
       // The existing PIN setup API will handle storing the device-specific PIN
       // This is just for logging and potential future enhancements
     } catch (error: any) {
-      console.error('🔐 [Enhanced Security] ❌ Error in PIN setup completion:', error);
+      console.error(
+        "🔐 [Enhanced Security] ❌ Error in PIN setup completion:",
+        error
+      );
     }
   },
 
-  /**
-   * Sync PIN from server to local device (for cross-device PIN sync)
-   */
-  syncPinFromServer: async (): Promise<{ success: boolean; error?: string }> => {
-    try {
-      console.log('🔄 [Enhanced Security] Syncing PIN from server to local device');
-      
-      // Get device ID
-      const deviceId = await deviceManager.getDeviceId();
-      
-      // Call server to get the PIN for this device
-      const response = await api.get('/security/sync-pin', {
-        params: { deviceId }
-      });
-      
-      if (response.data.success && response.data.pin) {
-        // Store the PIN locally
-        await AsyncStorage.setItem('@expenzez_app_password', response.data.pin);
-        await AsyncStorage.setItem('@expenzez_has_pin', 'true');
-        
-        console.log('✅ [Enhanced Security] PIN synced from server successfully');
-        return { success: true };
-      } else {
-        console.log('⚠️ [Enhanced Security] No PIN available on server for this device');
-        return { success: false, error: 'No PIN available on server' };
-      }
-    } catch (error: any) {
-      console.error('❌ [Enhanced Security] Error syncing PIN from server:', error);
-      return { success: false, error: error.message || 'Sync failed' };
-    }
-  },
 };
