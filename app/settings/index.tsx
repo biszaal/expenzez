@@ -14,6 +14,14 @@ export default function SettingsPage() {
   const { logout } = useAuth();
   const { subscription, isTrialActive, daysUntilTrialExpires } = useSubscription();
 
+  // Debug: Log subscription state to verify dynamic values
+  console.log('📊 [Settings] Subscription State:', {
+    tier: subscription.tier,
+    isTrialActive,
+    daysUntilTrialExpires,
+    trialEndDate: subscription.trialEndDate
+  });
+
   // Local state for settings
   const [currency, setCurrency] = useState("GBP");
 
@@ -440,9 +448,19 @@ export default function SettingsPage() {
 
           {/* Subscription Information */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Subscription
-            </Text>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+                Subscription
+              </Text>
+              {isTrialActive && (
+                <View style={[styles.trialBadge, { backgroundColor: colors.primary[100] }]}>
+                  <Ionicons name="sparkles" size={12} color={colors.primary[600]} />
+                  <Text style={[styles.trialBadgeText, { color: colors.primary[600] }]}>
+                    Trial Active
+                  </Text>
+                </View>
+              )}
+            </View>
             <View
               style={[
                 styles.aboutContainer,
@@ -455,7 +473,7 @@ export default function SettingsPage() {
             >
               <View style={styles.aboutItem}>
                 <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
-                  Auto-Renewable Subscription
+                  Plan Name
                 </Text>
                 <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
                   Expenzez Premium
@@ -482,18 +500,48 @@ export default function SettingsPage() {
               <View style={[styles.aboutDivider, { backgroundColor: colors.border.light }]} />
               <View style={styles.aboutItem}>
                 <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
-                  Free Trial
+                  Free Trial Duration
                 </Text>
-                <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
-                  {isTrialActive
-                    ? `${daysUntilTrialExpires} day${daysUntilTrialExpires !== 1 ? 's' : ''} left`
-                    : '14 days'}
-                </Text>
+                <View style={styles.trialValueContainer}>
+                  <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
+                    {isTrialActive && daysUntilTrialExpires !== null
+                      ? `${daysUntilTrialExpires} day${daysUntilTrialExpires !== 1 ? 's' : ''} remaining`
+                      : '14 days'}
+                  </Text>
+                  {isTrialActive && subscription.trialEndDate && (
+                    <Text style={[styles.trialEndDate, { color: colors.text.tertiary }]}>
+                      Expires {new Date(subscription.trialEndDate).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </Text>
+                  )}
+                </View>
               </View>
             </View>
             <Text style={[styles.subscriptionNote, { color: colors.text.secondary }]}>
               Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Payment charged to App Store account. Manage subscriptions in App Store settings.
             </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.manageSubscriptionButton,
+                {
+                  backgroundColor: colors.primary[500],
+                  borderColor: colors.primary[600],
+                },
+                shadows.sm,
+              ]}
+              onPress={() => router.push("/subscription/plans")}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="diamond" size={18} color="white" />
+              <Text style={styles.manageSubscriptionText}>
+                {isTrialActive ? 'View Premium Plans' : 'Upgrade to Premium'}
+              </Text>
+              <Ionicons name="arrow-forward" size={16} color="white" />
+            </TouchableOpacity>
           </View>
 
           {/* Legal */}
@@ -676,15 +724,32 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 32,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
-    marginBottom: 8,
   },
   sectionDescription: {
     fontSize: 15,
     marginBottom: 20,
     lineHeight: 20,
+  },
+  trialBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  trialBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   themeContainer: {
     borderRadius: 16,
@@ -775,5 +840,32 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginTop: 12,
     paddingHorizontal: 4,
+  },
+  trialValueContainer: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  trialEndDate: {
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  manageSubscriptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    marginTop: 16,
+    gap: 8,
+    borderWidth: 1,
+  },
+  manageSubscriptionText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: 'white',
+    flex: 1,
+    textAlign: 'center',
   },
 });

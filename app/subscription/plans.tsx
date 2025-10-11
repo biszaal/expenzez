@@ -98,7 +98,8 @@ export default function SubscriptionPlansScreen() {
     isTrialActive,
     daysUntilTrialExpires,
     purchaseSubscription,
-    restorePurchases
+    restorePurchases,
+    refreshSubscription
   } = useSubscription();
 
   const [selectedPlan, setSelectedPlan] = useState('premium-annual');
