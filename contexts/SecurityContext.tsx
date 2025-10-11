@@ -1,11 +1,21 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppState, AppStateStatus } from "react-native";
 import { nativeSecurityAPI } from "../services/api/nativeSecurityAPI";
 import { nativeCryptoStorage } from "../services/nativeCryptoStorage";
 import { deviceManager } from "../services/deviceManager";
 import { useAuth } from "../app/auth/AuthContext";
-import { enhancedSecurityAPI, UserSecurityPreferences } from "../services/api/enhancedSecurityAPI";
+import {
+  enhancedSecurityAPI,
+  UserSecurityPreferences,
+} from "../services/api/enhancedSecurityAPI";
 
 interface SecurityContextType {
   isLocked: boolean;
@@ -36,7 +46,8 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isSecurityEnabled, setIsSecurityEnabled] = useState(false);
   const [needsPinSetup, setNeedsPinSetup] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [securityPreferences, setSecurityPreferences] = useState<UserSecurityPreferences | null>(null);
+  const [securityPreferences, setSecurityPreferences] =
+    useState<UserSecurityPreferences | null>(null);
   const { isLoggedIn } = useAuth();
 
   // Debouncing ref to prevent excessive API calls
@@ -56,36 +67,52 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const initializeSecureSystem = async () => {
     try {
-      console.log('🔐 [SecurityContext] Initializing secure security system...');
+      console.log(
+        "🔐 [SecurityContext] Initializing secure security system..."
+      );
 
       // Step 1: Check if app should start in locked state
       const storedLockState = await AsyncStorage.getItem(APP_LOCKED_KEY);
-      const storedSecurityEnabled = await AsyncStorage.getItem(SECURITY_ENABLED_KEY);
-      const appLockPreference = await AsyncStorage.getItem('@expenzez_app_lock_preference');
+      const storedSecurityEnabled =
+        await AsyncStorage.getItem(SECURITY_ENABLED_KEY);
+      const appLockPreference = await AsyncStorage.getItem(
+        "@expenzez_app_lock_preference"
+      );
 
-      console.log('🔐 [SecurityContext] Initial storage check:', {
+      console.log("🔐 [SecurityContext] Initial storage check:", {
         storedLockState,
         storedSecurityEnabled,
         appLockPreference,
-        isLoggedIn
+        isLoggedIn,
       });
 
       // ALWAYS clear session on app startup to force fresh authentication
       // This ensures PIN is required every time the app is opened
-      console.log('🔐 [SecurityContext] App startup - clearing all sessions to force fresh PIN entry');
+      console.log(
+        "🔐 [SecurityContext] App startup - clearing all sessions to force fresh PIN entry"
+      );
       try {
         await nativeSecurityAPI.clearSession();
-        await AsyncStorage.removeItem('@expenzez_last_unlock');
-        console.log('🔐 [SecurityContext] ✅ All sessions cleared on app startup');
+        await AsyncStorage.removeItem("@expenzez_last_unlock");
+        console.log(
+          "🔐 [SecurityContext] ✅ All sessions cleared on app startup"
+        );
       } catch (clearError) {
-        console.warn('🔐 [SecurityContext] Could not clear session on startup:', clearError);
+        console.warn(
+          "🔐 [SecurityContext] Could not clear session on startup:",
+          clearError
+        );
       }
 
       // If security is enabled (legacy OR preference) and user is logged in, start locked
-      const shouldStartLocked = (storedSecurityEnabled === 'true' || appLockPreference === 'true') && isLoggedIn;
+      const shouldStartLocked =
+        (storedSecurityEnabled === "true" || appLockPreference === "true") &&
+        isLoggedIn;
 
       if (shouldStartLocked) {
-        console.log('🔐 [SecurityContext] Security enabled on app startup - starting locked for PIN entry');
+        console.log(
+          "🔐 [SecurityContext] Security enabled on app startup - starting locked for PIN entry"
+        );
         setIsLocked(true);
         setIsSecurityEnabled(true);
         await AsyncStorage.setItem(APP_LOCKED_KEY, "true");
@@ -94,31 +121,40 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
       // Step 2: Initialize the secure security API with better error handling
       try {
         await nativeSecurityAPI.initialize();
-        console.log('🔐 [SecurityContext] Secure API initialized successfully');
+        console.log("🔐 [SecurityContext] Secure API initialized successfully");
       } catch (initError: any) {
-        console.warn('🔐 [SecurityContext] Secure API initialization failed (non-critical):', initError.message);
+        console.warn(
+          "🔐 [SecurityContext] Secure API initialization failed (non-critical):",
+          initError.message
+        );
         // Don't fail the entire system if initialization has issues
       }
 
       // Step 3: Always check security status (this should work even if initialization failed)
       await checkSecurityStatus();
-      
+
       setIsInitialized(true);
-      console.log('🔐 [SecurityContext] ✅ Security system initialized');
+      console.log("🔐 [SecurityContext] ✅ Security system initialized");
     } catch (error) {
-      console.error('🔐 [SecurityContext] ❌ Critical error in security initialization:', error);
-      
+      console.error(
+        "🔐 [SecurityContext] ❌ Critical error in security initialization:",
+        error
+      );
+
       // Even on critical error, try basic security check
       try {
         await checkSecurityStatus();
       } catch (statusError) {
-        console.error('🔐 [SecurityContext] ❌ Security status check also failed:', statusError);
+        console.error(
+          "🔐 [SecurityContext] ❌ Security status check also failed:",
+          statusError
+        );
         // Set safe defaults
         setIsSecurityEnabled(false);
         setIsLocked(false);
         setNeedsPinSetup(false);
       }
-      
+
       setIsInitialized(true);
     }
   };
@@ -136,14 +172,18 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
       if (nextAppState === "background") {
         // Only lock when app actually goes to background, not just inactive
         if (isSecurityEnabled) {
-          console.log('🔐 [SecurityContext] App backgrounded, locking in 500ms...');
+          console.log(
+            "🔐 [SecurityContext] App backgrounded, locking in 500ms..."
+          );
           // Add small delay to prevent locking during navigation transitions
           backgroundTimeout = setTimeout(() => {
             lockApp();
           }, 500);
         }
       } else if (nextAppState === "active") {
-        console.log('🔐 [SecurityContext] App became active, canceling any pending lock');
+        console.log(
+          "🔐 [SecurityContext] App became active, canceling any pending lock"
+        );
         // App became active again, don't lock
         if (backgroundTimeout) {
           clearTimeout(backgroundTimeout);
@@ -167,29 +207,37 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
   const syncSecurityPreferences = useCallback(async () => {
     try {
       if (!isLoggedIn) {
-        console.log('🔐 [SecurityContext] Not logged in, skipping preference sync');
+        console.log(
+          "🔐 [SecurityContext] Not logged in, skipping preference sync"
+        );
         setSecurityPreferences(null);
         return;
       }
 
-      console.log('🔐 [SecurityContext] Syncing security preferences from server...');
+      console.log(
+        "🔐 [SecurityContext] Syncing security preferences from server..."
+      );
 
       const preferences = await enhancedSecurityAPI.getSecurityPreferences();
 
       if (preferences) {
-        console.log('🔐 [SecurityContext] ✅ Synced preferences:', {
+        console.log("🔐 [SecurityContext] ✅ Synced preferences:", {
           appLockEnabled: preferences.appLockEnabled,
           biometricEnabled: preferences.biometricEnabled,
           sessionTimeout: preferences.sessionTimeout,
         });
         setSecurityPreferences(preferences);
       } else {
-        console.log('🔐 [SecurityContext] ⚠️ No preferences found, checking local fallback storage');
+        console.log(
+          "🔐 [SecurityContext] ⚠️ No preferences found, checking local fallback storage"
+        );
 
         // Check for local fallback storage
         try {
-          const localAppLockPref = await AsyncStorage.getItem('@expenzez_app_lock_preference');
-          const appLockEnabled = localAppLockPref === 'true';
+          const localAppLockPref = await AsyncStorage.getItem(
+            "@expenzez_app_lock_preference"
+          );
+          const appLockEnabled = localAppLockPref === "true";
 
           const fallbackPrefs: UserSecurityPreferences = {
             appLockEnabled: appLockEnabled,
@@ -199,10 +247,15 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
             lastUpdated: Date.now(),
           };
 
-          console.log('🔐 [SecurityContext] ✅ Using local fallback preferences:', { appLockEnabled });
+          console.log(
+            "🔐 [SecurityContext] ✅ Using local fallback preferences:",
+            { appLockEnabled }
+          );
           setSecurityPreferences(fallbackPrefs);
         } catch (localError) {
-          console.log('🔐 [SecurityContext] ⚠️ Local fallback failed, using defaults');
+          console.log(
+            "🔐 [SecurityContext] ⚠️ Local fallback failed, using defaults"
+          );
           const defaultPrefs: UserSecurityPreferences = {
             appLockEnabled: false,
             biometricEnabled: false,
@@ -214,14 +267,22 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       }
     } catch (error) {
-      console.error('🔐 [SecurityContext] ❌ Error syncing preferences:', error);
+      console.error(
+        "🔐 [SecurityContext] ❌ Error syncing preferences:",
+        error
+      );
 
       // Try to use local fallback storage first
       try {
-        const localAppLockPref = await AsyncStorage.getItem('@expenzez_app_lock_preference');
-        const appLockEnabled = localAppLockPref === 'true';
+        const localAppLockPref = await AsyncStorage.getItem(
+          "@expenzez_app_lock_preference"
+        );
+        const appLockEnabled = localAppLockPref === "true";
 
-        console.log('🔐 [SecurityContext] ✅ Using local fallback after error:', { appLockEnabled });
+        console.log(
+          "🔐 [SecurityContext] ✅ Using local fallback after error:",
+          { appLockEnabled }
+        );
         setSecurityPreferences({
           appLockEnabled: appLockEnabled,
           biometricEnabled: false,
@@ -230,7 +291,9 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
           lastUpdated: Date.now(),
         });
       } catch (localError) {
-        console.log('🔐 [SecurityContext] ⚠️ Local fallback also failed, using defaults');
+        console.log(
+          "🔐 [SecurityContext] ⚠️ Local fallback also failed, using defaults"
+        );
         // Use fallback defaults
         setSecurityPreferences({
           appLockEnabled: false,
@@ -249,14 +312,16 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
       clearTimeout(syncDebounceRef.current);
     }
     syncDebounceRef.current = setTimeout(() => {
-      console.log('🔐 [SecurityContext] Debounced preference sync triggered');
+      console.log("🔐 [SecurityContext] Debounced preference sync triggered");
       syncSecurityPreferences();
     }, 500);
   }, [syncSecurityPreferences]);
 
   const checkSecurityStatus = useCallback(async () => {
     try {
-      console.log('🔐 [SecurityContext] Checking enhanced security status...', { isLoggedIn });
+      console.log("🔐 [SecurityContext] Checking enhanced security status...", {
+        isLoggedIn,
+      });
 
       if (isLoggedIn) {
         // Step 1: Sync security preferences from server
@@ -266,7 +331,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
         const securityStatus = await enhancedSecurityAPI.getSecurityStatus();
 
         if (securityStatus) {
-          console.log('🔐 [SecurityContext] Enhanced security status:', {
+          console.log("🔐 [SecurityContext] Enhanced security status:", {
             appLockEnabled: securityStatus.preferences.appLockEnabled,
             hasDevicePIN: securityStatus.hasDevicePIN,
             needsPinSetup: securityStatus.needsPinSetup,
@@ -282,27 +347,47 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
               // Check if we have a valid session
               const hasValidSession = await nativeSecurityAPI.hasValidSession();
               setIsLocked(!hasValidSession);
-              console.log('🔐 [SecurityContext] App lock enabled with PIN, locked:', !hasValidSession);
+              console.log(
+                "🔐 [SecurityContext] App lock enabled with PIN, locked:",
+                !hasValidSession
+              );
             } else {
               // App lock enabled but no PIN on this device - don't lock yet, show PIN setup
               setIsLocked(false);
-              console.log('🔐 [SecurityContext] App lock enabled but no device PIN - PIN setup needed');
+              console.log(
+                "🔐 [SecurityContext] App lock enabled but no device PIN - PIN setup needed"
+              );
             }
           } else {
             // App lock disabled - ensure app is unlocked
             setIsLocked(false);
-            console.log('🔐 [SecurityContext] App lock disabled - app unlocked');
+            console.log(
+              "🔐 [SecurityContext] App lock disabled - app unlocked"
+            );
           }
 
           // Update backward compatibility storage
-          await AsyncStorage.setItem(SECURITY_ENABLED_KEY, securityStatus.preferences.appLockEnabled.toString());
-          await AsyncStorage.setItem(APP_LOCKED_KEY, (!securityStatus.preferences.appLockEnabled || securityStatus.hasDevicePIN) ? "false" : "true");
+          await AsyncStorage.setItem(
+            SECURITY_ENABLED_KEY,
+            securityStatus.preferences.appLockEnabled.toString()
+          );
+          await AsyncStorage.setItem(
+            APP_LOCKED_KEY,
+            !securityStatus.preferences.appLockEnabled ||
+              securityStatus.hasDevicePIN
+              ? "false"
+              : "true"
+          );
         } else {
-          console.log('🔐 [SecurityContext] ⚠️ Could not get enhanced status, falling back to legacy check');
+          console.log(
+            "🔐 [SecurityContext] ⚠️ Could not get enhanced status, falling back to legacy check"
+          );
           await checkSecurityStatusLegacy();
         }
       } else {
-        console.log('🔐 [SecurityContext] User not logged in - clearing security state');
+        console.log(
+          "🔐 [SecurityContext] User not logged in - clearing security state"
+        );
         setIsSecurityEnabled(false);
         setIsLocked(false);
         setNeedsPinSetup(false);
@@ -312,7 +397,10 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
         await AsyncStorage.setItem(APP_LOCKED_KEY, "false");
       }
     } catch (error) {
-      console.error("🔐 [SecurityContext] Error checking enhanced security status:", error);
+      console.error(
+        "🔐 [SecurityContext] Error checking enhanced security status:",
+        error
+      );
       // Fallback to legacy method
       await checkSecurityStatusLegacy();
     }
@@ -320,156 +408,225 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const checkSecurityStatusLegacy = useCallback(async () => {
     try {
-      console.log('🔐 [SecurityContext] Falling back to legacy security check...', { isLoggedIn });
-      
+      console.log(
+        "🔐 [SecurityContext] Falling back to legacy security check...",
+        { isLoggedIn }
+      );
+
       // Only check server/database for user's PIN if logged in
       let hasPinOnServer = false;
       if (isLoggedIn) {
         try {
           const deviceId = await deviceManager.getDeviceId();
-          const securitySettings = await nativeSecurityAPI.getSecuritySettings(deviceId);
-          hasPinOnServer = !!securitySettings && !!securitySettings.encryptedPin;
-          
-          console.log('🔐 [SecurityContext] Server PIN check:', { 
-            hasPinOnServer, 
+          const securitySettings =
+            await nativeSecurityAPI.getSecuritySettings(deviceId);
+          hasPinOnServer =
+            !!securitySettings && !!securitySettings.encryptedPin;
+
+          console.log("🔐 [SecurityContext] Server PIN check:", {
+            hasPinOnServer,
             hasSettings: !!securitySettings,
-            hasEncryptedPin: !!securitySettings?.encryptedPin 
+            hasEncryptedPin: !!securitySettings?.encryptedPin,
           });
 
           // CRITICAL FIX: If server has PIN but local doesn't, sync it down
           // This happens when user logs in from a different device or after cache clear
           // BUT: Don't sync if security was just disabled (check the security enabled flag)
           if (hasPinOnServer && securitySettings?.encryptedPin) {
-            const hasLocalPin = await AsyncStorage.getItem("@expenzez_app_password");
-            const isSecurityLocallyEnabled = await AsyncStorage.getItem(SECURITY_ENABLED_KEY);
-            
+            const hasLocalPin = await AsyncStorage.getItem(
+              "@expenzez_app_password"
+            );
+            const isSecurityLocallyEnabled =
+              await AsyncStorage.getItem(SECURITY_ENABLED_KEY);
+
             // Only sync down if security is enabled locally - prevents re-enabling after disable
-            if (!hasLocalPin && isSecurityLocallyEnabled === 'true') {
-              console.log('🔐 [SecurityContext] Server PIN exists but no local PIN - syncing down');
+            if (!hasLocalPin && isSecurityLocallyEnabled === "true") {
+              console.log(
+                "🔐 [SecurityContext] Server PIN exists but no local PIN - syncing down"
+              );
               // Store the server's encrypted PIN locally for validation
-              await AsyncStorage.setItem("@expenzez_app_password", securitySettings.encryptedPin);
-              console.log('🔐 [SecurityContext] Server PIN synced to local storage');
-            } else if (!hasLocalPin && isSecurityLocallyEnabled !== 'true') {
-              console.log('🔐 [SecurityContext] Server PIN exists but security disabled locally - not syncing');
+              await AsyncStorage.setItem(
+                "@expenzez_app_password",
+                securitySettings.encryptedPin
+              );
+              console.log(
+                "🔐 [SecurityContext] Server PIN synced to local storage"
+              );
+            } else if (!hasLocalPin && isSecurityLocallyEnabled !== "true") {
+              console.log(
+                "🔐 [SecurityContext] Server PIN exists but security disabled locally - not syncing"
+              );
             }
           }
         } catch (error) {
           // Silently handle server errors - no user-facing error needed
-          console.log('🔐 [SecurityContext] Server check failed, using local fallback');
+          console.log(
+            "🔐 [SecurityContext] Server check failed, using local fallback"
+          );
           hasPinOnServer = false;
         }
       } else {
-        console.log('🔐 [SecurityContext] User not logged in, skipping server PIN check');
+        console.log(
+          "🔐 [SecurityContext] User not logged in, skipping server PIN check"
+        );
       }
 
       // For production app, prioritize database (server) PIN as source of truth
       // Local PIN is backup for offline scenarios
       // Re-check local PIN after potential server sync
       const hasLocalPin = await AsyncStorage.getItem("@expenzez_app_password");
-      
+
       // DATABASE FIRST: If server has PIN, that's authoritative
       // Local PIN is only used if server is unavailable
       const hasPin = hasPinOnServer || !!hasLocalPin;
-      
-      console.log('🔐 [SecurityContext] PIN authority check:', { 
-        hasPinOnServer, 
-        hasLocalPin: !!hasLocalPin, 
+
+      console.log("🔐 [SecurityContext] PIN authority check:", {
+        hasPinOnServer,
+        hasLocalPin: !!hasLocalPin,
         hasPin,
-        prioritySource: hasPinOnServer ? 'SERVER' : hasLocalPin ? 'LOCAL' : 'NONE'
+        prioritySource: hasPinOnServer
+          ? "SERVER"
+          : hasLocalPin
+            ? "LOCAL"
+            : "NONE",
       });
 
-      console.log('🔐 [SecurityContext] PIN status:', { hasPinOnServer, hasLocalPin: !!hasLocalPin, hasPin });
+      console.log("🔐 [SecurityContext] PIN status:", {
+        hasPinOnServer,
+        hasLocalPin: !!hasLocalPin,
+        hasPin,
+      });
 
       // If logged in, check if PIN exists for optional security
       if (isLoggedIn) {
         // CRITICAL FIX: Check if user has locally disabled security before re-enabling
-        const isSecurityLocallyEnabled = await AsyncStorage.getItem(SECURITY_ENABLED_KEY);
+        const isSecurityLocallyEnabled =
+          await AsyncStorage.getItem(SECURITY_ENABLED_KEY);
 
         // ENHANCED FIX: Read preferences directly from storage to avoid timing issues
         let currentAppLockPreference = securityPreferences?.appLockEnabled;
         if (currentAppLockPreference === undefined) {
           // If state is not yet updated, read directly from local storage
-          const localAppLockPref = await AsyncStorage.getItem('@expenzez_app_lock_preference');
-          currentAppLockPreference = localAppLockPref === 'true';
-          console.log('🔐 [SecurityContext] State not ready, reading from storage:', { currentAppLockPreference });
+          const localAppLockPref = await AsyncStorage.getItem(
+            "@expenzez_app_lock_preference"
+          );
+          currentAppLockPreference = localAppLockPref === "true";
+          console.log(
+            "🔐 [SecurityContext] State not ready, reading from storage:",
+            { currentAppLockPreference }
+          );
         }
 
         // Prioritize security preferences over legacy storage
         // If preferences say appLockEnabled=true, that overrides legacy "false" setting
-        const shouldEnableSecurity = hasPin && (
-          currentAppLockPreference === true ||
-          (currentAppLockPreference !== false && isSecurityLocallyEnabled !== 'false')
-        );
+        const shouldEnableSecurity =
+          hasPin &&
+          (currentAppLockPreference === true ||
+            (currentAppLockPreference !== false &&
+              isSecurityLocallyEnabled !== "false"));
 
-        console.log('🔐 [SecurityContext] Security state check:', {
+        console.log("🔐 [SecurityContext] Security state check:", {
           hasPin,
           hasLocalPin: !!hasLocalPin,
           isSecurityLocallyEnabled,
           appLockEnabled: securityPreferences?.appLockEnabled,
           currentAppLockPreference,
           shouldEnableSecurity,
-          condition1: hasPin && isSecurityLocallyEnabled !== 'false',
-          condition2: hasPin && isSecurityLocallyEnabled === 'false'
+          condition1: hasPin && isSecurityLocallyEnabled !== "false",
+          condition2: hasPin && isSecurityLocallyEnabled === "false",
         });
 
         // DATABASE PRIORITY: If PIN exists (server or local), enable security unless explicitly disabled
         if (shouldEnableSecurity) {
-          console.log('🔐 [SecurityContext] PIN found (server or local) and security not disabled - enabling security');
-          console.log('🔐 [SecurityContext] Enabling security - PIN source:', hasPinOnServer ? 'SERVER' : 'LOCAL');
+          console.log(
+            "🔐 [SecurityContext] PIN found (server or local) and security not disabled - enabling security"
+          );
+          console.log(
+            "🔐 [SecurityContext] Enabling security - PIN source:",
+            hasPinOnServer ? "SERVER" : "LOCAL"
+          );
           setIsSecurityEnabled(true);
-          
+
           // IMPROVED CROSS-DEVICE PIN SYNC: If server has PIN but local doesn't, sync it
           if (hasPinOnServer && !hasLocalPin) {
-            console.log('🔄 [SecurityContext] Server has PIN but local doesn\'t - syncing PIN from server');
+            console.log(
+              "🔄 [SecurityContext] Server has PIN but local doesn't - syncing PIN from server"
+            );
             try {
-              // Sync PIN from server to local storage
-              const syncResult = await enhancedSecurityAPI.syncPinFromServer();
-              if (syncResult.success) {
-                console.log('✅ [SecurityContext] PIN synced from server successfully');
-                // Update local PIN flag
-                await AsyncStorage.setItem('@expenzez_has_pin', 'true');
+              // Get the encrypted PIN from server and store it locally
+              const deviceId = await deviceManager.getDeviceId();
+              const securitySettings = await nativeSecurityAPI.getSecuritySettings(deviceId);
+              
+              if (securitySettings && securitySettings.encryptedPin) {
+                // Store the server's encrypted PIN locally for validation
+                await AsyncStorage.setItem("@expenzez_app_password", securitySettings.encryptedPin);
+                await AsyncStorage.setItem("@expenzez_has_pin", "true");
+                console.log("✅ [SecurityContext] PIN synced from server successfully");
+                // Update hasLocalPin for the rest of the logic
+                hasLocalPin = true;
               } else {
-                console.log('⚠️ [SecurityContext] PIN sync failed, will require setup on this device');
-                setNeedsPinSetup(true);
+                console.log("⚠️ [SecurityContext] No PIN available on server for this device");
+                // Don't require PIN setup if server doesn't have PIN - just disable security
+                setIsSecurityEnabled(false);
+                setIsLocked(false);
+                setNeedsPinSetup(false);
+                return;
               }
             } catch (error) {
-              console.error('❌ [SecurityContext] Error syncing PIN from server:', error);
+              console.error(
+                "❌ [SecurityContext] Error syncing PIN from server:",
+                error
+              );
+              // If sync fails, still allow PIN setup on this device
               setNeedsPinSetup(true);
             }
           }
-          
+
           // Use session-based locking: if no recent unlock session, require PIN
-          const lastUnlockTime = await AsyncStorage.getItem('@expenzez_last_unlock');
+          const lastUnlockTime = await AsyncStorage.getItem(
+            "@expenzez_last_unlock"
+          );
           const now = Date.now();
           const sessionTimeout = 2 * 60 * 1000; // 2 minutes session for testing (was 15 minutes)
-          
-          const hasValidSession = lastUnlockTime && (now - parseInt(lastUnlockTime)) < sessionTimeout;
-          
-          console.log('🔐 [SecurityContext] Session check:', {
-            lastUnlockTime: lastUnlockTime ? new Date(parseInt(lastUnlockTime)).toISOString() : 'null',
+
+          const hasValidSession =
+            lastUnlockTime && now - parseInt(lastUnlockTime) < sessionTimeout;
+
+          console.log("🔐 [SecurityContext] Session check:", {
+            lastUnlockTime: lastUnlockTime
+              ? new Date(parseInt(lastUnlockTime)).toISOString()
+              : "null",
             now: new Date(now).toISOString(),
-            sessionAge: lastUnlockTime ? (now - parseInt(lastUnlockTime)) / 1000 + 's' : 'N/A',
-            sessionTimeout: sessionTimeout / 1000 + 's',
-            hasValidSession
+            sessionAge: lastUnlockTime
+              ? (now - parseInt(lastUnlockTime)) / 1000 + "s"
+              : "N/A",
+            sessionTimeout: sessionTimeout / 1000 + "s",
+            hasValidSession,
           });
-          
+
           if (!hasValidSession) {
-            console.log('🔐 [SecurityContext] ⚠️ No valid unlock session - LOCKING for PIN entry');
+            console.log(
+              "🔐 [SecurityContext] ⚠️ No valid unlock session - LOCKING for PIN entry"
+            );
             setIsLocked(true);
             await AsyncStorage.setItem(APP_LOCKED_KEY, "true");
-            console.log('🔐 [SecurityContext] App locked state set to TRUE');
+            console.log("🔐 [SecurityContext] App locked state set to TRUE");
           } else {
-            console.log('🔐 [SecurityContext] ✅ Valid unlock session found - staying unlocked');
+            console.log(
+              "🔐 [SecurityContext] ✅ Valid unlock session found - staying unlocked"
+            );
             setIsLocked(false);
             await AsyncStorage.setItem(APP_LOCKED_KEY, "false");
-            console.log('🔐 [SecurityContext] App locked state set to FALSE');
+            console.log("🔐 [SecurityContext] App locked state set to FALSE");
           }
-          
+
           setNeedsPinSetup(false);
           // Update legacy storage to match the new security state
           await AsyncStorage.setItem(SECURITY_ENABLED_KEY, "true");
         } else if (hasPin && !shouldEnableSecurity) {
-          console.log('🔐 [SecurityContext] PIN found but security explicitly disabled - respecting local choice');
+          console.log(
+            "🔐 [SecurityContext] PIN found but security explicitly disabled - respecting local choice"
+          );
           setIsSecurityEnabled(false);
           setIsLocked(false);
           setNeedsPinSetup(false);
@@ -478,41 +635,51 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
           await AsyncStorage.setItem(SECURITY_ENABLED_KEY, "false");
           await AsyncStorage.setItem(APP_LOCKED_KEY, "false");
         } else {
-          console.log('🔐 [SecurityContext] No PIN found (server or local) - security disabled, app unlocked');
-          
+          console.log(
+            "🔐 [SecurityContext] No PIN found (server or local) - security disabled, app unlocked"
+          );
+
           // CRITICAL FIX: When no PIN exists anywhere, completely disable security
           // This prevents the PIN screen from showing when there's nothing to validate against
           setIsSecurityEnabled(false);
           setIsLocked(false);
           setNeedsPinSetup(false);
-          
+
           // Clear any stale security state that might cause issues
           await AsyncStorage.setItem(SECURITY_ENABLED_KEY, "false");
           await AsyncStorage.setItem(APP_LOCKED_KEY, "false");
           await AsyncStorage.removeItem("@expenzez_app_password");
           await AsyncStorage.removeItem("@expenzez_biometric_enabled");
           await AsyncStorage.removeItem("@expenzez_last_unlock");
-          
-          console.log('🔐 [SecurityContext] Security completely disabled - no PIN exists anywhere');
+
+          console.log(
+            "🔐 [SecurityContext] Security completely disabled - no PIN exists anywhere"
+          );
         }
       } else {
-        console.log('🔐 [SecurityContext] User not logged in - clearing security state');
+        console.log(
+          "🔐 [SecurityContext] User not logged in - clearing security state"
+        );
         // When user is logged out, clear all security state to prevent PIN validation issues
         // This prevents the scenario where app was locked but user session expired
         setIsSecurityEnabled(false);
         setIsLocked(false);
         setNeedsPinSetup(false);
-        
+
         // Clear potentially stale security storage
         await AsyncStorage.setItem(SECURITY_ENABLED_KEY, "false");
         await AsyncStorage.setItem(APP_LOCKED_KEY, "false");
         await AsyncStorage.removeItem("@expenzez_last_unlock");
-        
-        console.log('🔐 [SecurityContext] Security state cleared - app unlocked for logged out user');
+
+        console.log(
+          "🔐 [SecurityContext] Security state cleared - app unlocked for logged out user"
+        );
       }
     } catch (error) {
       // Silently handle errors and use safe defaults
-      console.log("🔐 [SecurityContext] Error checking security status, using safe defaults");
+      console.log(
+        "🔐 [SecurityContext] Error checking security status, using safe defaults"
+      );
       // If we can't determine status, default to unlocked state to prevent user lockout
       // This is safer than defaulting to locked, especially after session expiry
       setIsSecurityEnabled(false);
@@ -532,7 +699,9 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsLocked(true);
     } catch (error) {
       // Silently handle storage errors, still update state
-      console.log("🔐 [SecurityContext] Storage error during lock, using memory state");
+      console.log(
+        "🔐 [SecurityContext] Storage error during lock, using memory state"
+      );
       setIsLocked(true);
     }
   }, []);
@@ -548,11 +717,16 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Update local state and backward compatibility
       await AsyncStorage.setItem(APP_LOCKED_KEY, "false");
-      await AsyncStorage.setItem('@expenzez_last_unlock', Date.now().toString());
+      await AsyncStorage.setItem(
+        "@expenzez_last_unlock",
+        Date.now().toString()
+      );
       setIsLocked(false);
     } catch (error) {
       // Silently handle storage errors, still update state
-      console.log("🔐 [SecurityContext] Storage error during unlock, using memory state");
+      console.log(
+        "🔐 [SecurityContext] Storage error during unlock, using memory state"
+      );
       setIsLocked(false);
     }
   }, []);
@@ -561,7 +735,10 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       // Extend both session systems
       await nativeSecurityAPI.extendSession();
-      await AsyncStorage.setItem('@expenzez_last_unlock', Date.now().toString());
+      await AsyncStorage.setItem(
+        "@expenzez_last_unlock",
+        Date.now().toString()
+      );
       console.log("🔐 [SecurityContext] ✅ Session extended (both systems)");
     } catch (error) {
       console.warn("🔐 [SecurityContext] Failed to extend session:", error);
@@ -573,7 +750,9 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("🔐 [SecurityContext] Enabling security with enhanced API");
 
       if (!isLoggedIn) {
-        console.log("🔐 [SecurityContext] ❌ User not logged in, cannot enable security");
+        console.log(
+          "🔐 [SecurityContext] ❌ User not logged in, cannot enable security"
+        );
         return;
       }
 
@@ -595,7 +774,10 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
         await AsyncStorage.setItem(SECURITY_ENABLED_KEY, "true");
         await AsyncStorage.setItem(APP_LOCKED_KEY, "false");
 
-        console.log("🔐 [SecurityContext] Security enabled, PIN setup needed:", result.needsPinSetup);
+        console.log(
+          "🔐 [SecurityContext] Security enabled, PIN setup needed:",
+          result.needsPinSetup
+        );
       } else {
         console.log("🔐 [SecurityContext] ❌ Failed to enable app lock");
         throw new Error("Failed to enable app lock");
@@ -617,7 +799,9 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsLocked(false);
 
       if (!isLoggedIn) {
-        console.log("🔐 [SecurityContext] User not logged in, clearing local security data only");
+        console.log(
+          "🔐 [SecurityContext] User not logged in, clearing local security data only"
+        );
         await AsyncStorage.multiRemove([
           SECURITY_ENABLED_KEY,
           APP_LOCKED_KEY,
@@ -635,7 +819,9 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
       const success = await enhancedSecurityAPI.disableAppLock();
 
       if (success) {
-        console.log("🔐 [SecurityContext] ✅ App lock disabled across all devices");
+        console.log(
+          "🔐 [SecurityContext] ✅ App lock disabled across all devices"
+        );
 
         // Update local state
         setIsSecurityEnabled(false);
@@ -648,9 +834,13 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
         await AsyncStorage.setItem(SECURITY_ENABLED_KEY, "false");
         await AsyncStorage.setItem(APP_LOCKED_KEY, "false");
 
-        console.log("🔐 [SecurityContext] ✅ Security completely disabled across devices");
+        console.log(
+          "🔐 [SecurityContext] ✅ Security completely disabled across devices"
+        );
       } else {
-        console.log("🔐 [SecurityContext] ⚠️ Enhanced API disable failed, but this should not happen with new fallback logic");
+        console.log(
+          "🔐 [SecurityContext] ⚠️ Enhanced API disable failed, but this should not happen with new fallback logic"
+        );
         // The enhanced API should now handle fallbacks internally, so this shouldn't happen
         // But if it does, we'll fall through to the catch block for manual cleanup
         throw new Error("Enhanced API failed unexpectedly");
@@ -683,7 +873,9 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Force a security status re-check to ensure UI updates (debounced)
     setTimeout(async () => {
-      console.log("🔐 [SecurityContext] Re-checking security status after disable...");
+      console.log(
+        "🔐 [SecurityContext] Re-checking security status after disable..."
+      );
       await checkSecurityStatus();
     }, 100);
   }, [isLoggedIn, syncSecurityPreferences, checkSecurityStatus]);
