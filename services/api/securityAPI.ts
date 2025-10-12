@@ -116,7 +116,11 @@ export const securityAPI = {
       const response = await api.post('/security/setup-pin', payload);
       
       if (response.status === 200) {
-        // Also store locally for offline validation
+        // CRITICAL FIX: Clear old local PIN before storing new one
+        console.log('🔒 [SecurityAPI] Clearing old local PIN before storing new PIN');
+        await AsyncStorage.removeItem('@expenzez_app_password');
+        
+        // Store new PIN locally for offline validation
         await AsyncStorage.setItem('@expenzez_app_password', request.pin);
         await AsyncStorage.setItem('@expenzez_security_enabled', 'true');
         if (request.biometricEnabled) {
@@ -126,7 +130,7 @@ export const securityAPI = {
         // Clear PIN removal flag since new PIN is now created
         await AsyncStorage.removeItem('@expenzez_pin_removed');
         
-        console.log('🔒 [SecurityAPI] ✅ PIN setup successful - stored locally and on server');
+        console.log('🔒 [SecurityAPI] ✅ PIN setup successful - old PIN cleared, new PIN stored locally and on server');
         console.log('🔒 [SecurityAPI] Server response:', response.data);
         return { success: true };
       } else {
@@ -144,6 +148,10 @@ export const securityAPI = {
       if (error.response?.status === 404 || !error.response) {
         console.log('🔒 [SecurityAPI] ⚠️ Server unavailable, storing PIN locally only');
         console.log('🔒 [SecurityAPI] Error details:', error.message);
+        
+        // CRITICAL FIX: Clear old local PIN before storing new one (fallback case)
+        console.log('🔒 [SecurityAPI] Clearing old local PIN before storing new PIN (fallback)');
+        await AsyncStorage.removeItem('@expenzez_app_password');
         
         await AsyncStorage.setItem('@expenzez_app_password', request.pin);
         await AsyncStorage.setItem('@expenzez_security_enabled', 'true');
