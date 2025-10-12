@@ -360,14 +360,14 @@ export const enhancedSecurityAPI = {
   /**
    * Validate PIN across all devices (cross-device PIN validation)
    */
-  validatePinCrossDevice: async (pin: string): Promise<{
+  validatePinCrossDevice: async (
+    pin: string
+  ): Promise<{
     success: boolean;
     error?: string;
   }> => {
     try {
-      console.log(
-        "🔐 [Enhanced Security] Validating PIN across all devices"
-      );
+      console.log("🔐 [Enhanced Security] Validating PIN across all devices");
 
       // Get device ID
       const deviceId = await deviceManager.getDeviceId();
@@ -388,7 +388,10 @@ export const enhancedSecurityAPI = {
           "❌ [Enhanced Security] Cross-device PIN validation failed:",
           response.data.message
         );
-        return { success: false, error: response.data.message || "Invalid PIN" };
+        return {
+          success: false,
+          error: response.data.message || "Invalid PIN",
+        };
       }
     } catch (error: any) {
       console.error(

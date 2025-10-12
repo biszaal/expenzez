@@ -626,10 +626,7 @@ export default function BillsScreen() {
 
   return (
     <SafeAreaView
-      style={[
-        styles.container,
-        { backgroundColor: colors.background.primary },
-      ]}
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
       <ScrollView
         style={styles.scrollView}

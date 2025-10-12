@@ -1,25 +1,14 @@
 import React, { useEffect, useState } from "react";
-import {
-  ScrollView,
-  RefreshControl,
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Dimensions,
-} from "react-native";
+import { ScrollView, RefreshControl, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import dayjs from "dayjs";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useSecurity } from "../../contexts/SecurityContext";
 import { useSubscription } from "../../contexts/SubscriptionContext";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { useAuth } from "../auth/AuthContext";
-import { useRouter } from "expo-router";
 import { PremiumUpgradeCard } from "../../components/premium/PremiumUpgradeCard";
 import { budgetAPI } from "../../services/api";
 import { transactionAPI } from "../../services/api/transactionAPI";
@@ -38,13 +27,6 @@ import {
   UpcomingBillsCard,
   NotificationCard,
 } from "../../components/home";
-import { EnhancedBalanceCard } from "../../components/home/EnhancedBalanceCard";
-import { EnhancedQuickActions } from "../../components/home/EnhancedQuickActions";
-import { EnhancedFinancialOverview } from "../../components/home/EnhancedFinancialOverview";
-import { EnhancedHomeHeader } from "../../components/home/EnhancedHomeHeader";
-import { EnhancedTransactionsList } from "../../components/home/EnhancedTransactionsList";
-
-const { width } = Dimensions.get("window");
 
 interface Transaction {
   id: string;
@@ -77,7 +59,6 @@ export default function HomeScreen() {
   const { isPremium } = useSubscription();
   const { unreadCount } = useNotifications();
   const { isLoggedIn, user } = useAuth();
-  const router = useRouter();
 
   // Core data state
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -161,11 +142,11 @@ export default function HomeScreen() {
             .startOf("month")
             .format("YYYY-MM-DD"),
           endDate: dayjs().endOf("month").format("YYYY-MM-DD"),
-        limit: 1000, // Load more for fallback balance calculation
+          limit: 1000, // Load more for fallback balance calculation
           useCache: true,
         })
         .catch((error) => {
-        console.error("❌ Error loading transactions:", error);
+          console.error("❌ Error loading transactions:", error);
           return {
             transactions: [],
             summary: {
@@ -196,8 +177,8 @@ export default function HomeScreen() {
         // Fallback: Calculate balance client-side from all loaded transactions
         finalBalance = (transactionResponse.transactions as any[]).reduce(
           (sum: number, tx: any): number => {
-          const amount = parseFloat(tx.amount) || 0;
-          return sum + amount;
+            const amount = parseFloat(tx.amount) || 0;
+            return sum + amount;
           },
           0
         );
@@ -390,40 +371,44 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Enhanced Header */}
-        <EnhancedHomeHeader />
-
-        {/* Balance Card Section */}
-        <View style={styles.balanceSection}>
-          <EnhancedBalanceCard
+        {/* Core Dashboard Section */}
+        <View style={styles.section}>
+          <HomeHeader />
+          <BalanceCard
             totalBalance={totalBalance}
             getTimeOfDay={getTimeOfDay}
             onRefresh={handleRefreshBalance}
             isRefreshing={balanceRefreshing}
           />
+          <QuickActions />
         </View>
 
-        {/* Quick Actions Section */}
-        <View style={styles.quickActionsSection}>
-          <EnhancedQuickActions />
+        {/* Contextual Cards Section */}
+        <View style={styles.section}>
+          {/* Show notifications only if there are unread notifications */}
+          {unreadCount > 0 && <NotificationCard />}
+
+          {/* Show premium upgrade occasionally, not always */}
+          {!isPremium && showPremiumCard && <PremiumUpgradeCard />}
+
+          <UpcomingBillsCard />
         </View>
 
         {/* Financial Overview Section */}
-        <View style={styles.overviewSection}>
-          <EnhancedFinancialOverview
+        <View style={styles.section}>
+          <MonthlyOverview
             thisMonthSpent={thisMonthSpent}
             userBudget={userBudget}
           />
         </View>
 
-        {/* Enhanced Transactions List */}
-        <EnhancedTransactionsList transactions={transactions} />
-
-        {/* Contextual Cards Section */}
-        <View style={styles.contextualSection}>
-          {unreadCount > 0 && <NotificationCard />}
-          {!isPremium && showPremiumCard && <PremiumUpgradeCard />}
-          <UpcomingBillsCard />
+        {/* Transactions Section */}
+        <View style={styles.section}>
+          <TransactionsList
+            transactions={transactions}
+            refreshingTransactions={fetchingData}
+            onRefreshTransactions={refreshData}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -438,312 +423,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: {
-    marginBottom: SPACING.xl,
-  },
-
-  // Header Section
-  headerSection: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 16,
-  },
-  welcomeSection: {
-    marginTop: 16,
-  },
-  welcomeText: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  welcomeSubtext: {
-    fontSize: 16,
-    fontWeight: "400",
-  },
-
-  // Balance Section
-  balanceSection: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  balanceGradientCard: {
-    borderRadius: 20,
-    padding: 24,
-    position: "relative",
-    overflow: "hidden",
-  },
-  balanceCardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 20,
-  },
-  balanceCardHeaderLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  balanceIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  balanceCardTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "white",
-    marginBottom: 2,
-  },
-  balanceCardSubtitle: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  balanceCardActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  balanceActionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  balanceAmountContainer: {
-    marginBottom: 16,
-  },
-  balanceAmount: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "white",
-    marginBottom: 8,
-  },
-  balanceChangeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  balanceChangeIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(16, 185, 129, 0.2)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 8,
-  },
-  balanceChangeText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#10B981",
-    marginLeft: 4,
-  },
-  balanceChangeLabel: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.7)",
-  },
-  balanceDecoration1: {
-    position: "absolute",
-    top: -20,
-    right: -20,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-  },
-  balanceDecoration2: {
-    position: "absolute",
-    bottom: -30,
-    right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-  },
-
-  // Quick Actions Section
-  quickActionsSection: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 16,
-  },
-  quickActionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  quickActionCard: {
-    width: (width - 64) / 2,
-    height: 120,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  quickActionGradient: {
-    flex: 1,
-    padding: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  quickActionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "white",
-    marginTop: 8,
-    marginBottom: 2,
-  },
-  quickActionSubtitle: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-
-  // Overview Section
-  overviewSection: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  overviewCard: {
-    borderRadius: 16,
-    padding: 20,
-  },
-  overviewStats: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  overviewStat: {
-    flex: 1,
-  },
-  overviewStatHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  overviewStatLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  overviewStatBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EF4444",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  overviewStatBadgeText: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "white",
-    marginLeft: 2,
-  },
-  overviewStatValue: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  overviewProgressBar: {
-    height: 4,
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  overviewProgressFill: {
-    height: "100%",
-    borderRadius: 2,
-  },
-  overviewDivider: {
-    width: 1,
-    backgroundColor: "#E5E7EB",
-    marginHorizontal: 16,
-  },
-
-  // Transactions Section
-  transactionsSection: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  viewAllButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 4,
-  },
-  viewAllButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "white",
-  },
-  transactionsCard: {
-    borderRadius: 16,
-    padding: 16,
-  },
-  transactionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  transactionContent: {
-    flex: 1,
-  },
-  transactionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  transactionDate: {
-    fontSize: 12,
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 32,
-  },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: "center",
-  },
-
-  // Contextual Section
-  contextualSection: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: SPACING.xl, // Add larger spacing between sections
   },
 });

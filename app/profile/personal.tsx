@@ -45,73 +45,93 @@ export default function PersonalInformationScreen() {
       try {
         console.log("🔍 [Personal] Fetching profile data...");
         const data = await getProfile();
-        console.log("📊 [Personal] Profile API response:", JSON.stringify(data, null, 2));
-        
+        console.log(
+          "📊 [Personal] Profile API response:",
+          JSON.stringify(data, null, 2)
+        );
+
         if (data) {
           // Map the API response to form fields
           const mappedData = {
-            firstName: data.firstName || data.givenName || data.first_name || "",
+            firstName:
+              data.firstName || data.givenName || data.first_name || "",
             lastName: data.lastName || data.familyName || data.last_name || "",
             email: data.email || "",
             phone: data.phone || data.phoneNumber || data.phone_number || "",
             address: data.address || "",
             city: data.city || "",
             country: data.country || "",
-            dateOfBirth: data.dateOfBirth || data.date_of_birth || data.birthDate || "",
+            dateOfBirth:
+              data.dateOfBirth || data.date_of_birth || data.birthDate || "",
           };
-          
-          console.log("✅ [Personal] Mapped profile data:", JSON.stringify(mappedData, null, 2));
+
+          console.log(
+            "✅ [Personal] Mapped profile data:",
+            JSON.stringify(mappedData, null, 2)
+          );
           setFormData(mappedData);
         } else {
-          console.log("⚠️ [Personal] No profile data returned, using user data as fallback");
+          console.log(
+            "⚠️ [Personal] No profile data returned, using user data as fallback"
+          );
           // If profile is null, try to use user data from AuthContext
-          const userData = user ? {
-            firstName: user.name?.split(' ')[0] || "",
-            lastName: user.name?.split(' ').slice(1).join(' ') || "",
-            email: user.email || "",
-            phone: "",
-            address: "",
-            city: "",
-            country: "",
-            dateOfBirth: "",
-          } : {
-            firstName: "",
-            lastName: "",
-            email: "",
-            phone: "",
-            address: "",
-            city: "",
-            country: "",
-            dateOfBirth: "",
-          };
-          
-          console.log("👤 [Personal] Using user data as fallback:", JSON.stringify(userData, null, 2));
+          const userData = user
+            ? {
+                firstName: user.name?.split(" ")[0] || "",
+                lastName: user.name?.split(" ").slice(1).join(" ") || "",
+                email: user.email || "",
+                phone: "",
+                address: "",
+                city: "",
+                country: "",
+                dateOfBirth: "",
+              }
+            : {
+                firstName: "",
+                lastName: "",
+                email: "",
+                phone: "",
+                address: "",
+                city: "",
+                country: "",
+                dateOfBirth: "",
+              };
+
+          console.log(
+            "👤 [Personal] Using user data as fallback:",
+            JSON.stringify(userData, null, 2)
+          );
           setFormData(userData);
         }
       } catch (error) {
         console.error("❌ [Personal] Error loading profile:", error);
         // Try to use user data as fallback on error
-        const userData = user ? {
-          firstName: user.name?.split(' ')[0] || "",
-          lastName: user.name?.split(' ').slice(1).join(' ') || "",
-          email: user.email || "",
-          phone: "",
-          address: "",
-          city: "",
-          country: "",
-          dateOfBirth: "",
-        } : {
-          firstName: "",
-          lastName: "",
-          email: "",
-          phone: "",
-          address: "",
-          city: "",
-          country: "",
-          dateOfBirth: "",
-        };
-        
-        console.log("🔄 [Personal] Using user data as fallback after error:", JSON.stringify(userData, null, 2));
+        const userData = user
+          ? {
+              firstName: user.name?.split(" ")[0] || "",
+              lastName: user.name?.split(" ").slice(1).join(" ") || "",
+              email: user.email || "",
+              phone: "",
+              address: "",
+              city: "",
+              country: "",
+              dateOfBirth: "",
+            }
+          : {
+              firstName: "",
+              lastName: "",
+              email: "",
+              phone: "",
+              address: "",
+              city: "",
+              country: "",
+              dateOfBirth: "",
+            };
+
+        console.log(
+          "🔄 [Personal] Using user data as fallback after error:",
+          JSON.stringify(userData, null, 2)
+        );
         setFormData(userData);
       }
       setLoading(false);
@@ -119,8 +139,14 @@ export default function PersonalInformationScreen() {
     fetchProfile();
   }, [user]);
 
-  if (loading) return <Text style={{ padding: 20, textAlign: 'center' }}>Loading...</Text>;
-  if (!formData) return <Text style={{ padding: 20, textAlign: 'center' }}>Unable to load profile</Text>;
+  if (loading)
+    return <Text style={{ padding: 20, textAlign: "center" }}>Loading...</Text>;
+  if (!formData)
+    return (
+      <Text style={{ padding: 20, textAlign: "center" }}>
+        Unable to load profile
+      </Text>
+    );
 
   // Handle form field changes
   const handleFieldChange = (field: string, value: string) => {
@@ -168,12 +194,12 @@ export default function PersonalInformationScreen() {
                 {
                   text: "Yes, Submit Request",
                   style: "destructive",
-                  onPress: submitDataDeletionRequest
-                }
+                  onPress: submitDataDeletionRequest,
+                },
               ]
             );
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -182,27 +208,30 @@ export default function PersonalInformationScreen() {
   const submitDataDeletionRequest = async () => {
     try {
       console.log("Submitting data deletion request...");
-      
+
       // TODO: Implement API call to submit data deletion request
       // For now, we'll show a success message with instructions
-      
+
       Alert.alert(
         "Data Deletion Request Submitted",
-        "Your request has been successfully submitted.\n\nReference ID: DDR-" + Date.now() + "\n\nYou will receive an email confirmation shortly. Your data will be deleted within 30 days as required by data protection regulations.\n\nIf you need to contact us about this request, please reference the ID above.",
+        "Your request has been successfully submitted.\n\nReference ID: DDR-" +
+          Date.now() +
+          "\n\nYou will receive an email confirmation shortly. Your data will be deleted within 30 days as required by data protection regulations.\n\nIf you need to contact us about this request, please reference the ID above.",
         [
           {
             text: "OK",
             onPress: () => {
               // Optionally navigate back or perform other actions
               console.log("Data deletion request acknowledged by user");
-            }
-          }
+            },
+          },
         ]
       );
-      
     } catch (error) {
       console.error("Error submitting data deletion request:", error);
-      showError("Failed to submit data deletion request. Please try again later.");
+      showError(
+        "Failed to submit data deletion request. Please try again later."
+      );
     }
   };
 
@@ -215,12 +244,12 @@ export default function PersonalInformationScreen() {
         { text: "Cancel", style: "cancel" },
         {
           text: "JSON Format",
-          onPress: () => exportData("json")
+          onPress: () => exportData("json"),
         },
         {
-          text: "CSV Format", 
-          onPress: () => exportData("csv")
-        }
+          text: "CSV Format",
+          onPress: () => exportData("csv"),
+        },
       ]
     );
   };
@@ -229,12 +258,12 @@ export default function PersonalInformationScreen() {
   const exportData = async (format: string) => {
     try {
       console.log(`Starting ${format.toUpperCase()} data export...`);
-      
+
       // TODO: Implement actual data export API call
       // For now, we'll show a success message
-      
+
       const exportId = "EXP-" + Date.now();
-      
+
       Alert.alert(
         "Data Export Started",
         `Your data export in ${format.toUpperCase()} format has been initiated.\n\nExport ID: ${exportId}\n\nYou will receive an email with a download link within the next few minutes. The download link will be valid for 7 days.\n\nYour export will include:\n• Profile information\n• Transaction history\n• Account settings\n• Banking connections (anonymized)`,
@@ -242,18 +271,18 @@ export default function PersonalInformationScreen() {
           {
             text: "OK",
             onPress: () => {
-              showSuccess(`${format.toUpperCase()} export requested successfully`);
-            }
-          }
+              showSuccess(
+                `${format.toUpperCase()} export requested successfully`
+              );
+            },
+          },
         ]
       );
-      
     } catch (error) {
       console.error("Error requesting data export:", error);
       showError("Failed to start data export. Please try again later.");
     }
   };
-
 
   // If not logged in, don't render anything (auth guard will handle redirect)
   if (!isLoggedIn) {
@@ -290,7 +319,6 @@ export default function PersonalInformationScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-
         {/* Personal Details Section */}
         <Section title="Personal Details">
           <View style={styles.formContainer}>

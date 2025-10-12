@@ -25,7 +25,9 @@ export const EnhancedBillsHeader: React.FC<EnhancedBillsHeaderProps> = ({
   const { user } = useAuth();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+    <View
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
       {/* Simple Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -33,12 +35,16 @@ export const EnhancedBillsHeader: React.FC<EnhancedBillsHeaderProps> = ({
             Bills
           </Text>
           <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
-            {totalBills} recurring bills • £{Math.abs(monthlyTotal).toFixed(0)}/month
+            {totalBills} recurring bills • £{Math.abs(monthlyTotal).toFixed(0)}
+            /month
           </Text>
         </View>
-        
+
         <TouchableOpacity
-          style={[styles.refreshButton, { backgroundColor: colors.background.secondary }]}
+          style={[
+            styles.refreshButton,
+            { backgroundColor: colors.background.secondary },
+          ]}
           onPress={onRefresh}
           disabled={isRefreshing}
           activeOpacity={0.7}
@@ -53,7 +59,12 @@ export const EnhancedBillsHeader: React.FC<EnhancedBillsHeaderProps> = ({
 
       {/* Quick Stats Row */}
       <View style={styles.statsRow}>
-        <View style={[styles.statItem, { backgroundColor: colors.background.secondary }]}>
+        <View
+          style={[
+            styles.statItem,
+            { backgroundColor: colors.background.secondary },
+          ]}
+        >
           <Text style={[styles.statValue, { color: colors.text.primary }]}>
             {totalBills}
           </Text>
@@ -61,8 +72,13 @@ export const EnhancedBillsHeader: React.FC<EnhancedBillsHeaderProps> = ({
             Total Bills
           </Text>
         </View>
-        
-        <View style={[styles.statItem, { backgroundColor: colors.background.secondary }]}>
+
+        <View
+          style={[
+            styles.statItem,
+            { backgroundColor: colors.background.secondary },
+          ]}
+        >
           <Text style={[styles.statValue, { color: colors.text.primary }]}>
             £{Math.abs(monthlyTotal).toFixed(0)}
           </Text>
@@ -70,8 +86,13 @@ export const EnhancedBillsHeader: React.FC<EnhancedBillsHeaderProps> = ({
             Monthly Total
           </Text>
         </View>
-        
-        <View style={[styles.statItem, { backgroundColor: colors.background.secondary }]}>
+
+        <View
+          style={[
+            styles.statItem,
+            { backgroundColor: colors.background.secondary },
+          ]}
+        >
           <Text style={[styles.statValue, { color: colors.error[500] }]}>
             {upcomingCount}
           </Text>

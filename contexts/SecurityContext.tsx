@@ -418,20 +418,28 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
       if (isLoggedIn) {
         try {
           // IMPROVED: Check if user has ANY PINs across all devices (not just this device)
-          console.log("🔐 [SecurityContext] Checking if user has any PINs across all devices...");
-          
+          console.log(
+            "🔐 [SecurityContext] Checking if user has any PINs across all devices..."
+          );
+
           try {
             // Try the new cross-device PIN check first
             const response = await api.get("/security/user-pins");
-            hasPinOnServer = !!(response.data.success && response.data.pins && response.data.pins.length > 0);
-            
+            hasPinOnServer = !!(
+              response.data.success &&
+              response.data.pins &&
+              response.data.pins.length > 0
+            );
+
             console.log("🔐 [SecurityContext] Cross-device PIN check:", {
               hasPinOnServer,
               pinCount: response.data.pins?.length || 0,
             });
           } catch (newApiError) {
-            console.log("🔐 [SecurityContext] New API not available, falling back to device-specific check");
-            
+            console.log(
+              "🔐 [SecurityContext] New API not available, falling back to device-specific check"
+            );
+
             // Fallback to device-specific check if new endpoint is not available
             const deviceId = await deviceManager.getDeviceId();
             const securitySettings =
