@@ -6,10 +6,13 @@ import { cachedApiCall, CACHE_TTL } from "./config/apiCache";
 function extractMerchantFromDescription(description: string): string {
   // Remove common prefixes and clean up merchant names
   return description
-    .replace(/^(CARD PAYMENT TO |FASTER PAYMENT TO |DIRECT DEBIT FROM |STANDING ORDER TO )/i, '')
-    .replace(/\s+\d{2}\/\d{2}\/\d{4}.*$/i, '') // Remove dates
-    .replace(/\s+REF:.*$/i, '') // Remove reference numbers
-    .replace(/\s+\*\d+.*$/i, '') // Remove card numbers
+    .replace(
+      /^(CARD PAYMENT TO |FASTER PAYMENT TO |DIRECT DEBIT FROM |STANDING ORDER TO )/i,
+      ""
+    )
+    .replace(/\s+\d{2}\/\d{2}\/\d{4}.*$/i, "") // Remove dates
+    .replace(/\s+REF:.*$/i, "") // Remove reference numbers
+    .replace(/\s+\*\d+.*$/i, "") // Remove card numbers
     .trim()
     .substring(0, 50); // Limit length
 }
@@ -18,20 +21,51 @@ function extractMerchantFromDescription(description: string): string {
 function categorizeTransaction(description: string): string {
   const desc = description.toLowerCase();
 
-  if (desc.includes('grocery') || desc.includes('supermarket') || desc.includes('tesco') || desc.includes('asda') || desc.includes('sainsbury')) {
-    return 'groceries';
-  } else if (desc.includes('restaurant') || desc.includes('cafe') || desc.includes('pizza') || desc.includes('mcdonald') || desc.includes('kfc')) {
-    return 'dining';
-  } else if (desc.includes('fuel') || desc.includes('petrol') || desc.includes('shell') || desc.includes('bp')) {
-    return 'transport';
-  } else if (desc.includes('shopping') || desc.includes('amazon') || desc.includes('ebay')) {
-    return 'shopping';
-  } else if (desc.includes('salary') || desc.includes('wage') || desc.includes('payroll')) {
-    return 'income';
-  } else if (desc.includes('rent') || desc.includes('mortgage') || desc.includes('utilities') || desc.includes('electric') || desc.includes('gas')) {
-    return 'bills';
+  if (
+    desc.includes("grocery") ||
+    desc.includes("supermarket") ||
+    desc.includes("tesco") ||
+    desc.includes("asda") ||
+    desc.includes("sainsbury")
+  ) {
+    return "groceries";
+  } else if (
+    desc.includes("restaurant") ||
+    desc.includes("cafe") ||
+    desc.includes("pizza") ||
+    desc.includes("mcdonald") ||
+    desc.includes("kfc")
+  ) {
+    return "dining";
+  } else if (
+    desc.includes("fuel") ||
+    desc.includes("petrol") ||
+    desc.includes("shell") ||
+    desc.includes("bp")
+  ) {
+    return "transport";
+  } else if (
+    desc.includes("shopping") ||
+    desc.includes("amazon") ||
+    desc.includes("ebay")
+  ) {
+    return "shopping";
+  } else if (
+    desc.includes("salary") ||
+    desc.includes("wage") ||
+    desc.includes("payroll")
+  ) {
+    return "income";
+  } else if (
+    desc.includes("rent") ||
+    desc.includes("mortgage") ||
+    desc.includes("utilities") ||
+    desc.includes("electric") ||
+    desc.includes("gas")
+  ) {
+    return "bills";
   } else {
-    return 'other';
+    return "other";
   }
 }
 
@@ -43,7 +77,9 @@ export const getInstitutions = async (...args: any[]) => {
 };
 
 export const getAccountDetails = async (accountId: string) => {
-  console.log("📱 [DataSource] Manual input mode: No account details available");
+  console.log(
+    "📱 [DataSource] Manual input mode: No account details available"
+  );
   return {
     id: accountId,
     name: "Manual Account",
@@ -62,7 +98,9 @@ export const getAccountDetails = async (accountId: string) => {
 };
 
 export const getAccountBalance = async (accountId: string) => {
-  console.log("📱 [DataSource] Manual input mode: No account balance available");
+  console.log(
+    "📱 [DataSource] Manual input mode: No account balance available"
+  );
   return {
     balanceAmount: {
       amount: 0,
@@ -74,7 +112,9 @@ export const getAccountBalance = async (accountId: string) => {
 };
 
 export const getAccountTransactions = async (accountId: string) => {
-  console.log("📱 [DataSource] Manual input mode: No account transactions available");
+  console.log(
+    "📱 [DataSource] Manual input mode: No account transactions available"
+  );
   return {
     transactions: [],
   };
@@ -83,7 +123,9 @@ export const getAccountTransactions = async (accountId: string) => {
 export const getAllAccountIds = async () => {
   try {
     // 📱 MANUAL INPUT MODE: Return empty array since we're not using bank connections
-    console.log("📱 [DataSource] Manual input mode: Skipping bank account fetch");
+    console.log(
+      "📱 [DataSource] Manual input mode: Skipping bank account fetch"
+    );
     return [];
   } catch (error: any) {
     console.error("Error loading accounts:", error);
@@ -92,7 +134,9 @@ export const getAllAccountIds = async () => {
 };
 
 export const refreshAccountBalances = async () => {
-  console.log("📱 [DataSource] Manual input mode: No account balances to refresh");
+  console.log(
+    "📱 [DataSource] Manual input mode: No account balances to refresh"
+  );
   return { success: true, message: "Manual mode - no balances to refresh" };
 };
 
@@ -102,13 +146,62 @@ export const getSpendingCategories = async () => {
   try {
     // Return default categories for manual input mode
     return [
-      { id: "food", name: "Food & Dining", icon: "restaurant", defaultBudget: 300, spent: 0, color: "#3B82F6" },
-      { id: "transport", name: "Transportation", icon: "car", defaultBudget: 150, spent: 0, color: "#10B981" },
-      { id: "entertainment", name: "Entertainment", icon: "game-controller", defaultBudget: 100, spent: 0, color: "#8B5CF6" },
-      { id: "shopping", name: "Shopping", icon: "bag", defaultBudget: 200, spent: 0, color: "#F59E0B" },
-      { id: "bills", name: "Bills & Utilities", icon: "flash", defaultBudget: 150, spent: 0, color: "#EF4444" },
-      { id: "health", name: "Health & Fitness", icon: "fitness", defaultBudget: 100, spent: 0, color: "#06B6D4" },
-      { id: "other", name: "Other", icon: "card", defaultBudget: 100, spent: 0, color: "#84CC16" },
+      {
+        id: "food",
+        name: "Food & Dining",
+        icon: "restaurant",
+        defaultBudget: 300,
+        spent: 0,
+        color: "#3B82F6",
+      },
+      {
+        id: "transport",
+        name: "Transportation",
+        icon: "car",
+        defaultBudget: 150,
+        spent: 0,
+        color: "#10B981",
+      },
+      {
+        id: "entertainment",
+        name: "Entertainment",
+        icon: "game-controller",
+        defaultBudget: 100,
+        spent: 0,
+        color: "#8B5CF6",
+      },
+      {
+        id: "shopping",
+        name: "Shopping",
+        icon: "bag",
+        defaultBudget: 200,
+        spent: 0,
+        color: "#F59E0B",
+      },
+      {
+        id: "bills",
+        name: "Bills & Utilities",
+        icon: "flash",
+        defaultBudget: 150,
+        spent: 0,
+        color: "#EF4444",
+      },
+      {
+        id: "health",
+        name: "Health & Fitness",
+        icon: "fitness",
+        defaultBudget: 100,
+        spent: 0,
+        color: "#06B6D4",
+      },
+      {
+        id: "other",
+        name: "Other",
+        icon: "card",
+        defaultBudget: 100,
+        spent: 0,
+        color: "#84CC16",
+      },
     ];
   } catch (error) {
     console.error("Error loading spending categories:", error);
@@ -117,7 +210,9 @@ export const getSpendingCategories = async () => {
 };
 
 export const getPaymentMethods = async () => {
-  console.log("📱 [DataSource] Manual input mode: No payment methods available");
+  console.log(
+    "📱 [DataSource] Manual input mode: No payment methods available"
+  );
   return [];
 };
 
@@ -134,17 +229,26 @@ export const getLegalSections = async () => {
 export const getNotificationSettings = async () => {
   try {
     // Check if app is locked first - prevent API calls that cause session expiry
-    const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
-    const isSecurityEnabled = await AsyncStorage.getItem('@expenzez_security_enabled');
+    const AsyncStorage = (
+      await import("@react-native-async-storage/async-storage")
+    ).default;
+    const isSecurityEnabled = await AsyncStorage.getItem(
+      "@expenzez_security_enabled"
+    );
 
-    if (isSecurityEnabled === 'true') {
-      const lastUnlockTime = await AsyncStorage.getItem('@expenzez_last_unlock');
+    if (isSecurityEnabled === "true") {
+      const lastUnlockTime = await AsyncStorage.getItem(
+        "@expenzez_last_unlock"
+      );
       const sessionTimeout = 15 * 60 * 1000; // 15 minutes (matches security system)
       const now = Date.now();
-      const hasValidSession = lastUnlockTime && (now - parseInt(lastUnlockTime)) < sessionTimeout;
+      const hasValidSession =
+        lastUnlockTime && now - parseInt(lastUnlockTime) < sessionTimeout;
 
       if (!hasValidSession) {
-        console.log("🔒 [DataSource] App is locked, skipping notification preferences fetch to prevent session expiry");
+        console.log(
+          "🔒 [DataSource] App is locked, skipping notification preferences fetch to prevent session expiry"
+        );
         return getDefaultNotificationSettings(); // Return defaults instead of making API call
       }
     }
@@ -180,17 +284,26 @@ const getDefaultNotificationSettings = () => ({
 export const getRecentNotifications = async () => {
   try {
     // Check if app is locked first - prevent API calls that cause session expiry
-    const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
-    const isSecurityEnabled = await AsyncStorage.getItem('@expenzez_security_enabled');
+    const AsyncStorage = (
+      await import("@react-native-async-storage/async-storage")
+    ).default;
+    const isSecurityEnabled = await AsyncStorage.getItem(
+      "@expenzez_security_enabled"
+    );
 
-    if (isSecurityEnabled === 'true') {
-      const lastUnlockTime = await AsyncStorage.getItem('@expenzez_last_unlock');
+    if (isSecurityEnabled === "true") {
+      const lastUnlockTime = await AsyncStorage.getItem(
+        "@expenzez_last_unlock"
+      );
       const sessionTimeout = 15 * 60 * 1000; // 15 minutes (matches security system)
       const now = Date.now();
-      const hasValidSession = lastUnlockTime && (now - parseInt(lastUnlockTime)) < sessionTimeout;
+      const hasValidSession =
+        lastUnlockTime && now - parseInt(lastUnlockTime) < sessionTimeout;
 
       if (!hasValidSession) {
-        console.log("🔒 [DataSource] App is locked, skipping notification history fetch to prevent session expiry");
+        console.log(
+          "🔒 [DataSource] App is locked, skipping notification history fetch to prevent session expiry"
+        );
         return []; // Return empty array instead of making API call
       }
     }
@@ -204,23 +317,30 @@ export const getRecentNotifications = async () => {
       id: notification.id || notification.notificationId,
       title: notification.title,
       message: notification.message,
-      timestamp: new Date(notification.createdAt || notification.timestamp).getTime(),
-      type: notification.type || 'account',
+      timestamp: new Date(
+        notification.createdAt || notification.timestamp
+      ).getTime(),
+      type: notification.type || "account",
       isRead: notification.read || false,
-      ...notification.data
+      ...notification.data,
     }));
   } catch (error) {
     console.error("Error loading real notifications:", error);
 
     // Handle timeout errors gracefully
-    if ((error as any).code === 'ECONNABORTED' || (error as any).message?.includes('timeout')) {
+    if (
+      (error as any).code === "ECONNABORTED" ||
+      (error as any).message?.includes("timeout")
+    ) {
       console.warn("Notification request timed out, returning empty list");
       return [];
     }
 
     // API not available, return sample notifications for demo
     if ((error as any).response?.status === 404) {
-      console.log('Notifications API not available, returning sample notifications for demo');
+      console.log(
+        "Notifications API not available, returning sample notifications for demo"
+      );
       return getSampleNotifications();
     }
 
@@ -231,78 +351,28 @@ export const getRecentNotifications = async () => {
 
 // Sample notifications for development/demo purposes
 const getSampleNotifications = () => {
-  const now = Date.now();
-  const hour = 60 * 60 * 1000;
-  const day = 24 * hour;
-
-  return [
-    {
-      id: 'sample_1',
-      title: 'Welcome to Smart Notifications!',
-      message: 'Your AI-powered financial coach is now active. Start adding transactions to get personalized insights.',
-      timestamp: now - (2 * hour),
-      type: 'insight',
-      isRead: false,
-      amount: null,
-      merchant: null,
-      category: null
-    },
-    {
-      id: 'sample_2',
-      title: 'Budget Tracking Available',
-      message: 'Set up your first budget to receive smart spending alerts and achieve your financial goals.',
-      timestamp: now - (6 * hour),
-      type: 'budget',
-      isRead: false,
-      amount: null,
-      merchant: null,
-      category: 'budgeting'
-    },
-    {
-      id: 'sample_3',
-      title: 'Security Features Enabled',
-      message: 'Your account is protected with biometric authentication and smart security monitoring.',
-      timestamp: now - (1 * day),
-      type: 'security',
-      isRead: true,
-      amount: null,
-      merchant: null,
-      category: 'security'
-    },
-    {
-      id: 'sample_4',
-      title: 'AI Assistant Ready',
-      message: 'Chat with your AI financial advisor for personalized money management tips and insights.',
-      timestamp: now - (1 * day + 4 * hour),
-      type: 'insight',
-      isRead: true,
-      amount: null,
-      merchant: null,
-      category: 'ai'
-    },
-    {
-      id: 'sample_5',
-      title: 'Goal Setting Available',
-      message: 'Create savings goals and track your progress with smart milestone notifications.',
-      timestamp: now - (2 * day),
-      type: 'insight',
-      isRead: true,
-      amount: null,
-      merchant: null,
-      category: 'goals'
-    }
-  ];
+  // Return empty array to avoid hardcoded notifications
+  // Real notifications should come from the backend API
+  console.log(
+    "📱 [DataSource] No sample notifications - using real backend data only"
+  );
+  return [];
 };
 
-export const getProfile = async (options: { useCache?: boolean; forceRefresh?: boolean } = { useCache: true, forceRefresh: false }) => {
+export const getProfile = async (
+  options: { useCache?: boolean; forceRefresh?: boolean } = {
+    useCache: true,
+    forceRefresh: false,
+  }
+) => {
   try {
     if (options.useCache) {
       return await cachedApiCall(
-        'user_profile',
+        "user_profile",
         async () => {
           const response = await profileAPI.getProfile();
           if (!response || !response.profile) {
-            console.warn('⚠️ Profile API returned null or empty response');
+            console.warn("⚠️ Profile API returned null or empty response");
             return null;
           }
           return response.profile;
@@ -313,7 +383,7 @@ export const getProfile = async (options: { useCache?: boolean; forceRefresh?: b
     } else {
       const response = await profileAPI.getProfile();
       if (!response || !response.profile) {
-        console.warn('⚠️ Profile API returned null or empty response');
+        console.warn("⚠️ Profile API returned null or empty response");
         return null;
       }
       return response.profile;
@@ -332,11 +402,16 @@ export const getProfile = async (options: { useCache?: boolean; forceRefresh?: b
   }
 };
 
-export const getCreditScore = async (options: { useCache?: boolean; forceRefresh?: boolean } = { useCache: true, forceRefresh: false }) => {
+export const getCreditScore = async (
+  options: { useCache?: boolean; forceRefresh?: boolean } = {
+    useCache: true,
+    forceRefresh: false,
+  }
+) => {
   try {
     if (options.useCache) {
       return await cachedApiCall(
-        'credit_score',
+        "credit_score",
         async () => {
           const response = await profileAPI.getCreditScore();
           return response.creditScore;
@@ -361,11 +436,13 @@ export const getCreditScore = async (options: { useCache?: boolean; forceRefresh
 export const getGoals = async () => {
   try {
     const response = await profileAPI.getGoals();
-    return response.goals || {
-      completed: 0,
-      total: 0,
-      items: [],
-    };
+    return (
+      response.goals || {
+        completed: 0,
+        total: 0,
+        items: [],
+      }
+    );
   } catch (error) {
     console.error("Error loading goals:", error);
     return {
@@ -455,7 +532,9 @@ export const getMonths = async () => {
 // 📱 MANUAL INPUT MODE: Use transactionAPI instead of banking APIs
 export const getTransactions = async () => {
   try {
-    console.log("[DataSource] getTransactions called - using manual transaction API");
+    console.log(
+      "[DataSource] getTransactions called - using manual transaction API"
+    );
 
     const { transactionAPI } = await import("./api/transactionAPI");
     const response = await transactionAPI.getTransactions({ limit: 2000 });
@@ -467,24 +546,32 @@ export const getTransactions = async () => {
       return [];
     }
 
-    console.log("[DataSource] Found transactions:", response.transactions.length);
+    console.log(
+      "[DataSource] Found transactions:",
+      response.transactions.length
+    );
 
     // Return the transactions with proper formatting
-    const formattedTransactions = response.transactions.map((tx: any, index: number) => ({
-      // Keep all original fields from API
-      ...tx,
-      // Add UI-expected fields
-      id: tx.id || `tx_${index}`,
-      transaction_id: tx.id,
-      account_id: tx.accountId || 'manual',
-      merchant_name: tx.merchant || tx.description || 'Manual Entry',
-      transaction_type: tx.type || (parseFloat(tx.amount || '0') < 0 ? 'debit' : 'credit'),
-      bank_name: tx.bankName || 'Manual Entry',
-    }));
+    const formattedTransactions = response.transactions.map(
+      (tx: any, index: number) => ({
+        // Keep all original fields from API
+        ...tx,
+        // Add UI-expected fields
+        id: tx.id || `tx_${index}`,
+        transaction_id: tx.id,
+        account_id: tx.accountId || "manual",
+        merchant_name: tx.merchant || tx.description || "Manual Entry",
+        transaction_type:
+          tx.type || (parseFloat(tx.amount || "0") < 0 ? "debit" : "credit"),
+        bank_name: tx.bankName || "Manual Entry",
+      })
+    );
 
-    console.log("[DataSource] Returning formatted transactions:", formattedTransactions.length);
+    console.log(
+      "[DataSource] Returning formatted transactions:",
+      formattedTransactions.length
+    );
     return formattedTransactions;
-
   } catch (error: any) {
     console.error("[DataSource] Error with transaction API call:", error);
     return [];
