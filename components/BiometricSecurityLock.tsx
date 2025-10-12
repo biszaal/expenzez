@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../app/auth/AuthContext";
 import { nativeSecurityAPI } from "../services/api/nativeSecurityAPI";
+import { enhancedSecurityAPI } from "../services/api/enhancedSecurityAPI";
 import { deviceManager } from "../services/deviceManager";
 import { spacing, borderRadius, shadows, typography } from "../constants/theme";
 import PinInput from "./PinInput";
@@ -294,11 +295,8 @@ export default function BiometricSecurityLock({ isVisible, onUnlock }: Biometric
         return;
       }
       
-      // Use secure API for validation (PBKDF2 hash-based validation)
-      const result = await nativeSecurityAPI.validatePin({
-        pin: pinToCheck,
-        deviceId
-      });
+      // Use cross-device PIN validation (validates against all user devices)
+      const result = await enhancedSecurityAPI.validatePinCrossDevice(pinToCheck);
       
       if (result.success) {
         console.log('🔐 [BiometricLock] PIN validation successful, resetting attempts');
