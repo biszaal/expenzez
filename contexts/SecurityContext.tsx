@@ -417,47 +417,37 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
       let hasPinOnServer = false;
       if (isLoggedIn) {
         try {
-          const deviceId = await deviceManager.getDeviceId();
-          const securitySettings =
-            await nativeSecurityAPI.getSecuritySettings(deviceId);
-          hasPinOnServer =
-            !!securitySettings && !!securitySettings.encryptedPin;
+          // IMPROVED: Check if user has ANY PINs across all devices (not just this device)
+          console.log("🔐 [SecurityContext] Checking if user has any PINs across all devices...");
+          
+          try {
+            // Try the new cross-device PIN check first
+            const response = await api.get("/security/user-pins");
+            hasPinOnServer = !!(response.data.success && response.data.pins && response.data.pins.length > 0);
+            
+            console.log("🔐 [SecurityContext] Cross-device PIN check:", {
+              hasPinOnServer,
+              pinCount: response.data.pins?.length || 0,
+            });
+          } catch (newApiError) {
+            console.log("🔐 [SecurityContext] New API not available, falling back to device-specific check");
+            
+            // Fallback to device-specific check if new endpoint is not available
+            const deviceId = await deviceManager.getDeviceId();
+            const securitySettings =
+              await nativeSecurityAPI.getSecuritySettings(deviceId);
+            hasPinOnServer =
+              !!securitySettings && !!securitySettings.encryptedPin;
 
-          console.log("🔐 [SecurityContext] Server PIN check:", {
-            hasPinOnServer,
-            hasSettings: !!securitySettings,
-            hasEncryptedPin: !!securitySettings?.encryptedPin,
-          });
-
-          // CRITICAL FIX: If server has PIN but local doesn't, sync it down
-          // This happens when user logs in from a different device or after cache clear
-          // BUT: Don't sync if security was just disabled (check the security enabled flag)
-          if (hasPinOnServer && securitySettings?.encryptedPin) {
-            const hasLocalPin = await AsyncStorage.getItem(
-              "@expenzez_app_password"
-            );
-            const isSecurityLocallyEnabled =
-              await AsyncStorage.getItem(SECURITY_ENABLED_KEY);
-
-            // Only sync down if security is enabled locally - prevents re-enabling after disable
-            if (!hasLocalPin && isSecurityLocallyEnabled === "true") {
-              console.log(
-                "🔐 [SecurityContext] Server PIN exists but no local PIN - syncing down"
-              );
-              // Store the server's encrypted PIN locally for validation
-              await AsyncStorage.setItem(
-                "@expenzez_app_password",
-                securitySettings.encryptedPin
-              );
-              console.log(
-                "🔐 [SecurityContext] Server PIN synced to local storage"
-              );
-            } else if (!hasLocalPin && isSecurityLocallyEnabled !== "true") {
-              console.log(
-                "🔐 [SecurityContext] Server PIN exists but security disabled locally - not syncing"
-              );
-            }
+            console.log("🔐 [SecurityContext] Device-specific PIN check:", {
+              hasPinOnServer,
+              hasSettings: !!securitySettings,
+              hasEncryptedPin: !!securitySettings?.encryptedPin,
+            });
           }
+
+          // Note: PIN syncing is now handled below in the main security check logic
+          // using the new cross-device sync endpoint
         } catch (error) {
           // Silently handle server errors - no user-facing error needed
           console.log(
@@ -550,22 +540,23 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
           // IMPROVED CROSS-DEVICE PIN SYNC: If server has PIN but local doesn't, sync it
           if (hasPinOnServer && !hasLocalPin) {
             console.log(
-              "🔄 [SecurityContext] Server has PIN but local doesn't - syncing PIN from server"
+              "🔄 [SecurityContext] Server has PIN but local doesn't - syncing PIN from server using new endpoint"
             );
             try {
-              // Get the encrypted PIN from server and store it locally
-              const deviceId = await deviceManager.getDeviceId();
-              const securitySettings = await nativeSecurityAPI.getSecuritySettings(deviceId);
-              
-              if (securitySettings && securitySettings.encryptedPin) {
-                // Store the server's encrypted PIN locally for validation
-                await AsyncStorage.setItem("@expenzez_app_password", securitySettings.encryptedPin);
-                await AsyncStorage.setItem("@expenzez_has_pin", "true");
-                console.log("✅ [SecurityContext] PIN synced from server successfully");
+              // Use the new cross-device PIN sync endpoint
+              const syncResult = await enhancedSecurityAPI.syncPinFromServer();
+
+              if (syncResult.success) {
+                console.log(
+                  "✅ [SecurityContext] PIN synced from server successfully using new endpoint"
+                );
                 // Update hasLocalPin for the rest of the logic
                 hasLocalPin = true;
               } else {
-                console.log("⚠️ [SecurityContext] No PIN available on server for this device");
+                console.log(
+                  "⚠️ [SecurityContext] PIN sync failed:",
+                  syncResult.error
+                );
                 // Don't require PIN setup if server doesn't have PIN - just disable security
                 setIsSecurityEnabled(false);
                 setIsLocked(false);
