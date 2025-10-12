@@ -313,15 +313,23 @@ export const enhancedSecurityAPI = {
       // Call server to get all PINs for this user
       const response = await api.get("/security/user-pins");
 
-      if (response.data.success && response.data.pins && response.data.pins.length > 0) {
+      if (
+        response.data.success &&
+        response.data.pins &&
+        response.data.pins.length > 0
+      ) {
         // Find the most recent PIN (or any PIN for cross-device sync)
-        const mostRecentPin = response.data.pins.sort((a: any, b: any) => 
-          (b.lastUpdated || b.createdAt) - (a.lastUpdated || a.createdAt)
+        const mostRecentPin = response.data.pins.sort(
+          (a: any, b: any) =>
+            (b.lastUpdated || b.createdAt) - (a.lastUpdated || a.createdAt)
         )[0];
 
         if (mostRecentPin && mostRecentPin.encryptedPin) {
           // Store the PIN locally
-          await AsyncStorage.setItem("@expenzez_app_password", mostRecentPin.encryptedPin);
+          await AsyncStorage.setItem(
+            "@expenzez_app_password",
+            mostRecentPin.encryptedPin
+          );
           await AsyncStorage.setItem("@expenzez_has_pin", "true");
 
           console.log(
@@ -346,6 +354,48 @@ export const enhancedSecurityAPI = {
         error
       );
       return { success: false, error: error.message || "Sync failed" };
+    }
+  },
+
+  /**
+   * Validate PIN across all devices (cross-device PIN validation)
+   */
+  validatePinCrossDevice: async (pin: string): Promise<{
+    success: boolean;
+    error?: string;
+  }> => {
+    try {
+      console.log(
+        "🔐 [Enhanced Security] Validating PIN across all devices"
+      );
+
+      // Get device ID
+      const deviceId = await deviceManager.getDeviceId();
+
+      // Call server to validate PIN across all devices
+      const response = await api.post("/security/validate-pin", {
+        pin: pin,
+        deviceId: deviceId,
+      });
+
+      if (response.data.success) {
+        console.log(
+          "✅ [Enhanced Security] Cross-device PIN validation successful"
+        );
+        return { success: true };
+      } else {
+        console.log(
+          "❌ [Enhanced Security] Cross-device PIN validation failed:",
+          response.data.message
+        );
+        return { success: false, error: response.data.message || "Invalid PIN" };
+      }
+    } catch (error: any) {
+      console.error(
+        "❌ [Enhanced Security] Error validating PIN across devices:",
+        error
+      );
+      return { success: false, error: error.message || "Validation failed" };
     }
   },
 };
