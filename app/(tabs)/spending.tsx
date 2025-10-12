@@ -26,6 +26,7 @@ import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { ChartData, ChartDataPoint } from "../../components/charts";
 import { processTransactionExpense } from "../../utils/expenseDetection";
 import { clearAllCache } from "../../services/config/apiCache";
+import { PerformanceMonitor } from "../../utils/performanceOptimizations";
 import {
   SpendingTabSwitch,
   SpendingMonthPicker,
@@ -68,32 +69,62 @@ export default function SpendingPage() {
     });
   }, [transactions, selectedMonth]);
 
-  // Monthly data calculation
+  // Monthly data calculation - OPTIMIZED with performance monitoring
   const monthlyData = useMemo(() => {
+    const stopTiming = PerformanceMonitor.startTiming(
+      "monthly-data-calculation"
+    );
+
     const monthlySpentByCategory: Record<string, number> = {};
     const monthlySpentByMerchant: Record<string, number> = {};
+
+    // Only process if we have transactions
+    if (monthlyTransactions.length === 0) {
+      stopTiming();
+      return {
+        categoryData: [],
+        merchantData: [],
+        totalSpent: 0,
+        averageTransaction: 0,
+      };
+    }
+
     console.log(
       `[Spending] Processing ${monthlyTransactions.length} monthly transactions`
     );
 
-    monthlyTransactions.forEach((txn, index) => {
-      const category = txn.category || "Other";
-      const merchantInfo = getMerchantInfo(
-        txn.description || txn.merchant || "Unknown Merchant"
-      );
-      const merchantName = merchantInfo.name;
+    // OPTIMIZATION: Process transactions in batches to prevent UI blocking
+    const BATCH_SIZE = 50;
+    const batches = [];
+    for (let i = 0; i < monthlyTransactions.length; i += BATCH_SIZE) {
+      batches.push(monthlyTransactions.slice(i, i + BATCH_SIZE));
+    }
 
-      // Use centralized expense detection logic
-      const expenseDetection = processTransactionExpense(txn, index, index < 3); // Only log first 3 transactions
-      const { isExpense } = expenseDetection;
+    // Process each batch
+    batches.forEach((batch, batchIndex) => {
+      batch.forEach((txn, index) => {
+        const category = txn.category || "Other";
+        const merchantInfo = getMerchantInfo(
+          txn.description || txn.merchant || "Unknown Merchant"
+        );
+        const merchantName = merchantInfo.name;
 
-      if (isExpense) {
-        const expenseAmount = Math.abs(txn.amount);
-        monthlySpentByCategory[category] =
-          (monthlySpentByCategory[category] || 0) + expenseAmount;
-        monthlySpentByMerchant[merchantName] =
-          (monthlySpentByMerchant[merchantName] || 0) + expenseAmount;
-      }
+        // Use centralized expense detection logic
+        const expenseDetection = processTransactionExpense(
+          txn,
+          index,
+          index < 3
+        ); // Only log first 3 transactions
+        const { isExpense } = expenseDetection;
+
+        if (isExpense) {
+          const expenseAmount = Math.abs(txn.amount);
+          monthlySpentByCategory[category] =
+            (monthlySpentByCategory[category] || 0) + expenseAmount;
+          monthlySpentByMerchant[merchantName] =
+            (monthlySpentByMerchant[merchantName] || 0) + expenseAmount;
+        }
+      });
     });
 
     console.log(
