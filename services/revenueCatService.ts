@@ -13,7 +13,8 @@ import Constants from "expo-constants";
 const REVENUECAT_API_KEY = {
   // iOS API Key format: appl_xxxxxxxxxxxxxxxxxxxxxxxx
   ios:
-    process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY || "appl_NOT_CONFIGURED_PLEASE_SET_API_KEY",
+    process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY ||
+    "appl_NOT_CONFIGURED_PLEASE_SET_API_KEY",
   // Android API Key format: goog_xxxxxxxxxxxxxxxxxxxxxxxx
   android:
     process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY ||
@@ -53,7 +54,11 @@ export class RevenueCatService {
           : REVENUECAT_API_KEY.android;
 
       // Check if API key is still placeholder
-      if (apiKey.includes("YOUR_") || apiKey.includes("_API_KEY") || apiKey.includes("NOT_CONFIGURED")) {
+      if (
+        apiKey.includes("YOUR_") ||
+        apiKey.includes("_API_KEY") ||
+        apiKey.includes("NOT_CONFIGURED")
+      ) {
         const error = `RevenueCat API key not configured. Please set EXPO_PUBLIC_REVENUECAT_${Platform.OS.toUpperCase()}_API_KEY environment variable.`;
         console.error("❌ [RevenueCat]", error);
         return { success: false, error };
@@ -67,9 +72,15 @@ export class RevenueCatService {
         return { success: false, error };
       }
 
-      // Configure RevenueCat
+      // Configure RevenueCat for production
       await Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.INFO);
       await Purchases.configure({ apiKey });
+      
+      // Debug: Log API key and configuration
+      console.log("🔧 [RevenueCat] Production API Key:", apiKey);
+      console.log("🔧 [RevenueCat] Platform:", Platform.OS);
+      console.log("🔧 [RevenueCat] Environment: Production");
+      console.log("🔧 [RevenueCat] Configured successfully");
 
       // Login user if provided
       if (userId) {
@@ -177,7 +188,19 @@ export class RevenueCatService {
           ],
         } as any;
       }
+      
+      // Debug: Log offerings request
+      console.log("🔧 [RevenueCat] Fetching production offerings...");
       const offerings = await Purchases.getOfferings();
+      console.log("🔧 [RevenueCat] All offerings:", Object.keys(offerings.all));
+      console.log("🔧 [RevenueCat] Current offering:", offerings.current?.identifier);
+      console.log("🔧 [RevenueCat] Available packages:", offerings.current?.availablePackages?.length || 0);
+      
+      if (!offerings.current) {
+        console.warn("⚠️ [RevenueCat] No current offering found. Check RevenueCat dashboard configuration.");
+        console.warn("⚠️ [RevenueCat] Make sure you have created offerings in RevenueCat dashboard.");
+      }
+      
       return offerings.current;
     } catch (error) {
       console.error("❌ [RevenueCat] Failed to get current offering:", error);
