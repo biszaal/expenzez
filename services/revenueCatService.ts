@@ -13,11 +13,11 @@ import Constants from "expo-constants";
 const REVENUECAT_API_KEY = {
   // iOS API Key format: appl_xxxxxxxxxxxxxxxxxxxxxxxx
   ios:
-    process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY || "appl_YOUR_IOS_API_KEY",
+    process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY || "appl_NOT_CONFIGURED_PLEASE_SET_API_KEY",
   // Android API Key format: goog_xxxxxxxxxxxxxxxxxxxxxxxx
   android:
     process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY ||
-    "goog_YOUR_ANDROID_API_KEY",
+    "goog_NOT_CONFIGURED_PLEASE_SET_API_KEY",
 };
 
 // Production mode - only use mock services in Expo Go
@@ -51,6 +51,13 @@ export class RevenueCatService {
         Platform.OS === "ios"
           ? REVENUECAT_API_KEY.ios
           : REVENUECAT_API_KEY.android;
+
+      // Check if API key is still placeholder
+      if (apiKey.includes("YOUR_") || apiKey.includes("_API_KEY") || apiKey.includes("NOT_CONFIGURED")) {
+        const error = `RevenueCat API key not configured. Please set EXPO_PUBLIC_REVENUECAT_${Platform.OS.toUpperCase()}_API_KEY environment variable.`;
+        console.error("❌ [RevenueCat]", error);
+        return { success: false, error };
+      }
 
       // Validate API key format
       const expectedPrefix = Platform.OS === "ios" ? "appl_" : "goog_";
