@@ -138,7 +138,6 @@ export default function SettingsPage() {
           style={[
             styles.backButton,
             { backgroundColor: colors.background.primary },
-            shadows.sm,
           ]}
           onPress={() => {
             if (router.canGoBack()) {
@@ -149,7 +148,7 @@ export default function SettingsPage() {
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={26} color={colors.primary[500]} />
+          <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={[styles.topBarTitle, { color: colors.text.primary }]}>
           Settings
@@ -698,31 +697,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 32,
-    paddingBottom: 16,
-    paddingHorizontal: 14,
+    paddingTop: 20,
+    paddingBottom: 12,
+    paddingHorizontal: 20,
   },
   backButton: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 16,
+    borderRadius: 14,
   },
   topBarTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "600",
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 40,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -731,13 +730,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "600",
   },
   sectionDescription: {
-    fontSize: 15,
-    marginBottom: 20,
-    lineHeight: 20,
+    fontSize: 14,
+    marginBottom: 16,
+    lineHeight: 18,
+    opacity: 0.7,
   },
   trialBadge: {
     flexDirection: 'row',
@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   themeContainer: {
-    borderRadius: 16,
+    borderRadius: 8,
     borderWidth: 1,
     overflow: "hidden",
   },
@@ -760,8 +760,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   themeOptionLeft: {
     flexDirection: "row",
@@ -769,38 +769,39 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   themeIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 16,
+    marginRight: 12,
   },
   themeTextContainer: {
     flex: 1,
   },
   themeLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "500",
     marginBottom: 2,
   },
   themeDescription: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
+    opacity: 0.7,
   },
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 8,
     borderWidth: 1,
   },
   settingText: {
     fontWeight: "500",
-    fontSize: 16,
+    fontSize: 15,
     flex: 1,
   },
   settingValue: {
@@ -812,7 +813,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   aboutContainer: {
-    borderRadius: 14,
+    borderRadius: 8,
     borderWidth: 1,
     overflow: "hidden",
   },
@@ -820,15 +821,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   aboutLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "500",
+    opacity: 0.7,
   },
   aboutValue: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
   },
   aboutDivider: {

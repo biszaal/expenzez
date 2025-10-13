@@ -224,15 +224,19 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
         ]}
       >
         {/* Header */}
-        <LinearGradient
-          colors={[colors.primary[600], colors.primary[500]]}
-          style={styles.header}
+        <View
+          style={[
+            styles.header,
+            { backgroundColor: colors.background.primary },
+          ]}
         >
           <View style={styles.headerTop}>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color="white" />
+              <Ionicons name="close" size={20} color={colors.text.primary} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Bill Details</Text>
+            <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
+              Bill Details
+            </Text>
             <View style={styles.placeholder} />
           </View>
 
@@ -240,18 +244,24 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
             <View
               style={[
                 styles.categoryIcon,
-                { backgroundColor: "rgba(255,255,255,0.2)" },
+                { backgroundColor: colors.background.secondary },
               ]}
             >
               <Ionicons
                 name={getCategoryIcon(bill.category)}
-                size={28}
-                color="white"
+                size={20}
+                color={colors.text.primary}
               />
             </View>
             <View style={styles.billInfo}>
-              <Text style={styles.billName}>{bill.name}</Text>
-              <Text style={styles.billMerchant}>{bill.merchant}</Text>
+              <Text style={[styles.billName, { color: colors.text.primary }]}>
+                {bill.name}
+              </Text>
+              <Text
+                style={[styles.billMerchant, { color: colors.text.tertiary }]}
+              >
+                {bill.merchant}
+              </Text>
             </View>
             <View style={styles.statusBadge}>
               <View
@@ -260,10 +270,12 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
                   { backgroundColor: getStatusColor(bill.status) },
                 ]}
               />
-              <Text style={styles.statusText}>{bill.status}</Text>
+              <Text style={[styles.statusText, { color: colors.text.primary }]}>
+                {bill.status}
+              </Text>
             </View>
           </View>
-        </LinearGradient>
+        </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Current Bill Info */}
@@ -311,18 +323,6 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
                   style={[styles.infoValue, { color: colors.text.primary }]}
                 >
                   {dayjs(bill.nextDueDate).format("MMM DD")}
-                </Text>
-              </View>
-              <View style={styles.infoItem}>
-                <Text
-                  style={[styles.infoLabel, { color: colors.text.secondary }]}
-                >
-                  Confidence
-                </Text>
-                <Text
-                  style={[styles.infoValue, { color: colors.text.primary }]}
-                >
-                  {(bill.confidence * 100).toFixed(0)}%
                 </Text>
               </View>
             </View>
@@ -581,28 +581,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+    paddingHorizontal: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   headerTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 12,
   },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.05)",
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
-    color: "white",
   },
   placeholder: {
     width: 40,
@@ -610,35 +611,39 @@ const styles = StyleSheet.create({
   billHeader: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 8,
   },
   categoryIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 16,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.1)",
   },
   billInfo: {
     flex: 1,
   },
   billName: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
     marginBottom: 4,
   },
   billMerchant: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.8)",
+    fontSize: 13,
+    opacity: 0.7,
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.05)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.1)",
   },
   statusDot: {
     width: 8,
@@ -647,105 +652,111 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "white",
+    fontSize: 11,
+    fontWeight: "500",
     textTransform: "capitalize",
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingHorizontal: 24,
+    paddingTop: 16,
   },
   card: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "500",
     marginLeft: 8,
   },
   infoGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+    gap: 12,
   },
   infoItem: {
     width: "48%",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   infoLabel: {
-    fontSize: 14,
+    fontSize: 12,
     marginBottom: 4,
+    opacity: 0.7,
   },
   infoValue: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "500",
   },
   summaryGrid: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   summaryItem: {
     flex: 1,
     alignItems: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
   },
   summaryLabel: {
-    fontSize: 13,
-    marginBottom: 6,
+    fontSize: 11,
+    marginBottom: 4,
     textAlign: "center",
+    opacity: 0.7,
   },
   summaryValue: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "600",
     textAlign: "center",
   },
   trackingInfo: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 6,
+    backgroundColor: "rgba(0,0,0,0.02)",
   },
   trackingText: {
-    fontSize: 12,
-    marginLeft: 8,
+    fontSize: 11,
+    marginLeft: 6,
+    opacity: 0.7,
   },
   actions: {
     flexDirection: "row",
     padding: 20,
     gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.08)",
+    backgroundColor: "rgba(0,0,0,0.02)",
+    marginBottom: 20,
   },
   actionButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 6,
+    borderWidth: 1,
   },
   actionButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
     color: "white",
+    fontSize: 14,
+    fontWeight: "500",
   },
   // Chart Styles
   chartContainer: {
@@ -801,17 +812,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingVertical: 8,
   },
   notificationInfo: {
     flex: 1,
-    marginRight: 16,
+    marginRight: 12,
   },
   notificationTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 2,
   },
   notificationSubtitle: {
-    fontSize: 14,
+    fontSize: 12,
+    opacity: 0.7,
   },
 });

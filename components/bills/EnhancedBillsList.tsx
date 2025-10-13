@@ -4,6 +4,196 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import dayjs from "dayjs";
 
+// Bill Icon Component with fallbacks
+interface BillIconProps {
+  merchant: string;
+  category: string;
+  size: number;
+  color: string;
+}
+
+// Number formatting utility
+const formatAmount = (amount: number): string => {
+  const absAmount = Math.abs(amount);
+
+  if (absAmount >= 100000) {
+    // For amounts >= 1,00,000 (Indian numbering system)
+    return absAmount.toLocaleString("en-IN");
+  } else if (absAmount >= 10000) {
+    // For amounts >= 10,000, use comma separation
+    return absAmount.toLocaleString("en-US");
+  } else {
+    // For smaller amounts, show as is
+    return absAmount.toFixed(2);
+  }
+};
+
+const BillIcon: React.FC<BillIconProps> = ({
+  merchant,
+  category,
+  size,
+  color,
+}) => {
+  const getIconName = () => {
+    const merchantLower = merchant.toLowerCase();
+
+    // Try merchant-specific icons first
+    if (
+      merchantLower.includes("netflix") ||
+      merchantLower.includes("spotify") ||
+      merchantLower.includes("youtube") ||
+      merchantLower.includes("disney")
+    ) {
+      return { name: "play-circle-outline", library: "Ionicons" };
+    }
+    if (
+      merchantLower.includes("amazon") ||
+      merchantLower.includes("shop") ||
+      merchantLower.includes("store") ||
+      merchantLower.includes("walmart")
+    ) {
+      return { name: "bag-outline", library: "Ionicons" };
+    }
+    if (
+      merchantLower.includes("uber") ||
+      merchantLower.includes("lyft") ||
+      merchantLower.includes("taxi") ||
+      merchantLower.includes("transport")
+    ) {
+      return { name: "car-outline", library: "Ionicons" };
+    }
+    if (
+      merchantLower.includes("starbucks") ||
+      merchantLower.includes("coffee") ||
+      merchantLower.includes("restaurant") ||
+      merchantLower.includes("food")
+    ) {
+      return { name: "restaurant-outline", library: "Ionicons" };
+    }
+    if (
+      merchantLower.includes("gym") ||
+      merchantLower.includes("fitness") ||
+      merchantLower.includes("health") ||
+      merchantLower.includes("medical")
+    ) {
+      return { name: "fitness-outline", library: "Ionicons" };
+    }
+    if (
+      merchantLower.includes("bank") ||
+      merchantLower.includes("credit") ||
+      merchantLower.includes("loan") ||
+      merchantLower.includes("finance")
+    ) {
+      return { name: "card-outline", library: "Ionicons" };
+    }
+    if (
+      merchantLower.includes("phone") ||
+      merchantLower.includes("mobile") ||
+      merchantLower.includes("telecom") ||
+      merchantLower.includes("verizon")
+    ) {
+      return { name: "phone-portrait-outline", library: "Ionicons" };
+    }
+    if (
+      merchantLower.includes("gas") ||
+      merchantLower.includes("fuel") ||
+      merchantLower.includes("petrol") ||
+      merchantLower.includes("shell")
+    ) {
+      return { name: "car-sport-outline", library: "Ionicons" };
+    }
+    if (
+      merchantLower.includes("electric") ||
+      merchantLower.includes("water") ||
+      merchantLower.includes("utility") ||
+      merchantLower.includes("power")
+    ) {
+      return { name: "flash-outline", library: "Ionicons" };
+    }
+    if (
+      merchantLower.includes("insurance") ||
+      merchantLower.includes("geico") ||
+      merchantLower.includes("state farm") ||
+      merchantLower.includes("allstate")
+    ) {
+      return { name: "shield-outline", library: "Ionicons" };
+    }
+    if (
+      merchantLower.includes("rent") ||
+      merchantLower.includes("mortgage") ||
+      merchantLower.includes("housing") ||
+      merchantLower.includes("apartment")
+    ) {
+      return { name: "home-outline", library: "Ionicons" };
+    }
+    if (
+      merchantLower.includes("school") ||
+      merchantLower.includes("university") ||
+      merchantLower.includes("college") ||
+      merchantLower.includes("education")
+    ) {
+      return { name: "school-outline", library: "Ionicons" };
+    }
+    if (
+      merchantLower.includes("hotel") ||
+      merchantLower.includes("airline") ||
+      merchantLower.includes("travel") ||
+      merchantLower.includes("booking")
+    ) {
+      return { name: "airplane-outline", library: "Ionicons" };
+    }
+
+    // Fallback to category-based icons
+    switch (category) {
+      case "Subscriptions":
+        return { name: "play-circle-outline", library: "Ionicons" };
+      case "Utilities":
+        return { name: "flash-outline", library: "Ionicons" };
+      case "Insurance":
+        return { name: "shield-outline", library: "Ionicons" };
+      case "Housing":
+        return { name: "home-outline", library: "Ionicons" };
+      case "Transportation":
+        return { name: "car-outline", library: "Ionicons" };
+      case "Food & Dining":
+        return { name: "restaurant-outline", library: "Ionicons" };
+      case "Healthcare":
+        return { name: "medical-outline", library: "Ionicons" };
+      case "Entertainment":
+        return { name: "film-outline", library: "Ionicons" };
+      case "Shopping":
+        return { name: "bag-outline", library: "Ionicons" };
+      case "Education":
+        return { name: "school-outline", library: "Ionicons" };
+      case "Travel":
+        return { name: "airplane-outline", library: "Ionicons" };
+      case "Bills & Utilities":
+        return { name: "receipt-outline", library: "Ionicons" };
+      default:
+        return { name: "receipt-outline", library: "Ionicons" };
+    }
+  };
+
+  const iconInfo = getIconName();
+
+  try {
+    if (iconInfo.library === "Ionicons") {
+      return <Ionicons name={iconInfo.name as any} size={size} color={color} />;
+    } else {
+      return (
+        <MaterialCommunityIcons
+          name={iconInfo.name as any}
+          size={size}
+          color={color}
+        />
+      );
+    }
+  } catch (error) {
+    // Ultimate fallback
+    return <Ionicons name="receipt-outline" size={size} color={color} />;
+  }
+};
+
 interface DetectedBill {
   id: string;
   name: string;
@@ -26,13 +216,13 @@ interface EnhancedBillsListProps {
 }
 
 const categories = [
-  { name: "All", icon: "apps-outline", color: "#6366F1" },
-  { name: "Subscriptions", icon: "play-circle-outline", color: "#8B5CF6" },
-  { name: "Utilities", icon: "flash-outline", color: "#F59E0B" },
-  { name: "Insurance", icon: "shield-checkmark-outline", color: "#10B981" },
-  { name: "Housing", icon: "home-outline", color: "#EF4444" },
-  { name: "Transportation", icon: "car-outline", color: "#06B6D4" },
-  { name: "Inactive", icon: "pause-circle-outline", color: "#6B7280" },
+  { name: "All", icon: "apps-outline" },
+  { name: "Subscriptions", icon: "play-circle-outline" },
+  { name: "Utilities", icon: "flash-outline" },
+  { name: "Insurance", icon: "shield-checkmark-outline" },
+  { name: "Housing", icon: "home-outline" },
+  { name: "Transportation", icon: "car-outline" },
+  { name: "Inactive", icon: "pause-circle-outline" },
 ];
 
 export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
@@ -43,6 +233,17 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
   onBillLongPress,
 }) => {
   const { colors } = useTheme();
+
+  // Handle marking bill as paid
+  const handleMarkAsPaid = (bill: DetectedBill) => {
+    // For now, we'll just show an alert. In a real app, this would:
+    // 1. Update the bill status in the database
+    // 2. Remove the bill from the current list
+    // 3. Possibly add it to a "Paid Bills" section
+    alert(
+      `Marked "${bill.name}" as paid! This would remove it from the list in a real implementation.`
+    );
+  };
 
   const getBillUrgency = (dueDate: string) => {
     const daysUntilDue = dayjs(dueDate).diff(dayjs(), "days");
@@ -82,32 +283,39 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
     }
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "Subscriptions":
-        return "play-circle-outline";
-      case "Utilities":
-        return "flash-outline";
-      case "Insurance":
-        return "shield-outline";
-      case "Housing":
-        return "home-outline";
-      case "Transportation":
-        return "car-outline";
-      default:
-        return "receipt";
-    }
-  };
+  const filteredBills = bills
+    .filter((bill) => {
+      if (selectedCategory === "All") return bill.status !== "cancelled";
+      if (selectedCategory === "Inactive") return bill.status === "cancelled";
+      return bill.category === selectedCategory && bill.status !== "cancelled";
+    })
+    .filter((bill) => {
+      // Only show truly recurring bills - require at least 2 transactions
+      const transactionCount = bill.transactions?.length || 0;
+      return transactionCount >= 2;
+    })
+    .filter((bill) => {
+      // Hide past bills (bills with due dates in the past)
+      const dueDate = dayjs(bill.nextDueDate);
+      const today = dayjs();
+      return dueDate.isAfter(today) || dueDate.isSame(today, "day");
+    })
+    .sort((a, b) => {
+      // Sort by next due date (ascending - earliest first)
+      const dateA = dayjs(a.nextDueDate);
+      const dateB = dayjs(b.nextDueDate);
 
-  const filteredBills = bills.filter((bill) => {
-    if (selectedCategory === "All") return bill.status !== "cancelled";
-    if (selectedCategory === "Inactive") return bill.status === "cancelled";
-    return bill.category === selectedCategory && bill.status !== "cancelled";
-  });
+      // Handle invalid dates - put them at the end
+      if (!dateA.isValid() && !dateB.isValid()) return 0;
+      if (!dateA.isValid()) return 1;
+      if (!dateB.isValid()) return -1;
+
+      return dateA.diff(dateB);
+    });
 
   return (
     <View style={styles.container}>
-      {/* Category Filter */}
+      {/* Minimal Category Filter */}
       <View style={styles.categorySection}>
         <ScrollView
           horizontal
@@ -122,8 +330,10 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
                 {
                   backgroundColor:
                     selectedCategory === category.name
-                      ? category.color
-                      : colors.background.primary,
+                      ? colors.primary[500]
+                      : colors.background.secondary,
+                  borderWidth: selectedCategory === category.name ? 0 : 1,
+                  borderColor: colors.border.light,
                 },
               ]}
               onPress={() => onCategoryChange(category.name)}
@@ -132,7 +342,9 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
                 name={category.icon as any}
                 size={16}
                 color={
-                  selectedCategory === category.name ? "white" : category.color
+                  selectedCategory === category.name
+                    ? "white"
+                    : colors.text.secondary
                 }
               />
               <Text
@@ -200,34 +412,32 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
                 key={bill.id}
                 style={[
                   styles.billCard,
-                  { backgroundColor: colors.background.primary },
+                  {
+                    backgroundColor: colors.background.primary,
+                    borderWidth: 1,
+                    borderColor: colors.border.light,
+                  },
                 ]}
                 onPress={() => onBillPress(bill)}
                 onLongPress={() => onBillLongPress(bill)}
                 delayLongPress={500}
               >
-                {/* Urgency Indicator Bar */}
-                <View
-                  style={[
-                    styles.urgencyBar,
-                    { backgroundColor: urgency.color },
-                  ]}
-                />
-
                 <View style={styles.billCardContent}>
                   <View
                     style={[
                       styles.billIcon,
                       {
-                        backgroundColor:
-                          (categoryInfo?.color || colors.primary[500]) + "20",
+                        backgroundColor: colors.background.secondary,
+                        borderWidth: 1,
+                        borderColor: colors.border.light,
                       },
                     ]}
                   >
-                    <MaterialCommunityIcons
-                      name={getCategoryIcon(bill.category) as any}
-                      size={24}
-                      color={categoryInfo?.color || colors.primary[500]}
+                    <BillIcon
+                      merchant={bill.merchant}
+                      category={bill.category}
+                      size={20}
+                      color={colors.text.secondary}
                     />
                   </View>
 
@@ -249,7 +459,7 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
                               { color: colors.text.primary },
                             ]}
                           >
-                            £{Math.abs(bill.amount).toFixed(2)}
+                            £{formatAmount(bill.amount)}
                           </Text>
                           <Text
                             style={[
@@ -267,11 +477,38 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
                                   : "qtr"}
                           </Text>
                         </View>
+
+                        {/* Paid Button */}
                         <TouchableOpacity
                           style={[
-                            styles.billMenuButton,
-                            { backgroundColor: colors.background.secondary },
+                            styles.paidButton,
+                            {
+                              backgroundColor: colors.success[100],
+                              borderColor: colors.success[300],
+                            },
                           ]}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleMarkAsPaid(bill);
+                          }}
+                        >
+                          <Ionicons
+                            name="checkmark"
+                            size={14}
+                            color={colors.success[600]}
+                          />
+                          <Text
+                            style={[
+                              styles.paidButtonText,
+                              { color: colors.success[600] },
+                            ]}
+                          >
+                            Paid
+                          </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={styles.billMenuButton}
                           onPress={(e) => {
                             e.stopPropagation();
                             onBillLongPress(bill);
@@ -280,94 +517,36 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
                           <Ionicons
                             name="ellipsis-vertical"
                             size={16}
-                            color={colors.text.secondary}
+                            color={colors.text.tertiary}
                           />
                         </TouchableOpacity>
                       </View>
                     </View>
 
                     <View style={styles.billMeta}>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
+                      <Text
+                        style={[
+                          styles.billBank,
+                          { color: colors.text.tertiary },
+                        ]}
                       >
-                        <Text
-                          style={[
-                            styles.billBank,
-                            { color: colors.text.secondary },
-                          ]}
-                        >
-                          {bill.bankName} •{" "}
-                          {dayjs(bill.nextDueDate).format("MMM DD")}
-                        </Text>
-                        <View
-                          style={[
-                            styles.urgencyBadge,
-                            { backgroundColor: urgency.bgColor },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.urgencyText,
-                              { color: urgency.color },
-                            ]}
-                          >
-                            {urgency.daysText}
-                          </Text>
-                        </View>
-                      </View>
-                      <View style={styles.billStatus}>
-                        <View
-                          style={[
-                            styles.statusDot,
-                            {
-                              backgroundColor:
-                                bill.status === "active"
-                                  ? colors.success[500]
-                                  : bill.status === "cancelled"
-                                    ? colors.error[500]
-                                    : colors.warning[500],
-                            },
-                          ]}
-                        />
-                        <Text
-                          style={[
-                            styles.statusText,
-                            { color: colors.text.tertiary },
-                          ]}
-                        >
-                          {bill.status.charAt(0).toUpperCase() +
-                            bill.status.slice(1)}
-                        </Text>
-                      </View>
+                        {dayjs(bill.nextDueDate).format("MMM DD")}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.billStatus,
+                          {
+                            color: urgency.color,
+                            fontWeight: urgency.daysText.includes("ago")
+                              ? "600"
+                              : "400",
+                          },
+                        ]}
+                      >
+                        {urgency.daysText}
+                      </Text>
                     </View>
                   </View>
-                </View>
-
-                {/* Confidence Bar */}
-                <View
-                  style={[
-                    styles.confidenceBar,
-                    { backgroundColor: colors.background.secondary },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.confidenceFill,
-                      {
-                        width: `${bill.confidence * 100}%`,
-                        backgroundColor:
-                          bill.confidence > 0.8
-                            ? colors.success[500]
-                            : bill.confidence > 0.6
-                              ? colors.warning[500]
-                              : colors.error[500],
-                      },
-                    ]}
-                  />
                 </View>
               </TouchableOpacity>
             );
@@ -383,63 +562,55 @@ const styles = {
     flex: 1,
   },
   categorySection: {
-    marginBottom: 20,
-    paddingHorizontal: 20,
+    marginBottom: 24,
+    paddingHorizontal: 24,
   },
   categoryScroll: {
-    gap: 12,
+    gap: 8,
   },
   categoryChip: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 20,
-    gap: 8,
+    borderRadius: 24,
+    gap: 6,
   },
   categoryChipText: {
     fontSize: 14,
-    fontWeight: "600" as const,
+    fontWeight: "500" as const,
   },
   billsSection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700" as const,
-    marginBottom: 16,
+    fontSize: 18,
+    fontWeight: "600" as const,
+    marginBottom: 20,
+    letterSpacing: -0.2,
   },
   billCount: {
     fontSize: 16,
-    fontWeight: "500" as const,
+    fontWeight: "400" as const,
+    opacity: 0.7,
   },
   billCard: {
-    borderRadius: 16,
-    marginBottom: 16,
+    borderRadius: 8,
+    marginBottom: 8,
     overflow: "hidden" as const,
-    position: "relative" as const,
-  },
-  urgencyBar: {
-    position: "absolute" as const,
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    borderTopLeftRadius: 16,
-    borderBottomLeftRadius: 16,
   },
   billCardContent: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    padding: 16,
+    padding: 12,
   },
   billIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-    marginRight: 16,
+    marginRight: 12,
   },
   billDetails: {
     flex: 1,
@@ -448,36 +619,53 @@ const styles = {
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   billName: {
-    fontSize: 16,
-    fontWeight: "600" as const,
+    fontSize: 15,
+    fontWeight: "500" as const,
     flex: 1,
+    letterSpacing: -0.1,
   },
   billHeaderRight: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    gap: 12,
+    gap: 8,
   },
   billAmountContainer: {
     flexDirection: "row" as const,
     alignItems: "baseline" as const,
   },
   billMenuButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
+  paidButton: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  paidButtonText: {
+    fontSize: 11,
+    fontWeight: "500" as const,
+    marginLeft: 4,
+  },
   billAmount: {
-    fontSize: 18,
-    fontWeight: "700" as const,
+    fontSize: 16,
+    fontWeight: "600" as const,
+    letterSpacing: -0.2,
   },
   billFrequency: {
     fontSize: 12,
-    fontWeight: "500" as const,
+    fontWeight: "400" as const,
+    opacity: 0.7,
   },
   billMeta: {
     flexDirection: "row" as const,
@@ -485,63 +673,46 @@ const styles = {
     alignItems: "center" as const,
   },
   billBank: {
-    fontSize: 14,
+    fontSize: 12,
     flex: 1,
-  },
-  urgencyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  urgencyText: {
-    fontSize: 11,
-    fontWeight: "600" as const,
+    opacity: 0.7,
   },
   billStatus: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 6,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusText: {
     fontSize: 12,
     fontWeight: "500" as const,
   },
-  confidenceBar: {
-    height: 3,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    borderRadius: 1.5,
+  urgencyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  confidenceFill: {
-    height: "100%",
-    borderRadius: 1.5,
+  urgencyText: {
+    fontSize: 11,
+    fontWeight: "500" as const,
   },
   emptyState: {
     alignItems: "center" as const,
-    paddingVertical: 40,
-    paddingHorizontal: 20,
+    paddingVertical: 60,
+    paddingHorizontal: 24,
   },
   emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: "center" as const,
     justifyContent: "center" as const,
     marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "600" as const,
+    fontWeight: "500" as const,
     marginBottom: 8,
+    letterSpacing: -0.2,
   },
   emptySubtitle: {
     fontSize: 14,
     textAlign: "center" as const,
     lineHeight: 20,
+    opacity: 0.7,
   },
 };

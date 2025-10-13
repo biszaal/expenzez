@@ -14,7 +14,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
-import { useNotifications, NotificationPreferences } from "../../contexts/NotificationContext";
+import {
+  useNotifications,
+  NotificationPreferences,
+} from "../../contexts/NotificationContext";
 import {
   spacing,
   borderRadius,
@@ -26,7 +29,7 @@ interface PreferenceItem {
   key: keyof NotificationPreferences;
   title: string;
   subtitle: string;
-  type: 'boolean' | 'number' | 'select';
+  type: "boolean" | "number" | "select";
   icon?: string;
   min?: number;
   max?: number;
@@ -104,14 +107,10 @@ export default function NotificationPreferencesScreen() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
   const { colors, isDark } = useTheme();
-  const {
-    preferences,
-    updatePreferences,
-    loading,
-    error,
-  } = useNotifications();
+  const { preferences, updatePreferences, loading, error } = useNotifications();
 
-  const [localPreferences, setLocalPreferences] = useState<NotificationPreferences | null>(null);
+  const [localPreferences, setLocalPreferences] =
+    useState<NotificationPreferences | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -120,7 +119,10 @@ export default function NotificationPreferencesScreen() {
     }
   }, [preferences]);
 
-  const handlePreferenceChange = async (key: keyof NotificationPreferences, value: any) => {
+  const handlePreferenceChange = async (
+    key: keyof NotificationPreferences,
+    value: any
+  ) => {
     if (!localPreferences) return;
 
     const updatedPreferences = { ...localPreferences, [key]: value };
@@ -131,7 +133,7 @@ export default function NotificationPreferencesScreen() {
     try {
       await updatePreferences({ [key]: value });
     } catch (error) {
-      console.error('Failed to update preference:', error);
+      console.error("Failed to update preference:", error);
     } finally {
       setSaving(false);
     }
@@ -143,7 +145,7 @@ export default function NotificationPreferencesScreen() {
     const value = localPreferences[item.key];
 
     switch (item.type) {
-      case 'boolean':
+      case "boolean":
         return (
           <View
             key={item.key}
@@ -171,25 +173,42 @@ export default function NotificationPreferencesScreen() {
                 </View>
               )}
               <View style={styles.preferenceContent}>
-                <Text style={[styles.preferenceTitle, { color: colors.text.primary }]}>
+                <Text
+                  style={[
+                    styles.preferenceTitle,
+                    { color: colors.text.primary },
+                  ]}
+                >
                   {item.title}
                 </Text>
-                <Text style={[styles.preferenceSubtitle, { color: colors.text.secondary }]}>
+                <Text
+                  style={[
+                    styles.preferenceSubtitle,
+                    { color: colors.text.secondary },
+                  ]}
+                >
                   {item.subtitle}
                 </Text>
               </View>
             </View>
             <Switch
               value={Boolean(value)}
-              onValueChange={(newValue) => handlePreferenceChange(item.key, newValue)}
-              trackColor={{ false: colors.gray[300], true: colors.primary[400] }}
-              thumbColor={Boolean(value) ? colors.primary[600] : colors.gray[400]}
+              onValueChange={(newValue) =>
+                handlePreferenceChange(item.key, newValue)
+              }
+              trackColor={{
+                false: colors.gray[300],
+                true: colors.primary[400],
+              }}
+              thumbColor={
+                Boolean(value) ? colors.primary[600] : colors.gray[400]
+              }
               ios_backgroundColor={colors.gray[300]}
             />
           </View>
         );
 
-      case 'number':
+      case "number":
         return (
           <View
             key={item.key}
@@ -217,10 +236,20 @@ export default function NotificationPreferencesScreen() {
                 </View>
               )}
               <View style={styles.preferenceContent}>
-                <Text style={[styles.preferenceTitle, { color: colors.text.primary }]}>
+                <Text
+                  style={[
+                    styles.preferenceTitle,
+                    { color: colors.text.primary },
+                  ]}
+                >
                   {item.title}
                 </Text>
-                <Text style={[styles.preferenceSubtitle, { color: colors.text.secondary }]}>
+                <Text
+                  style={[
+                    styles.preferenceSubtitle,
+                    { color: colors.text.secondary },
+                  ]}
+                >
                   {item.subtitle}
                 </Text>
               </View>
@@ -251,8 +280,8 @@ export default function NotificationPreferencesScreen() {
           </View>
         );
 
-      case 'select':
-        const selectedOption = item.options?.find(opt => opt.value === value);
+      case "select":
+        const selectedOption = item.options?.find((opt) => opt.value === value);
         return (
           <TouchableOpacity
             key={item.key}
@@ -265,17 +294,14 @@ export default function NotificationPreferencesScreen() {
             ]}
             onPress={() => {
               if (item.options) {
-                Alert.alert(
-                  item.title,
-                  "Choose your preference",
-                  [
-                    ...item.options.map(option => ({
-                      text: option.label,
-                      onPress: () => handlePreferenceChange(item.key, option.value),
-                    })),
-                    { text: "Cancel", style: "cancel" as const }
-                  ]
-                );
+                Alert.alert(item.title, "Choose your preference", [
+                  ...item.options.map((option) => ({
+                    text: option.label,
+                    onPress: () =>
+                      handlePreferenceChange(item.key, option.value),
+                  })),
+                  { text: "Cancel", style: "cancel" as const },
+                ]);
               }
             }}
           >
@@ -295,16 +321,28 @@ export default function NotificationPreferencesScreen() {
                 </View>
               )}
               <View style={styles.preferenceContent}>
-                <Text style={[styles.preferenceTitle, { color: colors.text.primary }]}>
+                <Text
+                  style={[
+                    styles.preferenceTitle,
+                    { color: colors.text.primary },
+                  ]}
+                >
                   {item.title}
                 </Text>
-                <Text style={[styles.preferenceSubtitle, { color: colors.text.secondary }]}>
+                <Text
+                  style={[
+                    styles.preferenceSubtitle,
+                    { color: colors.text.secondary },
+                  ]}
+                >
                   {item.subtitle}
                 </Text>
               </View>
             </View>
             <View style={styles.selectContainer}>
-              <Text style={[styles.selectValue, { color: colors.text.primary }]}>
+              <Text
+                style={[styles.selectValue, { color: colors.text.primary }]}
+              >
                 {selectedOption?.label || "Not set"}
               </Text>
               <Ionicons
@@ -374,7 +412,8 @@ export default function NotificationPreferencesScreen() {
         {/* Description */}
         <View style={styles.section}>
           <Text style={[styles.description, { color: colors.text.secondary }]}>
-            Control when and how you receive notifications from Expenzez. Security alerts are always enabled for your protection.
+            Control when and how you receive notifications from Expenzez.
+            Security alerts are always enabled for your protection.
           </Text>
         </View>
 
@@ -407,14 +446,22 @@ export default function NotificationPreferencesScreen() {
 
         {/* Security Note */}
         <View style={styles.section}>
-          <View style={[styles.securityNote, { backgroundColor: colors.primary[100] }]}>
+          <View
+            style={[
+              styles.securityNote,
+              { backgroundColor: colors.primary[100] },
+            ]}
+          >
             <Ionicons
               name="shield-checkmark"
               size={24}
               color={colors.primary[600]}
             />
-            <Text style={[styles.securityNoteText, { color: colors.primary[700] }]}>
-              Security alerts (login attempts, failed logins) are always enabled and cannot be disabled to protect your account.
+            <Text
+              style={[styles.securityNoteText, { color: colors.primary[700] }]}
+            >
+              Security alerts (login attempts, failed logins) are always enabled
+              and cannot be disabled to protect your account.
             </Text>
           </View>
         </View>
@@ -431,12 +478,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing["2xl"],
+    paddingBottom: 24,
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   headerContent: {
     flexDirection: "row",
@@ -444,15 +491,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.xl,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
   headerTitle: {
-    fontSize: typography.fontSizes.xl,
-    fontWeight: "700" as const,
+    fontSize: 18,
+    fontWeight: "600" as const,
   },
   savingText: {
     fontSize: typography.fontSizes.sm,
@@ -460,14 +507,14 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   section: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
+    marginHorizontal: 20,
+    marginBottom: 20,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.md,
+    marginBottom: 12,
   },
   sectionHeaderLeft: {
     flexDirection: "row",
@@ -475,26 +522,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sectionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.xl,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: spacing.md,
+    marginRight: 12,
   },
   sectionHeaderContent: {
     flex: 1,
   },
   sectionTitle: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: "700" as const,
-    marginBottom: spacing.xs,
+    fontSize: 16,
+    fontWeight: "600" as const,
+    marginBottom: 4,
   },
   sectionDescription: {
-    fontSize: typography.fontSizes.sm,
+    fontSize: 12,
+    opacity: 0.7,
   },
   preferencesCard: {
-    borderRadius: borderRadius["2xl"],
+    borderRadius: 8,
     borderWidth: 1,
     overflow: "hidden",
   },
@@ -502,8 +550,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   preferenceLeft: {
     flexDirection: "row",
@@ -511,23 +559,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   preferenceIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.lg,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: spacing.md,
+    marginRight: 12,
   },
   preferenceContent: {
     flex: 1,
   },
   preferenceTitle: {
-    fontSize: typography.fontSizes.base,
-    fontWeight: "600" as const,
-    marginBottom: spacing.xs,
+    fontSize: 15,
+    fontWeight: "500" as const,
+    marginBottom: 4,
   },
   preferenceSubtitle: {
-    fontSize: typography.fontSizes.sm,
+    fontSize: 12,
+    opacity: 0.7,
   },
   numberInputContainer: {
     flexDirection: "row",

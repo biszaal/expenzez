@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle } from "react-native-svg";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useSubscription } from "../../contexts/SubscriptionContext";
@@ -59,7 +59,7 @@ export default function AccountScreen() {
   // Clear data when user logs out
   useEffect(() => {
     if (!isLoggedIn || !user) {
-      console.log('🔄 [Account] User logged out, clearing all data');
+      console.log("🔄 [Account] User logged out, clearing all data");
       setProfile(null);
       setSavingsGoals([]);
       setLoading(false);
@@ -73,23 +73,26 @@ export default function AccountScreen() {
       try {
         setLoading(true);
         const userId = user?.id || user?.email || user?.username;
-        console.log('📥 [Account] Fetching profile data for user:', userId);
+        console.log("📥 [Account] Fetching profile data for user:", userId);
 
         // Clear AsyncStorage cache before fetching
         try {
-          const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+          const AsyncStorage = (
+            await import("@react-native-async-storage/async-storage")
+          ).default;
           const keys = await AsyncStorage.getAllKeys();
-          const cacheKeys = keys.filter(key =>
-            key.includes('profile') ||
-            key.includes('@expenzez_cache_/api/profile') ||
-            key.includes('user_data')
+          const cacheKeys = keys.filter(
+            (key) =>
+              key.includes("profile") ||
+              key.includes("@expenzez_cache_/api/profile") ||
+              key.includes("user_data")
           );
           if (cacheKeys.length > 0) {
             await AsyncStorage.multiRemove(cacheKeys);
-            console.log('🧹 [Account] Cleared cache keys:', cacheKeys.length);
+            console.log("🧹 [Account] Cleared cache keys:", cacheKeys.length);
           }
         } catch (cacheError) {
-          console.warn('⚠️ [Account] Cache clear warning:', cacheError);
+          console.warn("⚠️ [Account] Cache clear warning:", cacheError);
         }
 
         // Fetch profile data
@@ -100,10 +103,10 @@ export default function AccountScreen() {
 
         // Set profile data
         if (profileData) {
-          console.log('✅ [Account] Loaded profile:', profileData.email);
+          console.log("✅ [Account] Loaded profile:", profileData.email);
           setProfile(profileData);
         } else {
-          console.log('⚠️ [Account] No profile data returned');
+          console.log("⚠️ [Account] No profile data returned");
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -119,7 +122,7 @@ export default function AccountScreen() {
       setSavingsGoals([]);
 
       // Fetch new data
-      console.log('🔄 [Account] User detected, fetching data for:', user.email);
+      console.log("🔄 [Account] User detected, fetching data for:", user.email);
       fetchUserData();
     }
   }, [isLoggedIn, user?.id, user?.email, user?.username, showError]);
@@ -127,7 +130,7 @@ export default function AccountScreen() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     setLogoutError(null);
-    
+
     try {
       await logout();
       router.replace("/auth/Login");
@@ -141,7 +144,12 @@ export default function AccountScreen() {
 
   // Get user display name
   const getUserDisplayName = () => {
-    console.log('📝 [Account] getUserDisplayName - profile:', profile, 'user:', user);
+    console.log(
+      "📝 [Account] getUserDisplayName - profile:",
+      profile,
+      "user:",
+      user
+    );
     if (profile?.firstName && profile?.lastName) {
       return `${profile.firstName} ${profile.lastName}`;
     }
@@ -159,7 +167,12 @@ export default function AccountScreen() {
 
   // Get user email
   const getUserEmail = () => {
-    console.log('📧 [Account] getUserEmail - profile:', profile?.email, 'user:', user?.email);
+    console.log(
+      "📧 [Account] getUserEmail - profile:",
+      profile?.email,
+      "user:",
+      user?.email
+    );
     if (profile?.email) {
       return profile.email;
     }
@@ -186,7 +199,7 @@ export default function AccountScreen() {
     if (profile?.createdAt) {
       return new Date(profile.createdAt).getFullYear().toString();
     }
-    if (user && 'createdAt' in user && user.createdAt) {
+    if (user && "createdAt" in user && user.createdAt) {
       return new Date(user.createdAt).getFullYear().toString();
     }
     // If no creation date available, show current year as fallback
@@ -206,14 +219,16 @@ export default function AccountScreen() {
       profile?.address?.postcode,
     ];
 
-    const completedFields = fields.filter(field => field && field.toString().trim() !== '').length;
+    const completedFields = fields.filter(
+      (field) => field && field.toString().trim() !== ""
+    ).length;
     const totalFields = fields.length;
     const percentage = (completedFields / totalFields) * 100;
 
     return {
       percentage: Math.round(percentage),
       completedFields,
-      totalFields
+      totalFields,
     };
   }, [profile]);
 
@@ -225,7 +240,6 @@ export default function AccountScreen() {
   const openExport = () => {
     setShowExport(true);
   };
-
 
   // Fetch savings goals
   const fetchSavingsGoals = async () => {
@@ -282,23 +296,20 @@ export default function AccountScreen() {
     setShowSavingsGoals(true);
   };
 
-
   const profileOptions = [
-    ...(!isPremium ? [{
-      title: isTrialActive ? "Upgrade to Premium" : "Get Premium",
-      subtitle: isTrialActive
-        ? `Trial ends in ${Math.max(0, Math.ceil((new Date(subscription?.trialEndDate || '').getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days`
-        : "Unlock unlimited features",
-      icon: (
-        <Ionicons
-          name="diamond"
-          size={24}
-          color="#F59E0B"
-        />
-      ),
-      route: "/subscription/plans",
-      isSpecial: true,
-    }] : []),
+    ...(!isPremium
+      ? [
+          {
+            title: isTrialActive ? "Upgrade to Premium" : "Get Premium",
+            subtitle: isTrialActive
+              ? `Trial ends in ${Math.max(0, Math.ceil((new Date(subscription?.trialEndDate || "").getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days`
+              : "Unlock unlimited features",
+            icon: <Ionicons name="diamond" size={24} color="#F59E0B" />,
+            route: "/subscription/plans",
+            isSpecial: true,
+          },
+        ]
+      : []),
     {
       title: "Personal Information",
       subtitle: "Update your details",
@@ -335,21 +346,18 @@ export default function AccountScreen() {
       ),
       route: "/notifications/preferences",
     },
-    ...(isPremium ? [{
-      title: "Premium Membership",
-      subtitle: "Manage your subscription",
-      icon: (
-        <Ionicons
-          name="diamond"
-          size={24}
-          color="#10B981"
-        />
-      ),
-      route: "/subscription/plans",
-      isSpecial: true,
-    }] : []),
+    ...(isPremium
+      ? [
+          {
+            title: "Premium Membership",
+            subtitle: "Manage your subscription",
+            icon: <Ionicons name="diamond" size={24} color="#10B981" />,
+            route: "/subscription/plans",
+            isSpecial: true,
+          },
+        ]
+      : []),
   ];
-
 
   if (!isLoggedIn) {
     return null;
@@ -357,7 +365,12 @@ export default function AccountScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+      <SafeAreaView
+        style={[
+          styles.container,
+          { backgroundColor: colors.background.secondary },
+        ]}
+      >
         <ProfileSkeleton />
       </SafeAreaView>
     );
@@ -365,7 +378,7 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView
-      key={user?.id || user?.email || user?.username || 'default'}
+      key={user?.id || user?.email || user?.username || "default"}
       style={[
         styles.container,
         { backgroundColor: colors.background.secondary },
@@ -381,10 +394,7 @@ export default function AccountScreen() {
           <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
               <Text
-                style={[
-                  styles.headerTitle,
-                  { color: colors.text.primary },
-                ]}
+                style={[styles.headerTitle, { color: colors.text.primary }]}
               >
                 Profile
               </Text>
@@ -415,11 +425,16 @@ export default function AccountScreen() {
 
         {/* Profile Section */}
         <View style={styles.profileSection}>
-          <View style={[styles.profileCard, { backgroundColor: colors.background.primary, ...shadows.lg }]}>
+          <View
+            style={[
+              styles.profileCard,
+              { backgroundColor: colors.background.primary, ...shadows.lg },
+            ]}
+          >
             <View style={styles.profileContent}>
               <View style={styles.avatarContainer}>
                 {/* Completion Ring */}
-                <Svg width={104} height={104} style={{ position: 'absolute' }}>
+                <Svg width={104} height={104} style={{ position: "absolute" }}>
                   {/* Background Ring */}
                   <Circle
                     cx={52}
@@ -439,8 +454,8 @@ export default function AccountScreen() {
                       profileCompletion.percentage === 100
                         ? colors.success[500]
                         : profileCompletion.percentage >= 70
-                        ? colors.primary[500]
-                        : colors.warning[500]
+                          ? colors.primary[500]
+                          : colors.warning[500]
                     }
                     strokeWidth={4}
                     strokeLinecap="round"
@@ -449,40 +464,72 @@ export default function AccountScreen() {
                     transform="rotate(-90 52 52)"
                   />
                 </Svg>
-                <View style={[styles.avatar, { backgroundColor: colors.primary[500] }]}>
-                  <Text style={styles.avatarText}>
-                    {getUserInitials()}
-                  </Text>
+                <View
+                  style={[
+                    styles.avatar,
+                    { backgroundColor: colors.primary[500] },
+                  ]}
+                >
+                  <Text style={styles.avatarText}>{getUserInitials()}</Text>
                 </View>
                 {/* Completion Badge */}
                 {profileCompletion.percentage < 100 && (
-                  <View style={[styles.completionBadge, { backgroundColor: colors.background.primary }]}>
-                    <Text style={[styles.completionText, { color: colors.primary[500] }]}>
+                  <View
+                    style={[
+                      styles.completionBadge,
+                      { backgroundColor: colors.background.primary },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.completionText,
+                        { color: colors.primary[500] },
+                      ]}
+                    >
                       {profileCompletion.percentage}%
                     </Text>
                   </View>
                 )}
               </View>
               <View style={styles.profileDetails}>
-                <Text style={[styles.profileName, { color: colors.text.primary }]}>
+                <Text
+                  style={[styles.profileName, { color: colors.text.primary }]}
+                >
                   {getUserDisplayName()}
                 </Text>
-                <Text style={[styles.profileEmail, { color: colors.text.secondary }]}>
+                <Text
+                  style={[
+                    styles.profileEmail,
+                    { color: colors.text.secondary },
+                  ]}
+                >
                   {getUserEmail()}
                 </Text>
                 <View style={styles.profileBadges}>
-                  <Text style={[styles.memberText, { color: colors.text.secondary }]}>
+                  <Text
+                    style={[
+                      styles.memberText,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
                     Member since {getMemberSince()}
                   </Text>
                 </View>
               </View>
             </View>
             <TouchableOpacity
-              style={[styles.editButton, { backgroundColor: colors.primary[100] }]}
+              style={[
+                styles.editButton,
+                { backgroundColor: colors.primary[100] },
+              ]}
               onPress={() => router.push("/profile/personal")}
             >
               <Ionicons name="pencil" size={16} color={colors.primary[600]} />
-              <Text style={[styles.editButtonText, { color: colors.primary[600] }]}>Edit</Text>
+              <Text
+                style={[styles.editButtonText, { color: colors.primary[600] }]}
+              >
+                Edit
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -510,26 +557,15 @@ export default function AccountScreen() {
                 <Ionicons name="trophy" size={20} color="white" />
               </View>
               <Text
-                style={[
-                  styles.statLabel,
-                  { color: colors.text.secondary },
-                ]}
+                style={[styles.statLabel, { color: colors.text.secondary }]}
               >
                 Savings Goals
               </Text>
-              <Text
-                style={[
-                  styles.statValue,
-                  { color: colors.text.primary },
-                ]}
-              >
+              <Text style={[styles.statValue, { color: colors.text.primary }]}>
                 {savingsGoals.length}
               </Text>
               <Text
-                style={[
-                  styles.statChange,
-                  { color: colors.text.secondary },
-                ]}
+                style={[styles.statChange, { color: colors.text.secondary }]}
               >
                 {savingsGoals.filter((g) => g.isCompleted).length} completed
               </Text>
@@ -539,9 +575,7 @@ export default function AccountScreen() {
 
         {/* Menu Options */}
         <View style={styles.menuSection}>
-          <Text
-            style={[styles.sectionTitle, { color: colors.text.primary }]}
-          >
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
             Quick Actions
           </Text>
 
@@ -735,7 +769,9 @@ export default function AccountScreen() {
                     borderBottomWidth: 0.5,
                   },
                   (option as any).isSpecial && {
-                    backgroundColor: (option as any).title.includes('Get') ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                    backgroundColor: (option as any).title.includes("Get")
+                      ? "rgba(245, 158, 11, 0.1)"
+                      : "rgba(16, 185, 129, 0.1)",
                   },
                 ]}
                 onPress={() => {
@@ -747,7 +783,9 @@ export default function AccountScreen() {
                     styles.menuIconContainer,
                     (option as any).isSpecial
                       ? {
-                          backgroundColor: (option as any).title.includes('Get') ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                          backgroundColor: (option as any).title.includes("Get")
+                            ? "rgba(245, 158, 11, 0.2)"
+                            : "rgba(16, 185, 129, 0.2)",
                         }
                       : { backgroundColor: colors.primary[100] },
                   ]}
@@ -759,12 +797,14 @@ export default function AccountScreen() {
                     style={[
                       styles.menuTitle,
                       { color: colors.text.primary },
-                      (option as any).isSpecial && { fontWeight: '600' },
+                      (option as any).isSpecial && { fontWeight: "600" },
                     ]}
                   >
                     {option.title}
                     {(option as any).isSpecial && !isPremium && (
-                      <Text style={{ color: '#F59E0B', marginLeft: 8 }}>✨</Text>
+                      <Text style={{ color: "#F59E0B", marginLeft: 8 }}>
+                        ✨
+                      </Text>
                     )}
                   </Text>
                   <Text
@@ -785,7 +825,6 @@ export default function AccountScreen() {
             ))}
           </View>
         </View>
-
 
         {/* Logout Error Display */}
         {logoutError && (
@@ -812,7 +851,10 @@ export default function AccountScreen() {
             disabled={isLoggingOut}
           >
             {isLoggingOut ? (
-              <ActivityIndicator size="small" color={isDark ? "#FCA5A5" : "#DC2626"} />
+              <ActivityIndicator
+                size="small"
+                color={isDark ? "#FCA5A5" : "#DC2626"}
+              />
             ) : (
               <Ionicons
                 name="log-out-outline"
@@ -833,12 +875,7 @@ export default function AccountScreen() {
 
         {/* App Info */}
         <View style={styles.appInfo}>
-          <Text
-            style={[
-              styles.appCopyright,
-              { color: colors.text.tertiary },
-            ]}
-          >
+          <Text style={[styles.appCopyright, { color: colors.text.tertiary }]}>
             Expenzez v1.0.0 - © {new Date().getFullYear()}
           </Text>
         </View>
@@ -1086,8 +1123,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   headerContent: {
     flexDirection: "row",
@@ -1098,32 +1135,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.xl,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
   },
   headerTitle: {
-    fontSize: typography.fontSizes["2xl"],
-    fontWeight: "700" as const,
+    fontSize: 20,
+    fontWeight: "600" as const,
   },
   headerSubtitle: {
-    fontSize: typography.fontSizes.base,
-    marginTop: spacing.xs,
+    fontSize: 14,
+    marginTop: 4,
+    opacity: 0.7,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.xl,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
   profileCard: {
-    borderRadius: borderRadius["4xl"],
+    borderRadius: 12,
     overflow: "hidden",
-    padding: spacing.lg,
+    padding: 16,
+    borderWidth: 1,
   },
   profileGradient: {
     borderRadius: borderRadius["4xl"],
@@ -1134,23 +1173,23 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: "relative" as const,
-    width: 104,
-    height: 104,
+    width: 80,
+    height: 80,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: spacing.md,
-    marginBottom: spacing.md,
+    marginRight: 12,
+    marginBottom: 12,
   },
   avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: {
-    fontSize: typography.fontSizes["2xl"],
-    fontWeight: "700" as const,
+    fontSize: 20,
+    fontWeight: "600" as const,
     color: "white",
   },
   completionBadge: {
@@ -1171,13 +1210,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    fontSize: typography.fontSizes.xl,
-    fontWeight: "700" as const,
+    fontSize: 18,
+    fontWeight: "600" as const,
     color: "white",
   },
   profileEmail: {
-    fontSize: typography.fontSizes.base,
-    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.8)",
   },
   profileBadges: {
     flexDirection: "row",
@@ -1202,17 +1241,17 @@ const styles = StyleSheet.create({
   },
   editButton: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: borderRadius.xl,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
   },
   editButtonText: {
     color: "white",
-    fontWeight: "600" as const,
-    fontSize: typography.fontSizes.base,
+    fontWeight: "500" as const,
+    fontSize: 14,
   },
   editButtonIcon: {
     marginLeft: spacing.sm,
@@ -1220,17 +1259,17 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
+    marginHorizontal: 20,
+    marginTop: 16,
   },
   statCard: {
     flex: 1,
-    marginHorizontal: spacing.xs,
+    marginHorizontal: 4,
   },
   statGradient: {
-    borderRadius: borderRadius["4xl"],
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     alignItems: "center",
   },
   statIconContainer: {
@@ -1240,49 +1279,51 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   statLabel: {
-    fontSize: typography.fontSizes.sm,
-    fontWeight: "600" as const,
+    fontSize: 12,
+    fontWeight: "500" as const,
     textAlign: "center" as const,
+    opacity: 0.7,
   },
   statValue: {
-    fontSize: typography.fontSizes.xl,
-    fontWeight: "700" as const,
+    fontSize: 16,
+    fontWeight: "600" as const,
   },
   statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.sm,
+    marginBottom: 8,
   },
   statChange: {
-    fontSize: typography.fontSizes.sm,
-    fontWeight: "500" as const,
+    fontSize: 12,
+    fontWeight: "400" as const,
+    opacity: 0.7,
   },
   menuSection: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
+    marginHorizontal: 20,
+    marginTop: 16,
   },
   sectionTitle: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: "700" as const,
-    marginBottom: spacing.md,
+    fontSize: 16,
+    fontWeight: "600" as const,
+    marginBottom: 12,
   },
   menuCard: {
-    borderRadius: borderRadius["4xl"],
+    borderRadius: 8,
     borderWidth: 1,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   menuIconContainer: {
-    borderRadius: borderRadius.xl,
-    padding: spacing.md,
-    marginRight: spacing.md,
+    borderRadius: 8,
+    padding: 8,
+    marginRight: 12,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1290,34 +1331,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuTitle: {
-    fontSize: typography.fontSizes.base,
-    fontWeight: "600" as const,
+    fontSize: 15,
+    fontWeight: "500" as const,
   },
   menuSubtitle: {
-    fontSize: typography.fontSizes.sm,
+    fontSize: 12,
+    opacity: 0.7,
   },
   logoutSection: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
+    marginHorizontal: 20,
+    marginTop: 16,
   },
   logoutButton: {
-    borderRadius: borderRadius["4xl"],
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
   },
   logoutText: {
-    fontWeight: "600" as const,
-    fontSize: typography.fontSizes.base,
-    marginLeft: spacing.md,
+    fontWeight: "500" as const,
+    fontSize: 15,
+    marginLeft: 8,
   },
   appInfo: {
     alignItems: "center",
-    marginHorizontal: spacing.lg,
-    marginTop: spacing["2xl"],
+    marginHorizontal: 20,
+    marginTop: 24,
   },
   appLogo: {
     borderRadius: borderRadius.xl,
@@ -1334,8 +1376,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   appCopyright: {
-    fontSize: typography.fontSizes.xs,
-    marginTop: spacing.xs,
+    fontSize: 11,
+    marginTop: 4,
+    opacity: 0.6,
   },
   loadingContainer: {
     flex: 1,
@@ -1348,13 +1391,13 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
   },
   profileSection: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
+    marginHorizontal: 20,
+    marginTop: 8,
   },
   profileContent: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.md,
+    marginBottom: 12,
   },
   settingsButton: {
     width: 40,
@@ -1517,33 +1560,34 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: spacing.md,
-    marginBottom: spacing.lg,
+    gap: 8,
+    marginBottom: 16,
   },
   quickActionCard: {
     width: "47%",
   },
   quickActionGradient: {
-    borderRadius: borderRadius["2xl"],
-    padding: spacing.lg,
+    borderRadius: 8,
+    padding: 12,
     alignItems: "center",
   },
   quickActionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.sm,
+    marginBottom: 8,
   },
   quickActionTitle: {
-    fontSize: typography.fontSizes.sm,
-    fontWeight: "600" as const,
-    marginBottom: spacing.xs,
+    fontSize: 13,
+    fontWeight: "500" as const,
+    marginBottom: 4,
   },
   quickActionSubtitle: {
-    fontSize: typography.fontSizes.xs,
-    fontWeight: "500" as const,
+    fontSize: 11,
+    fontWeight: "400" as const,
+    opacity: 0.7,
   },
   premiumMenuCard: {
     borderRadius: borderRadius["4xl"],
@@ -1680,13 +1724,13 @@ const styles = StyleSheet.create({
     marginVertical: spacing.md,
     padding: spacing.md,
     borderRadius: 8,
-    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+    backgroundColor: "rgba(220, 38, 38, 0.1)",
     borderWidth: 1,
-    borderColor: 'rgba(220, 38, 38, 0.3)',
+    borderColor: "rgba(220, 38, 38, 0.3)",
   },
   errorText: {
     fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
+    fontWeight: "500",
+    textAlign: "center",
   },
 });
