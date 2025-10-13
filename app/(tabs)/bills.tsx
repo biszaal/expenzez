@@ -626,7 +626,10 @@ export default function BillsScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background.primary }]}
+      style={[
+        styles.container,
+        { backgroundColor: colors.background.secondary },
+      ]}
     >
       <ScrollView
         style={styles.scrollView}
@@ -669,12 +672,19 @@ export default function BillsScreen() {
         )}
       </ScrollView>
 
-      {/* Floating Action Button for Adding New Bill */}
+      {/* Minimal Floating Action Button */}
       <TouchableOpacity
-        style={[styles.fabButton, { backgroundColor: colors.primary[500] }]}
+        style={[
+          styles.fabButton,
+          {
+            backgroundColor: colors.background.primary,
+            borderWidth: 1,
+            borderColor: colors.border.light,
+          },
+        ]}
         onPress={showAddBillOptions}
       >
-        <Ionicons name="add" size={28} color="white" />
+        <Ionicons name="add" size={24} color={colors.text.primary} />
       </TouchableOpacity>
 
       {/* Bill Details Modal */}
@@ -1178,21 +1188,21 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 1.5,
   },
-  // Floating Action Button
+  // Minimal Floating Action Button
   fabButton: {
     position: "absolute",
     bottom: spacing.xl,
     right: spacing.lg,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 8,
+    elevation: 2,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
 });
 

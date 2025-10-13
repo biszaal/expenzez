@@ -5,6 +5,22 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../app/auth/AuthContext";
 
+// Number formatting utility
+const formatAmount = (amount: number): string => {
+  const absAmount = Math.abs(amount);
+
+  if (absAmount >= 100000) {
+    // For amounts >= 1,00,000 (Indian numbering system)
+    return absAmount.toLocaleString("en-IN");
+  } else if (absAmount >= 10000) {
+    // For amounts >= 10,000, use comma separation
+    return absAmount.toLocaleString("en-US");
+  } else {
+    // For smaller amounts, show as is
+    return absAmount.toFixed(2);
+  }
+};
+
 interface EnhancedBillsHeaderProps {
   totalBills: number;
   monthlyTotal: number;
@@ -28,78 +44,29 @@ export const EnhancedBillsHeader: React.FC<EnhancedBillsHeaderProps> = ({
     <View
       style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
-      {/* Simple Header */}
+      {/* Clean Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={[styles.title, { color: colors.text.primary }]}>
             Bills
           </Text>
-          <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
-            {totalBills} recurring bills • £{Math.abs(monthlyTotal).toFixed(0)}
-            /month
+          <Text style={[styles.subtitle, { color: colors.text.tertiary }]}>
+            {totalBills} bills • £{formatAmount(monthlyTotal)}/month
           </Text>
         </View>
 
         <TouchableOpacity
-          style={[
-            styles.refreshButton,
-            { backgroundColor: colors.background.secondary },
-          ]}
+          style={styles.refreshButton}
           onPress={onRefresh}
           disabled={isRefreshing}
           activeOpacity={0.7}
         >
           <Ionicons
             name={isRefreshing ? "refresh" : "refresh-outline"}
-            size={20}
-            color={colors.primary[500]}
+            size={16}
+            color={colors.text.tertiary}
           />
         </TouchableOpacity>
-      </View>
-
-      {/* Quick Stats Row */}
-      <View style={styles.statsRow}>
-        <View
-          style={[
-            styles.statItem,
-            { backgroundColor: colors.background.secondary },
-          ]}
-        >
-          <Text style={[styles.statValue, { color: colors.text.primary }]}>
-            {totalBills}
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
-            Total Bills
-          </Text>
-        </View>
-
-        <View
-          style={[
-            styles.statItem,
-            { backgroundColor: colors.background.secondary },
-          ]}
-        >
-          <Text style={[styles.statValue, { color: colors.text.primary }]}>
-            £{Math.abs(monthlyTotal).toFixed(0)}
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
-            Monthly Total
-          </Text>
-        </View>
-
-        <View
-          style={[
-            styles.statItem,
-            { backgroundColor: colors.background.secondary },
-          ]}
-        >
-          <Text style={[styles.statValue, { color: colors.error[500] }]}>
-            {upcomingCount}
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
-            Due Soon
-          </Text>
-        </View>
       </View>
     </View>
   );
@@ -107,54 +74,59 @@ export const EnhancedBillsHeader: React.FC<EnhancedBillsHeaderProps> = ({
 
 const styles = {
   container: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 24,
   },
   header: {
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   headerLeft: {
     flex: 1,
   },
   title: {
     fontSize: 28,
-    fontWeight: "700" as const,
+    fontWeight: "600" as const,
     marginBottom: 4,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "400" as const,
+    opacity: 0.7,
   },
   refreshButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
   statsRow: {
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
-    gap: 12,
+    gap: 16,
   },
   statItem: {
     flex: 1,
-    borderRadius: 12,
-    padding: 16,
     alignItems: "center" as const,
+    paddingVertical: 12,
+    minWidth: 0,
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: "700" as const,
+    fontSize: 18,
+    fontWeight: "600" as const,
     marginBottom: 4,
+    letterSpacing: -0.3,
+    flexWrap: "nowrap" as const,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "500" as const,
     textAlign: "center" as const,
+    opacity: 0.7,
   },
 };

@@ -42,13 +42,13 @@ export default function SecurityScreen() {
     checkSecurityStatus,
     syncSecurityPreferences,
     unlockApp,
-    extendSession
+    extendSession,
   } = useSecurity();
   const [hasBiometric, setHasBiometric] = useState(false);
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPinVerification, setShowPinVerification] = useState(false);
-  const [pinInput, setPinInput] = useState('');
+  const [pinInput, setPinInput] = useState("");
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
   const [loadingDevices, setLoadingDevices] = useState(false);
   const [currentDeviceId, setCurrentDeviceId] = useState<string | null>(null);
@@ -56,9 +56,13 @@ export default function SecurityScreen() {
   // Auto-verification effect
   React.useEffect(() => {
     if (pinInput.length === 5 && !isLoading) {
-      console.log('🔐 [Security] useEffect: PIN length 5, triggering auto-verification');
+      console.log(
+        "🔐 [Security] useEffect: PIN length 5, triggering auto-verification"
+      );
       const timeoutId = setTimeout(() => {
-        console.log('🔐 [Security] useEffect: Executing verification after timeout');
+        console.log(
+          "🔐 [Security] useEffect: Executing verification after timeout"
+        );
         verifyPinAndDisableSecurity();
       }, 200);
 
@@ -68,7 +72,8 @@ export default function SecurityScreen() {
   }, [pinInput, isLoading]);
 
   // Local state to force UI updates when context state changes
-  const [localSecurityEnabled, setLocalSecurityEnabled] = useState(isSecurityEnabled);
+  const [localSecurityEnabled, setLocalSecurityEnabled] =
+    useState(isSecurityEnabled);
 
   // Debouncing refs to prevent excessive API calls
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -80,7 +85,6 @@ export default function SecurityScreen() {
       setLocalSecurityEnabled(isSecurityEnabled);
     }
   }, [isSecurityEnabled, localSecurityEnabled]);
-
 
   // Debounced security status check to prevent excessive API calls
   const debouncedCheckSecurityStatus = useCallback(() => {
@@ -104,7 +108,7 @@ export default function SecurityScreen() {
       try {
         await extendSession();
       } catch (error) {
-        console.warn('Failed to extend session:', error);
+        console.warn("Failed to extend session:", error);
       }
 
       // Load all settings
@@ -128,20 +132,26 @@ export default function SecurityScreen() {
         try {
           await extendSession();
         } catch (error) {
-          console.warn('Failed to extend unlock session:', error);
+          console.warn("Failed to extend unlock session:", error);
         }
 
         // Only check security status with a delay if needed
         setTimeout(async () => {
           // Force component re-render by checking local state without triggering API calls
-          const securityEnabled = await AsyncStorage.getItem('@expenzez_security_enabled');
+          const securityEnabled = await AsyncStorage.getItem(
+            "@expenzez_security_enabled"
+          );
 
           // Only sync local state if there's a clear mismatch
-          if (securityEnabled === 'true' && !isSecurityEnabled) {
-            console.log('🔐 [SecuritySettings] Syncing enabled state from storage');
+          if (securityEnabled === "true" && !isSecurityEnabled) {
+            console.log(
+              "🔐 [SecuritySettings] Syncing enabled state from storage"
+            );
             setLocalSecurityEnabled(true);
-          } else if (securityEnabled === 'false' && isSecurityEnabled) {
-            console.log('🔐 [SecuritySettings] Syncing disabled state from storage');
+          } else if (securityEnabled === "false" && isSecurityEnabled) {
+            console.log(
+              "🔐 [SecuritySettings] Syncing disabled state from storage"
+            );
             setLocalSecurityEnabled(false);
           }
         }, 100); // Reduced delay to make UI more responsive
@@ -152,7 +162,9 @@ export default function SecurityScreen() {
 
   // React to direct security state changes (without excessive API calls)
   React.useEffect(() => {
-    console.log('🔐 [SecuritySettings] Security state changed:', { isSecurityEnabled });
+    console.log("🔐 [SecuritySettings] Security state changed:", {
+      isSecurityEnabled,
+    });
     // Only update biometric settings when security state changes
     if (isSecurityEnabled) {
       checkBiometricAvailability();
@@ -200,24 +212,26 @@ export default function SecurityScreen() {
           "Create PIN",
           "You need to create a 5-digit PIN to enable app security.",
           [
-            { 
-              text: "Cancel", 
+            {
+              text: "Cancel",
               style: "cancel",
               onPress: () => {
                 // Reset loading state when cancelled
                 setIsLoading(false);
-              }
+              },
             },
             {
               text: "Create PIN",
               onPress: () => {
                 // Don't clear loading here - let the user see we're navigating
-                console.log('🔐 [Security] Navigating to PIN creation (always create new PIN)');
-                router.push('/security/create-pin');
+                console.log(
+                  "🔐 [Security] Navigating to PIN creation (always create new PIN)"
+                );
+                router.push("/security/create-pin");
                 // Clear loading after a short delay
                 setTimeout(() => setIsLoading(false), 500);
-              }
-            }
+              },
+            },
           ]
         );
         return; // Don't execute finally block immediately
@@ -231,7 +245,7 @@ export default function SecurityScreen() {
               text: "Enter PIN",
               style: "destructive",
               onPress: () => {
-                setPinInput('');
+                setPinInput("");
                 setShowPinVerification(true);
               },
             },
@@ -291,56 +305,56 @@ export default function SecurityScreen() {
   };
 
   const verifyPinAndDisableSecurity = async () => {
-    console.log('🔐 [Security] verifyPinAndDisableSecurity called', {
+    console.log("🔐 [Security] verifyPinAndDisableSecurity called", {
       isLoading,
       pinInputLength: pinInput.length,
-      pinInput: pinInput.replace(/./g, '*') // Hide PIN in logs
+      pinInput: pinInput.replace(/./g, "*"), // Hide PIN in logs
     });
 
     // Prevent multiple calls while loading or invalid PIN length
     if (isLoading) {
-      console.log('🔐 [Security] Already loading, skipping verification');
+      console.log("🔐 [Security] Already loading, skipping verification");
       return;
     }
 
     if (pinInput.length !== 5) {
-      console.log('🔐 [Security] PIN length not 5, skipping verification');
+      console.log("🔐 [Security] PIN length not 5, skipping verification");
       return;
     }
 
     try {
-      console.log('🔐 [Security] Starting PIN verification...');
+      console.log("🔐 [Security] Starting PIN verification...");
       setIsLoading(true);
 
       let validation: { success: boolean; error?: any } = { success: false };
 
       const deviceId = await deviceManager.getDeviceId();
-      console.log('🔐 [Security] Got device ID:', deviceId.slice(0, 8) + '...');
+      console.log("🔐 [Security] Got device ID:", deviceId.slice(0, 8) + "...");
 
-      console.log('🔐 [Security] Calling nativeSecurityAPI.validatePin...');
+      console.log("🔐 [Security] Calling nativeSecurityAPI.validatePin...");
       validation = await nativeSecurityAPI.validatePin({
         pin: pinInput,
         deviceId,
       });
-      console.log('🔐 [Security] PIN validation completed:', validation);
+      console.log("🔐 [Security] PIN validation completed:", validation);
 
-      console.log('🔐 [Security] PIN validation result:', validation.success);
+      console.log("🔐 [Security] PIN validation result:", validation.success);
 
       if (validation.success) {
         // PIN is correct, proceed with disabling security
-        console.log('🔐 [Security] PIN correct, disabling security...');
+        console.log("🔐 [Security] PIN correct, disabling security...");
 
         // Small delay to show success state
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         setShowPinVerification(false);
-        setPinInput('');
+        setPinInput("");
 
-        console.log('🔐 [Security] Calling unlockApp...');
+        console.log("🔐 [Security] Calling unlockApp...");
         await unlockApp();
-        console.log('🔐 [Security] Calling disableSecurity...');
+        console.log("🔐 [Security] Calling disableSecurity...");
         await disableSecurity();
-        console.log('🔐 [Security] Security disabled successfully');
+        console.log("🔐 [Security] Security disabled successfully");
 
         Alert.alert(
           "Security Disabled",
@@ -348,8 +362,8 @@ export default function SecurityScreen() {
         );
       } else {
         // PIN is incorrect - reset PIN input and show error
-        console.log('🔐 [Security] PIN incorrect, showing error');
-        setPinInput('');
+        console.log("🔐 [Security] PIN incorrect, showing error");
+        setPinInput("");
         Alert.alert(
           "Incorrect PIN",
           "The PIN you entered is incorrect. Please try again. (Try 00000 for test mode)",
@@ -357,19 +371,19 @@ export default function SecurityScreen() {
             {
               text: "Try Again",
               onPress: () => {
-                console.log('🔐 [Security] User chose to try again');
-                setPinInput('');
-              }
+                console.log("🔐 [Security] User chose to try again");
+                setPinInput("");
+              },
             },
             {
               text: "Cancel",
               style: "cancel",
               onPress: () => {
-                console.log('🔐 [Security] User cancelled verification');
+                console.log("🔐 [Security] User cancelled verification");
                 setShowPinVerification(false);
-                setPinInput('');
-              }
-            }
+                setPinInput("");
+              },
+            },
           ]
         );
       }
@@ -378,33 +392,33 @@ export default function SecurityScreen() {
       console.error("🔐 [Security] Error details:", {
         message: error?.message,
         stack: error?.stack,
-        name: error?.name
+        name: error?.name,
       });
-      setPinInput('');
+      setPinInput("");
       Alert.alert(
         "Verification Failed",
-        `Failed to verify PIN: ${error?.message || 'Unknown error'}. Try 00000 for test mode.`,
+        `Failed to verify PIN: ${error?.message || "Unknown error"}. Try 00000 for test mode.`,
         [
           {
             text: "Try Again",
             onPress: () => {
-              console.log('🔐 [Security] User chose to retry after error');
-              setPinInput('');
-            }
+              console.log("🔐 [Security] User chose to retry after error");
+              setPinInput("");
+            },
           },
           {
             text: "Cancel",
             style: "cancel",
             onPress: () => {
-              console.log('🔐 [Security] User cancelled after error');
+              console.log("🔐 [Security] User cancelled after error");
               setShowPinVerification(false);
-              setPinInput('');
-            }
-          }
+              setPinInput("");
+            },
+          },
         ]
       );
     } finally {
-      console.log('🔐 [Security] PIN verification completed, clearing loading');
+      console.log("🔐 [Security] PIN verification completed, clearing loading");
       setIsLoading(false);
     }
   };
@@ -414,7 +428,7 @@ export default function SecurityScreen() {
       const deviceId = await deviceManager.getDeviceId();
       setCurrentDeviceId(deviceId);
     } catch (error) {
-      console.error('Error getting current device ID:', error);
+      console.error("Error getting current device ID:", error);
     }
   };
 
@@ -426,7 +440,7 @@ export default function SecurityScreen() {
         setDevices(response.devices);
       }
     } catch (error) {
-      console.error('Error loading devices:', error);
+      console.error("Error loading devices:", error);
       // Don't show error alert for now, just fail silently
     } finally {
       setLoadingDevices(false);
@@ -445,11 +459,17 @@ export default function SecurityScreen() {
           onPress: async () => {
             try {
               await deviceAPI.revokeDevice(deviceId);
-              Alert.alert("Device Revoked", `"${deviceName}" has been revoked successfully.`);
+              Alert.alert(
+                "Device Revoked",
+                `"${deviceName}" has been revoked successfully.`
+              );
               await loadDevices(); // Reload the list
             } catch (error) {
-              console.error('Error revoking device:', error);
-              Alert.alert("Error", "Failed to revoke device. Please try again.");
+              console.error("Error revoking device:", error);
+              Alert.alert(
+                "Error",
+                "Failed to revoke device. Please try again."
+              );
             }
           },
         },
@@ -463,7 +483,7 @@ export default function SecurityScreen() {
       Alert.alert("Device Trusted", `"${deviceName}" is now a trusted device.`);
       await loadDevices(); // Reload the list
     } catch (error) {
-      console.error('Error trusting device:', error);
+      console.error("Error trusting device:", error);
       Alert.alert("Error", "Failed to trust device. Please try again.");
     }
   };
@@ -473,7 +493,7 @@ export default function SecurityScreen() {
     if (device.platform) parts.push(device.platform);
     if (device.deviceType) parts.push(device.deviceType);
     if (device.browser) parts.push(device.browser);
-    return parts.join(' • ');
+    return parts.join(" • ");
   };
 
   const formatLastSeen = (lastSeen: string) => {
@@ -483,9 +503,9 @@ export default function SecurityScreen() {
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) {
-      return 'Today';
+      return "Today";
     } else if (diffDays === 1) {
-      return 'Yesterday';
+      return "Yesterday";
     } else if (diffDays < 7) {
       return `${diffDays} days ago`;
     } else {
@@ -607,10 +627,9 @@ export default function SecurityScreen() {
                       { color: colors.text.secondary },
                     ]}
                   >
-                    {securityPreferences?.appLockEnabled ?
-                      "Synced across all devices" :
-                      "Require PIN to unlock app"
-                    }
+                    {securityPreferences?.appLockEnabled
+                      ? "Synced across all devices"
+                      : "Require PIN to unlock app"}
                   </Text>
                 </View>
               </View>
@@ -637,13 +656,17 @@ export default function SecurityScreen() {
             <View
               style={[
                 styles.card,
-                { backgroundColor: colors.warning[50], borderWidth: 1, borderColor: colors.warning[200] },
+                {
+                  backgroundColor: colors.warning[50],
+                  borderWidth: 1,
+                  borderColor: colors.warning[200],
+                },
                 shadows.sm,
               ]}
             >
               <TouchableOpacity
                 style={styles.settingItem}
-                onPress={() => router.push('/security/create-pin')}
+                onPress={() => router.push("/security/create-pin")}
               >
                 <View style={styles.settingLeft}>
                   <View
@@ -673,7 +696,8 @@ export default function SecurityScreen() {
                         { color: colors.warning[600] },
                       ]}
                     >
-                      App Lock is enabled on your account. Set up a PIN on this device to unlock the app.
+                      App Lock is enabled on your account. Set up a PIN on this
+                      device to unlock the app.
                     </Text>
                   </View>
                 </View>
@@ -704,30 +728,46 @@ export default function SecurityScreen() {
                 <Ionicons
                   name="shield-checkmark"
                   size={16}
-                  color={securityPreferences.appLockEnabled ? colors.success[500] : colors.gray[400]}
+                  color={
+                    securityPreferences.appLockEnabled
+                      ? colors.success[500]
+                      : colors.gray[400]
+                  }
                 />
-                <Text style={[styles.infoText, { color: colors.text.secondary }]}>
-                  App Lock: {securityPreferences.appLockEnabled ? 'Enabled across all devices' : 'Disabled'}
+                <Text
+                  style={[styles.infoText, { color: colors.text.secondary }]}
+                >
+                  App Lock:{" "}
+                  {securityPreferences.appLockEnabled
+                    ? "Enabled across all devices"
+                    : "Disabled"}
                 </Text>
               </View>
               <View style={styles.infoItem}>
                 <Ionicons
                   name="phone-portrait"
                   size={16}
-                  color={!needsPinSetup ? colors.success[500] : colors.warning[500]}
+                  color={
+                    !needsPinSetup ? colors.success[500] : colors.warning[500]
+                  }
                 />
-                <Text style={[styles.infoText, { color: colors.text.secondary }]}>
-                  This Device: {needsPinSetup ? 'PIN setup required' : 'PIN configured'}
+                <Text
+                  style={[styles.infoText, { color: colors.text.secondary }]}
+                >
+                  This Device:{" "}
+                  {needsPinSetup ? "PIN setup required" : "PIN configured"}
                 </Text>
               </View>
               <View style={styles.infoItem}>
-                <Ionicons
-                  name="time"
-                  size={16}
-                  color={colors.primary[500]}
-                />
-                <Text style={[styles.infoText, { color: colors.text.secondary }]}>
-                  Session Timeout: {Math.round((securityPreferences.sessionTimeout || 300000) / 60000)} minutes
+                <Ionicons name="time" size={16} color={colors.primary[500]} />
+                <Text
+                  style={[styles.infoText, { color: colors.text.secondary }]}
+                >
+                  Session Timeout:{" "}
+                  {Math.round(
+                    (securityPreferences.sessionTimeout || 300000) / 60000
+                  )}{" "}
+                  minutes
                 </Text>
               </View>
             </View>
@@ -796,57 +836,61 @@ export default function SecurityScreen() {
 
         {/* Password Management Section */}
         {localSecurityEnabled && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-            Password Management
-          </Text>
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: colors.background.primary },
-              shadows.sm,
-            ]}
-          >
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={changePassword}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              Password Management
+            </Text>
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: colors.background.primary },
+                shadows.sm,
+              ]}
             >
-              <View style={styles.settingLeft}>
-                <View
-                  style={[
-                    styles.settingIcon,
-                    { backgroundColor: colors.warning[100] },
-                  ]}
-                >
-                  <Ionicons name="key" size={20} color={colors.warning[500]} />
-                </View>
-                <View style={styles.settingContent}>
-                  <Text
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={changePassword}
+              >
+                <View style={styles.settingLeft}>
+                  <View
                     style={[
-                      styles.settingTitle,
-                      { color: colors.text.primary },
+                      styles.settingIcon,
+                      { backgroundColor: colors.warning[100] },
                     ]}
                   >
-                    Change PIN
-                  </Text>
-                  <Text
-                    style={[
-                      styles.settingSubtitle,
-                      { color: colors.text.secondary },
-                    ]}
-                  >
-                    Update your 5-digit PIN
-                  </Text>
+                    <Ionicons
+                      name="key"
+                      size={20}
+                      color={colors.warning[500]}
+                    />
+                  </View>
+                  <View style={styles.settingContent}>
+                    <Text
+                      style={[
+                        styles.settingTitle,
+                        { color: colors.text.primary },
+                      ]}
+                    >
+                      Change PIN
+                    </Text>
+                    <Text
+                      style={[
+                        styles.settingSubtitle,
+                        { color: colors.text.secondary },
+                      ]}
+                    >
+                      Update your 5-digit PIN
+                    </Text>
+                  </View>
                 </View>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.gray[400]}
-              />
-            </TouchableOpacity>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.gray[400]}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
         )}
 
         {/* Trusted Devices Section */}
@@ -864,14 +908,17 @@ export default function SecurityScreen() {
             {loadingDevices ? (
               <View style={styles.loadingDevicesContainer}>
                 <ActivityIndicator size="small" color={colors.primary[500]} />
-                <Text style={[styles.loadingDevicesText, { color: colors.text.secondary }]}>
+                <Text
+                  style={[
+                    styles.loadingDevicesText,
+                    { color: colors.text.secondary },
+                  ]}
+                >
                   Loading devices...
                 </Text>
               </View>
             ) : devices.length === 0 ? (
-              <EmptyState
-                type="devices"
-              />
+              <EmptyState type="devices" />
             ) : (
               devices.map((device, index) => {
                 const isCurrentDevice = device.deviceId === currentDeviceId;
@@ -879,20 +926,23 @@ export default function SecurityScreen() {
                 // Enhanced device icon logic
                 const getDeviceIcon = () => {
                   // iOS devices
-                  if (device.platform === 'ios') {
-                    if (device.deviceType === 'tablet') return 'tablet-portrait';
-                    if (device.deviceType === 'desktop') return 'desktop';
-                    return 'phone-portrait';
+                  if (device.platform === "ios") {
+                    if (device.deviceType === "tablet")
+                      return "tablet-portrait";
+                    if (device.deviceType === "desktop") return "desktop";
+                    return "phone-portrait";
                   }
                   // Android devices
-                  if (device.platform === 'android') {
-                    if (device.deviceType === 'tablet') return 'tablet-landscape';
-                    return 'phone-portrait-outline';
+                  if (device.platform === "android") {
+                    if (device.deviceType === "tablet")
+                      return "tablet-landscape";
+                    return "phone-portrait-outline";
                   }
                   // Other devices
-                  if (device.deviceType === 'desktop') return 'desktop-outline';
-                  if (device.deviceType === 'tablet') return 'tablet-landscape-outline';
-                  return 'hardware-chip-outline';
+                  if (device.deviceType === "desktop") return "desktop-outline";
+                  if (device.deviceType === "tablet")
+                    return "tablet-landscape-outline";
+                  return "hardware-chip-outline";
                 };
 
                 // Trust level color
@@ -934,15 +984,35 @@ export default function SecurityScreen() {
                             >
                               {device.deviceName}
                               {isCurrentDevice && (
-                                <Text style={[styles.currentDeviceBadge, { color: colors.success[600] }]}>
-                                  {' '}• This device
+                                <Text
+                                  style={[
+                                    styles.currentDeviceBadge,
+                                    { color: colors.success[600] },
+                                  ]}
+                                >
+                                  {" "}
+                                  • This device
                                 </Text>
                               )}
                             </Text>
                             {device.isTrusted && (
-                              <View style={[styles.trustedBadge, { backgroundColor: colors.success[100] }]}>
-                                <Ionicons name="shield-checkmark" size={12} color={colors.success[600]} />
-                                <Text style={[styles.trustedBadgeText, { color: colors.success[600] }]}>
+                              <View
+                                style={[
+                                  styles.trustedBadge,
+                                  { backgroundColor: colors.success[100] },
+                                ]}
+                              >
+                                <Ionicons
+                                  name="shield-checkmark"
+                                  size={12}
+                                  color={colors.success[600]}
+                                />
+                                <Text
+                                  style={[
+                                    styles.trustedBadgeText,
+                                    { color: colors.success[600] },
+                                  ]}
+                                >
                                   Trusted
                                 </Text>
                               </View>
@@ -979,24 +1049,53 @@ export default function SecurityScreen() {
                       <View style={styles.deviceActions}>
                         {!device.isTrusted && (
                           <TouchableOpacity
-                            style={[styles.deviceActionButton, { backgroundColor: colors.success[100] }]}
-                            onPress={() => handleTrustDevice(device.deviceId, device.deviceName)}
+                            style={[
+                              styles.deviceActionButton,
+                              { backgroundColor: colors.success[100] },
+                            ]}
+                            onPress={() =>
+                              handleTrustDevice(
+                                device.deviceId,
+                                device.deviceName
+                              )
+                            }
                           >
-                            <Ionicons name="shield-checkmark" size={16} color={colors.success[600]} />
+                            <Ionicons
+                              name="shield-checkmark"
+                              size={16}
+                              color={colors.success[600]}
+                            />
                           </TouchableOpacity>
                         )}
                         {!isCurrentDevice && (
                           <TouchableOpacity
-                            style={[styles.deviceActionButton, { backgroundColor: colors.error[100] }]}
-                            onPress={() => handleRevokeDevice(device.deviceId, device.deviceName)}
+                            style={[
+                              styles.deviceActionButton,
+                              { backgroundColor: colors.error[100] },
+                            ]}
+                            onPress={() =>
+                              handleRevokeDevice(
+                                device.deviceId,
+                                device.deviceName
+                              )
+                            }
                           >
-                            <Ionicons name="trash" size={16} color={colors.error[600]} />
+                            <Ionicons
+                              name="trash"
+                              size={16}
+                              color={colors.error[600]}
+                            />
                           </TouchableOpacity>
                         )}
                       </View>
                     </View>
                     {index < devices.length - 1 && (
-                      <View style={[styles.deviceSeparator, { backgroundColor: colors.gray[200] }]} />
+                      <View
+                        style={[
+                          styles.deviceSeparator,
+                          { backgroundColor: colors.gray[200] },
+                        ]}
+                      />
                     )}
                   </View>
                 );
@@ -1076,89 +1175,128 @@ export default function SecurityScreen() {
         animationType="slide"
         presentationStyle="fullScreen"
         onRequestClose={() => {
-          setPinInput('');
+          setPinInput("");
           setShowPinVerification(false);
         }}
       >
-        <View style={[styles.verificationContainer, { backgroundColor: colors.background.primary }]}>
+        <View
+          style={[
+            styles.verificationContainer,
+            { backgroundColor: colors.background.primary },
+          ]}
+        >
           <SafeAreaView style={styles.safeArea}>
-          {/* Header */}
-          <View style={styles.verificationHeader}>
-            <TouchableOpacity
-              onPress={() => {
-                setPinInput('');
-                setShowPinVerification(false);
-              }}
-              style={[styles.closeButton, { backgroundColor: colors.background.secondary }]}
-            >
-              <Ionicons name="close" size={24} color={colors.text.primary} />
-            </TouchableOpacity>
-            <Text style={[styles.verificationTitle, { color: colors.text.primary }]}>
-              Verify Your PIN
-            </Text>
-            <View style={{ width: 40 }} />
-          </View>
-
-          {/* Content */}
-          <View style={styles.verificationContent}>
-            {/* Title Section */}
-            <View style={styles.verificationTextSection}>
-              <Text style={[styles.verificationMainText, { color: colors.text.primary }]}>
-                Disable App Security
+            {/* Header */}
+            <View style={styles.verificationHeader}>
+              <TouchableOpacity
+                onPress={() => {
+                  setPinInput("");
+                  setShowPinVerification(false);
+                }}
+                style={[
+                  styles.closeButton,
+                  { backgroundColor: colors.background.secondary },
+                ]}
+              >
+                <Ionicons name="close" size={24} color={colors.text.primary} />
+              </TouchableOpacity>
+              <Text
+                style={[
+                  styles.verificationTitle,
+                  { color: colors.text.primary },
+                ]}
+              >
+                Verify Your PIN
               </Text>
-              <Text style={[styles.verificationSubText, { color: colors.text.secondary }]}>
-                Enter your 5-digit PIN to remove app lock protection
-              </Text>
+              <View style={{ width: 40 }} />
             </View>
 
-            {/* PIN Input Section */}
-            <View style={styles.verificationPinSection}>
-              <PinInput
-                pin={pinInput}
-                onPinChange={(newPin) => {
-                  console.log('🔐 [Security] PIN input changed:', {
-                    oldLength: pinInput.length,
-                    newLength: newPin.length,
-                    isLoading
-                  });
-
-                  setPinInput(newPin);
-
-                  // Auto-verification is handled by useEffect above
-                }}
-                isLoading={isLoading}
-                maxLength={5}
-                showBiometric={false}
-              />
-
-              {/* Fixed Height Status Container */}
-              <View style={styles.statusContainer}>
-                {isLoading ? (
-                  <View style={styles.loadingSection}>
-                    <ActivityIndicator size="small" color={colors.primary[500]} />
-                    <Text style={[styles.statusText, { color: colors.primary[500], marginLeft: spacing.sm }]}>
-                      Verifying PIN...
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={{ height: 40 }} />
-                )}
+            {/* Content */}
+            <View style={styles.verificationContent}>
+              {/* Title Section */}
+              <View style={styles.verificationTextSection}>
+                <Text
+                  style={[
+                    styles.verificationMainText,
+                    { color: colors.text.primary },
+                  ]}
+                >
+                  Disable App Security
+                </Text>
+                <Text
+                  style={[
+                    styles.verificationSubText,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  Enter your 5-digit PIN to remove app lock protection
+                </Text>
               </View>
 
-              {/* Spacer to maintain layout */}
-              <View style={{ height: 60 }} />
-            </View>
+              {/* PIN Input Section */}
+              <View style={styles.verificationPinSection}>
+                <PinInput
+                  pin={pinInput}
+                  onPinChange={(newPin) => {
+                    console.log("🔐 [Security] PIN input changed:", {
+                      oldLength: pinInput.length,
+                      newLength: newPin.length,
+                      isLoading,
+                    });
 
-            {/* Emergency Manual Button (hidden unless needed) */}
-            {pinInput.length === 5 && !isLoading && false && (
-              <TouchableOpacity
-                style={[styles.manualVerifyButton, { backgroundColor: colors.error[500] }]}
-                onPress={() => {
-                  console.log('🔐 [Security] Manual verify button pressed');
-                  verifyPinAndDisableSecurity();
+                    setPinInput(newPin);
+
+                    // Auto-verification is handled by useEffect above
+                  }}
+                  isLoading={isLoading}
+                  maxLength={5}
+                  showBiometric={false}
+                />
+
+                {/* Fixed Height Status Container */}
+                <View style={styles.statusContainer}>
+                  {isLoading ? (
+                    <View style={styles.loadingSection}>
+                      <ActivityIndicator
+                        size="small"
+                        color={colors.primary[500]}
+                      />
+                      <Text
+                        style={[
+                          styles.statusText,
+                          {
+                            color: colors.primary[500],
+                            marginLeft: spacing.sm,
+                          },
+                        ]}
+                      >
+                        Verifying PIN...
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={{ height: 40 }} />
+                  )}
+                </View>
+
+                {/* Spacer to maintain layout */}
+                <View style={{ height: 60 }} />
+              </View>
+
+              {/* Emergency Manual Button (hidden unless needed) */}
+              {pinInput.length === 5 && !isLoading && false && (
+                <TouchableOpacity
+                  style={[
+                    styles.manualVerifyButton,
+                    { backgroundColor: colors.error[500] },
+                  ]}
+                  onPress={() => {
+                    console.log("🔐 [Security] Manual verify button pressed");
+                    verifyPinAndDisableSecurity();
                   }}
                 >
-                  <Text style={[styles.manualVerifyButtonText, { color: 'white' }]}>
+                  <Text
+                    style={[styles.manualVerifyButtonText, { color: "white" }]}
+                  >
                     Disable Security
                   </Text>
                 </TouchableOpacity>
@@ -1167,13 +1305,30 @@ export default function SecurityScreen() {
 
             {/* Loading Overlay */}
             {isLoading && (
-              <View style={[styles.loadingOverlay, { backgroundColor: colors.background.primary + '90' }]}>
-                <View style={[styles.loadingCard, { backgroundColor: colors.background.primary }]}>
+              <View
+                style={[
+                  styles.loadingOverlay,
+                  { backgroundColor: colors.background.primary + "90" },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.loadingCard,
+                    { backgroundColor: colors.background.primary },
+                  ]}
+                >
                   <ActivityIndicator size="large" color={colors.primary[500]} />
-                  <Text style={[styles.loadingText, { color: colors.text.primary }]}>
+                  <Text
+                    style={[styles.loadingText, { color: colors.text.primary }]}
+                  >
                     Verifying PIN...
                   </Text>
-                  <Text style={[styles.loadingSubtext, { color: colors.text.secondary }]}>
+                  <Text
+                    style={[
+                      styles.loadingSubtext,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
                     Please wait while we verify your PIN
                   </Text>
                 </View>
@@ -1191,8 +1346,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   headerContent: {
     flexDirection: "row",
@@ -1200,15 +1355,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.xl,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
   headerTitle: {
-    fontSize: typography.fontSizes.xl,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "600",
   },
   headerRight: {
     width: 40,
@@ -1217,27 +1372,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing["2xl"],
+    paddingBottom: 24,
   },
   section: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
+    marginHorizontal: 20,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: "700",
-    marginBottom: spacing.md,
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
   },
   card: {
-    borderRadius: borderRadius["2xl"],
+    borderRadius: 8,
     overflow: "hidden",
   },
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   settingLeft: {
     flexDirection: "row",
@@ -1245,47 +1400,49 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   settingIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.lg,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: spacing.md,
+    marginRight: 12,
   },
   settingContent: {
     flex: 1,
   },
   settingTitle: {
-    fontSize: typography.fontSizes.base,
-    fontWeight: "600",
-    marginBottom: spacing.xs,
+    fontSize: 15,
+    fontWeight: "500",
+    marginBottom: 4,
   },
   settingSubtitle: {
-    fontSize: typography.fontSizes.sm,
+    fontSize: 12,
+    opacity: 0.7,
   },
   infoItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   infoText: {
-    fontSize: typography.fontSizes.sm,
-    marginLeft: spacing.md,
+    fontSize: 12,
+    marginLeft: 12,
     flex: 1,
+    opacity: 0.7,
   },
   resetButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.xl,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
   },
   resetButtonText: {
-    fontSize: typography.fontSizes.base,
-    fontWeight: "600",
-    marginLeft: spacing.sm,
+    fontSize: 15,
+    fontWeight: "500",
+    marginLeft: 8,
   },
   // PIN Verification Screen styles
   verificationContainer: {
@@ -1295,136 +1452,136 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   verificationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing['2xl'],
+    paddingTop: spacing["2xl"],
     paddingBottom: spacing.lg,
   },
   closeButton: {
     width: 40,
     height: 40,
     borderRadius: borderRadius.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     ...shadows.sm,
   },
   verificationTitle: {
     fontSize: typography.fontSizes.xl,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   verificationContent: {
     flex: 1,
     paddingHorizontal: spacing.lg,
   },
   verificationTextSection: {
-    alignItems: 'center',
-    paddingTop: spacing['3xl'],
+    alignItems: "center",
+    paddingTop: spacing["3xl"],
     paddingBottom: spacing.xl,
   },
   verificationMainText: {
-    fontSize: typography.fontSizes['2xl'],
-    fontWeight: '700',
-    textAlign: 'center',
+    fontSize: typography.fontSizes["2xl"],
+    fontWeight: "700",
+    textAlign: "center",
     marginBottom: spacing.md,
   },
   verificationSubText: {
     fontSize: typography.fontSizes.base,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
     paddingHorizontal: spacing.md,
   },
   verificationPinSection: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: spacing.xl,
   },
   statusContainer: {
-    marginTop: spacing['2xl'],
-    alignItems: 'center',
+    marginTop: spacing["2xl"],
+    alignItems: "center",
     minHeight: 60,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   loadingSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   statusText: {
     fontSize: typography.fontSizes.base,
-    textAlign: 'center',
-    fontWeight: '500',
+    textAlign: "center",
+    fontWeight: "500",
   },
   verifyButton: {
-    paddingHorizontal: spacing['2xl'],
+    paddingHorizontal: spacing["2xl"],
     paddingVertical: spacing.lg,
     borderRadius: borderRadius.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minWidth: 200,
     ...shadows.md,
   },
   verifyButtonText: {
     fontSize: typography.fontSizes.lg,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   manualVerifyButton: {
     marginTop: spacing.xl,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
     borderRadius: borderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minWidth: 200,
     ...shadows.sm,
   },
   manualVerifyButtonText: {
     fontSize: typography.fontSizes.base,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   loadingOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1000,
   },
   loadingCard: {
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing['2xl'],
-    borderRadius: borderRadius['2xl'],
-    alignItems: 'center',
+    paddingVertical: spacing["2xl"],
+    borderRadius: borderRadius["2xl"],
+    alignItems: "center",
     minWidth: 200,
     ...shadows.lg,
   },
   loadingText: {
     fontSize: typography.fontSizes.lg,
     marginTop: spacing.lg,
-    textAlign: 'center',
-    fontWeight: '600',
+    textAlign: "center",
+    fontWeight: "600",
   },
   loadingSubtext: {
     fontSize: typography.fontSizes.sm,
     marginTop: spacing.sm,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 18,
   },
   // Legacy styles (keeping for compatibility)
   loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing['2xl'],
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing["2xl"],
   },
   // Device Management Styles
   loadingDevicesContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: spacing.xl,
   },
   loadingDevicesText: {
@@ -1432,63 +1589,63 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
   },
   emptyDevicesContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing['2xl'],
+    alignItems: "center",
+    paddingVertical: spacing["2xl"],
     paddingHorizontal: spacing.lg,
   },
   emptyDevicesText: {
     fontSize: typography.fontSizes.base,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: spacing.md,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyDevicesSubtext: {
     fontSize: typography.fontSizes.sm,
     marginTop: spacing.xs,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 18,
   },
   deviceItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
   },
   deviceLeft: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     flex: 1,
   },
   deviceIcon: {
     width: 40,
     height: 40,
     borderRadius: borderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: spacing.md,
   },
   deviceContent: {
     flex: 1,
   },
   deviceHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.xs,
   },
   deviceName: {
     fontSize: typography.fontSizes.base,
-    fontWeight: '600',
+    fontWeight: "600",
     flex: 1,
   },
   currentDeviceBadge: {
     fontSize: typography.fontSizes.sm,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   trustedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.md,
@@ -1496,7 +1653,7 @@ const styles = StyleSheet.create({
   },
   trustedBadgeText: {
     fontSize: typography.fontSizes.xs,
-    fontWeight: '600',
+    fontWeight: "600",
     marginLeft: spacing.xs,
   },
   deviceType: {
@@ -1511,16 +1668,16 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSizes.xs,
   },
   deviceActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
   },
   deviceActionButton: {
     width: 32,
     height: 32,
     borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     ...shadows.sm,
   },
   deviceSeparator: {

@@ -1,5 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import {
   ScrollView,
   Text,
@@ -8,6 +14,7 @@ import {
   StyleSheet,
   Animated,
   Easing,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -59,6 +66,38 @@ export default function SpendingPage() {
   // Animation values
   const animatedProgress = useMemo(() => new Animated.Value(0), []);
   const animatedScale = useMemo(() => new Animated.Value(0.9), []);
+
+  // Ref to prevent multiple simultaneous fetchData calls
+  const fetchingRef = useRef(false);
+
+  // Ref to prevent multiple simultaneous category updates
+  const updatingCategoriesRef = useRef(false);
+
+  // Ref to track if XP has been awarded for this session
+  const xpAwardedRef = useRef(false);
+
+  // Ref to track last processed data to prevent unnecessary updates
+  const lastProcessedDataRef = useRef<string>("");
+
+  // Info button handler
+  const handleInfoPress = () => {
+    // Show spending insights modal
+    Alert.alert(
+      "Spending Insights",
+      "This page shows your spending breakdown by categories and merchants. Use the month picker to view different months, and switch between categories and merchants to see detailed spending patterns.\n\n• Categories: See spending by expense type\n• Merchants: See spending by store/company\n• Analytics: View spending trends and patterns\n• Budget: Track your monthly budget progress",
+      [
+        {
+          text: "Got it",
+          style: "default",
+        },
+        {
+          text: "More Help",
+          style: "default",
+          onPress: () => router.push("/help"),
+        },
+      ]
+    );
+  };
 
   // Filter transactions for selected month (memoized separately for better performance)
   const monthlyTransactions = useMemo(() => {
@@ -224,8 +263,10 @@ export default function SpendingPage() {
     0
   );
   const monthlySpentPercentage =
-    totalBudget > 0 ? (monthlyData.monthlyTotalSpent / totalBudget) * 100 : 0;
-  const monthlyOverBudget = monthlyData.monthlyTotalSpent > totalBudget;
+    totalBudget > 0
+      ? ((monthlyData?.monthlyTotalSpent || 0) / totalBudget) * 100
+      : 0;
+  const monthlyOverBudget = (monthlyData?.monthlyTotalSpent || 0) > totalBudget;
 
   // Spending metrics calculation
   const currentDate = dayjs();
@@ -236,13 +277,14 @@ export default function SpendingPage() {
 
   const averageSpendPerDay =
     currentMonth && dayOfMonth > 0
-      ? monthlyData.monthlyTotalSpent / dayOfMonth
-      : monthlyData.monthlyTotalSpent / daysInMonth;
+      ? (monthlyData?.monthlyTotalSpent || 0) / dayOfMonth
+      : (monthlyData?.monthlyTotalSpent || 0) / daysInMonth;
 
   // Always show expected total based on average daily spend
   const predictedMonthlySpend = averageSpendPerDay * daysInMonth;
 
-  const displayLeftToSpend = totalBudget - monthlyData.monthlyTotalSpent;
+  const displayLeftToSpend =
+    totalBudget - (monthlyData?.monthlyTotalSpent || 0);
 
   // Month selection options - use available months from balance summary
   const months = useMemo(() => {
@@ -539,17 +581,7 @@ export default function SpendingPage() {
             categoryBudgets
           );
 
-          // Award XP for budget review (checking spending against budgets)
-          if (Object.keys(categoryBudgets).length > 0) {
-            try {
-              await awardXPSilently("budget-review");
-            } catch (xpError) {
-              console.error(
-                "[SpendingTab] Error awarding budget review XP:",
-                xpError
-              );
-            }
-          }
+          // Note: XP awarding moved to a separate effect to prevent multiple awards
         } catch (budgetError) {
           console.error("❌ Error fetching budget preferences:", budgetError);
           // Fallback to AsyncStorage if database fails
@@ -635,7 +667,14 @@ export default function SpendingPage() {
 
   // Data fetching
   const fetchData = useCallback(async () => {
+    // Prevent multiple simultaneous calls
+    if (fetchingRef.current) {
+      console.log("🔄 [Spending] Fetch already in progress, skipping...");
+      return;
+    }
+
     try {
+      fetchingRef.current = true;
       setLoading(true);
       setError(null);
 
@@ -743,6 +782,7 @@ export default function SpendingPage() {
       setError(`${errorMessage}. Please check your connection and try again.`);
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
   }, [generateCategoriesFromTransactions]);
 
@@ -771,10 +811,10 @@ export default function SpendingPage() {
     const result = categoryData
       .map((cat) => {
         // Calculate spending by looking for both exact match and mapped categories
-        let spending = monthlyData.monthlySpentByCategory[cat.name] || 0;
+        let spending = monthlyData?.monthlySpentByCategory?.[cat.name] || 0;
 
         // Also check for backend category names that map to this frontend category
-        Object.entries(monthlyData.monthlySpentByCategory || {}).forEach(
+        Object.entries(monthlyData?.monthlySpentByCategory || {}).forEach(
           ([backendCat, amount]) => {
             if (mapCategoryName(backendCat) === cat.name) {
               spending += amount;
@@ -792,32 +832,47 @@ export default function SpendingPage() {
     // Debug: log category spending data
     console.log("🐛 [Spending] Category spending data:", {
       categoryCount: result.length,
-      monthlySpentByCategory: monthlyData.monthlySpentByCategory,
+      monthlySpentByCategory: monthlyData?.monthlySpentByCategory,
       sortedCategories: result
         .slice(0, 3)
         .map((c) => ({ name: c.name, spent: c.monthlySpent })),
     });
 
     return result;
-  }, [categoryData, monthlyData.monthlySpentByCategory]);
+  }, [categoryData, monthlyData?.monthlySpentByCategory]);
+
+  // Award XP once when categories are first loaded (not on every regeneration)
+  useEffect(() => {
+    if (sortedCategoryData.length > 0 && !xpAwardedRef.current) {
+      xpAwardedRef.current = true;
+      try {
+        awardXPSilently("budget-review");
+      } catch (xpError) {
+        console.error(
+          "[SpendingTab] Error awarding budget review XP:",
+          xpError
+        );
+      }
+    }
+  }, [sortedCategoryData.length, awardXPSilently]);
 
   // Debug spending categories data flow
   useEffect(() => {
     console.log("🐛 [Spending] Debug info:", {
       sortedCategoryDataLength: sortedCategoryData.length,
-      monthlyTransactionsLength: monthlyData.monthlyTransactions.length,
-      totalMonthlySpent: monthlyData.monthlyTotalSpent,
+      monthlyTransactionsLength: monthlyData?.monthlyTransactions?.length || 0,
+      totalMonthlySpent: monthlyData?.monthlyTotalSpent || 0,
       hasSpendingData: sortedCategoryData.some(
         (c) => (c.monthlySpent || 0) > 0
       ),
       firstCategory: sortedCategoryData[0],
-      firstTransaction: monthlyData.monthlyTransactions[0],
+      firstTransaction: monthlyData?.monthlyTransactions?.[0],
     });
   }, [sortedCategoryData, monthlyData]);
 
   // Merchant data with monthly spending
   const sortedMerchantData = useMemo(() => {
-    return Object.entries(monthlyData.monthlySpentByMerchant || {})
+    return Object.entries(monthlyData?.monthlySpentByMerchant || {})
       .map(([merchantName, amount]) => {
         const merchantInfo = getMerchantInfo(merchantName);
         return {
@@ -830,7 +885,7 @@ export default function SpendingPage() {
         };
       })
       .sort((a, b) => (b.monthlySpent || 0) - (a.monthlySpent || 0));
-  }, [monthlyData.monthlySpentByMerchant]);
+  }, [monthlyData?.monthlySpentByMerchant]);
 
   // Point selection handler
   const handlePointSelect = React.useCallback((point: ChartDataPoint) => {
@@ -857,18 +912,40 @@ export default function SpendingPage() {
 
   // Regenerate categories with dynamic budgets when month changes
   useEffect(() => {
-    if (transactions.length > 0) {
-      // Recalculate categories with month-specific budgets
-      const updateCategories = async () => {
+    if (transactions.length > 0 && !updatingCategoriesRef.current) {
+      // Create a hash of the current data to check if it has actually changed
+      const currentDataHash = JSON.stringify({
+        selectedMonth,
+        transactionsLength: transactions.length,
+        monthlyDataHash: monthlyData ? JSON.stringify(monthlyData) : null,
+      });
+
+      // Only update if data has actually changed
+      if (currentDataHash === lastProcessedDataRef.current) {
+        return; // No change, skip update
+      }
+
+      // Add a small delay to prevent rapid successive calls
+      const timeoutId = setTimeout(async () => {
+        if (updatingCategoriesRef.current) return; // Double-check
+
         try {
+          updatingCategoriesRef.current = true;
           const categoriesResponse =
             await generateCategoriesFromTransactions(monthlyData);
           setCategoryData(categoriesResponse);
+          lastProcessedDataRef.current = currentDataHash; // Update hash after successful update
         } catch (error) {
           console.error("❌ Error updating categories for month:", error);
+        } finally {
+          updatingCategoriesRef.current = false;
         }
+      }, 500); // Increased debounce to 500ms
+
+      return () => {
+        clearTimeout(timeoutId);
+        updatingCategoriesRef.current = false;
       };
-      updateCategories();
     }
   }, [
     selectedMonth,
@@ -941,7 +1018,7 @@ export default function SpendingPage() {
       // Always fetch data when logged in, regardless of bank connection status
       fetchData();
     }
-  }, [isLoggedIn, selectedMonth, fetchData]);
+  }, [isLoggedIn, selectedMonth]);
 
   // Loading state - show loading during data fetch or bank check
   if (loading || checkingBank) {
@@ -1050,6 +1127,7 @@ export default function SpendingPage() {
                   { backgroundColor: colors.background.primary },
                 ]}
                 activeOpacity={0.8}
+                onPress={handleInfoPress}
               >
                 <Ionicons
                   name="information-circle"
@@ -1178,7 +1256,7 @@ export default function SpendingPage() {
         {selectedTab === "summary" && (
           <BudgetSummaryCard
             selectedMonth={selectedMonth}
-            monthlyTotalSpent={monthlyData.monthlyTotalSpent}
+            monthlyTotalSpent={monthlyData?.monthlyTotalSpent || 0}
             totalBudget={totalBudget}
             averageSpendPerDay={averageSpendPerDay}
             predictedMonthlySpend={predictedMonthlySpend}
@@ -1210,7 +1288,9 @@ export default function SpendingPage() {
                       values: chartData.values?.slice(0, 3) || [],
                       dataPoints: chartData.dataPoints?.slice(0, 3) || [],
                     }} // Show limited data in preview
-                    hasTransactions={monthlyData.monthlyTransactions.length > 0}
+                    hasTransactions={
+                      (monthlyData?.monthlyTransactions?.length || 0) > 0
+                    }
                     monthlyOverBudget={monthlyOverBudget}
                     dailySpendingData={{
                       ...dailySpendingData,
@@ -1227,7 +1307,9 @@ export default function SpendingPage() {
               <SpendingAnalyticsSection
                 selectedMonth={selectedMonth}
                 chartData={chartData}
-                hasTransactions={monthlyData.monthlyTransactions.length > 0}
+                hasTransactions={
+                  (monthlyData?.monthlyTransactions?.length || 0) > 0
+                }
                 monthlyOverBudget={monthlyOverBudget}
                 dailySpendingData={dailySpendingData}
                 onPointSelect={handlePointSelect}
@@ -1245,7 +1327,7 @@ export default function SpendingPage() {
               <>
                 <SpendingCategoryListClean
                   sortedCategoryData={sortedCategoryData}
-                  filteredTransactions={monthlyData.monthlyTransactions}
+                  filteredTransactions={monthlyData?.monthlyTransactions || []}
                   formatAmount={formatAmount}
                   currency="GBP"
                   onCategoryPress={(category) => {
@@ -1259,7 +1341,7 @@ export default function SpendingPage() {
             {spendingTab === "merchants" && (
               <SpendingMerchantList
                 sortedMerchantData={sortedMerchantData}
-                filteredTransactions={monthlyData.monthlyTransactions}
+                filteredTransactions={monthlyData?.monthlyTransactions || []}
                 formatAmount={formatAmount}
                 currency="GBP"
                 onMerchantPress={(merchant) => {
@@ -1289,21 +1371,25 @@ const styles = StyleSheet.create({
   premiumHeader: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   premiumHeaderContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    minHeight: 40,
   },
   premiumBrandSection: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
   },
   premiumHeaderTitle: {
     fontSize: 28,
     fontWeight: "700",
     marginRight: spacing.sm,
+    lineHeight: 36,
   },
   premiumBrandAccent: {
     width: 4,
@@ -1312,16 +1398,19 @@ const styles = StyleSheet.create({
   },
   premiumHeaderRight: {
     alignItems: "flex-end",
+    justifyContent: "flex-start",
   },
   premiumHeaderSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "500",
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
+    opacity: 0.7,
+    lineHeight: 18,
   },
   premiumHeaderButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",

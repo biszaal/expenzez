@@ -596,28 +596,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing["2xl"],
+    paddingBottom: 24,
   },
   formContainer: {
-    gap: spacing.md,
+    gap: 12,
   },
   formRow: {
     flexDirection: "row",
   },
   formField: {
-    marginBottom: spacing.md,
+    marginBottom: 12,
   },
   fieldLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: spacing.xs,
+    fontSize: 13,
+    fontWeight: "500",
+    marginBottom: 6,
+    opacity: 0.8,
   },
   textInput: {
     borderWidth: 1,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: 16,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
   },
   textArea: {
     height: 80,

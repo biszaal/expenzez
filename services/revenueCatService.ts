@@ -75,7 +75,7 @@ export class RevenueCatService {
       // Configure RevenueCat for production
       await Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.INFO);
       await Purchases.configure({ apiKey });
-      
+
       // Debug: Log API key and configuration
       console.log("🔧 [RevenueCat] Production API Key:", apiKey);
       console.log("🔧 [RevenueCat] Platform:", Platform.OS);
@@ -188,19 +188,34 @@ export class RevenueCatService {
           ],
         } as any;
       }
-      
+
       // Debug: Log offerings request
       console.log("🔧 [RevenueCat] Fetching production offerings...");
       const offerings = await Purchases.getOfferings();
       console.log("🔧 [RevenueCat] All offerings:", Object.keys(offerings.all));
-      console.log("🔧 [RevenueCat] Current offering:", offerings.current?.identifier);
-      console.log("🔧 [RevenueCat] Available packages:", offerings.current?.availablePackages?.length || 0);
-      
+      console.log(
+        "🔧 [RevenueCat] Current offering:",
+        offerings.current?.identifier
+      );
+      console.log(
+        "🔧 [RevenueCat] Available packages:",
+        offerings.current?.availablePackages?.length || 0
+      );
+
       if (!offerings.current) {
-        console.warn("⚠️ [RevenueCat] No current offering found. Check RevenueCat dashboard configuration.");
-        console.warn("⚠️ [RevenueCat] Make sure you have created offerings in RevenueCat dashboard.");
+        console.warn(
+          "⚠️ [RevenueCat] No current offering found. Check RevenueCat dashboard configuration."
+        );
+        console.warn(
+          "⚠️ [RevenueCat] Make sure you have created offerings in RevenueCat dashboard."
+        );
+        console.warn("⚠️ [RevenueCat] Current status:");
+        console.warn("- App Store Connect: Products created ✅");
+        console.warn("- RevenueCat: Products added to offerings ✅");
+        console.warn("- Apple: Products waiting for review ⏳");
+        console.warn("⚠️ [RevenueCat] Expected approval time: 24-48 hours");
       }
-      
+
       return offerings.current;
     } catch (error) {
       console.error("❌ [RevenueCat] Failed to get current offering:", error);

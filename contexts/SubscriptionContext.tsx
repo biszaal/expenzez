@@ -242,7 +242,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
           "❌ [SubscriptionContext] RevenueCat initialization failed:",
           initResult.error
         );
-        
+
         // Show user-friendly error for API key issues
         if (initResult.error?.includes("API key not configured")) {
           Alert.alert(
@@ -251,7 +251,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
             [{ text: "OK", style: "default" }]
           );
         }
-        
+
         // Continue with local subscription data, but log the issue
         return;
       }

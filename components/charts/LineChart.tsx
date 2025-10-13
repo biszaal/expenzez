@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import React, { useEffect, useMemo, useState } from "react";
+import { View, StyleSheet, Text } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,8 +9,8 @@ import Animated, {
   Extrapolate,
   runOnJS,
   Easing,
-} from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+} from "react-native-reanimated";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Svg, {
   Path,
   Circle,
@@ -21,9 +21,14 @@ import Svg, {
   Text as SvgText,
   Mask,
   Rect,
-} from 'react-native-svg';
-import * as Haptics from 'expo-haptics';
-import { LineChartProps, ChartDimensions, ChartDataPoint, GestureState } from './types';
+} from "react-native-svg";
+import * as Haptics from "expo-haptics";
+import {
+  LineChartProps,
+  ChartDimensions,
+  ChartDataPoint,
+  GestureState,
+} from "./types";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -35,16 +40,16 @@ export const LineChart: React.FC<LineChartProps> = ({
   height,
   animated = true,
   interactive = true,
-  gradientColors = ['#8B5CF6', '#3B82F6'],
-  lineColor = '#8B5CF6',
-  pointColor = '#8B5CF6',
-  backgroundColor = 'transparent',
+  gradientColors = ["#8B5CF6", "#3B82F6"],
+  lineColor = "#8B5CF6",
+  pointColor = "#8B5CF6",
+  backgroundColor = "transparent",
   onPointSelect,
   showGrid = true,
   showPoints = true,
-  curveType = 'bezier',
-  gridColor = '#888',
-  labelColor = '#888',
+  curveType = "bezier",
+  gridColor = "#888",
+  labelColor = "#888",
 }) => {
   // Animation values
   const pathAnimationProgress = useSharedValue(0);
@@ -52,37 +57,43 @@ export const LineChart: React.FC<LineChartProps> = ({
   const gestureY = useSharedValue(0);
   const isGestureActive = useSharedValue(false);
   const selectedPointIndex = useSharedValue(-1);
-  
+
   // State for displaying selected value
-  const [selectedValue, setSelectedValue] = useState<{value: number, label: string} | null>(null);
-  
+  const [selectedValue, setSelectedValue] = useState<{
+    value: number;
+    label: string;
+  } | null>(null);
+
   // Chart dimensions
-  const dimensions: ChartDimensions = useMemo(() => ({
-    width,
-    height,
-    paddingHorizontal: 40,
-    paddingVertical: 30,
-    chartWidth: width - 80,
-    chartHeight: height - 60,
-  }), [width, height]);
+  const dimensions: ChartDimensions = useMemo(
+    () => ({
+      width,
+      height,
+      paddingHorizontal: 35,
+      paddingVertical: 20,
+      chartWidth: width - 70,
+      chartHeight: height - 40,
+    }),
+    [width, height]
+  );
 
   // Calculate min/max values for scaling (including comparison data)
   const { minValue, maxValue, valueRange } = useMemo(() => {
     if (!data.values.length) {
       return { minValue: 0, maxValue: 1, valueRange: 1 };
     }
-    
+
     let allValues = [...data.values];
-    
+
     // Include comparison data in min/max calculation
     if (data.comparisonData?.values) {
       allValues = [...allValues, ...data.comparisonData.values];
     }
-    
+
     const max = Math.max(...allValues);
     const min = Math.min(...allValues);
     const range = max - min || 1;
-    
+
     return { minValue: min, maxValue: max, valueRange: range };
   }, [data.values, data.comparisonData]);
 
@@ -94,16 +105,22 @@ export const LineChart: React.FC<LineChartProps> = ({
 
     return data.values.map((value, index) => {
       // X coordinate: spread points evenly across chart width
-      const x = dimensions.paddingHorizontal + (index / Math.max(1, data.values.length - 1)) * dimensions.chartWidth;
-      
+      const x =
+        dimensions.paddingHorizontal +
+        (index / Math.max(1, data.values.length - 1)) * dimensions.chartWidth;
+
       // Y coordinate: map value to chart height (inverted because SVG y=0 is top)
-      const normalizedValue = valueRange === 0 ? 0.5 : (value - minValue) / valueRange;
-      const y = dimensions.height - dimensions.paddingVertical - (normalizedValue * dimensions.chartHeight);
-      
+      const normalizedValue =
+        valueRange === 0 ? 0.5 : (value - minValue) / valueRange;
+      const y =
+        dimensions.height -
+        dimensions.paddingVertical -
+        normalizedValue * dimensions.chartHeight;
+
       return {
         value,
         label: data.labels[index] || `${index}`,
-        date: data.labels[index] || '',
+        date: data.labels[index] || "",
         x,
         y,
       } as ChartDataPoint;
@@ -118,29 +135,46 @@ export const LineChart: React.FC<LineChartProps> = ({
 
     return data.comparisonData.values.map((value, index) => {
       // X coordinate: spread points evenly across chart width
-      const x = dimensions.paddingHorizontal + (index / Math.max(1, data.comparisonData!.values.length - 1)) * dimensions.chartWidth;
-      
+      const x =
+        dimensions.paddingHorizontal +
+        (index / Math.max(1, data.comparisonData!.values.length - 1)) *
+          dimensions.chartWidth;
+
       // Y coordinate: map value to chart height using same scale as main data
-      const normalizedValue = valueRange === 0 ? 0.5 : (value - minValue) / valueRange;
-      const y = dimensions.height - dimensions.paddingVertical - (normalizedValue * dimensions.chartHeight);
-      
+      const normalizedValue =
+        valueRange === 0 ? 0.5 : (value - minValue) / valueRange;
+      const y =
+        dimensions.height -
+        dimensions.paddingVertical -
+        normalizedValue * dimensions.chartHeight;
+
       return {
         value,
         label: data.labels[index] || `${index}`,
-        date: data.labels[index] || '',
+        date: data.labels[index] || "",
         x,
         y,
       } as ChartDataPoint;
     });
-  }, [data.comparisonData, data.labels, dimensions, minValue, maxValue, valueRange]);
+  }, [
+    data.comparisonData,
+    data.labels,
+    dimensions,
+    minValue,
+    maxValue,
+    valueRange,
+  ]);
 
   // Generate SVG path
-  const generatePath = (points: ChartDataPoint[], type: 'linear' | 'bezier' = 'bezier'): string => {
-    if (points.length === 0) return '';
+  const generatePath = (
+    points: ChartDataPoint[],
+    type: "linear" | "bezier" = "bezier"
+  ): string => {
+    if (points.length === 0) return "";
 
     let path = `M${points[0].x},${points[0].y}`;
 
-    if (type === 'linear') {
+    if (type === "linear") {
       for (let i = 1; i < points.length; i++) {
         path += ` L${points[i].x},${points[i].y}`;
       }
@@ -153,7 +187,7 @@ export const LineChart: React.FC<LineChartProps> = ({
         const controlPoint1Y = current.y;
         const controlPoint2X = current.x + (next.x - current.x) * 0.6;
         const controlPoint2Y = next.y;
-        
+
         path += ` C${controlPoint1X},${controlPoint1Y} ${controlPoint2X},${controlPoint2Y} ${next.x},${next.y}`;
       }
     }
@@ -162,8 +196,14 @@ export const LineChart: React.FC<LineChartProps> = ({
   };
 
   // Generate SVG paths
-  const svgPath = useMemo(() => generatePath(processedData, curveType), [processedData, curveType]);
-  const comparisonSvgPath = useMemo(() => generatePath(comparisonProcessedData, curveType), [comparisonProcessedData, curveType]);
+  const svgPath = useMemo(
+    () => generatePath(processedData, curveType),
+    [processedData, curveType]
+  );
+  const comparisonSvgPath = useMemo(
+    () => generatePath(comparisonProcessedData, curveType),
+    [comparisonProcessedData, curveType]
+  );
 
   // Find closest point to gesture
   const findClosestPoint = (x: number): number => {
@@ -181,29 +221,28 @@ export const LineChart: React.FC<LineChartProps> = ({
     return closestIndex;
   };
 
-
   // Gesture handler
   const gestureHandler = Gesture.Pan()
     .onStart(() => {
-      'worklet';
+      "worklet";
       isGestureActive.value = true;
       runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
     })
     .onUpdate((event) => {
-      'worklet';
+      "worklet";
       // Try using absoluteX/Y to get screen coordinates, then convert to SVG coordinates
       const gestureXCoord = event.x;
       const gestureYCoord = event.y;
-      
+
       const clampedX = Math.max(
         dimensions.paddingHorizontal,
         Math.min(gestureXCoord, dimensions.width - dimensions.paddingHorizontal)
       );
-      
+
       // Find closest point inline for better performance
       let closestIndex = 0;
       let minDistance = Math.abs(processedData[0]?.x - clampedX);
-      
+
       processedData.forEach((point, index) => {
         const distance = Math.abs(point.x - clampedX);
         if (distance < minDistance) {
@@ -211,23 +250,26 @@ export const LineChart: React.FC<LineChartProps> = ({
           closestIndex = index;
         }
       });
-      
+
       if (closestIndex !== selectedPointIndex.value) {
         selectedPointIndex.value = closestIndex;
-        
+
         if (processedData[closestIndex]) {
           // Interpolate Y position directly in the worklet for better performance
           let interpolatedY = processedData[closestIndex].y;
-          
+
           // Find interpolated Y position based on gesture X
           if (processedData.length > 1) {
-            const clampedX = Math.max(processedData[0].x, Math.min(gestureXCoord, processedData[processedData.length - 1].x));
-            
+            const clampedX = Math.max(
+              processedData[0].x,
+              Math.min(gestureXCoord, processedData[processedData.length - 1].x)
+            );
+
             // Find bracketing points
             for (let i = 0; i < processedData.length - 1; i++) {
               const current = processedData[i];
               const next = processedData[i + 1];
-              
+
               if (clampedX >= current.x && clampedX <= next.x) {
                 const ratio = (clampedX - current.x) / (next.x - current.x);
                 interpolatedY = current.y + ratio * (next.y - current.y);
@@ -235,20 +277,20 @@ export const LineChart: React.FC<LineChartProps> = ({
               }
             }
           }
-          
+
           // Position dot using SVG coordinates directly (no screen-based corrections needed)
           // The gesture coordinates should already match the SVG coordinate system
           gestureX.value = gestureXCoord;
           gestureY.value = interpolatedY;
-          
+
           runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
-          
+
           // Update selected value for display
           runOnJS(setSelectedValue)({
             value: processedData[closestIndex].value,
-            label: processedData[closestIndex].label
+            label: processedData[closestIndex].label,
           });
-          
+
           if (onPointSelect) {
             runOnJS(onPointSelect)(processedData[closestIndex]);
           }
@@ -256,7 +298,7 @@ export const LineChart: React.FC<LineChartProps> = ({
       }
     })
     .onEnd(() => {
-      'worklet';
+      "worklet";
       isGestureActive.value = false;
       selectedPointIndex.value = -1;
       runOnJS(setSelectedValue)(null);
@@ -265,7 +307,7 @@ export const LineChart: React.FC<LineChartProps> = ({
   // Calculate path length for smooth animation
   const pathLength = useMemo(() => {
     if (processedData.length < 2) return 0;
-    
+
     let totalLength = 0;
     for (let i = 0; i < processedData.length - 1; i++) {
       const dx = processedData[i + 1].x - processedData[i].x;
@@ -278,17 +320,23 @@ export const LineChart: React.FC<LineChartProps> = ({
   // Animated mask width for revealing line from left to right
   const animatedMaskStyle = useAnimatedStyle(() => {
     // Calculate the actual line width based on data points for more precise masking
-    const lineWidth = processedData.length > 0 
-      ? processedData[processedData.length - 1].x - processedData[0].x + dimensions.paddingHorizontal
-      : dimensions.width;
-    
+    const lineWidth =
+      processedData.length > 0
+        ? processedData[processedData.length - 1].x -
+          processedData[0].x +
+          dimensions.paddingHorizontal
+        : dimensions.width;
+
     const revealWidth = interpolate(
       pathAnimationProgress.value,
       [0, 1],
-      [processedData[0]?.x || dimensions.paddingHorizontal, processedData[processedData.length - 1]?.x || dimensions.width],
+      [
+        processedData[0]?.x || dimensions.paddingHorizontal,
+        processedData[processedData.length - 1]?.x || dimensions.width,
+      ],
       Extrapolate.CLAMP
     );
-    
+
     return {
       width: revealWidth,
     };
@@ -301,42 +349,44 @@ export const LineChart: React.FC<LineChartProps> = ({
     }
 
     const progress = pathAnimationProgress.value;
-    
+
     // Calculate which point index we should be at based on progress
     const targetIndex = Math.floor(progress * (processedData.length - 1));
     const nextIndex = Math.min(targetIndex + 1, processedData.length - 1);
-    
+
     // Get the current and next points
     const currentPoint = processedData[targetIndex];
     const nextPoint = processedData[nextIndex];
-    
+
     if (!currentPoint) {
       return { opacity: 0 };
     }
-    
+
     // Calculate interpolation within the current segment
-    const segmentProgress = (progress * (processedData.length - 1)) - targetIndex;
-    
+    const segmentProgress = progress * (processedData.length - 1) - targetIndex;
+
     // Interpolate position between current and next point
-    const animatedX = currentPoint.x + (nextPoint.x - currentPoint.x) * segmentProgress;
-    const animatedY = currentPoint.y + (nextPoint.y - currentPoint.y) * segmentProgress;
+    const animatedX =
+      currentPoint.x + (nextPoint.x - currentPoint.x) * segmentProgress;
+    const animatedY =
+      currentPoint.y + (nextPoint.y - currentPoint.y) * segmentProgress;
 
     return {
       transform: [
         { translateX: animatedX - processedData[processedData.length - 1].x },
-        { translateY: animatedY - processedData[processedData.length - 1].y }
+        { translateY: animatedY - processedData[processedData.length - 1].y },
       ] as any,
       opacity: progress > 0.05 ? 1 : 0, // Show dot early in animation
     };
   });
 
   const animatedPointStyle = useAnimatedStyle(() => {
-    const scale = isGestureActive.value ? 
-      withSpring(1.3, { damping: 15, stiffness: 200 }) : 
-      withSpring(1, { damping: 15, stiffness: 200 });
-    const opacity = isGestureActive.value ? 
-      withSpring(1, { damping: 15, stiffness: 200 }) : 
-      withSpring(0, { damping: 15, stiffness: 200 });
+    const scale = isGestureActive.value
+      ? withSpring(1.3, { damping: 15, stiffness: 200 })
+      : withSpring(1, { damping: 15, stiffness: 200 });
+    const opacity = isGestureActive.value
+      ? withSpring(1, { damping: 15, stiffness: 200 })
+      : withSpring(0, { damping: 15, stiffness: 200 });
 
     return {
       transform: [{ scale }],
@@ -351,7 +401,7 @@ export const LineChart: React.FC<LineChartProps> = ({
       pathAnimationProgress.value = 0;
       // Start animation with linear easing
       setTimeout(() => {
-        pathAnimationProgress.value = withTiming(1, { 
+        pathAnimationProgress.value = withTiming(1, {
           duration: 1500,
           easing: Easing.linear, // Linear animation
         });
@@ -359,22 +409,21 @@ export const LineChart: React.FC<LineChartProps> = ({
     }
   }, [processedData, animated, pathAnimationProgress]);
 
-
-
   return (
     <View style={[styles.container, { backgroundColor, width, height }]}>
       {/* Value display overlay */}
       {selectedValue && (
         <Animated.View style={[styles.valueOverlay, animatedPointStyle]}>
-          <Text style={styles.valueText}>£{selectedValue.value.toFixed(2)}</Text>
+          <Text style={styles.valueText}>
+            £{selectedValue.value.toFixed(2)}
+          </Text>
           <Text style={styles.labelText}>{selectedValue.label}</Text>
         </Animated.View>
       )}
-      
+
       <GestureDetector gesture={gestureHandler}>
         <Animated.View style={{ width, height }}>
           <Svg width={width} height={height}>
-            
             <Defs>
               <LinearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
                 {gradientColors.map((color, index) => (
@@ -385,7 +434,7 @@ export const LineChart: React.FC<LineChartProps> = ({
                   />
                 ))}
               </LinearGradient>
-              
+
               {/* Mask for line animation */}
               <Mask id="lineMask">
                 <AnimatedRect
@@ -415,12 +464,12 @@ export const LineChart: React.FC<LineChartProps> = ({
             {comparisonSvgPath && (
               <Path
                 d={comparisonSvgPath}
-                stroke="rgba(156, 163, 175, 0.6)"  // Faded gray color
+                stroke="rgba(156, 163, 175, 0.6)" // Faded gray color
                 strokeWidth={2}
                 fill="none"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeDasharray="6,4"  // Dashed line to differentiate
+                strokeDasharray="6,4" // Dashed line to differentiate
                 opacity={0.8}
               />
             )}
@@ -442,22 +491,28 @@ export const LineChart: React.FC<LineChartProps> = ({
               </G>
             )}
 
-            {/* Y-axis labels - simplified and better spaced */}
+            {/* Y-axis labels - only show 2 labels to prevent overlap */}
             <G>
-              {[0, 0.5, 1].map((ratio, index) => {
+              {[0, 1].map((ratio, index) => {
                 const value = minValue + ratio * (maxValue - minValue);
-                const y = dimensions.height - dimensions.paddingVertical - (ratio * dimensions.chartHeight);
+                const y =
+                  dimensions.height -
+                  dimensions.paddingVertical -
+                  ratio * dimensions.chartHeight;
                 return (
                   <SvgText
                     key={`ylabel-${index}`}
-                    x={dimensions.paddingHorizontal - 15}
-                    y={y + 4}
-                    fontSize={11}
+                    x={dimensions.paddingHorizontal - 5}
+                    y={y + 3}
+                    fontSize={9}
                     fill={labelColor}
                     textAnchor="end"
                     fontWeight="500"
                   >
-                    £{value >= 1000 ? `${(value/1000).toFixed(1)}k` : Math.round(value)}
+                    £
+                    {value >= 1000
+                      ? `${(value / 1000).toFixed(1)}k`
+                      : Math.round(value)}
                   </SvgText>
                 );
               })}
@@ -466,7 +521,7 @@ export const LineChart: React.FC<LineChartProps> = ({
             {/* X-axis labels - only show non-empty labels */}
             <G>
               {processedData.map((point, index) => {
-                if (data.labels[index] && data.labels[index].trim() !== '') {
+                if (data.labels[index] && data.labels[index].trim() !== "") {
                   return (
                     <SvgText
                       key={`xlabel-${index}`}
@@ -484,9 +539,6 @@ export const LineChart: React.FC<LineChartProps> = ({
                 return null;
               })}
             </G>
-
-
-
           </Svg>
         </Animated.View>
       </GestureDetector>
@@ -497,25 +549,25 @@ export const LineChart: React.FC<LineChartProps> = ({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   valueOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 20,
     left: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     zIndex: 10,
   },
   valueText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   labelText: {
-    color: 'white',
+    color: "white",
     fontSize: 12,
     opacity: 0.8,
     marginTop: 2,
