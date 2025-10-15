@@ -4,8 +4,6 @@ import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
-import { useSubscription } from "../../contexts/SubscriptionContext";
-import { withPremiumGate } from "../../components/premium";
 import { useAlert } from "../../hooks/useAlert";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 
@@ -190,8 +188,5 @@ const styles = StyleSheet.create({
   },
 });
 
-// Wrap with premium gate for credit score monitoring
-export default withPremiumGate(CreditScorePage, 'creditScoreMonitoring', {
-  upgradeMessage: 'Monitor your credit score and get personalized improvement tips with Premium',
-  allowTrialAccess: true
-});
+// All users have free access to credit score monitoring
+export default CreditScorePage;

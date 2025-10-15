@@ -16,7 +16,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle } from "react-native-svg";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
-import { useSubscription } from "../../contexts/SubscriptionContext";
 import { useAlert } from "../../hooks/useAlert";
 import { ProfileSkeleton } from "../../components/ui/SkeletonLoader";
 import {
@@ -43,7 +42,7 @@ export default function AccountScreen() {
   const { isLoggedIn, user, logout } = useAuth();
   const { colors, isDark } = useTheme();
   const { showError } = useAlert();
-  const { isPremium, isTrialActive, subscription } = useSubscription();
+  // Subscription features removed - all users have free access
 
   const [profile, setProfile] = useState<any>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
@@ -297,19 +296,6 @@ export default function AccountScreen() {
   };
 
   const profileOptions = [
-    ...(!isPremium
-      ? [
-          {
-            title: isTrialActive ? "Upgrade to Premium" : "Get Premium",
-            subtitle: isTrialActive
-              ? `Trial ends in ${Math.max(0, Math.ceil((new Date(subscription?.trialEndDate || "").getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days`
-              : "Unlock unlimited features",
-            icon: <Ionicons name="diamond" size={24} color="#F59E0B" />,
-            route: "/subscription/plans",
-            isSpecial: true,
-          },
-        ]
-      : []),
     {
       title: "Personal Information",
       subtitle: "Update your details",
@@ -346,17 +332,6 @@ export default function AccountScreen() {
       ),
       route: "/notifications/preferences",
     },
-    ...(isPremium
-      ? [
-          {
-            title: "Premium Membership",
-            subtitle: "Manage your subscription",
-            icon: <Ionicons name="diamond" size={24} color="#10B981" />,
-            route: "/subscription/plans",
-            isSpecial: true,
-          },
-        ]
-      : []),
   ];
 
   if (!isLoggedIn) {
@@ -801,7 +776,7 @@ export default function AccountScreen() {
                     ]}
                   >
                     {option.title}
-                    {(option as any).isSpecial && !isPremium && (
+                    {(option as any).isSpecial && (
                       <Text style={{ color: "#F59E0B", marginLeft: 8 }}>
                         ✨
                       </Text>

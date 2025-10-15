@@ -15,8 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { notificationAPI, aiService } from "../../services/api";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../app/auth/AuthContext";
-import { useSubscription } from "../../contexts/SubscriptionContext";
-import { UsageIndicator, UpgradePrompt } from "../../components/premium";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { spacing, borderRadius, typography } from "../../constants/theme";
 import { useRouter } from "expo-router";
@@ -47,29 +45,28 @@ interface MonthlyReport {
   };
 }
 
-
 export default function AIAssistantScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
-  const {
-    checkFeatureAccess,
-    incrementUsage,
-    getUsageDisplay,
-    isPremium,
-    isTrialActive
-  } = useSubscription();
+  // Subscription features removed - all users have free access
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
+  const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(
+    null
+  );
   const [reportLoading, setReportLoading] = useState(false);
   const [showReport, setShowReport] = useState(false);
-  const [proactiveInsights, setProactiveInsights] = useState<ProactiveInsight[]>([]);
-  const [conversationStarters, setConversationStarters] = useState<string[]>([]);
+  const [proactiveInsights, setProactiveInsights] = useState<
+    ProactiveInsight[]
+  >([]);
+  const [conversationStarters, setConversationStarters] = useState<string[]>(
+    []
+  );
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [showInsights, setShowInsights] = useState(true);
-  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  // Premium features removed - all users have free access
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Fetch chat history on mount
@@ -79,10 +76,17 @@ export default function AIAssistantScreen() {
         const res = await aiService.getAIChatHistory();
         if (res.history && res.history.length > 0) {
           setMessages(
-            res.history.map((msg: any) => ({
-              role: msg.role,
-              content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content) || "Invalid message",
-            })).filter((msg: any) => msg.content && typeof msg.content === 'string')
+            res.history
+              .map((msg: any) => ({
+                role: msg.role,
+                content:
+                  typeof msg.content === "string"
+                    ? msg.content
+                    : JSON.stringify(msg.content) || "Invalid message",
+              }))
+              .filter(
+                (msg: any) => msg.content && typeof msg.content === "string"
+              )
           );
         } else {
           setMessages([
@@ -103,35 +107,42 @@ export default function AIAssistantScreen() {
         ]);
       }
     };
-    
+
     const fetchMonthlyReport = async () => {
       try {
         // Wait for authentication to be ready
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
         // Check if we have valid tokens before making the request
-        const { tokenManager } = await import('../../services/tokenManager');
-        
+        const { tokenManager } = await import("../../services/tokenManager");
+
         // Try to get a valid token, but don't proceed if network issues prevent token refresh
         let token: string | null = null;
         try {
           token = await tokenManager.getValidAccessToken();
         } catch (tokenError: any) {
           // If token refresh fails due to network issues, skip the API call
-          if (tokenError.code === 'ERR_NETWORK' || tokenError.message?.includes('Network Error')) {
-            console.log('[AI Assistant] Token refresh failed due to network issues - skipping monthly report fetch');
+          if (
+            tokenError.code === "ERR_NETWORK" ||
+            tokenError.message?.includes("Network Error")
+          ) {
+            console.log(
+              "[AI Assistant] Token refresh failed due to network issues - skipping monthly report fetch"
+            );
             return;
           }
           throw tokenError; // Re-throw non-network errors
         }
-        
+
         if (!token) {
-          console.log('[AI Assistant] No valid token available for monthly report - skipping');
+          console.log(
+            "[AI Assistant] No valid token available for monthly report - skipping"
+          );
           return;
         }
-        
+
         setReportLoading(true);
-        const reportData = await notificationAPI.getMonthlyReport('latest');
+        const reportData = await notificationAPI.getMonthlyReport("latest");
         if (reportData.report) {
           setMonthlyReport(reportData.report);
         } else if (reportData.hasReports === false) {
@@ -142,15 +153,22 @@ export default function AIAssistantScreen() {
         // Silently handle monthly reports unavailability (expected in development)
         // The error is already handled gracefully in the API layer
         if (error.response?.status === 401) {
-          console.log('[AI Assistant] Monthly report authentication failed - likely due to network issues during token refresh');
-        } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
-          console.log('[AI Assistant] Network error prevented monthly report fetch - will retry later');
+          console.log(
+            "[AI Assistant] Monthly report authentication failed - likely due to network issues during token refresh"
+          );
+        } else if (
+          error.code === "ERR_NETWORK" ||
+          error.message?.includes("Network Error")
+        ) {
+          console.log(
+            "[AI Assistant] Network error prevented monthly report fetch - will retry later"
+          );
         }
       } finally {
         setReportLoading(false);
       }
     };
-    
+
     fetchHistory();
     fetchMonthlyReport();
 
@@ -162,23 +180,27 @@ export default function AIAssistantScreen() {
       }
 
       try {
-        console.log('🧠 [AI Assistant] Loading proactive insights...');
+        console.log("🧠 [AI Assistant] Loading proactive insights...");
         const [insights, starters] = await Promise.allSettled([
           aiService.generateProactiveInsights(user.id),
-          aiService.getConversationStarters(user.id)
+          aiService.getConversationStarters(user.id),
         ]);
 
-        if (insights.status === 'fulfilled') {
+        if (insights.status === "fulfilled") {
           setProactiveInsights(insights.value);
-          console.log(`✅ [AI Assistant] Loaded ${insights.value.length} proactive insights`);
+          console.log(
+            `✅ [AI Assistant] Loaded ${insights.value.length} proactive insights`
+          );
         }
 
-        if (starters.status === 'fulfilled') {
+        if (starters.status === "fulfilled") {
           setConversationStarters(starters.value);
-          console.log(`✅ [AI Assistant] Loaded ${starters.value.length} conversation starters`);
+          console.log(
+            `✅ [AI Assistant] Loaded ${starters.value.length} conversation starters`
+          );
         }
       } catch (error) {
-        console.error('❌ [AI Assistant] Error loading proactive data:', error);
+        console.error("❌ [AI Assistant] Error loading proactive data:", error);
       } finally {
         setInsightsLoading(false);
       }
@@ -197,66 +219,66 @@ export default function AIAssistantScreen() {
     const messageToSend = messageText || input.trim();
     if (!messageToSend || loading) return;
 
-    // Check usage limits for free users
-    if (!isPremium && !isTrialActive) {
-      const canUse = await incrementUsage('aiChats');
-      if (!canUse) {
-        setShowUpgradePrompt(true);
-        return;
-      }
-    }
+    // All users have free access to AI assistant
 
     const userMessage: Message = { role: "user", content: messageToSend };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
     setShowInsights(false); // Hide insights after first message
-    
+
     try {
       // Save user message (don't block on failure)
-      const saveResult = await aiService.saveAIChatMessage("user", userMessage.content);
+      const saveResult = await aiService.saveAIChatMessage(
+        "user",
+        userMessage.content
+      );
       if (saveResult.fallback && __DEV__) {
         console.log("💾 User message not saved to server:", saveResult.message);
       }
-      
+
       // Get AI insight (with fallback support)
       const res = await aiService.getAIInsight(messageToSend);
-      console.log('🤖 [AI Assistant] Response:', JSON.stringify(res));
+      console.log("🤖 [AI Assistant] Response:", JSON.stringify(res));
 
       // Handle different response formats from backend
-      let responseContent = res.answer || res.response || res.message || res.content;
+      let responseContent =
+        res.answer || res.response || res.message || res.content;
 
       // If response is an object with nested answer
-      if (!responseContent && typeof res === 'object') {
-        responseContent = res.data?.answer || res.data?.response || res.data?.message;
+      if (!responseContent && typeof res === "object") {
+        responseContent =
+          res.data?.answer || res.data?.response || res.data?.message;
       }
 
       const aiMessage: Message = {
         role: "assistant",
         content: responseContent || "Sorry, I couldn't generate an answer.",
       };
-      
+
       setMessages((prev) => [...prev, aiMessage]);
-      
+
       // Save AI response (don't block on failure)
-      const saveAIResult = await aiService.saveAIChatMessage("assistant", aiMessage.content);
+      const saveAIResult = await aiService.saveAIChatMessage(
+        "assistant",
+        aiMessage.content
+      );
       if (saveAIResult.fallback && __DEV__) {
         console.log("💾 AI message not saved to server:", saveAIResult.message);
       }
-      
+
       // Log if using fallback response for debugging
       if (res.fallback && __DEV__) {
         console.log("🤖 Using fallback AI response:", res.error || res.message);
       }
-      
     } catch (err: any) {
       console.error("❌ AI Assistant error:", err);
-      
+
       // Try to get a fallback response instead of generic error
       try {
         console.log("🤖 Attempting fallback response for error...");
         const fallbackRes = await aiService.getAIInsight(messageToSend);
-        
+
         if (fallbackRes.success && fallbackRes.answer) {
           // Use the fallback response
           const aiMessage: Message = {
@@ -264,11 +286,11 @@ export default function AIAssistantScreen() {
             content: fallbackRes.answer,
           };
           setMessages((prev) => [...prev, aiMessage]);
-          
+
           if (fallbackRes.isFallback && __DEV__) {
             console.log("🤖 Successfully used fallback response");
           }
-          
+
           // Try to save the fallback response
           try {
             await aiService.saveAIChatMessage("assistant", aiMessage.content);
@@ -280,15 +302,16 @@ export default function AIAssistantScreen() {
         }
       } catch (fallbackErr) {
         console.error("❌ Fallback also failed:", fallbackErr);
-        
+
         // Only show generic error if fallback completely fails
-        const errorMsg = "I'm experiencing some technical difficulties. Please try again in a moment, or check your internet connection.";
-        
+        const errorMsg =
+          "I'm experiencing some technical difficulties. Please try again in a moment, or check your internet connection.";
+
         setMessages((prev) => [
           ...prev,
           { role: "assistant", content: errorMsg },
         ]);
-        
+
         // Try to save error message (don't throw if it fails)
         try {
           await aiService.saveAIChatMessage("assistant", errorMsg);
@@ -333,18 +356,28 @@ export default function AIAssistantScreen() {
 
                 if (scrollViewRef.current) {
                   setTimeout(
-                    () => scrollViewRef.current?.scrollToEnd({ animated: true }),
+                    () =>
+                      scrollViewRef.current?.scrollToEnd({ animated: true }),
                     100
                   );
                 }
               } else if (clearResult.fallback) {
-                console.warn("⚠️ Chat history not cleared on server:", clearResult.message);
+                console.warn(
+                  "⚠️ Chat history not cleared on server:",
+                  clearResult.message
+                );
                 // Don't clear locally if server clear failed
-                Alert.alert("Error", "Failed to clear chat history on server. Please try again.");
+                Alert.alert(
+                  "Error",
+                  "Failed to clear chat history on server. Please try again."
+                );
               }
             } catch (error) {
               console.error("❌ Failed to clear chat history:", error);
-              Alert.alert("Error", "Failed to clear chat history. Please check your connection and try again.");
+              Alert.alert(
+                "Error",
+                "Failed to clear chat history. Please check your connection and try again."
+              );
             }
           },
         },
@@ -357,24 +390,28 @@ export default function AIAssistantScreen() {
       style={{ flex: 1, backgroundColor: colors.background.secondary }}
     >
       {/* Enhanced Modern Header */}
-      <View style={{
-        backgroundColor: colors.background.primary,
-        paddingHorizontal: 20,
-        paddingTop: 16,
-        paddingBottom: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
-      }}>
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
+      <View
+        style={{
+          backgroundColor: colors.background.primary,
+          paddingHorizontal: 20,
+          paddingTop: 16,
+          paddingBottom: 20,
+          borderBottomWidth: 1,
+          borderBottomColor: "rgba(0,0,0,0.05)",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 2,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <TouchableOpacity
             onPress={() => router.back()}
             style={{
@@ -382,48 +419,70 @@ export default function AIAssistantScreen() {
               height: 40,
               borderRadius: 20,
               backgroundColor: colors.background.secondary,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
+              alignItems: "center",
+              justifyContent: "center",
+              shadowColor: "#000",
               shadowOffset: { width: 0, height: 1 },
               shadowOpacity: 0.1,
               shadowRadius: 2,
               elevation: 1,
             }}
           >
-            <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={colors.primary[500]}
+            />
           </TouchableOpacity>
-          
-          <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 16 }}>
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginBottom: 4,
-            }}>
-              <View style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                backgroundColor: colors.primary[500] + '15',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 8,
-              }}>
-                <Ionicons name="sparkles" size={18} color={colors.primary[500]} />
+
+          <View
+            style={{ flex: 1, alignItems: "center", paddingHorizontal: 16 }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 4,
+              }}
+            >
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: colors.primary[500] + "15",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 8,
+                }}
+              >
+                <Ionicons
+                  name="sparkles"
+                  size={18}
+                  color={colors.primary[500]}
+                />
               </View>
-              <Text style={{
-                fontSize: 20,
-                fontWeight: '800',
-                color: colors.text.primary,
-              }}>AI Assistant</Text>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "800",
+                  color: colors.text.primary,
+                }}
+              >
+                AI Assistant
+              </Text>
             </View>
-            <Text style={{
-              fontSize: 14,
-              color: colors.text.secondary,
-              textAlign: 'center',
-            }}>Financial insights & advice</Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.text.secondary,
+                textAlign: "center",
+              }}
+            >
+              Financial insights & advice
+            </Text>
           </View>
-          
+
           <TouchableOpacity
             onPress={handleClearChat}
             disabled={loading}
@@ -431,25 +490,24 @@ export default function AIAssistantScreen() {
               width: 40,
               height: 40,
               borderRadius: 20,
-              backgroundColor: loading ? colors.background.tertiary : colors.error[500] + '15',
-              alignItems: 'center',
-              justifyContent: 'center',
+              backgroundColor: loading
+                ? colors.background.tertiary
+                : colors.error[500] + "15",
+              alignItems: "center",
+              justifyContent: "center",
               opacity: loading ? 0.5 : 1,
             }}
           >
-            <Ionicons 
-              name="trash-outline" 
-              size={18} 
-              color={loading ? colors.text.tertiary : colors.error[500]} 
+            <Ionicons
+              name="trash-outline"
+              size={18}
+              color={loading ? colors.text.tertiary : colors.error[500]}
             />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Usage Indicator for Free Users */}
-      {!isPremium && !isTrialActive && (
-        <UsageIndicator type="aiChats" style={{ marginHorizontal: 20, marginVertical: 8 }} />
-      )}
+      {/* All users have free access to AI assistant */}
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -472,95 +530,144 @@ export default function AIAssistantScreen() {
           >
             {/* Monthly Report Section - Optional Feature */}
             {monthlyReport && (
-              <View style={{
-                marginBottom: 20,
-                padding: 16,
-                backgroundColor: colors.background.secondary,
-                borderRadius: borderRadius.xl,
-                borderWidth: 1,
-                borderColor: colors.primary[500] + '20',
-              }}>
+              <View
+                style={{
+                  marginBottom: 20,
+                  padding: 16,
+                  backgroundColor: colors.background.secondary,
+                  borderRadius: borderRadius.xl,
+                  borderWidth: 1,
+                  borderColor: colors.primary[500] + "20",
+                }}
+              >
                 <TouchableOpacity
                   onPress={() => setShowReport(!showReport)}
                   style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                     marginBottom: showReport ? 16 : 0,
                   }}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 20,
-                      backgroundColor: colors.primary[500],
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12,
-                    }}>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <View
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
+                        backgroundColor: colors.primary[500],
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: 12,
+                      }}
+                    >
                       <Ionicons name="analytics" size={20} color="#fff" />
                     </View>
                     <View>
-                      <Text style={{
-                        fontSize: 16,
-                        fontWeight: '600',
-                        color: colors.text.primary,
-                      }}>
-                        {new Date(monthlyReport.reportMonth + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Report
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "600",
+                          color: colors.text.primary,
+                        }}
+                      >
+                        {new Date(
+                          monthlyReport.reportMonth + "-01"
+                        ).toLocaleDateString("en-US", {
+                          month: "long",
+                          year: "numeric",
+                        })}{" "}
+                        Report
                       </Text>
-                      <Text style={{
-                        fontSize: 12,
-                        color: colors.text.secondary,
-                      }}>Monthly AI Financial Summary</Text>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: colors.text.secondary,
+                        }}
+                      >
+                        Monthly AI Financial Summary
+                      </Text>
                     </View>
                   </View>
-                  <Ionicons 
-                    name={showReport ? "chevron-up" : "chevron-down"} 
-                    size={20} 
-                    color={colors.text.secondary} 
+                  <Ionicons
+                    name={showReport ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color={colors.text.secondary}
                   />
                 </TouchableOpacity>
 
                 {showReport && (
                   <View>
                     {/* Key Metrics */}
-                    <View style={{
-                      flexDirection: 'row',
-                      marginBottom: 16,
-                    }}>
-                      <View style={{ flex: 1, alignItems: 'center' }}>
-                        <Text style={{ fontSize: 24, fontWeight: '700', color: colors.success[600] }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        marginBottom: 16,
+                      }}
+                    >
+                      <View style={{ flex: 1, alignItems: "center" }}>
+                        <Text
+                          style={{
+                            fontSize: 24,
+                            fontWeight: "700",
+                            color: colors.success[600],
+                          }}
+                        >
                           £{monthlyReport.reportData.totalIncome.toFixed(0)}
                         </Text>
-                        <Text style={{ fontSize: 12, color: colors.text.secondary }}>Income</Text>
+                        <Text
+                          style={{ fontSize: 12, color: colors.text.secondary }}
+                        >
+                          Income
+                        </Text>
                       </View>
-                      <View style={{ flex: 1, alignItems: 'center' }}>
-                        <Text style={{ fontSize: 24, fontWeight: '700', color: colors.error[600] }}>
+                      <View style={{ flex: 1, alignItems: "center" }}>
+                        <Text
+                          style={{
+                            fontSize: 24,
+                            fontWeight: "700",
+                            color: colors.error[600],
+                          }}
+                        >
                           £{monthlyReport.reportData.totalExpenses.toFixed(0)}
                         </Text>
-                        <Text style={{ fontSize: 12, color: colors.text.secondary }}>Expenses</Text>
+                        <Text
+                          style={{ fontSize: 12, color: colors.text.secondary }}
+                        >
+                          Expenses
+                        </Text>
                       </View>
-                      <View style={{ flex: 1, alignItems: 'center' }}>
-                        <Text style={{ 
-                          fontSize: 24, 
-                          fontWeight: '700', 
-                          color: monthlyReport.reportData.netFlow >= 0 ? colors.success[600] : colors.error[600] 
-                        }}>
+                      <View style={{ flex: 1, alignItems: "center" }}>
+                        <Text
+                          style={{
+                            fontSize: 24,
+                            fontWeight: "700",
+                            color:
+                              monthlyReport.reportData.netFlow >= 0
+                                ? colors.success[600]
+                                : colors.error[600],
+                          }}
+                        >
                           £{monthlyReport.reportData.netFlow.toFixed(0)}
                         </Text>
-                        <Text style={{ fontSize: 12, color: colors.text.secondary }}>Net Flow</Text>
+                        <Text
+                          style={{ fontSize: 12, color: colors.text.secondary }}
+                        >
+                          Net Flow
+                        </Text>
                       </View>
                     </View>
 
                     {/* AI Insights */}
-                    <View style={{
-                      backgroundColor: colors.primary[500] + '10',
-                      borderRadius: borderRadius.lg,
-                      padding: 12,
-                      marginBottom: 12,
-                    }}>
-                      <MarkdownRenderer 
+                    <View
+                      style={{
+                        backgroundColor: colors.primary[500] + "10",
+                        borderRadius: borderRadius.lg,
+                        padding: 12,
+                        marginBottom: 12,
+                      }}
+                    >
+                      <MarkdownRenderer
                         content={monthlyReport.reportData.monthlyInsights}
                         fontSize={14}
                         lineHeight={20}
@@ -570,35 +677,48 @@ export default function AIAssistantScreen() {
                     {/* Top Categories */}
                     {monthlyReport.reportData.topCategories.length > 0 && (
                       <View>
-                        <Text style={{
-                          fontSize: 14,
-                          fontWeight: '600',
-                          color: colors.text.primary,
-                          marginBottom: 8,
-                        }}>Top Spending Categories</Text>
-                        {monthlyReport.reportData.topCategories.slice(0, 3).map((category, idx) => (
-                          <View key={idx} style={{
-                            flexDirection: 'row',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            paddingVertical: 4,
-                          }}>
-                            <Text style={{
-                              fontSize: 13,
-                              color: colors.text.secondary,
-                              textTransform: 'capitalize',
-                            }}>
-                              {category.category}
-                            </Text>
-                            <Text style={{
-                              fontSize: 13,
-                              fontWeight: '500',
-                              color: colors.text.primary,
-                            }}>
-                              £{category.amount.toFixed(0)}
-                            </Text>
-                          </View>
-                        ))}
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            fontWeight: "600",
+                            color: colors.text.primary,
+                            marginBottom: 8,
+                          }}
+                        >
+                          Top Spending Categories
+                        </Text>
+                        {monthlyReport.reportData.topCategories
+                          .slice(0, 3)
+                          .map((category, idx) => (
+                            <View
+                              key={idx}
+                              style={{
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                paddingVertical: 4,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: 13,
+                                  color: colors.text.secondary,
+                                  textTransform: "capitalize",
+                                }}
+                              >
+                                {category.category}
+                              </Text>
+                              <Text
+                                style={{
+                                  fontSize: 13,
+                                  fontWeight: "500",
+                                  color: colors.text.primary,
+                                }}
+                              >
+                                £{category.amount.toFixed(0)}
+                              </Text>
+                            </View>
+                          ))}
                       </View>
                     )}
                   </View>
@@ -612,13 +732,17 @@ export default function AIAssistantScreen() {
                 {/* Insights */}
                 {proactiveInsights.length > 0 && (
                   <View style={{ marginBottom: 16 }}>
-                    <Text style={{
-                      fontSize: 16,
-                      fontWeight: '700',
-                      color: colors.text.primary,
-                      marginBottom: 12,
-                      marginLeft: 4,
-                    }}>💡 Personalized Insights</Text>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: colors.text.primary,
+                        marginBottom: 12,
+                        marginLeft: 4,
+                      }}
+                    >
+                      💡 Personalized Insights
+                    </Text>
 
                     {proactiveInsights.slice(0, 2).map((insight, index) => {
                       const typeColors = {
@@ -626,10 +750,11 @@ export default function AIAssistantScreen() {
                         warning: colors.warning[500],
                         tip: colors.primary[500],
                         suggestion: colors.secondary[500],
-                        motivation: colors.accent[500]
+                        motivation: colors.accent[500],
                       };
 
-                      const typeColor = typeColors[insight.type] || colors.primary[500];
+                      const typeColor =
+                        typeColors[insight.type] || colors.primary[500];
 
                       return (
                         <TouchableOpacity
@@ -641,60 +766,84 @@ export default function AIAssistantScreen() {
                             marginBottom: 12,
                             borderLeftWidth: 4,
                             borderLeftColor: typeColor,
-                            shadowColor: '#000',
+                            shadowColor: "#000",
                             shadowOffset: { width: 0, height: 2 },
                             shadowOpacity: 0.1,
                             shadowRadius: 3,
                             elevation: 2,
                           }}
                           onPress={() => {
-                            if (insight.actionable && insight.suggestedActions.length > 0) {
+                            if (
+                              insight.actionable &&
+                              insight.suggestedActions.length > 0
+                            ) {
                               const actionQuestion = `Help me with: ${insight.message} What specific steps should I take?`;
                               sendMessage(actionQuestion);
                             }
                           }}
                           activeOpacity={insight.actionable ? 0.7 : 1}
                         >
-                          <Text style={{
-                            fontSize: 16,
-                            fontWeight: '700',
-                            color: colors.text.primary,
-                            marginBottom: 8,
-                          }}>{insight.title}</Text>
+                          <Text
+                            style={{
+                              fontSize: 16,
+                              fontWeight: "700",
+                              color: colors.text.primary,
+                              marginBottom: 8,
+                            }}
+                          >
+                            {insight.title}
+                          </Text>
 
-                          <Text style={{
-                            fontSize: 14,
-                            color: colors.text.secondary,
-                            lineHeight: 20,
-                            marginBottom: insight.actionable ? 12 : 0,
-                          }}>{insight.message}</Text>
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              color: colors.text.secondary,
+                              lineHeight: 20,
+                              marginBottom: insight.actionable ? 12 : 0,
+                            }}
+                          >
+                            {insight.message}
+                          </Text>
 
-                          {insight.actionable && insight.suggestedActions.length > 0 && (
-                            <View style={{
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              flexWrap: 'wrap',
-                              marginTop: 8,
-                            }}>
-                              <View style={{
-                                backgroundColor: typeColor + '15',
-                                paddingHorizontal: 8,
-                                paddingVertical: 4,
-                                borderRadius: borderRadius.sm,
-                                marginRight: 8,
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                              }}>
-                                <Ionicons name="help-circle" size={14} color={typeColor} />
-                                <Text style={{
-                                  fontSize: 12,
-                                  fontWeight: '600',
-                                  color: typeColor,
-                                  marginLeft: 4,
-                                }}>Tap to get help</Text>
+                          {insight.actionable &&
+                            insight.suggestedActions.length > 0 && (
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  flexWrap: "wrap",
+                                  marginTop: 8,
+                                }}
+                              >
+                                <View
+                                  style={{
+                                    backgroundColor: typeColor + "15",
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 4,
+                                    borderRadius: borderRadius.sm,
+                                    marginRight: 8,
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <Ionicons
+                                    name="help-circle"
+                                    size={14}
+                                    color={typeColor}
+                                  />
+                                  <Text
+                                    style={{
+                                      fontSize: 12,
+                                      fontWeight: "600",
+                                      color: typeColor,
+                                      marginLeft: 4,
+                                    }}
+                                  >
+                                    Tap to get help
+                                  </Text>
+                                </View>
                               </View>
-                            </View>
-                          )}
+                            )}
                         </TouchableOpacity>
                       );
                     })}
@@ -704,45 +853,61 @@ export default function AIAssistantScreen() {
                 {/* Conversation Starters */}
                 {conversationStarters.length > 0 && (
                   <View>
-                    <Text style={{
-                      fontSize: 16,
-                      fontWeight: '700',
-                      color: colors.text.primary,
-                      marginBottom: 12,
-                      marginLeft: 4,
-                    }}>💬 Quick Questions</Text>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: colors.text.primary,
+                        marginBottom: 12,
+                        marginLeft: 4,
+                      }}
+                    >
+                      💬 Quick Questions
+                    </Text>
 
-                    <View style={{
-                      flexDirection: 'row',
-                      flexWrap: 'wrap',
-                      marginHorizontal: -4,
-                    }}>
-                      {conversationStarters.slice(0, 6).map((starter, index) => (
-                        <TouchableOpacity
-                          key={index}
-                          style={{
-                            backgroundColor: colors.primary[500] + '15',
-                            borderRadius: borderRadius.xl,
-                            paddingHorizontal: 12,
-                            paddingVertical: 8,
-                            margin: 4,
-                            borderWidth: 1,
-                            borderColor: colors.primary[500] + '30',
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                          }}
-                          onPress={() => sendMessage(starter)}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name="chatbubble" size={14} color={colors.primary[500]} />
-                          <Text style={{
-                            fontSize: 14,
-                            fontWeight: '500',
-                            color: colors.primary[500],
-                            marginLeft: 6,
-                          }}>{starter}</Text>
-                        </TouchableOpacity>
-                      ))}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        flexWrap: "wrap",
+                        marginHorizontal: -4,
+                      }}
+                    >
+                      {conversationStarters
+                        .slice(0, 6)
+                        .map((starter, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={{
+                              backgroundColor: colors.primary[500] + "15",
+                              borderRadius: borderRadius.xl,
+                              paddingHorizontal: 12,
+                              paddingVertical: 8,
+                              margin: 4,
+                              borderWidth: 1,
+                              borderColor: colors.primary[500] + "30",
+                              flexDirection: "row",
+                              alignItems: "center",
+                            }}
+                            onPress={() => sendMessage(starter)}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons
+                              name="chatbubble"
+                              size={14}
+                              color={colors.primary[500]}
+                            />
+                            <Text
+                              style={{
+                                fontSize: 14,
+                                fontWeight: "500",
+                                color: colors.primary[500],
+                                marginLeft: 6,
+                              }}
+                            >
+                              {starter}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
                     </View>
                   </View>
                 )}
@@ -755,143 +920,179 @@ export default function AIAssistantScreen() {
                 style={{
                   marginBottom: 20,
                   flexDirection: "row",
-                  justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
-                  alignItems: 'flex-end',
+                  justifyContent:
+                    msg.role === "user" ? "flex-end" : "flex-start",
+                  alignItems: "flex-end",
                 }}
               >
                 {/* AI Avatar */}
                 {msg.role === "assistant" && (
-                  <View style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    backgroundColor: colors.primary[500],
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 8,
-                    marginBottom: 4,
-                  }}>
+                  <View
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                      backgroundColor: colors.primary[500],
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 8,
+                      marginBottom: 4,
+                    }}
+                  >
                     <Ionicons name="sparkles" size={16} color="#fff" />
                   </View>
                 )}
-                
+
                 {/* Message Bubble */}
-                <View style={{
-                  maxWidth: "75%",
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  borderRadius: 20,
-                  backgroundColor: msg.role === "user" 
-                    ? colors.primary[500] 
-                    : colors.background.primary,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 3,
-                  elevation: 2,
-                  borderBottomLeftRadius: msg.role === "assistant" ? 4 : 20,
-                  borderBottomRightRadius: msg.role === "user" ? 4 : 20,
-                }}>
+                <View
+                  style={{
+                    maxWidth: "75%",
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    borderRadius: 20,
+                    backgroundColor:
+                      msg.role === "user"
+                        ? colors.primary[500]
+                        : colors.background.primary,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 3,
+                    elevation: 2,
+                    borderBottomLeftRadius: msg.role === "assistant" ? 4 : 20,
+                    borderBottomRightRadius: msg.role === "user" ? 4 : 20,
+                  }}
+                >
                   {msg.role === "assistant" ? (
-                    <MarkdownRenderer content={typeof msg.content === 'string' ? msg.content : 'Invalid message content'} />
+                    <MarkdownRenderer
+                      content={
+                        typeof msg.content === "string"
+                          ? msg.content
+                          : "Invalid message content"
+                      }
+                    />
                   ) : (
-                    <Text style={{
-                      fontSize: 16,
-                      lineHeight: 22,
-                      color: msg.role === "user" ? "#fff" : colors.text.primary,
-                    }}>
-                      {typeof msg.content === 'string' ? msg.content : 'Invalid message content'}
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        lineHeight: 22,
+                        color:
+                          msg.role === "user" ? "#fff" : colors.text.primary,
+                      }}
+                    >
+                      {typeof msg.content === "string"
+                        ? msg.content
+                        : "Invalid message content"}
                     </Text>
                   )}
                 </View>
-                
+
                 {/* User Avatar */}
                 {msg.role === "user" && (
-                  <View style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    backgroundColor: colors.background.tertiary,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginLeft: 8,
-                    marginBottom: 4,
-                  }}>
-                    <Ionicons name="person" size={16} color={colors.text.secondary} />
+                  <View
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                      backgroundColor: colors.background.tertiary,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginLeft: 8,
+                      marginBottom: 4,
+                    }}
+                  >
+                    <Ionicons
+                      name="person"
+                      size={16}
+                      color={colors.text.secondary}
+                    />
                   </View>
                 )}
               </Animated.View>
             ))}
             {/* Enhanced Loading State */}
             {loading && (
-              <Animated.View style={{
-                marginBottom: 20,
-                flexDirection: "row",
-                justifyContent: "flex-start",
-                alignItems: 'flex-end',
-              }}>
+              <Animated.View
+                style={{
+                  marginBottom: 20,
+                  flexDirection: "row",
+                  justifyContent: "flex-start",
+                  alignItems: "flex-end",
+                }}
+              >
                 {/* AI Avatar */}
-                <View style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: colors.primary[500],
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 8,
-                  marginBottom: 4,
-                }}>
+                <View
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: colors.primary[500],
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 8,
+                    marginBottom: 4,
+                  }}
+                >
                   <Ionicons name="sparkles" size={16} color="#fff" />
                 </View>
-                
+
                 {/* Typing Indicator */}
-                <View style={{
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  borderRadius: 20,
-                  borderBottomLeftRadius: 4,
-                  backgroundColor: colors.background.primary,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 3,
-                  elevation: 2,
-                }}>
+                <View
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    borderRadius: 20,
+                    borderBottomLeftRadius: 4,
+                    backgroundColor: colors.background.primary,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 3,
+                    elevation: 2,
+                  }}
+                >
                   <ActivityIndicator size="small" color={colors.primary[500]} />
-                  <Text style={{
-                    marginLeft: 8,
-                    color: colors.text.secondary,
-                    fontSize: 16,
-                    fontStyle: 'italic',
-                  }}>AI is thinking...</Text>
+                  <Text
+                    style={{
+                      marginLeft: 8,
+                      color: colors.text.secondary,
+                      fontSize: 16,
+                      fontStyle: "italic",
+                    }}
+                  >
+                    AI is thinking...
+                  </Text>
                 </View>
               </Animated.View>
             )}
           </ScrollView>
           {/* Enhanced Input Bar */}
-          <View style={{
-            position: "absolute",
-            bottom: 16,
-            left: 0,
-            right: 0,
-            paddingHorizontal: 16,
-          }}>
-            <View style={{
-              flexDirection: "row",
-              alignItems: "flex-end",
-              backgroundColor: colors.background.primary,
-              borderRadius: 24,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.15,
-              shadowRadius: 8,
-              elevation: 5,
+          <View
+            style={{
+              position: "absolute",
+              bottom: 16,
+              left: 0,
+              right: 0,
               paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderWidth: 1,
-              borderColor: colors.border.light,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "flex-end",
+                backgroundColor: colors.background.primary,
+                borderRadius: 24,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+                elevation: 5,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderWidth: 1,
+                borderColor: colors.border.light,
               }}
             >
               <TextInput
@@ -919,10 +1120,13 @@ export default function AIAssistantScreen() {
                   width: 40,
                   height: 40,
                   borderRadius: 20,
-                  backgroundColor: (!input.trim() || loading) ? colors.background.tertiary : colors.primary[500],
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  shadowColor: '#000',
+                  backgroundColor:
+                    !input.trim() || loading
+                      ? colors.background.tertiary
+                      : colors.primary[500],
+                  alignItems: "center",
+                  justifyContent: "center",
+                  shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.1,
                   shadowRadius: 4,
@@ -934,10 +1138,12 @@ export default function AIAssistantScreen() {
                 {loading ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Ionicons 
-                    name="arrow-up" 
-                    size={20} 
-                    color={(!input.trim() || loading) ? colors.text.tertiary : "#fff"} 
+                  <Ionicons
+                    name="arrow-up"
+                    size={20}
+                    color={
+                      !input.trim() || loading ? colors.text.tertiary : "#fff"
+                    }
                   />
                 )}
               </TouchableOpacity>
@@ -946,20 +1152,7 @@ export default function AIAssistantScreen() {
         </View>
       </KeyboardAvoidingView>
 
-      {/* Upgrade Prompt Modal */}
-      <UpgradePrompt
-        title="AI Chat Limit Reached"
-        message="You've used all your AI chats for this month. Upgrade to Premium for unlimited conversations with your AI financial assistant."
-        isModal={true}
-        visible={showUpgradePrompt}
-        onClose={() => setShowUpgradePrompt(false)}
-        features={[
-          'Unlimited AI conversations',
-          'Advanced financial insights',
-          'Personalized recommendations',
-          'Priority support'
-        ]}
-      />
+      {/* All users have free access to AI assistant */}
     </SafeAreaView>
   );
 }

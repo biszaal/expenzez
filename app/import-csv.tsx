@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { useTheme } from "../contexts/ThemeContext";
 import { transactionAPI } from "../services/api";
@@ -804,16 +804,16 @@ export default function CSVImportScreen() {
       // Convert to CSV string
       const csvContent = templateData.map((row) => row.join(",")).join("\n");
 
-      // Create temporary file
+      // Create temporary file using legacy API
       const fileName = "expenzez-template.csv";
-      const file = new FileSystem.File(FileSystem.Paths.document, fileName);
+      const fileUri = FileSystem.documentDirectory + fileName;
 
-      // Write content to file using the writeAsStringAsync from legacy (recommended for simple string writes)
-      await FileSystem.writeAsStringAsync(file.uri, csvContent);
+      // Write content to file using the legacy writeAsStringAsync
+      await FileSystem.writeAsStringAsync(fileUri, csvContent);
 
       // Check if sharing is available
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(file.uri, {
+        await Sharing.shareAsync(fileUri, {
           mimeType: "text/csv",
           dialogTitle: "Save CSV Template",
           UTI: "public.comma-separated-values-text",
@@ -822,7 +822,7 @@ export default function CSVImportScreen() {
         // Fallback for devices without sharing - show template content
         Alert.alert(
           "CSV Template",
-          'Required format (5 columns):\n\nDate,Description,Amount,Category,Type\n2024-01-15,Tesco Grocery,-45.67,groceries,debit\n2024-01-15,Salary Payment,2500.00,income,credit\n\n• Amount: negative for expenses, positive for income\n• Type: "debit" for expenses, "credit" for income\n• Category: groceries, food, transport, bills, etc.',
+          'Required format (5 columns):\n\nDate,Description,Amount,Category,Type\n2024-01-15,Tesco Grocery,45.67,groceries,debit\n2024-01-15,Salary Payment,2500.00,income,credit\n\n• Amount: Always use positive values\n• Type: "debit" for expenses, "credit" for income\n• Category: groceries, food, transport, bills, etc.',
           [{ text: "OK" }]
         );
       }
@@ -843,7 +843,8 @@ export default function CSVImportScreen() {
       setImporting(true);
 
       // Use backend CSV import with auto-categorization
-      const result = await transactionAPI.importCsvTransactions(allTransactions);
+      const result =
+        await transactionAPI.importCsvTransactions(allTransactions);
 
       // Use summary if available, otherwise fallback to direct properties
       const summary = result.summary || {
@@ -989,7 +990,7 @@ export default function CSVImportScreen() {
               • Date, Description, Amount, Category, Type
             </Text>
             <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Amount: Positive for income, negative for expenses
+              • Amount: Always use positive values (e.g., 45.67)
             </Text>
             <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
               • Type: &quot;credit&quot; for income, &quot;debit&quot; for
