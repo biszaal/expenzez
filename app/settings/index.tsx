@@ -1,26 +1,26 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Switch, Alert, Linking } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ScrollView,
+  Switch,
+  Alert,
+  Linking,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme, ColorScheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../auth/AuthContext";
-import { useSubscription } from "../../contexts/SubscriptionContext";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { colors, colorScheme, setColorScheme, isDark } = useTheme();
   const { logout } = useAuth();
-  const { subscription, isTrialActive, daysUntilTrialExpires } = useSubscription();
-
-  // Debug: Log subscription state to verify dynamic values
-  console.log('📊 [Settings] Subscription State:', {
-    tier: subscription.tier,
-    isTrialActive,
-    daysUntilTrialExpires,
-    trialEndDate: subscription.trialEndDate
-  });
+  // Subscription features removed - all users have free access
 
   // Local state for settings
   const [currency, setCurrency] = useState("GBP");
@@ -30,20 +30,20 @@ export default function SettingsPage() {
       key: "light" as ColorScheme,
       label: "Light Mode",
       icon: "sunny-outline",
-      description: "Always use light theme"
+      description: "Always use light theme",
     },
     {
       key: "dark" as ColorScheme,
-      label: "Dark Mode", 
+      label: "Dark Mode",
       icon: "moon-outline",
-      description: "Always use dark theme"
+      description: "Always use dark theme",
     },
     {
       key: "system" as ColorScheme,
       label: "System Default",
       icon: "phone-portrait-outline",
-      description: "Follow your phone's setting"
-    }
+      description: "Follow your phone's setting",
+    },
   ];
 
   const currencyOptions = [
@@ -56,35 +56,33 @@ export default function SettingsPage() {
   ];
 
   const handleCurrencyPress = () => {
-    Alert.alert(
-      "Select Currency",
-      "Choose your preferred currency",
-      [
-        ...currencyOptions.map(option => ({
-          text: `${option.symbol} ${option.name}`,
-          onPress: () => setCurrency(option.code),
-          style: currency === option.code ? 'default' as const : 'default' as const
-        })),
-        { text: "Cancel", style: "cancel" as const }
-      ]
-    );
+    Alert.alert("Select Currency", "Choose your preferred currency", [
+      ...currencyOptions.map((option) => ({
+        text: `${option.symbol} ${option.name}`,
+        onPress: () => setCurrency(option.code),
+        style:
+          currency === option.code
+            ? ("default" as const)
+            : ("default" as const),
+      })),
+      { text: "Cancel", style: "cancel" as const },
+    ]);
   };
 
   const handleExportData = () => {
-    Alert.alert(
-      "Export Data",
-      "Export your financial data as CSV or PDF?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "CSV", onPress: () => exportData("csv") },
-        { text: "PDF", onPress: () => exportData("pdf") }
-      ]
-    );
+    Alert.alert("Export Data", "Export your financial data as CSV or PDF?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "CSV", onPress: () => exportData("csv") },
+      { text: "PDF", onPress: () => exportData("pdf") },
+    ]);
   };
 
   const exportData = async (format: string) => {
     // TODO: Implement actual data export
-    Alert.alert("Export Started", `Your data export in ${format.toUpperCase()} format will be ready shortly.`);
+    Alert.alert(
+      "Export Started",
+      `Your data export in ${format.toUpperCase()} format will be ready shortly.`
+    );
   };
 
   const handleDeleteData = () => {
@@ -93,32 +91,34 @@ export default function SettingsPage() {
       "This will permanently delete all your financial data, including transactions, accounts, and budgets. This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete", 
+        {
+          text: "Delete",
           style: "destructive",
           onPress: async () => {
             try {
               // TODO: Implement actual data deletion
-              Alert.alert("Data Deleted", "All your data has been permanently deleted.");
+              Alert.alert(
+                "Data Deleted",
+                "All your data has been permanently deleted."
+              );
             } catch (error) {
               Alert.alert("Error", "Failed to delete data. Please try again.");
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
 
   const handleContactSupport = () => {
-    Alert.alert(
-      "Contact Support",
-      "How would you like to get in touch?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Email", onPress: () => Linking.openURL("mailto:support@expenzez.com") },
-        { text: "Help Center", onPress: () => router.push("/help") }
-      ]
-    );
+    Alert.alert("Contact Support", "How would you like to get in touch?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Email",
+        onPress: () => Linking.openURL("mailto:support@expenzez.com"),
+      },
+      { text: "Help Center", onPress: () => router.push("/help") },
+    ]);
   };
 
   return (
@@ -155,19 +155,36 @@ export default function SettingsPage() {
         </Text>
         <View style={{ width: 32 }} />
       </View>
-      
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.content}>
           {/* Theme Section */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
               Appearance
             </Text>
-            <Text style={[styles.sectionDescription, { color: colors.text.secondary }]}>
+            <Text
+              style={[
+                styles.sectionDescription,
+                { color: colors.text.secondary },
+              ]}
+            >
               Choose how expenzez looks on your device
             </Text>
-            
-            <View style={[styles.themeContainer, { backgroundColor: colors.background.primary, borderColor: colors.border.light }, shadows.sm]}>
+
+            <View
+              style={[
+                styles.themeContainer,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+            >
               {themeOptions.map((option, index) => (
                 <TouchableOpacity
                   key={option.key}
@@ -178,32 +195,51 @@ export default function SettingsPage() {
                       borderBottomColor: colors.border.light,
                     },
                     colorScheme === option.key && {
-                      backgroundColor: colors.primary[100] || 'rgba(124, 58, 237, 0.1)',
-                    }
+                      backgroundColor:
+                        colors.primary[100] || "rgba(124, 58, 237, 0.1)",
+                    },
                   ]}
                   onPress={() => setColorScheme(option.key)}
                   activeOpacity={0.7}
                 >
                   <View style={styles.themeOptionLeft}>
-                    <View style={[
-                      styles.themeIconContainer,
-                      { backgroundColor: colorScheme === option.key ? colors.primary[500] : colors.background.tertiary }
-                    ]}>
+                    <View
+                      style={[
+                        styles.themeIconContainer,
+                        {
+                          backgroundColor:
+                            colorScheme === option.key
+                              ? colors.primary[500]
+                              : colors.background.tertiary,
+                        },
+                      ]}
+                    >
                       <Ionicons
                         name={option.icon as any}
                         size={20}
-                        color={colorScheme === option.key ? "#fff" : colors.text.secondary}
+                        color={
+                          colorScheme === option.key
+                            ? "#fff"
+                            : colors.text.secondary
+                        }
                       />
                     </View>
                     <View style={styles.themeTextContainer}>
-                      <Text style={[
-                        styles.themeLabel,
-                        { color: colors.text.primary },
-                        colorScheme === option.key && { fontWeight: '600' }
-                      ]}>
+                      <Text
+                        style={[
+                          styles.themeLabel,
+                          { color: colors.text.primary },
+                          colorScheme === option.key && { fontWeight: "600" },
+                        ]}
+                      >
                         {option.label}
                       </Text>
-                      <Text style={[styles.themeDescription, { color: colors.text.secondary }]}>
+                      <Text
+                        style={[
+                          styles.themeDescription,
+                          { color: colors.text.secondary },
+                        ]}
+                      >
                         {option.description}
                       </Text>
                     </View>
@@ -220,13 +256,12 @@ export default function SettingsPage() {
             </View>
           </View>
 
-
           {/* App Settings */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
               App Settings
             </Text>
-            
+
             <TouchableOpacity
               style={[
                 styles.settingItem,
@@ -244,12 +279,20 @@ export default function SettingsPage() {
                 color={colors.primary[500]}
                 style={{ marginRight: 14 }}
               />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
+              <Text
+                style={[styles.settingText, { color: colors.text.primary }]}
+              >
                 Currency
               </Text>
               <View style={styles.settingValue}>
-                <Text style={[styles.settingValueText, { color: colors.text.secondary }]}>
-                  {currencyOptions.find(c => c.code === currency)?.symbol} {currency}
+                <Text
+                  style={[
+                    styles.settingValueText,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  {currencyOptions.find((c) => c.code === currency)?.symbol}{" "}
+                  {currency}
                 </Text>
                 <Ionicons
                   name="chevron-forward"
@@ -276,7 +319,9 @@ export default function SettingsPage() {
                 color={colors.primary[500]}
                 style={{ marginRight: 14 }}
               />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
+              <Text
+                style={[styles.settingText, { color: colors.text.primary }]}
+              >
                 Budget Settings
               </Text>
               <Ionicons
@@ -311,7 +356,9 @@ export default function SettingsPage() {
                 color={colors.primary[500]}
                 style={{ marginRight: 14 }}
               />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
+              <Text
+                style={[styles.settingText, { color: colors.text.primary }]}
+              >
                 Notifications
               </Text>
               <Ionicons
@@ -338,7 +385,9 @@ export default function SettingsPage() {
                 color={colors.primary[500]}
                 style={{ marginRight: 14 }}
               />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
+              <Text
+                style={[styles.settingText, { color: colors.text.primary }]}
+              >
                 Security & Privacy
               </Text>
               <Ionicons
@@ -354,7 +403,7 @@ export default function SettingsPage() {
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
               Account
             </Text>
-            
+
             <TouchableOpacity
               style={[
                 styles.settingItem,
@@ -372,7 +421,9 @@ export default function SettingsPage() {
                 color={colors.primary[500]}
                 style={{ marginRight: 14 }}
               />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
+              <Text
+                style={[styles.settingText, { color: colors.text.primary }]}
+              >
                 Export Data
               </Text>
               <Ionicons
@@ -382,13 +433,12 @@ export default function SettingsPage() {
               />
             </TouchableOpacity>
 
-
             <TouchableOpacity
               style={[
                 styles.settingItem,
                 {
-                  backgroundColor: isDark ? '#7F1D1D' : '#FEF2F2',
-                  borderColor: isDark ? '#991B1B' : '#FECACA',
+                  backgroundColor: isDark ? "#7F1D1D" : "#FEF2F2",
+                  borderColor: isDark ? "#991B1B" : "#FECACA",
                 },
                 shadows.sm,
               ]}
@@ -397,10 +447,15 @@ export default function SettingsPage() {
               <Ionicons
                 name="trash-outline"
                 size={22}
-                color={isDark ? '#FCA5A5' : '#DC2626'}
+                color={isDark ? "#FCA5A5" : "#DC2626"}
                 style={{ marginRight: 14 }}
               />
-              <Text style={[styles.settingText, { color: isDark ? '#FCA5A5' : '#DC2626' }]}>
+              <Text
+                style={[
+                  styles.settingText,
+                  { color: isDark ? "#FCA5A5" : "#DC2626" },
+                ]}
+              >
                 Delete All Data
               </Text>
               <Ionicons
@@ -434,7 +489,9 @@ export default function SettingsPage() {
                 color={colors.primary[500]}
                 style={{ marginRight: 14 }}
               />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
+              <Text
+                style={[styles.settingText, { color: colors.text.primary }]}
+              >
                 Help & Support
               </Text>
               <Ionicons
@@ -445,103 +502,7 @@ export default function SettingsPage() {
             </TouchableOpacity>
           </View>
 
-          {/* Subscription Information */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-                Subscription
-              </Text>
-              {isTrialActive && (
-                <View style={[styles.trialBadge, { backgroundColor: colors.primary[100] }]}>
-                  <Ionicons name="sparkles" size={12} color={colors.primary[600]} />
-                  <Text style={[styles.trialBadgeText, { color: colors.primary[600] }]}>
-                    Trial Active
-                  </Text>
-                </View>
-              )}
-            </View>
-            <View
-              style={[
-                styles.aboutContainer,
-                {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-            >
-              <View style={styles.aboutItem}>
-                <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
-                  Plan Name
-                </Text>
-                <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
-                  Expenzez Premium
-                </Text>
-              </View>
-              <View style={[styles.aboutDivider, { backgroundColor: colors.border.light }]} />
-              <View style={styles.aboutItem}>
-                <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
-                  Monthly Plan
-                </Text>
-                <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
-                  £4.99/month
-                </Text>
-              </View>
-              <View style={[styles.aboutDivider, { backgroundColor: colors.border.light }]} />
-              <View style={styles.aboutItem}>
-                <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
-                  Annual Plan
-                </Text>
-                <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
-                  £49.99/year
-                </Text>
-              </View>
-              <View style={[styles.aboutDivider, { backgroundColor: colors.border.light }]} />
-              <View style={styles.aboutItem}>
-                <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
-                  Free Trial Duration
-                </Text>
-                <View style={styles.trialValueContainer}>
-                  <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
-                    {isTrialActive && daysUntilTrialExpires !== null
-                      ? `${daysUntilTrialExpires} day${daysUntilTrialExpires !== 1 ? 's' : ''} remaining`
-                      : '14 days'}
-                  </Text>
-                  {isTrialActive && subscription.trialEndDate && (
-                    <Text style={[styles.trialEndDate, { color: colors.text.tertiary }]}>
-                      Expires {new Date(subscription.trialEndDate).toLocaleDateString('en-GB', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
-                    </Text>
-                  )}
-                </View>
-              </View>
-            </View>
-            <Text style={[styles.subscriptionNote, { color: colors.text.secondary }]}>
-              Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Payment charged to App Store account. Manage subscriptions in App Store settings.
-            </Text>
-
-            <TouchableOpacity
-              style={[
-                styles.manageSubscriptionButton,
-                {
-                  backgroundColor: colors.primary[500],
-                  borderColor: colors.primary[600],
-                },
-                shadows.sm,
-              ]}
-              onPress={() => router.push("/subscription/plans")}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="diamond" size={18} color="white" />
-              <Text style={styles.manageSubscriptionText}>
-                {isTrialActive ? 'View Premium Plans' : 'Upgrade to Premium'}
-              </Text>
-              <Ionicons name="arrow-forward" size={16} color="white" />
-            </TouchableOpacity>
-          </View>
+          {/* Subscription features removed - all users have free access */}
 
           {/* Legal */}
           <View style={styles.section}>
@@ -566,7 +527,9 @@ export default function SettingsPage() {
                 color={colors.primary[500]}
                 style={{ marginRight: 14 }}
               />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
+              <Text
+                style={[styles.settingText, { color: colors.text.primary }]}
+              >
                 Privacy Policy
               </Text>
               <Ionicons
@@ -593,7 +556,9 @@ export default function SettingsPage() {
                 color={colors.primary[500]}
                 style={{ marginRight: 14 }}
               />
-              <Text style={[styles.settingText, { color: colors.text.primary }]}>
+              <Text
+                style={[styles.settingText, { color: colors.text.primary }]}
+              >
                 Terms of Use (EULA)
               </Text>
               <Ionicons
@@ -620,19 +585,32 @@ export default function SettingsPage() {
               ]}
             >
               <View style={styles.aboutItem}>
-                <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
+                <Text
+                  style={[styles.aboutLabel, { color: colors.text.secondary }]}
+                >
                   App Version
                 </Text>
-                <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
+                <Text
+                  style={[styles.aboutValue, { color: colors.text.primary }]}
+                >
                   1.0.0
                 </Text>
               </View>
-              <View style={[styles.aboutDivider, { backgroundColor: colors.border.light }]} />
+              <View
+                style={[
+                  styles.aboutDivider,
+                  { backgroundColor: colors.border.light },
+                ]}
+              />
               <View style={styles.aboutItem}>
-                <Text style={[styles.aboutLabel, { color: colors.text.secondary }]}>
+                <Text
+                  style={[styles.aboutLabel, { color: colors.text.secondary }]}
+                >
                   Company
                 </Text>
-                <Text style={[styles.aboutValue, { color: colors.text.primary }]}>
+                <Text
+                  style={[styles.aboutValue, { color: colors.text.primary }]}
+                >
                   Biszaal Tech Ltd.
                 </Text>
               </View>
@@ -645,40 +623,44 @@ export default function SettingsPage() {
               style={[
                 styles.settingItem,
                 {
-                  backgroundColor: isDark ? '#7F1D1D' : '#FEF2F2',
-                  borderColor: isDark ? '#991B1B' : '#FECACA',
+                  backgroundColor: isDark ? "#7F1D1D" : "#FEF2F2",
+                  borderColor: isDark ? "#991B1B" : "#FECACA",
                 },
                 shadows.sm,
               ]}
               onPress={() => {
-                Alert.alert(
-                  "Sign Out",
-                  "Are you sure you want to sign out?",
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Sign Out",
-                      style: "destructive",
-                      onPress: async () => {
-                        try {
-                          await logout();
-                          router.replace("/auth/Login");
-                        } catch (error) {
-                          Alert.alert("Error", "Failed to sign out. Please try again.");
-                        }
+                Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Sign Out",
+                    style: "destructive",
+                    onPress: async () => {
+                      try {
+                        await logout();
+                        router.replace("/auth/Login");
+                      } catch (error) {
+                        Alert.alert(
+                          "Error",
+                          "Failed to sign out. Please try again."
+                        );
                       }
-                    }
-                  ]
-                );
+                    },
+                  },
+                ]);
               }}
             >
               <Ionicons
                 name="log-out-outline"
                 size={22}
-                color={isDark ? '#FCA5A5' : '#DC2626'}
+                color={isDark ? "#FCA5A5" : "#DC2626"}
                 style={{ marginRight: 14 }}
               />
-              <Text style={[styles.settingText, { color: isDark ? '#FCA5A5' : '#DC2626' }]}>
+              <Text
+                style={[
+                  styles.settingText,
+                  { color: isDark ? "#FCA5A5" : "#DC2626" },
+                ]}
+              >
                 Sign Out
               </Text>
             </TouchableOpacity>
@@ -724,9 +706,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   sectionTitle: {
@@ -740,8 +722,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   trialBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -749,7 +731,7 @@ const styles = StyleSheet.create({
   },
   trialBadgeText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   themeContainer: {
     borderRadius: 8,
@@ -844,18 +826,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   trialValueContainer: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+    alignItems: "flex-end",
+    justifyContent: "center",
   },
   trialEndDate: {
     fontSize: 12,
     marginTop: 4,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   manageSubscriptionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 14,
@@ -865,9 +847,9 @@ const styles = StyleSheet.create({
   },
   manageSubscriptionText: {
     fontSize: 15,
-    fontWeight: '600',
-    color: 'white',
+    fontWeight: "600",
+    color: "white",
     flex: 1,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

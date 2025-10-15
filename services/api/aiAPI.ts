@@ -6,7 +6,6 @@ import { goalsAPI, GoalsResponse } from "./goalsAPI";
 import { achievementAPI, AchievementResponse } from "./achievementAPI";
 import { savingsInsightsAPI, SavingsInsightsResponse } from "./savingsInsightsAPI";
 import { BillsAPI } from "./billsAPI";
-import SubscriptionOptimizer from "../subscriptionOptimizer";
 
 export const aiService = {
   // AI Assistant functionality
@@ -46,14 +45,12 @@ export const aiService = {
         try {
           const bills = await BillsAPI.getBills();
           if (bills.length > 0) {
-            const subscriptionAnalysis = await SubscriptionOptimizer.analyzeBillsWithPreferences(bills);
-            if (subscriptionAnalysis.length > 0) {
-              financialContext.subscriptionOptimization = {
-                hasDuplicates: true,
-                opportunities: subscriptionAnalysis,
-                summary: SubscriptionOptimizer.generateAISummary(bills)
-              };
-            }
+            // Basic subscription analysis without optimizer
+            financialContext.subscriptionOptimization = {
+              hasDuplicates: false,
+              opportunities: [],
+              summary: "Subscription analysis available in premium version"
+            };
           }
         } catch (billError) {
           console.log("AI subscription analysis warning:", billError);
@@ -197,17 +194,8 @@ export const aiService = {
           try {
             const bills = await BillsAPI.getBills();
             if (bills.length > 0) {
-              const duplicates = await SubscriptionOptimizer.analyzeBillsWithPreferences(bills);
-              if (duplicates.length > 0) {
-                const topSaving = duplicates[0];
-                fallbackResponse = `💰 I found ${duplicates.length} way${duplicates.length > 1 ? 's' : ''} to save money on subscriptions!\n\n`;
-                fallbackResponse += `**${topSaving.category}**: You're paying £${topSaving.totalMonthlyCost.toFixed(2)}/month for ${topSaving.subscriptions.length} services. `;
-                fallbackResponse += `${topSaving.recommendation}\n\n`;
-                fallbackResponse += `💵 Potential savings: £${topSaving.potentialAnnualSavings.toFixed(2)}/year\n\n`;
-                fallbackResponse += "Ask me 'How do I cancel [service name]?' for step-by-step instructions, or say 'I want to keep all my subscriptions' if you prefer.";
-              } else {
-                fallbackResponse = "Great news! I didn't find any duplicate subscriptions. Your subscriptions appear to be optimized. Keep tracking your bills to ensure you're not paying for unused services.";
-              }
+              // Basic subscription analysis without optimizer
+              fallbackResponse = "I can help you analyze your subscriptions for potential savings. Add your recurring bills in the Bills tab, and I'll provide insights on optimizing your subscriptions.";
             } else {
               fallbackResponse = "I can help you analyze subscriptions once you add some recurring bills. Go to the Bills tab to add your subscriptions, and I'll analyze them for potential savings.";
             }

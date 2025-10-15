@@ -1,5 +1,4 @@
-import { api } from '../config/apiClient';
-import { cachedApiCall, CACHE_TTL, clearCachedData } from '../config/apiCache';
+import { api } from "../config/apiClient";
 
 export interface Transaction {
   id: string;
@@ -15,7 +14,7 @@ export interface TransactionCreateData {
   category: string;
   description: string;
   date: string;
-  type?: 'debit' | 'credit';
+  type?: "debit" | "credit";
   tags?: string[];
   merchant?: string;
   accountId?: string;
@@ -48,7 +47,7 @@ export interface GetTransactionsParams {
   category?: string;
   startDate?: string;
   endDate?: string;
-  type?: 'debit' | 'credit';
+  type?: "debit" | "credit";
   useCache?: boolean;
 }
 
@@ -59,7 +58,7 @@ export interface CSVTransaction {
   amount: number;
   originalAmount: number;
   category: string;
-  type: 'debit' | 'credit';
+  type: "debit" | "credit";
 }
 
 export interface CSVImportResponse {
@@ -76,79 +75,66 @@ export interface CSVImportResponse {
   };
 }
 
-
 export const transactionAPI = {
-  createTransaction: async (data: TransactionCreateData): Promise<TransactionCreateResponse> => {
-    const response = await api.post('/transactions', data);
-
-    // Invalidate transaction cache after creating new transaction
-    await clearCachedData('transactions_all');
-
+  createTransaction: async (
+    data: TransactionCreateData
+  ): Promise<TransactionCreateResponse> => {
+    const response = await api.post("/transactions", data);
     return response.data;
   },
 
   getTransactions: async (
-    params: GetTransactionsParams = {},
-    options: { useCache?: boolean; forceRefresh?: boolean } = { useCache: true, forceRefresh: false }
+    params: GetTransactionsParams = {}
   ): Promise<TransactionsResponse> => {
     const queryParams = new URLSearchParams();
 
     // Default limit to 50 for faster initial load
     const limit = params.limit !== undefined ? params.limit : 50;
-    queryParams.append('limit', limit.toString());
+    queryParams.append("limit", limit.toString());
 
-    if (params.startKey) queryParams.append('startKey', params.startKey);
-    if (params.category) queryParams.append('category', params.category);
-    if (params.startDate) queryParams.append('startDate', params.startDate);
-    if (params.endDate) queryParams.append('endDate', params.endDate);
-    if (params.type) queryParams.append('type', params.type);
+    if (params.startKey) queryParams.append("startKey", params.startKey);
+    if (params.category) queryParams.append("category", params.category);
+    if (params.startDate) queryParams.append("startDate", params.startDate);
+    if (params.endDate) queryParams.append("endDate", params.endDate);
+    if (params.type) queryParams.append("type", params.type);
 
-    const url = queryParams.toString() ? `/transactions?${queryParams.toString()}` : '/transactions';
+    const url = queryParams.toString()
+      ? `/transactions?${queryParams.toString()}`
+      : "/transactions";
 
-    // Generate cache key based on params
-    const cacheKey = `transactions_${JSON.stringify(params)}`;
-
-    if (options.useCache) {
-      return cachedApiCall(
-        cacheKey,
-        async () => {
-          const response = await api.get(url);
-          return response.data;
-        },
-        CACHE_TTL.SHORT, // 30 seconds for transactions
-        options.forceRefresh
-      );
-    } else {
-      const response = await api.get(url);
-      return response.data;
-    }
+    // Always fetch fresh data from server - no caching
+    const response = await api.get(url);
+    return response.data;
   },
 
   // CSV Import with auto-categorization
-  importCsvTransactions: async (transactions: CSVTransaction[]): Promise<CSVImportResponse> => {
-    const response = await api.post('/transactions/import-csv', {
-      transactions
+  importCsvTransactions: async (
+    transactions: CSVTransaction[]
+  ): Promise<CSVImportResponse> => {
+    const response = await api.post("/transactions/import-csv", {
+      transactions,
     });
     return response.data;
   },
 
-
   // Helper method to convert expense data to transaction format
   convertExpenseToTransaction: (expenseData: any): TransactionCreateData => {
-    const isIncome = expenseData.tags?.includes('income');
+    const isIncome = expenseData.tags?.includes("income");
     return {
-      amount: isIncome ? Math.abs(expenseData.amount) : -Math.abs(expenseData.amount),
+      amount: isIncome
+        ? Math.abs(expenseData.amount)
+        : -Math.abs(expenseData.amount),
       originalAmount: Math.abs(expenseData.amount),
       category: expenseData.category,
       description: expenseData.description,
       date: expenseData.date,
-      type: isIncome ? 'credit' : 'debit',
+      type: isIncome ? "credit" : "debit",
       tags: expenseData.tags || [],
       merchant: expenseData.description,
-      accountId: 'manual',
-      bankName: 'Manual Entry',
-      accountType: 'Manual Account',
+      accountId: "manual",
+      bankName: "Manual Entry",
+      accountType: "Manual Account",
       isPending: false,
     };
-  }
+  },
 };

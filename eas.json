@@ -10,8 +10,6 @@
       "channel": "development",
       "env": {
         "EXPO_PUBLIC_ENV": "development",
-        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_yfPFpbhaPCTmblZKDJMHMyRKhKH",
-        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_YOUR_ANDROID_API_KEY"
       }
     },
     "preview": {
@@ -19,8 +17,6 @@
       "channel": "preview",
       "env": {
         "EXPO_PUBLIC_ENV": "preview",
-        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_yfPFpbhaPCTmblZKDJMHMyRKhKH",
-        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_YOUR_ANDROID_API_KEY"
       },
       "ios": {
         "resourceClass": "m-medium"
@@ -34,8 +30,6 @@
       "channel": "production",
       "env": {
         "EXPO_PUBLIC_ENV": "production",
-        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_yfPFpbhaPCTmblZKDJMHMyRKhKH",
-        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_YOUR_ANDROID_API_KEY"
       },
       "ios": {
         "enterpriseProvisioning": "universal",

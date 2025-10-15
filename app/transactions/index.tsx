@@ -48,10 +48,10 @@ export default function TransactionsScreen() {
   const router = useRouter();
   const { merchant } = useLocalSearchParams<{ merchant?: string }>();
   const { isLoggedIn } = useAuth();
-  const {
-    isLoggedIn: authLoggedIn,
-    checkingBank,
-  } = useAuthGuard(undefined, true);
+  const { isLoggedIn: authLoggedIn, checkingBank } = useAuthGuard(
+    undefined,
+    true
+  );
   const { colors } = useTheme();
   const { showSuccess, showError } = useAlert();
 
@@ -68,27 +68,36 @@ export default function TransactionsScreen() {
       else setLoading(true);
 
       // Always fetch last 12 months to have all months available in filter
-      const startDate = dayjs().subtract(12, 'months').startOf('month').format('YYYY-MM-DD');
-      const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
+      const startDate = dayjs()
+        .subtract(12, "months")
+        .startOf("month")
+        .format("YYYY-MM-DD");
+      const endDate = dayjs().endOf("month").format("YYYY-MM-DD");
       const limit = 2400; // ~200 per month for 12 months
 
-      console.log(`[Transactions] Fetching last 12 months (${startDate} to ${endDate})...`);
+      console.log(
+        `[Transactions] Fetching last 12 months (${startDate} to ${endDate})...`
+      );
 
       const transactionsResponse = await transactionAPI.getTransactions({
         startDate,
         endDate,
         limit,
-        useCache: true
       });
       console.log(`[Transactions] API Response:`, transactionsResponse);
 
-      if (transactionsResponse?.transactions && transactionsResponse.transactions.length > 0) {
-        const formattedTransactions: Transaction[] = transactionsResponse.transactions.map(
-          (tx: any) => {
+      if (
+        transactionsResponse?.transactions &&
+        transactionsResponse.transactions.length > 0
+      ) {
+        const formattedTransactions: Transaction[] =
+          transactionsResponse.transactions.map((tx: any) => {
             console.log(`[Transactions] Processing transaction:`, tx);
 
-            // Get the original amount (should be positive)
-            const originalAmount = Math.abs(tx.originalAmount || tx.amount || 0);
+            // Get the original amount (should be positive) - ensure it's a number
+            const originalAmount = Math.abs(
+              Number(tx.originalAmount || tx.amount || 0)
+            );
 
             // Determine transaction type from amount
             const rawAmount = tx.amount || 0;
@@ -98,7 +107,10 @@ export default function TransactionsScreen() {
             }
 
             const formatted = {
-              id: tx.id || tx.transactionId || `tx_${Date.now()}_${Math.random()}`,
+              id:
+                tx.id ||
+                tx.transactionId ||
+                `tx_${Date.now()}_${Math.random()}`,
               amount: rawAmount,
               description: tx.description || "Unknown Transaction",
               date: tx.date || new Date().toISOString(),
@@ -115,10 +127,11 @@ export default function TransactionsScreen() {
 
             console.log(`[Transactions] Formatted transaction:`, formatted);
             return formatted;
-          }
-        );
+          });
 
-        console.log(`[Transactions] Setting ${formattedTransactions.length} formatted transactions`);
+        console.log(
+          `[Transactions] Setting ${formattedTransactions.length} formatted transactions`
+        );
         setTransactions(formattedTransactions);
         setLastUpdated(dayjs().format("HH:mm"));
 
@@ -166,19 +179,26 @@ export default function TransactionsScreen() {
 
   // Auto-select the most recent month when transactions are loaded - but don't auto-filter
   useEffect(() => {
-    console.log(`[Transactions] useEffect triggered - selectedMonth: ${selectedMonth}, transactions: ${transactions.length}`);
+    console.log(
+      `[Transactions] useEffect triggered - selectedMonth: ${selectedMonth}, transactions: ${transactions.length}`
+    );
 
     if (transactions.length > 0) {
-      console.log(`[Transactions] Sample transactions:`, transactions.slice(0, 5).map(tx => ({
-        date: tx.date,
-        timestamp: tx.timestamp,
-        description: tx.description
-      })));
+      console.log(
+        `[Transactions] Sample transactions:`,
+        transactions.slice(0, 5).map((tx) => ({
+          date: tx.date,
+          timestamp: tx.timestamp,
+          description: tx.description,
+        }))
+      );
 
       // Test date parsing for specific dates like the ones in DynamoDB
       console.log(`[Transactions] Testing date parsing:`);
       console.log(`  2025-08-22 → ${dayjs("2025-08-22").format("YYYY-MM")}`);
-      console.log(`  2025-08-23T10:30:14.816Z → ${dayjs("2025-08-23T10:30:14.816Z").format("YYYY-MM")}`);
+      console.log(
+        `  2025-08-23T10:30:14.816Z → ${dayjs("2025-08-23T10:30:14.816Z").format("YYYY-MM")}`
+      );
       console.log(`  Current date → ${dayjs().format("YYYY-MM")}`);
     }
 
@@ -191,7 +211,10 @@ export default function TransactionsScreen() {
         monthsSet.add(month);
       });
       const sortedMonths = Array.from(monthsSet).sort().reverse();
-      console.log(`[Transactions] Available months found (but not auto-selecting):`, sortedMonths);
+      console.log(
+        `[Transactions] Available months found (but not auto-selecting):`,
+        sortedMonths
+      );
 
       // Don't auto-select any month - let users see all transactions
       // setSelectedMonth("");  // Keep empty to show all
@@ -206,7 +229,10 @@ export default function TransactionsScreen() {
       monthsSet.add(month);
     });
 
-    console.log(`[Transactions] Available months for filter:`, Array.from(monthsSet).sort().reverse());
+    console.log(
+      `[Transactions] Available months for filter:`,
+      Array.from(monthsSet).sort().reverse()
+    );
 
     // Show more months since user has 975 transactions
     const months = Array.from(monthsSet).sort().reverse().slice(0, 12);
@@ -220,34 +246,43 @@ export default function TransactionsScreen() {
   // Filter and group transactions
   const { filteredTransactions, pendingTransactions } = useMemo(() => {
     let filtered = transactions;
-    console.log(`[Transactions] Starting filter with ${transactions.length} transactions, selectedMonth: ${selectedMonth}`);
+    console.log(
+      `[Transactions] Starting filter with ${transactions.length} transactions, selectedMonth: ${selectedMonth}`
+    );
 
     if (transactions.length > 0) {
-      console.log(`[Transactions] Sample transaction dates:`, transactions.slice(0, 3).map(tx => ({
-        description: tx.description,
-        date: tx.date,
-        timestamp: tx.timestamp,
-        parsedMonth: dayjs(tx.date || tx.timestamp).format("YYYY-MM")
-      })));
+      console.log(
+        `[Transactions] Sample transaction dates:`,
+        transactions.slice(0, 3).map((tx) => ({
+          description: tx.description,
+          date: tx.date,
+          timestamp: tx.timestamp,
+          parsedMonth: dayjs(tx.date || tx.timestamp).format("YYYY-MM"),
+        }))
+      );
     }
 
     // Month filter - only apply if selectedMonth is set and not empty
     if (selectedMonth && selectedMonth.trim() !== "") {
       console.log(`[Transactions] Applying month filter for: ${selectedMonth}`);
       const beforeFilterCount = filtered.length;
-      filtered = filtered.filter(
-        (tx) => {
-          const txMonth = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
-          const matches = txMonth === selectedMonth;
-          return matches;
-        }
+      filtered = filtered.filter((tx) => {
+        const txMonth = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
+        const matches = txMonth === selectedMonth;
+        return matches;
+      });
+      console.log(
+        `[Transactions] Month filter: ${beforeFilterCount} → ${filtered.length} transactions`
       );
-      console.log(`[Transactions] Month filter: ${beforeFilterCount} → ${filtered.length} transactions`);
     } else {
-      console.log(`[Transactions] No month filter applied, showing all ${transactions.length} transactions`);
+      console.log(
+        `[Transactions] No month filter applied, showing all ${transactions.length} transactions`
+      );
     }
 
-    console.log(`[Transactions] After month filter: ${filtered.length} transactions (selectedMonth: "${selectedMonth}")`);
+    console.log(
+      `[Transactions] After month filter: ${filtered.length} transactions (selectedMonth: "${selectedMonth}")`
+    );
 
     // Search filter
     if (searchQuery.trim()) {
@@ -303,7 +338,6 @@ export default function TransactionsScreen() {
     return dayjs(date).format("ddd DD MMM");
   };
 
-
   const getMerchantLogo = (description: string) => {
     const merchantInfo = getMerchantInfo(description);
     return merchantInfo.logo;
@@ -323,13 +357,25 @@ export default function TransactionsScreen() {
   // Show skeleton loader during initial load
   if (loading && transactions.length === 0) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <SafeAreaView
+        style={[
+          styles.container,
+          { backgroundColor: colors.background.primary },
+        ]}
+      >
         <View style={styles.header}>
           <TouchableOpacity
-            style={[styles.backButton, { backgroundColor: colors.background.secondary }]}
+            style={[
+              styles.backButton,
+              { backgroundColor: colors.background.secondary },
+            ]}
             onPress={() => router.back()}
           >
-            <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={colors.primary[500]}
+            />
           </TouchableOpacity>
           <View style={styles.headerContent}>
             <Text style={[styles.headerTitle, { color: colors.text.primary }]}>

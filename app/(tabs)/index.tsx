@@ -6,10 +6,8 @@ import * as SecureStore from "expo-secure-store";
 import dayjs from "dayjs";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useSecurity } from "../../contexts/SecurityContext";
-import { useSubscription } from "../../contexts/SubscriptionContext";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { useAuth } from "../auth/AuthContext";
-import { PremiumUpgradeCard } from "../../components/premium/PremiumUpgradeCard";
 import { budgetAPI } from "../../services/api";
 import { transactionAPI } from "../../services/api/transactionAPI";
 import { balanceAPI } from "../../services/api/balanceAPI";
@@ -56,7 +54,7 @@ interface Account {
 export default function HomeScreen() {
   const { colors } = useTheme();
   const { isLocked } = useSecurity();
-  const { isPremium } = useSubscription();
+  // Subscription features removed - all users have free access
   const { unreadCount } = useNotifications();
   const { isLoggedIn, user } = useAuth();
 
@@ -143,7 +141,6 @@ export default function HomeScreen() {
             .format("YYYY-MM-DD"),
           endDate: dayjs().endOf("month").format("YYYY-MM-DD"),
           limit: 1000, // Load more for fallback balance calculation
-          useCache: true,
         })
         .catch((error) => {
           console.error("❌ Error loading transactions:", error);
@@ -388,8 +385,7 @@ export default function HomeScreen() {
           {/* Show notifications only if there are unread notifications */}
           {unreadCount > 0 && <NotificationCard />}
 
-          {/* Show premium upgrade occasionally, not always */}
-          {!isPremium && showPremiumCard && <PremiumUpgradeCard />}
+          {/* Premium features removed - all users have free access */}
 
           <UpcomingBillsCard />
         </View>

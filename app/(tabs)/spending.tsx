@@ -19,7 +19,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
 // import { useSubscription } from "../../contexts/SubscriptionContext"; // Removed unused import
-import { PremiumGate } from "../../components/premium";
 import { SpendingSkeleton } from "../../components/ui/SkeletonLoader";
 import { spacing } from "../../constants/theme";
 import { budgetAPI } from "../../services/api";
@@ -1274,47 +1273,17 @@ export default function SpendingPage() {
         {/* Analytics Section */}
         {selectedTab === "categories" && (
           <>
-            <PremiumGate
-              feature="advancedAnalytics"
-              upgradeMessage="Unlock detailed spending analytics, charts, and insights with Premium"
-              showPreview={true}
-              previewContent={
-                <View style={{ opacity: 0.5 }}>
-                  <SpendingAnalyticsSection
-                    selectedMonth={selectedMonth}
-                    chartData={{
-                      ...chartData,
-                      labels: chartData.labels?.slice(0, 3) || [],
-                      values: chartData.values?.slice(0, 3) || [],
-                      dataPoints: chartData.dataPoints?.slice(0, 3) || [],
-                    }} // Show limited data in preview
-                    hasTransactions={
-                      (monthlyData?.monthlyTransactions?.length || 0) > 0
-                    }
-                    monthlyOverBudget={monthlyOverBudget}
-                    dailySpendingData={{
-                      ...dailySpendingData,
-                      labels: dailySpendingData.labels?.slice(0, 7) || [],
-                      data: dailySpendingData.data?.slice(0, 7) || [],
-                      prevMonthData:
-                        dailySpendingData.prevMonthData?.slice(0, 7) || [],
-                    }} // Show limited data
-                    onPointSelect={() => {}} // Disable interaction in preview
-                  />
-                </View>
+            {/* All users have free access to analytics */}
+            <SpendingAnalyticsSection
+              selectedMonth={selectedMonth}
+              chartData={chartData}
+              hasTransactions={
+                (monthlyData?.monthlyTransactions?.length || 0) > 0
               }
-            >
-              <SpendingAnalyticsSection
-                selectedMonth={selectedMonth}
-                chartData={chartData}
-                hasTransactions={
-                  (monthlyData?.monthlyTransactions?.length || 0) > 0
-                }
-                monthlyOverBudget={monthlyOverBudget}
-                dailySpendingData={dailySpendingData}
-                onPointSelect={handlePointSelect}
-              />
-            </PremiumGate>
+              monthlyOverBudget={monthlyOverBudget}
+              dailySpendingData={dailySpendingData}
+              onPointSelect={handlePointSelect}
+            />
 
             {/* Category/Merchant Switch */}
             <CategoryMerchantSwitch
