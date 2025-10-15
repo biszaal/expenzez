@@ -1,5 +1,5 @@
 // Clean and Professional Register Screen
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   KeyboardAvoidingView,
@@ -53,6 +53,12 @@ export default function Register() {
   const [registrationError, setRegistrationError] = useState("");
   const [passwordError] = useState("");
   const { showError, showSuccess } = useAlert();
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Scroll to top when step changes
+  useEffect(() => {
+    scrollViewRef.current?.scrollTo({ x: 0, y: 0, animated: true });
+  }, [step]);
 
   const handleChange = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -251,6 +257,7 @@ export default function Register() {
             behavior={Platform.OS === "ios" ? "padding" : undefined}
           >
             <ScrollView
+              ref={scrollViewRef}
               style={styles.scrollView}
               contentContainerStyle={styles.scrollContent}
               keyboardShouldPersistTaps="handled"
