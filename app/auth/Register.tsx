@@ -96,6 +96,14 @@ export default function Register() {
 
     // Phone validation is handled in RegisterStep5 component
     // If we reach here, the phone should already be in E.164 format
+
+    // Convert birthdate from YYYY-MM-DD to MM/DD/YYYY format for AWS Cognito
+    let formattedBirthdate = submitValues.dob;
+    if (submitValues.dob && submitValues.dob.includes('-')) {
+      const [year, month, day] = submitValues.dob.split('-');
+      formattedBirthdate = `${month}/${day}/${year}`;
+    }
+
     console.log("Registration data being submitted:", {
       username: submitValues.username,
       email: submitValues.email,
@@ -107,7 +115,8 @@ export default function Register() {
       family_name: submitValues.familyName,
       hasPassword: !!submitValues.password,
       passwordLength: submitValues.password?.length,
-      birthdate: submitValues.dob,
+      birthdate_original: submitValues.dob,
+      birthdate_formatted: formattedBirthdate,
       address: submitValues.address,
       gender: submitValues.gender
     });
@@ -120,6 +129,7 @@ export default function Register() {
       );
       return;
     }
+
     setIsLoading(true);
     setRegistrationError("");
     try {
@@ -131,7 +141,7 @@ export default function Register() {
         email: submitValues.email,
         password: submitValues.password,
         phone_number: submitValues.phone_number,
-        birthdate: submitValues.dob,
+        birthdate: formattedBirthdate,
         address: submitValues.address,
         gender: submitValues.gender,
       });
