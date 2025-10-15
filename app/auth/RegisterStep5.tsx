@@ -203,11 +203,9 @@ export default function RegisterStep5({
     const fullName = `${values.givenName} ${values.familyName}`.trim();
     onChange('name', fullName);
 
-    // Wait for React to finish state updates before submitting
-    // React state updates are async, so we need to let the event loop complete
-    setTimeout(() => {
-      onSubmit();
-    }, 0);
+    // Pass the values directly to onSubmit to avoid React state timing issues
+    // This ensures the formatted phone_number and name are used immediately
+    onSubmit({ phone_number: formattedPhone, name: fullName });
   };
 
   return (
