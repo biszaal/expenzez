@@ -145,55 +145,21 @@ export default function Register() {
       });
       
       let errorMsg = err.message || "Something went wrong. Try again later.";
-      let shouldRedirectToLogin = false;
-      
+
       // Enhanced error handling for different types of user existence errors
       if (err.response?.data?.error === "UsernameExistsException") {
         errorMsg = "This username is already taken. Please choose a different username.";
-      } else if (err.response?.data?.error === "EmailExistsException" || 
+      } else if (err.response?.data?.error === "EmailExistsException" ||
                  (err.response?.status === 409 && err.response?.data?.message?.toLowerCase().includes("email"))) {
-        // Redirect to login for email that already exists
-        console.log("Redirecting to login due to email exists");
-        shouldRedirectToLogin = true;
-        try {
-          showSuccess("Account found! Redirecting to login...");
-          setTimeout(() => {
-            router.replace({
-              pathname: "/auth/Login",
-              params: { email: values.email, message: "An account with this email already exists. Please log in." }
-            });
-          }, 2000);
-        } catch (redirectError) {
-          console.error("Error during redirect:", redirectError);
-        }
-        return;
+        // Show error instead of redirecting - keep user data intact
+        errorMsg = "An account with this email already exists. If this is your account, please go to login page.";
       } else if (err.response?.data?.error === "PhoneNumberExistsException" ||
                  (err.response?.status === 409 && err.response?.data?.message?.toLowerCase().includes("phone"))) {
-        // Redirect to login for phone that already exists
-        console.log("Redirecting to login due to phone exists");
-        shouldRedirectToLogin = true;
-        try {
-          showSuccess("Account found! Redirecting to login...");
-          setTimeout(() => {
-            router.replace({
-              pathname: "/auth/Login",
-              params: { phone: values.phone_number, message: "An account with this phone number already exists. Please log in." }
-            });
-          }, 2000);
-        } catch (redirectError) {
-          console.error("Error during redirect:", redirectError);
-        }
-        return;
+        // Show error instead of redirecting - keep user data intact
+        errorMsg = "An account with this phone number already exists. If this is your account, please go to login page.";
       } else if (err.response?.data?.message?.includes("User already exists")) {
-        shouldRedirectToLogin = true;
-        showSuccess("Account found! Redirecting to login...");
-        setTimeout(() => {
-          router.replace({
-            pathname: "/auth/Login",
-            params: { email: values.email, message: "An account with these details already exists. Please log in or verify your email." }
-          });
-        }, 2000);
-        return;
+        // Show error instead of redirecting - keep user data intact
+        errorMsg = "An account with these details already exists. If this is your account, please go to login page.";
       } else if (
         err.response?.data?.error === "InvalidPasswordException" ||
         err.response?.data?.message?.toLowerCase().includes("password")
@@ -202,27 +168,11 @@ export default function Register() {
       } else if (err.response?.data?.message?.toLowerCase().includes("username")) {
         errorMsg = "Username is not available. Please choose a different username.";
       } else if (err.response?.data?.message?.toLowerCase().includes("email")) {
-        // Fallback for email-related errors - redirect to login
-        shouldRedirectToLogin = true;
-        showSuccess("Account found! Redirecting to login...");
-        setTimeout(() => {
-          router.replace({
-            pathname: "/auth/Login",
-            params: { email: values.email, message: "Email address is already registered. Please log in instead." }
-          });
-        }, 2000);
-        return;
+        // Show error instead of redirecting - keep user data intact
+        errorMsg = "This email address is already registered. If this is your account, please go to login page.";
       } else if (err.response?.data?.message?.toLowerCase().includes("phone")) {
-        // Fallback for phone-related errors - redirect to login
-        shouldRedirectToLogin = true;
-        showSuccess("Account found! Redirecting to login...");
-        setTimeout(() => {
-          router.replace({
-            pathname: "/auth/Login",
-            params: { phone: values.phone_number, message: "Phone number is already registered. Please log in instead." }
-          });
-        }, 2000);
-        return;
+        // Show error instead of redirecting - keep user data intact
+        errorMsg = "This phone number is already registered. If this is your account, please go to login page.";
       } else if (err.response?.status === 400) {
         // Handle 400 errors with specific messages
         console.log("Handling 400 error:", err.response?.data);
@@ -246,25 +196,11 @@ export default function Register() {
           errorMsg = err.response?.data?.message || "Registration failed. Please check your details.";
         }
       } else if (err.response?.status === 409) {
-        // Handle any 409 error as a duplicate user scenario
+        // Handle any 409 error as a duplicate user scenario - show error instead of redirecting
         console.log("Handling 409 error as duplicate user");
-        try {
-          showSuccess("Account found! Redirecting to login...");
-          setTimeout(() => {
-            router.replace({
-              pathname: "/auth/Login",
-              params: { 
-                email: values.email, 
-                message: "An account with these details already exists. Please log in instead." 
-              }
-            });
-          }, 2000);
-        } catch (redirectError) {
-          console.error("Error during 409 redirect:", redirectError);
-        }
-        return;
+        errorMsg = "An account with these details already exists. If this is your account, please go to login page.";
       }
-      
+
       setRegistrationError(errorMsg);
       console.error("Registration error:", err);
     } finally {
