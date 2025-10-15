@@ -390,22 +390,22 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: layout.screenPadding,
+    paddingHorizontal: 0,
     paddingVertical: spacing.lg,
   },
 
   // Clean Form
   formContainer: {
-    borderRadius: borderRadius.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: spacing.lg,
+    borderRadius: 0,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+    marginBottom: 0,
   },
   formContent: {
-    padding: spacing.lg,
+    padding: 0,
   },
 
   // Error handling
@@ -413,6 +413,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
+    marginHorizontal: spacing.md,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     marginBottom: spacing.lg,
@@ -428,6 +429,7 @@ const styles = StyleSheet.create({
   loginLink: {
     alignSelf: 'center',
     marginTop: spacing.md,
+    marginHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     paddingBottom: spacing.xl, // Extra padding at bottom
   },
