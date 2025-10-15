@@ -122,16 +122,16 @@ export default function RegisterStep5({
 }: any) {
   const { colors } = useTheme();
   const [selectedCountryCode, setSelectedCountryCode] = useState(countryCodes[0]);
-  const [phoneNumber, setPhoneNumber] = useState(values.phone || "");
+  const [phoneNumber, setPhoneNumber] = useState(values.phone_number || "");
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [phoneError, setPhoneError] = useState("");
 
   // Sync phone number with parent form state
   useEffect(() => {
-    if (values.phone && values.phone !== phoneNumber) {
-      setPhoneNumber(values.phone);
+    if (values.phone_number && values.phone_number !== phoneNumber) {
+      setPhoneNumber(values.phone_number);
     }
-  }, [values.phone, phoneNumber]);
+  }, [values.phone_number, phoneNumber]);
 
   // Set name field on component mount
   useEffect(() => {
@@ -196,9 +196,9 @@ export default function RegisterStep5({
       return;
     }
     
-    // Set phone number in E.164 format
-    onChange('phone', formattedPhone);
-    
+    // Set phone number in E.164 format (backend expects 'phone_number' with underscore)
+    onChange('phone_number', formattedPhone);
+
     // Also set the name field as concatenated first and last name for compatibility
     const fullName = `${values.givenName} ${values.familyName}`.trim();
     onChange('name', fullName);
