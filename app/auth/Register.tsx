@@ -70,33 +70,49 @@ export default function Register() {
   };
   const handleBack = () => setStep((s) => s - 1);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (overrideValues?: { phone_number?: string; name?: string }) => {
+    // Merge override values with current state
+    const submitValues = {
+      ...values,
+      ...overrideValues
+    };
+
     // Prevent email as username
-    if (values.username.includes("@")) {
+    if (submitValues.username.includes("@")) {
       showError(
         "Username cannot be an email address. Please choose a unique username."
       );
       return;
     }
+
+    // DEBUG: Log all values before submission
+    console.log("🔍 [Register] ALL VALUES:", submitValues);
+    console.log("🔍 [Register] Phone number specifically:", {
+      phone_number: submitValues.phone_number,
+      type: typeof submitValues.phone_number,
+      length: submitValues.phone_number?.length,
+      isEmpty: !submitValues.phone_number,
+    });
+
     // Phone validation is handled in RegisterStep5 component
     // If we reach here, the phone should already be in E.164 format
     console.log("Registration data being submitted:", {
-      username: values.username,
-      email: values.email,
-      phone_number: values.phone_number,
-      phone_raw: values.phone_number, // Show raw phone value for debugging
-      phone_length: values.phone_number?.length || 0,
-      name: values.name,
-      given_name: values.givenName,
-      family_name: values.familyName,
-      hasPassword: !!values.password,
-      passwordLength: values.password?.length,
-      birthdate: values.dob,
-      address: values.address,
-      gender: values.gender
+      username: submitValues.username,
+      email: submitValues.email,
+      phone_number: submitValues.phone_number,
+      phone_raw: submitValues.phone_number, // Show raw phone value for debugging
+      phone_length: submitValues.phone_number?.length || 0,
+      name: submitValues.name,
+      given_name: submitValues.givenName,
+      family_name: submitValues.familyName,
+      hasPassword: !!submitValues.password,
+      passwordLength: submitValues.password?.length,
+      birthdate: submitValues.dob,
+      address: submitValues.address,
+      gender: submitValues.gender
     });
     const isValidPassword = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(
-      values.password
+      submitValues.password
     );
     if (!isValidPassword) {
       showError(
@@ -108,24 +124,24 @@ export default function Register() {
     setRegistrationError("");
     try {
       const result = await register({
-        username: values.username,
-        name: values.name,
-        given_name: values.givenName,
-        family_name: values.familyName,
-        email: values.email,
-        password: values.password,
-        phone_number: values.phone_number,
-        birthdate: values.dob,
-        address: values.address,
-        gender: values.gender,
+        username: submitValues.username,
+        name: submitValues.name,
+        given_name: submitValues.givenName,
+        family_name: submitValues.familyName,
+        email: submitValues.email,
+        password: submitValues.password,
+        phone_number: submitValues.phone_number,
+        birthdate: submitValues.dob,
+        address: submitValues.address,
+        gender: submitValues.gender,
       });
       if (result.success) {
         showSuccess("Registration successful! Please verify your email.");
         router.replace({
           pathname: "/auth/EmailVerification",
-          params: { 
-            email: values.email,
-            password: values.password // Pass password for auto-login after verification
+          params: {
+            email: submitValues.email,
+            password: submitValues.password // Pass password for auto-login after verification
           },
         });
         return;
