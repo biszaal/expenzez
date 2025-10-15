@@ -33,7 +33,7 @@ const initialState = {
   familyName: "",
   gender: "",
   dob: "",
-  phone: "",
+  phone_number: "",
   address: "",
   address1: "",
   address2: "",
@@ -77,9 +77,9 @@ export default function Register() {
     console.log("Registration data being submitted:", {
       username: values.username,
       email: values.email,
-      phone_number: values.phone,
-      phone_raw: values.phone, // Show raw phone value for debugging
-      phone_length: values.phone?.length || 0,
+      phone_number: values.phone_number,
+      phone_raw: values.phone_number, // Show raw phone value for debugging
+      phone_length: values.phone_number?.length || 0,
       name: values.name,
       given_name: values.givenName,
       family_name: values.familyName,
@@ -108,7 +108,7 @@ export default function Register() {
         family_name: values.familyName,
         email: values.email,
         password: values.password,
-        phone_number: values.phone,
+        phone_number: values.phone_number,
         birthdate: values.dob,
         address: values.address,
         gender: values.gender,
@@ -177,7 +177,7 @@ export default function Register() {
           setTimeout(() => {
             router.replace({
               pathname: "/auth/Login",
-              params: { phone: values.phone, message: "An account with this phone number already exists. Please log in." }
+              params: { phone: values.phone_number, message: "An account with this phone number already exists. Please log in." }
             });
           }, 2000);
         } catch (redirectError) {
@@ -219,7 +219,7 @@ export default function Register() {
         setTimeout(() => {
           router.replace({
             pathname: "/auth/Login",
-            params: { phone: values.phone, message: "Phone number is already registered. Please log in instead." }
+            params: { phone: values.phone_number, message: "Phone number is already registered. Please log in instead." }
           });
         }, 2000);
         return;
