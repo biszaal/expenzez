@@ -203,8 +203,11 @@ export default function RegisterStep5({
     const fullName = `${values.givenName} ${values.familyName}`.trim();
     onChange('name', fullName);
 
-    // Call onSubmit immediately - state should be updated synchronously
-    onSubmit();
+    // Wait for React to finish state updates before submitting
+    // React state updates are async, so we need to let the event loop complete
+    setTimeout(() => {
+      onSubmit();
+    }, 0);
   };
 
   return (
