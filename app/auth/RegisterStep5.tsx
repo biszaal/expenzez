@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.xl,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
   },
   progressStep: {
     width: 28,
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: spacing.xl,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
   },
   title: {
     fontSize: 24,
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   formFields: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingBottom: spacing.lg,
   },
   inputContainer: {
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     marginTop: spacing.lg,
     gap: spacing.md,
   },
