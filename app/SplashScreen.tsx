@@ -89,52 +89,45 @@ export default function SplashScreen() {
   }, []);
 
   return (
-    <LinearGradient
-      colors={[colors.primary[600], colors.primary[400], colors.accent[500]]}
-      style={styles.gradient}
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.primary[500] }]}
     >
       <StatusBar
         barStyle="light-content"
-        backgroundColor="transparent"
-        translucent={true}
+        backgroundColor={colors.primary[500]}
       />
-      
-      <SafeAreaView style={styles.container}>
-        <Animated.View
-          style={[
-            styles.content,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }],
-            },
-          ]}
-        >
-          {/* Glass Morphism Logo Container */}
-          <View style={styles.logoContainer}>
-            <BlurView intensity={20} style={styles.glassBackground}>
-              <View style={styles.glassInner}>
-                <Image
-                  source={require("../assets/images/transparent-logo.png")}
-                  style={styles.logoImage}
-                  resizeMode="contain"
-                />
-              </View>
-            </BlurView>
-          </View>
 
-          {/* App Name */}
-          <Text style={styles.appName}>Expenzez</Text>
-          <Text style={styles.tagline}>Personal Finance Assistant</Text>
-        </Animated.View>
-      </SafeAreaView>
-    </LinearGradient>
+      <Animated.View
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
+      >
+        {/* Glass Morphism Logo Container */}
+        <View style={styles.logoContainer}>
+          <BlurView intensity={20} style={styles.glassBackground}>
+            <View style={styles.glassInner}>
+              <Image
+                source={require("../assets/images/transparent-logo.png")}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+            </View>
+          </BlurView>
+        </View>
+
+        {/* App Name */}
+        <Text style={styles.appName}>Expenzez</Text>
+        <Text style={styles.tagline}>Personal Finance Assistant</Text>
+      </Animated.View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
   container: {
     flex: 1,
   },
