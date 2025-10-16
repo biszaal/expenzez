@@ -210,70 +210,64 @@ export default function RegisterStep5({
 
   return (
     <View style={styles.container}>
-      {/* Clean Progress Indicator - All Complete */}
+      {/* Glass Progress Indicator - All Complete */}
       <View style={styles.progressContainer}>
-        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
-          <Ionicons name="checkmark" size={16} color="#8B5CF6" />
+        <View style={styles.completedStep}>
+          <Ionicons name="checkmark" size={16} color="white" />
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
-          <Ionicons name="checkmark" size={16} color="#8B5CF6" />
+        <View style={styles.completedLine} />
+        <View style={styles.completedStep}>
+          <Ionicons name="checkmark" size={16} color="white" />
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
-          <Ionicons name="checkmark" size={16} color="#8B5CF6" />
+        <View style={styles.completedLine} />
+        <View style={styles.completedStep}>
+          <Ionicons name="checkmark" size={16} color="white" />
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
-          <Ionicons name="checkmark" size={16} color="#8B5CF6" />
+        <View style={styles.completedLine} />
+        <View style={styles.completedStep}>
+          <Ionicons name="checkmark" size={16} color="white" />
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
-          <Ionicons name="checkmark" size={16} color="#8B5CF6" />
-        </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }])}>
+        <View style={styles.completedLine} />
+        <View style={styles.activeStep}>
           <Typography variant="caption" style={styles.activeStepText}>5</Typography>
         </View>
       </View>
 
-      {/* Clean Header */}
+      {/* Glass Header */}
       <View style={styles.header}>
-        <Typography variant="h2" style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])}>
+        <Typography variant="h2" style={styles.title}>
           Phone Number
         </Typography>
-        <Typography variant="body" style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])}>
+        <Typography variant="body" style={styles.subtitle}>
           Add your phone number for account security
         </Typography>
       </View>
 
-      {/* Clean Form Fields */}
+      {/* Glass Form Fields */}
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.formFields}>
           {/* Phone Number Input */}
           <View style={styles.inputContainer}>
-            <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
+            <Typography variant="body" style={styles.inputLabel} weight="medium">
               Phone Number *
             </Typography>
-            
+
             <View style={styles.phoneInputContainer}>
               {/* Country Code Picker */}
               <TouchableOpacity
                 onPress={() => setShowCountryPicker(!showCountryPicker)}
-                style={StyleSheet.flatten([styles.countryCodeButton, {
-                  backgroundColor: colors.background.tertiary,
-                  borderColor: colors.border.medium,
-                }])}
+                style={styles.countryCodeButton}
               >
-                <Typography variant="body" style={{ color: colors.text.primary }}>
+                <Typography variant="body" style={{ color: "white" }}>
                   {selectedCountryCode.flag} {selectedCountryCode.code}
                 </Typography>
-                <Ionicons name="chevron-down" size={16} color={colors.text.secondary} />
+                <Ionicons name="chevron-down" size={16} color="rgba(255, 255, 255, 0.7)" />
               </TouchableOpacity>
 
               {/* Phone Number Field */}
               <TextField
                 placeholder="Enter phone number"
+                placeholderTextColor="rgba(255, 255, 255, 0.5)"
                 value={phoneNumber}
                 onChangeText={(text) => {
                   setPhoneNumber(text);
@@ -281,22 +275,15 @@ export default function RegisterStep5({
                   // Don't update parent form state here - only on submit with proper formatting
                 }}
                 keyboardType="phone-pad"
-                style={StyleSheet.flatten([styles.phoneInput, {
-                  backgroundColor: colors.background.tertiary,
-                  borderColor: phoneError ? colors.error[500] : colors.border.medium,
-                  color: colors.text.primary
-                }])}
+                style={styles.phoneInput}
               />
             </View>
 
             {/* Phone Error Display */}
             {phoneError && (
-              <View style={StyleSheet.flatten([styles.errorContainer, { 
-                backgroundColor: colors.error[50], 
-                borderColor: colors.error[200]
-              }])}>
-                <Ionicons name="warning" size={20} color={colors.error[500]} />
-                <Typography variant="body" style={StyleSheet.flatten([styles.errorText, { color: colors.error[700] }])}>
+              <View style={styles.errorContainer}>
+                <Ionicons name="warning" size={20} color="#ef4444" />
+                <Typography variant="body" style={styles.errorText}>
                   {phoneError}
                 </Typography>
               </View>
@@ -304,18 +291,18 @@ export default function RegisterStep5({
 
             {/* Country Code Options */}
             {showCountryPicker && (
-              <View style={StyleSheet.flatten([styles.countryList, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }])}>
+              <View style={styles.countryList}>
                 <ScrollView style={styles.countryScrollView} nestedScrollEnabled={true}>
                   {countryCodes.map((country, index) => (
                     <TouchableOpacity
                       key={index}
-                      style={StyleSheet.flatten([styles.countryOption, { borderBottomColor: colors.border.light }])}
+                      style={styles.countryOption}
                       onPress={() => {
                         setSelectedCountryCode(country);
                         setShowCountryPicker(false);
                       }}
                     >
-                      <Typography variant="body" style={{ color: colors.text.primary }}>
+                      <Typography variant="body" style={{ color: "white" }}>
                         {country.flag} {country.code} {country.label}
                       </Typography>
                     </TouchableOpacity>
@@ -326,42 +313,42 @@ export default function RegisterStep5({
           </View>
 
           {/* Privacy Note */}
-          <View style={StyleSheet.flatten([styles.privacyNote, { backgroundColor: colors.background.tertiary, borderColor: colors.border.light }])}>
-            <Ionicons name="shield-checkmark-outline" size={20} color="#8B5CF6" />
-            <Typography variant="caption" style={StyleSheet.flatten([styles.privacyText, { color: colors.text.secondary }])}>
+          <View style={styles.privacyNote}>
+            <Ionicons name="shield-checkmark-outline" size={20} color="white" />
+            <Typography variant="caption" style={styles.privacyText}>
               Your phone number will be used for account verification and security purposes only.
             </Typography>
           </View>
 
           {/* Review Summary */}
-          <View style={StyleSheet.flatten([styles.summaryContainer, { backgroundColor: colors.background.tertiary, borderColor: colors.border.light }])}>
-            <Typography variant="body" style={StyleSheet.flatten([styles.summaryTitle, { color: colors.text.primary }])} weight="semibold">
+          <View style={styles.summaryContainer}>
+            <Typography variant="body" style={styles.summaryTitle} weight="semibold">
               Account Summary
             </Typography>
-            
+
             <View style={styles.summaryItem}>
-              <Typography variant="caption" style={StyleSheet.flatten([styles.summaryLabel, { color: colors.text.secondary }])}>
+              <Typography variant="caption" style={styles.summaryLabel}>
                 Name:
               </Typography>
-              <Typography variant="caption" style={StyleSheet.flatten([styles.summaryValue, { color: colors.text.primary }])}>
+              <Typography variant="caption" style={styles.summaryValue}>
                 {values.givenName} {values.familyName}
               </Typography>
             </View>
-            
+
             <View style={styles.summaryItem}>
-              <Typography variant="caption" style={StyleSheet.flatten([styles.summaryLabel, { color: colors.text.secondary }])}>
+              <Typography variant="caption" style={styles.summaryLabel}>
                 Username:
               </Typography>
-              <Typography variant="caption" style={StyleSheet.flatten([styles.summaryValue, { color: colors.text.primary }])}>
+              <Typography variant="caption" style={styles.summaryValue}>
                 {values.username}
               </Typography>
             </View>
-            
+
             <View style={styles.summaryItem}>
-              <Typography variant="caption" style={StyleSheet.flatten([styles.summaryLabel, { color: colors.text.secondary }])}>
+              <Typography variant="caption" style={styles.summaryLabel}>
                 Email:
               </Typography>
-              <Typography variant="caption" style={StyleSheet.flatten([styles.summaryValue, { color: colors.text.primary }])}>
+              <Typography variant="caption" style={styles.summaryValue}>
                 {values.email}
               </Typography>
             </View>
@@ -369,18 +356,18 @@ export default function RegisterStep5({
         </View>
       </ScrollView>
 
-      {/* Navigation Buttons */}
+      {/* Glass Navigation Buttons */}
       <View style={styles.buttonContainer}>
-        <Button 
-          title="Back" 
-          onPress={onBack} 
-          style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }])}
-          textStyle={{ color: colors.text.primary }}
+        <Button
+          title="Back"
+          onPress={onBack}
+          style={styles.backButton}
+          textStyle={{ color: "white" }}
         />
-        <Button 
+        <Button
           title={isLoading ? "Creating Account..." : "Create Account"}
           onPress={handleSubmit}
-          style={StyleSheet.flatten([styles.submitButton, { backgroundColor: '#8B5CF6', opacity: isLoading ? 0.7 : 1 }])}
+          style={StyleSheet.flatten([styles.submitButton, { opacity: isLoading ? 0.7 : 1 }])}
           disabled={isLoading || !phoneNumber.trim()}
         />
       </View>
@@ -406,27 +393,42 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     paddingHorizontal: spacing.md,
   },
-  progressStep: {
+  completedStep: {
     width: 28,
     height: 28,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  completedStep: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderWidth: 2,
+    borderColor: 'white',
   },
   activeStep: {
-    shadowColor: '#8B5CF6',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderWidth: 2,
+    borderColor: 'white',
+    shadowColor: '#fff',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 2,
   },
+  completedLine: {
+    width: 24,
+    height: 2,
+    marginHorizontal: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
   progressLine: {
     width: 24,
     height: 2,
     marginHorizontal: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
   },
   activeStepText: {
     fontSize: 12,
@@ -436,17 +438,18 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: spacing.xl,
-    paddingHorizontal: spacing.md,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: spacing.xs,
+    color: 'white',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
+    color: 'rgba(255, 255, 255, 0.85)',
   },
   scrollView: {
     flex: 1,
@@ -456,38 +459,47 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   inputContainer: {
-    marginBottom: spacing.lg,
+    marginBottom: 16,
   },
   inputLabel: {
-    marginBottom: spacing.xs,
+    color: 'white',
+    marginBottom: 6,
     fontSize: 14,
+    fontWeight: '600',
   },
   phoneInputContainer: {
     flexDirection: 'row',
     gap: spacing.sm,
   },
   countryCodeButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    minHeight: 44,
+    minHeight: 48,
   },
   phoneInput: {
     flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    fontSize: 16,
-    minHeight: 44,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: 'white',
+    minHeight: 48,
   },
   countryList: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 1,
-    borderRadius: borderRadius.md,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 14,
     marginTop: spacing.xs,
     maxHeight: 200,
   },
@@ -498,13 +510,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   privacyNote: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: 14,
     borderWidth: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     marginBottom: spacing.lg,
     gap: spacing.sm,
   },
@@ -512,16 +527,20 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     lineHeight: 16,
+    color: 'rgba(255, 255, 255, 0.85)',
   },
   summaryContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
-    borderRadius: borderRadius.md,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 14,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
   summaryTitle: {
     fontSize: 16,
     marginBottom: spacing.sm,
+    color: 'white',
   },
   summaryItem: {
     flexDirection: 'row',
@@ -530,30 +549,41 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   summaryValue: {
     fontSize: 12,
     fontWeight: '500',
+    color: 'white',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
     marginTop: spacing.lg,
     gap: spacing.md,
   },
   backButton: {
     flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm + 2,
-    minHeight: 44,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 25,
+    paddingVertical: 16,
+    minHeight: 54,
   },
   submitButton: {
     flex: 1,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm + 2,
-    minHeight: 44,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    borderRadius: 25,
+    paddingVertical: 16,
+    minHeight: 54,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
   loadingOverlay: {
     position: 'absolute',
@@ -569,8 +599,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: 14,
     borderWidth: 1,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderColor: 'rgba(239, 68, 68, 0.3)',
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },
@@ -579,5 +611,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     lineHeight: 18,
+    color: 'white',
   },
 });
