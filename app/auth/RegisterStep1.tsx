@@ -62,90 +62,81 @@ export default function RegisterStep1({
 
   return (
     <View style={styles.container}>
-      {/* Clean Progress Indicator */}
+      {/* Glass Progress Indicator */}
       <View style={styles.progressContainer}>
-        <View style={StyleSheet.flatten([styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }])}>
+        <View style={styles.activeStep}>
           <Typography variant="caption" style={styles.activeStepText}>1</Typography>
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
-          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>2</Typography>
+        <View style={styles.progressLine} />
+        <View style={styles.inactiveStep}>
+          <Typography variant="caption" style={styles.stepText}>2</Typography>
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
-          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>3</Typography>
+        <View style={styles.progressLine} />
+        <View style={styles.inactiveStep}>
+          <Typography variant="caption" style={styles.stepText}>3</Typography>
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
-          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>4</Typography>
+        <View style={styles.progressLine} />
+        <View style={styles.inactiveStep}>
+          <Typography variant="caption" style={styles.stepText}>4</Typography>
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
-          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>5</Typography>
+        <View style={styles.progressLine} />
+        <View style={styles.inactiveStep}>
+          <Typography variant="caption" style={styles.stepText}>5</Typography>
         </View>
       </View>
 
-      {/* Clean Header */}
+      {/* Glass Header */}
       <View style={styles.header}>
-        <Typography variant="h2" style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])}>
+        <Typography variant="h2" style={styles.title}>
           Personal Details
         </Typography>
-        <Typography variant="body" style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])}>
+        <Typography variant="body" style={styles.subtitle}>
           Tell us your name and choose a username
         </Typography>
       </View>
 
-      {/* Clean Form Fields */}
+      {/* Glass Form Fields */}
       <View style={styles.formFields}>
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
+          <Typography variant="body" style={styles.inputLabel} weight="medium">
             First Name
           </Typography>
           <TextField
             placeholder="Enter your first name"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={values.givenName}
             onChangeText={(v) => onChange("givenName", v)}
             autoCapitalize="words"
-            style={StyleSheet.flatten([styles.input, {
-              backgroundColor: colors.background.tertiary,
-              borderColor: colors.border.medium,
-              color: colors.text.primary
-            }])}
+            style={styles.input}
           />
         </View>
-        
+
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
+          <Typography variant="body" style={styles.inputLabel} weight="medium">
             Last Name
           </Typography>
           <TextField
             placeholder="Enter your last name"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={values.familyName}
             onChangeText={(v) => onChange("familyName", v)}
             autoCapitalize="words"
-            style={StyleSheet.flatten([styles.input, {
-              backgroundColor: colors.background.tertiary,
-              borderColor: colors.border.medium,
-              color: colors.text.primary
-            }])}
+            style={styles.input}
           />
         </View>
-        
+
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
+          <Typography variant="body" style={styles.inputLabel} weight="medium">
             Username
           </Typography>
           <TextField
             placeholder="Choose a unique username"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={values.username}
             onChangeText={(v) => onChange("username", v)}
             autoCapitalize="none"
             autoCorrect={false}
-            style={StyleSheet.flatten([styles.input, {
-              backgroundColor: colors.background.tertiary,
-              borderColor: colors.border.medium,
-              color: colors.text.primary
-            }])}
+            style={styles.input}
           />
           
           {/* Clean Username Status */}
@@ -213,28 +204,41 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     paddingHorizontal: spacing.md,
   },
-  progressStep: {
+  activeStep: {
     width: 28,
     height: 28,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  activeStep: {
-    shadowColor: '#8B5CF6',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    shadowColor: '#fff',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 2,
   },
+  inactiveStep: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
   progressLine: {
     width: 24,
     height: 2,
     marginHorizontal: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
   },
   stepText: {
     fontSize: 12,
     fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.6)',
   },
   activeStepText: {
     fontSize: 12,
@@ -244,36 +248,41 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: spacing.xl,
-    paddingHorizontal: spacing.md,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: spacing.xs,
+    color: 'white',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
+    color: 'rgba(255, 255, 255, 0.85)',
   },
   formFields: {
-    paddingHorizontal: spacing.md,
     flex: 1,
   },
   inputContainer: {
-    marginBottom: spacing.lg,
+    marginBottom: 16,
   },
   inputLabel: {
-    marginBottom: spacing.xs,
+    color: 'white',
+    marginBottom: 6,
     fontSize: 14,
+    fontWeight: '600',
   },
   input: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    fontSize: 16,
-    minHeight: 44,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: 'white',
+    minHeight: 48,
   },
   statusContainer: {
     flexDirection: 'row',
@@ -285,12 +294,21 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
     fontSize: 12,
     lineHeight: 16,
+    color: 'white',
   },
   continueButton: {
-    marginHorizontal: spacing.md,
     marginTop: spacing.lg,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm + 2,
-    minHeight: 44,
+    borderRadius: 25,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    paddingVertical: 16,
+    minHeight: 54,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });
