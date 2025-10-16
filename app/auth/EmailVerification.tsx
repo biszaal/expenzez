@@ -4,6 +4,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  StatusBar,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,6 +18,8 @@ import { useAlert } from "../../hooks/useAlert";
 import { spacing, borderRadius } from "../../constants/theme";
 import { authAPI } from "../../services/api";
 import { useAuth } from "./AuthContext";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 
 export default function EmailVerification() {
   const router = useRouter();
@@ -233,187 +239,155 @@ export default function EmailVerification() {
   };
 
   return (
-    <SafeAreaView
-      style={StyleSheet.flatten([
-        styles.container,
-        { backgroundColor: colors.background.primary },
-      ])}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={StyleSheet.flatten([
-            styles.backButton,
-            { backgroundColor: colors.background.secondary },
-          ])}
-          onPress={() => router.back()}
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Gradient Background */}
+      <LinearGradient
+        colors={["#667eea", "#764ba2"]}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
-        </TouchableOpacity>
-
-        <View style={styles.headerContent}>
-          <View
-            style={StyleSheet.flatten([
-              styles.iconContainer,
-              { backgroundColor: colors.primary[100] },
-            ])}
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <Ionicons
-              name="mail-outline"
-              size={48}
-              color={colors.primary[500]}
-            />
-          </View>
-
-          <Typography
-            variant="h2"
-            style={StyleSheet.flatten([
-              styles.title,
-              { color: colors.text.primary },
-            ])}
-          >
-            Verify Your Email
-          </Typography>
-
-          <Typography
-            variant="body"
-            style={StyleSheet.flatten([
-              styles.subtitle,
-              { color: colors.text.secondary },
-            ])}
-          >
-            {params.email
-              ? "We've sent a 6-digit verification code to:"
-              : "Enter the 6-digit verification code sent to your email:"}
-          </Typography>
-
-          <Typography
-            variant="body"
-            style={StyleSheet.flatten([
-              styles.email,
-              { color: colors.primary[500] },
-            ])}
-            weight="semibold"
-          >
-            {params.email || email || (params.username ? `${params.username}@example.com` : "your registered email")}
-          </Typography>
-        </View>
-      </View>
-
-      {/* Verification Form */}
-      <View style={styles.formContainer}>
-        <View style={styles.inputContainer}>
-          <Typography
-            variant="body"
-            style={StyleSheet.flatten([
-              styles.inputLabel,
-              { color: colors.text.primary },
-            ])}
-            weight="medium"
-          >
-            Verification Code
-          </Typography>
-          <TextField
-            placeholder="Enter 6-digit code"
-            value={verificationCode}
-            onChangeText={(text) =>
-              setVerificationCode(text.replace(/[^0-9]/g, "").slice(0, 6))
-            }
-            keyboardType="numeric"
-            style={StyleSheet.flatten([
-              styles.input,
-              {
-                backgroundColor: colors.background.tertiary,
-                borderColor: colors.border.medium,
-              },
-            ])}
-            inputStyle={{
-              color: colors.text.primary,
-              textAlign: "center",
-              fontSize: 24,
-              letterSpacing: 8,
-            }}
-          />
-        </View>
-
-        {/* Verify Button */}
-        <Button
-          title={isVerifying ? "Verifying..." : "Verify Email"}
-          onPress={handleVerification}
-          style={StyleSheet.flatten([
-            styles.verifyButton,
-            { backgroundColor: colors.primary[500] },
-          ])}
-          disabled={isVerifying || verificationCode.length !== 6}
-        />
-
-        {/* Resend Code */}
-        <View style={styles.resendContainer}>
-          <Typography
-            variant="body"
-            style={StyleSheet.flatten([
-              styles.resendText,
-              { color: colors.text.secondary },
-            ])}
-          >
-            Didn&apos;t receive the code?
-          </Typography>
-
-          <TouchableOpacity
-            onPress={handleResendCode}
-            disabled={isResending || resendTimer > 0}
-            style={styles.resendButton}
-          >
-            {isResending ? (
-              <ActivityIndicator size="small" color={colors.primary[500]} />
-            ) : (
-              <Typography
-                variant="body"
-                style={StyleSheet.flatten([
-                  styles.resendButtonText,
-                  {
-                    color:
-                      resendTimer > 0
-                        ? colors.text.tertiary
-                        : colors.primary[500],
-                  },
-                ])}
-                weight="medium"
+            {/* Header */}
+            <View style={styles.header}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.back()}
               >
-                {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend Code"}
-              </Typography>
-            )}
-          </TouchableOpacity>
-        </View>
+                <BlurView intensity={30} tint="light" style={styles.backButtonBlur}>
+                  <Ionicons name="chevron-back" size={24} color="white" />
+                </BlurView>
+              </TouchableOpacity>
 
-        {/* Help Text */}
-        <View
-          style={StyleSheet.flatten([
-            styles.helpContainer,
-            {
-              backgroundColor: colors.background.tertiary,
-              borderColor: colors.border.light,
-            },
-          ])}
-        >
-          <Ionicons
-            name="information-circle"
-            size={20}
-            color={colors.text.secondary}
-          />
-          <Typography
-            variant="caption"
-            style={StyleSheet.flatten([
-              styles.helpText,
-              { color: colors.text.secondary },
-            ])}
-          >
-            Check your spam folder if you don&apos;t see the email. The code
-            expires in 24 hours.
-          </Typography>
-        </View>
-      </View>
-    </SafeAreaView>
+              <View style={styles.headerContent}>
+                <View style={styles.logoContainer}>
+                  <View style={styles.logoCircle}>
+                    <Ionicons name="mail-outline" size={40} color="white" />
+                  </View>
+                </View>
+
+                <Typography variant="h1" style={styles.title}>
+                  Verify Your Email
+                </Typography>
+
+                <Typography variant="body" style={styles.subtitle}>
+                  {params.email
+                    ? "We've sent a 6-digit verification code to:"
+                    : "Enter the 6-digit verification code sent to your email:"}
+                </Typography>
+
+                <Typography variant="body" style={styles.email} weight="semibold">
+                  {params.email || email || (params.username ? `${params.username}@example.com` : "your registered email")}
+                </Typography>
+              </View>
+            </View>
+
+            {/* Glass Form Container */}
+            <BlurView intensity={40} tint="light" style={styles.glassCard}>
+              <View style={styles.formContent}>
+                {/* Verification Code Input */}
+                <View style={styles.inputContainer}>
+                  <Typography variant="body" style={styles.inputLabel}>
+                    Verification Code
+                  </Typography>
+                  <TextField
+                    placeholder="000000"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                    value={verificationCode}
+                    onChangeText={(text) =>
+                      setVerificationCode(text.replace(/[^0-9]/g, "").slice(0, 6))
+                    }
+                    keyboardType="numeric"
+                    style={styles.input}
+                    inputStyle={{
+                      color: "white",
+                      textAlign: "center",
+                      fontSize: 24,
+                      letterSpacing: 8,
+                    }}
+                  />
+                </View>
+
+                {/* Verify Button */}
+                <TouchableOpacity
+                  style={styles.verifyButton}
+                  onPress={handleVerification}
+                  disabled={isVerifying || verificationCode.length !== 6}
+                  activeOpacity={0.9}
+                >
+                  <BlurView intensity={30} tint="light" style={styles.buttonBlur}>
+                    {isVerifying ? (
+                      <>
+                        <ActivityIndicator size="small" color="white" />
+                        <Typography variant="body" style={styles.buttonText}>
+                          Verifying...
+                        </Typography>
+                      </>
+                    ) : (
+                      <>
+                        <Typography variant="body" style={styles.buttonText}>
+                          Verify Email
+                        </Typography>
+                        <Ionicons name="checkmark-circle" size={20} color="white" />
+                      </>
+                    )}
+                  </BlurView>
+                </TouchableOpacity>
+
+                {/* Resend Code */}
+                <View style={styles.resendContainer}>
+                  <Typography variant="body" style={styles.resendText}>
+                    Didn't receive the code?
+                  </Typography>
+
+                  <TouchableOpacity
+                    onPress={handleResendCode}
+                    disabled={isResending || resendTimer > 0}
+                    style={styles.resendButton}
+                  >
+                    {isResending ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <Typography
+                        variant="body"
+                        style={[
+                          styles.resendButtonText,
+                          { opacity: resendTimer > 0 ? 0.5 : 1 },
+                        ]}
+                        weight="medium"
+                      >
+                        {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend Code"}
+                      </Typography>
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                {/* Help Text */}
+                <View style={styles.helpContainer}>
+                  <Ionicons name="information-circle" size={20} color="rgba(255, 255, 255, 0.8)" />
+                  <Typography variant="caption" style={styles.helpText}>
+                    Check your spam folder if you don't see the email. The code expires in 24 hours.
+                  </Typography>
+                </View>
+              </View>
+            </BlurView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -421,98 +395,167 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: 30,
+    paddingVertical: 20,
+  },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
+    alignItems: "center",
+    marginBottom: 24,
+    position: "relative",
   },
   backButton: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 1,
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  backButtonBlur: {
     width: 40,
     height: 40,
-    borderRadius: borderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.lg,
   },
   headerContent: {
     alignItems: "center",
   },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  logoContainer: {
+    marginBottom: 16,
+  },
+  logoCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.lg,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   title: {
     fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: spacing.sm,
+    fontWeight: "800",
+    color: "white",
+    marginBottom: 6,
+    letterSpacing: -0.5,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
-    marginBottom: spacing.xs,
+    marginBottom: 6,
   },
   email: {
-    fontSize: 16,
+    fontSize: 15,
+    color: "white",
     textAlign: "center",
-    marginBottom: spacing.xl,
   },
-  formContainer: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
+  glassCard: {
+    borderRadius: 30,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.3,
+    shadowRadius: 30,
+    elevation: 10,
+  },
+  formContent: {
+    padding: 24,
   },
   inputContainer: {
-    marginBottom: spacing.xl,
+    marginBottom: 20,
   },
   inputLabel: {
-    marginBottom: spacing.sm,
-    fontSize: 16,
+    color: "white",
+    marginBottom: 6,
+    fontSize: 14,
+    fontWeight: "600",
     textAlign: "center",
   },
   input: {
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    borderColor: "rgba(255, 255, 255, 0.25)",
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     fontSize: 24,
-    minHeight: 60,
+    color: "white",
+    minHeight: 48,
   },
   verifyButton: {
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.xl,
-    minHeight: 50,
+    borderRadius: 25,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+    marginBottom: 20,
+  },
+  buttonBlur: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    gap: 10,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
   resendContainer: {
     alignItems: "center",
-    marginBottom: spacing.xl,
+    marginBottom: 20,
   },
   resendText: {
     fontSize: 14,
-    marginBottom: spacing.sm,
+    color: "rgba(255, 255, 255, 0.85)",
+    marginBottom: 8,
   },
   resendButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   resendButtonText: {
     fontSize: 14,
+    color: "white",
+    fontWeight: "600",
   },
   helpContainer: {
     flexDirection: "row",
     alignItems: "flex-start",
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    padding: 16,
+    borderRadius: 14,
     borderWidth: 1,
-    gap: spacing.sm,
+    gap: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   helpText: {
     flex: 1,
     fontSize: 12,
     lineHeight: 16,
+    color: "rgba(255, 255, 255, 0.85)",
   },
 });

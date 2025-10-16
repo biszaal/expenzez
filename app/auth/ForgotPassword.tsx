@@ -16,6 +16,8 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { spacing, borderRadius, layout } from "../../constants/theme";
 import { useAlert } from "../../hooks/useAlert";
 import { authAPI } from "../../services/api";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -121,202 +123,187 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background.primary} />
-      <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background.primary }])}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
 
-        <SafeAreaView style={styles.safeArea}>
-          <KeyboardAvoidingView
-            style={styles.keyboardView}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
+      {/* Gradient Background */}
+      <LinearGradient
+        colors={["#667eea", "#764ba2"]}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <ScrollView 
-              style={styles.scrollView}
-              contentContainerStyle={styles.scrollContent}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Clean Header Section */}
-              <View style={styles.header}>
-                {/* Back Button */}
-                <TouchableOpacity
-                  onPress={() => router.back()}
-                  style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.secondary }])}
-                  accessibilityLabel="Go back"
-                >
-                  <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-                </TouchableOpacity>
+            {/* Header */}
+            <View style={styles.header}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.back()}
+              >
+                <BlurView intensity={30} tint="light" style={styles.backButtonBlur}>
+                  <Ionicons name="chevron-back" size={24} color="white" />
+                </BlurView>
+              </TouchableOpacity>
 
-                {/* Header Content */}
-                <View style={styles.headerContent}>
-                  <View style={StyleSheet.flatten([styles.iconContainer, { backgroundColor: '#8B5CF6' }])}>
-                    <Ionicons name="lock-closed-outline" size={28} color="white" />
-                  </View>
-                  
-                  <Typography
-                    variant="h1"
-                    style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])}
-                    align="center"
-                  >
-                    Reset Password
-                  </Typography>
-                  <Typography
-                    variant="body"
-                    style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])}
-                    align="center"
-                  >
-                    Enter your username and we&apos;ll send you a reset code
-                  </Typography>
-                </View>
-              </View>
-
-              {/* Clean Form Container */}
-              <View style={styles.formSection}>
-                <View style={StyleSheet.flatten([styles.formContainer, { backgroundColor: colors.background.secondary }])}>
-                  <View style={styles.formContent}>
-                    {/* Success State */}
-                    {emailSent && (
-                      <View style={styles.successContainer}>
-                        <View style={StyleSheet.flatten([styles.successIcon, { backgroundColor: colors.success[500] }])}>
-                          <Ionicons name="checkmark" size={28} color="white" />
-                        </View>
-                        
-                        <Typography
-                          variant="h2"
-                          style={StyleSheet.flatten([styles.successTitle, { color: colors.text.primary }])}
-                          align="center"
-                        >
-                          Code Sent
-                        </Typography>
-                        
-                        <Typography
-                          variant="body"
-                          style={StyleSheet.flatten([styles.successMessage, { color: colors.text.secondary }])}
-                          align="center"
-                        >
-                          Reset code sent to {userEmail}
-                        </Typography>
-
-                        <View style={StyleSheet.flatten([styles.instructionBox, { backgroundColor: colors.background.tertiary, borderColor: colors.border.light }])}>
-                          <Typography variant="caption" style={StyleSheet.flatten([styles.instructionText, { color: colors.text.secondary }])}>
-                            Check your email for the 6-digit code, then create your new password.
-                          </Typography>
-                        </View>
-
-                        {/* Resend Button */}
-                        <TouchableOpacity
-                          style={StyleSheet.flatten([
-                            styles.resendButton,
-                            { 
-                              backgroundColor: resendCooldown > 0 ? colors.gray[300] : '#8B5CF6',
-                              opacity: resendCooldown > 0 ? 0.6 : 1
-                            }
-                          ])}
-                          onPress={handleResend}
-                          disabled={resendCooldown > 0 || isLoading}
-                        >
-                          <Typography variant="body" style={StyleSheet.flatten([styles.resendText, { color: 'white' }])}>
-                            {resendCooldown > 0 
-                              ? `Resend in ${resendCooldown}s`
-                              : isLoading 
-                              ? "Sending..."
-                              : "Resend Code"
-                            }
-                          </Typography>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          style={StyleSheet.flatten([styles.continueButton, { backgroundColor: '#8B5CF6' }])}
-                          onPress={() => {
-                            router.push({
-                              pathname: "/auth/ResetPassword",
-                              params: { username: username.trim(), email: userEmail }
-                            });
-                          }}
-                        >
-                          <Typography variant="body" style={{ color: 'white' }} weight="semibold">
-                            Continue
-                          </Typography>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-
-                    {/* Form State */}
-                    {!emailSent && (
-                      <>
-                        {/* Clean Username Input */}
-                        <View style={styles.inputContainer}>
-                          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
-                            Username
-                          </Typography>
-                          <TextField
-                            placeholder="Enter your username"
-                            value={username}
-                            onChangeText={setUsername}
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            style={StyleSheet.flatten([styles.input, { 
-                              backgroundColor: colors.background.tertiary,
-                              borderColor: colors.border.medium,
-                              color: colors.text.primary
-                            }])}
-                          />
-                        </View>
-
-                        {/* Clean Submit Button */}
-                        <TouchableOpacity
-                          style={StyleSheet.flatten([
-                            styles.submitButton, 
-                            { 
-                              backgroundColor: '#8B5CF6',
-                              opacity: isLoading ? 0.7 : 1 
-                            }
-                          ])}
-                          onPress={handleSubmit}
-                          disabled={isLoading}
-                        >
-                          <Typography
-                            variant="body"
-                            weight="semibold"
-                            style={{ color: 'white' }}
-                          >
-                            {isLoading ? 'Sending...' : 'Send Reset Code'}
-                          </Typography>
-                        </TouchableOpacity>
-
-                        {/* Additional Links */}
-                        <View style={styles.linksContainer}>
-                          <TouchableOpacity
-                            style={styles.linkButton}
-                            onPress={() => router.push("/auth/ForgotUsername")}
-                          >
-                            <Typography variant="body" style={{ color: '#8B5CF6' }}>
-                              Forgot username?
-                            </Typography>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            style={styles.linkButton}
-                            onPress={() => router.push("/auth/Login")}
-                          >
-                            <Typography variant="body" style={{ color: colors.text.secondary }}>
-                              Back to{" "}
-                              <Typography variant="body" style={{ color: '#8B5CF6' }} weight="semibold">
-                                Sign In
-                              </Typography>
-                            </Typography>
-                          </TouchableOpacity>
-                        </View>
-                      </>
-                    )}
+              <View style={styles.headerContent}>
+                <View style={styles.logoContainer}>
+                  <View style={styles.logoCircle}>
+                    <Ionicons name="lock-closed-outline" size={40} color="white" />
                   </View>
                 </View>
+
+                <Typography variant="h1" style={styles.title}>
+                  Reset Password
+                </Typography>
+                <Typography variant="body" style={styles.subtitle}>
+                  Enter your username and we'll send you a reset code
+                </Typography>
               </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </SafeAreaView>
-      </View>
-    </>
+            </View>
+
+            {/* Glass Form Container */}
+            <BlurView intensity={40} tint="light" style={styles.glassCard}>
+              <View style={styles.formContent}>
+                {/* Success State */}
+                {emailSent && (
+                  <View style={styles.successContainer}>
+                    <View style={styles.successIconCircle}>
+                      <Ionicons name="checkmark" size={40} color="white" />
+                    </View>
+
+                    <Typography variant="h2" style={styles.successTitle}>
+                      Code Sent
+                    </Typography>
+
+                    <Typography variant="body" style={styles.successMessage}>
+                      Reset code sent to {userEmail}
+                    </Typography>
+
+                    <View style={styles.instructionBox}>
+                      <Ionicons name="information-circle" size={20} color="rgba(255, 255, 255, 0.8)" />
+                      <Typography variant="caption" style={styles.instructionText}>
+                        Check your email for the 6-digit code, then create your new password.
+                      </Typography>
+                    </View>
+
+                    {/* Resend Button */}
+                    <TouchableOpacity
+                      style={[
+                        styles.resendCodeButton,
+                        { opacity: resendCooldown > 0 || isLoading ? 0.6 : 1 }
+                      ]}
+                      onPress={handleResend}
+                      disabled={resendCooldown > 0 || isLoading}
+                      activeOpacity={0.9}
+                    >
+                      <BlurView intensity={30} tint="light" style={styles.buttonBlur}>
+                        <Typography variant="body" style={styles.buttonText}>
+                          {resendCooldown > 0
+                            ? `Resend in ${resendCooldown}s`
+                            : isLoading
+                            ? "Sending..."
+                            : "Resend Code"
+                          }
+                        </Typography>
+                      </BlurView>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.continueButton}
+                      onPress={() => {
+                        router.push({
+                          pathname: "/auth/ResetPassword",
+                          params: { username: username.trim(), email: userEmail }
+                        });
+                      }}
+                      activeOpacity={0.9}
+                    >
+                      <BlurView intensity={30} tint="light" style={styles.buttonBlur}>
+                        <Typography variant="body" style={styles.buttonText} weight="semibold">
+                          Continue
+                        </Typography>
+                        <Ionicons name="arrow-forward" size={20} color="white" />
+                      </BlurView>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* Form State */}
+                {!emailSent && (
+                  <>
+                    {/* Username Input */}
+                    <View style={styles.inputContainer}>
+                      <Typography variant="body" style={styles.inputLabel} weight="medium">
+                        Username
+                      </Typography>
+                      <TextField
+                        placeholder="Enter your username"
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                        value={username}
+                        onChangeText={setUsername}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        style={styles.input}
+                      />
+                    </View>
+
+                    {/* Submit Button */}
+                    <TouchableOpacity
+                      style={[styles.submitButton, { opacity: isLoading ? 0.7 : 1 }]}
+                      onPress={handleSubmit}
+                      disabled={isLoading}
+                      activeOpacity={0.9}
+                    >
+                      <BlurView intensity={30} tint="light" style={styles.buttonBlur}>
+                        <Typography variant="body" weight="semibold" style={styles.buttonText}>
+                          {isLoading ? 'Sending...' : 'Send Reset Code'}
+                        </Typography>
+                        <Ionicons name="mail" size={20} color="white" />
+                      </BlurView>
+                    </TouchableOpacity>
+
+                    {/* Additional Links */}
+                    <View style={styles.linksContainer}>
+                      <TouchableOpacity
+                        style={styles.linkButton}
+                        onPress={() => router.push("/auth/ForgotUsername")}
+                      >
+                        <Typography variant="body" style={styles.linkText}>
+                          Forgot username?
+                        </Typography>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.linkButton}
+                        onPress={() => router.push("/auth/Login")}
+                      >
+                        <Typography variant="body" style={styles.linkTextSecondary}>
+                          Back to{" "}
+                          <Typography variant="body" style={styles.linkText} weight="semibold">
+                            Sign In
+                          </Typography>
+                        </Typography>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                )}
+              </View>
+            </BlurView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -335,157 +322,202 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: layout.screenPadding,
-    paddingVertical: spacing.lg,
+    justifyContent: "center",
+    paddingHorizontal: 30,
+    paddingVertical: 20,
   },
-
-  // Clean Header
   header: {
-    marginBottom: spacing.lg,
-    position: 'relative',
+    alignItems: "center",
+    marginBottom: 24,
+    position: "relative",
   },
   backButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     zIndex: 1,
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  backButtonBlur: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerContent: {
-    alignItems: 'center',
-    paddingTop: spacing.lg,
+    alignItems: "center",
   },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
+  logoContainer: {
+    marginBottom: 16,
+  },
+  logoCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: spacing.sm,
+    fontWeight: "800",
+    color: "white",
+    marginBottom: 6,
+    letterSpacing: -0.5,
+    textAlign: "center",
   },
   subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.85)",
+    textAlign: "center",
     lineHeight: 22,
-    maxWidth: '85%',
+    maxWidth: "85%",
   },
-
-  // Clean Form
-  formSection: {
-    marginBottom: spacing.lg,
-  },
-  formContainer: {
-    borderRadius: borderRadius.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+  glassCard: {
+    borderRadius: 30,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.3,
+    shadowRadius: 30,
+    elevation: 10,
   },
   formContent: {
-    padding: spacing.lg,
+    padding: 24,
   },
-
-  // Clean Input
   inputContainer: {
-    marginBottom: spacing.md,
+    marginBottom: 16,
   },
   inputLabel: {
-    marginBottom: spacing.xs,
+    color: "white",
+    marginBottom: 6,
     fontSize: 14,
+    fontWeight: "600",
   },
   input: {
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    fontSize: 16,
-    minHeight: layout.inputHeight,
+    borderColor: "rgba(255, 255, 255, 0.25)",
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: "white",
+    minHeight: 48,
   },
-
-  // Clean Button
   submitButton: {
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: layout.buttonHeight,
+    borderRadius: 25,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+    marginBottom: 16,
   },
-
-  // Links
+  buttonBlur: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    gap: 10,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
   linksContainer: {
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingBottom: spacing.xl, // Extra padding at bottom
+    alignItems: "center",
+    gap: 12,
   },
   linkButton: {
-    paddingVertical: spacing.sm,
+    paddingVertical: 8,
   },
-
-  // Success State
+  linkText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  linkTextSecondary: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 15,
+  },
   successContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
+    alignItems: "center",
+    paddingVertical: 8,
   },
-  successIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
+  successIconCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "rgba(34, 197, 94, 0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    marginBottom: 16,
   },
   successTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: spacing.sm,
+    fontSize: 24,
+    fontWeight: "800",
+    color: "white",
+    marginBottom: 8,
+    textAlign: "center",
   },
   successMessage: {
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
-    marginBottom: spacing.lg,
-    maxWidth: '90%',
+    marginBottom: 16,
+    maxWidth: "90%",
+    color: "rgba(255, 255, 255, 0.85)",
+    fontSize: 15,
   },
   instructionBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: 16,
+    borderRadius: 14,
     borderWidth: 1,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
+    gap: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    marginBottom: 16,
   },
   instructionText: {
-    fontSize: 14,
-    lineHeight: 18,
-    textAlign: 'center',
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: "left",
+    flex: 1,
+    color: "rgba(255, 255, 255, 0.85)",
   },
-  resendButton: {
-    alignSelf: 'stretch',
-    marginBottom: spacing.md,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resendText: {
-    fontSize: 14,
-    fontWeight: '600',
+  resendCodeButton: {
+    alignSelf: "stretch",
+    marginBottom: 12,
+    borderRadius: 25,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
   continueButton: {
-    alignSelf: 'stretch',
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm + 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: layout.buttonHeight,
+    alignSelf: "stretch",
+    borderRadius: 25,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });
