@@ -336,25 +336,25 @@ function RootLayoutNav() {
   let initialRoute;
   let userType;
 
-  if (shouldTreatAsLoggedIn) {
-    // 🟢 LOGGED IN USER
-    userType = "LOGGED_IN";
-    initialRoute = "(tabs)"; // Go directly to main app
-  } else if (onboardingStatusChecked) {
-    if (hasCompletedOnboarding) {
-      // 🟡 RETURNING USER (not logged in, but has seen onboarding)
-      userType = "RETURNING_USER";
-      initialRoute = "auth/Login"; // Go directly to login
-    } else {
-      // 🔴 NEW USER (never used the app)
-      userType = "NEW_USER";
-      initialRoute = "SplashScreen"; // Start onboarding flow
-    }
-  } else {
-    // 🟠 LOADING STATE (still checking user status)
-    userType = "LOADING";
-    initialRoute = "SplashScreen"; // Show splash while determining status
-  }
+         if (shouldTreatAsLoggedIn) {
+           // 🟢 LOGGED IN USER
+           userType = "LOGGED_IN";
+           initialRoute = "(tabs)"; // Go directly to main app
+         } else if (onboardingStatusChecked) {
+           if (hasCompletedOnboarding) {
+             // 🟡 RETURNING USER (not logged in, but has seen onboarding)
+             userType = "RETURNING_USER";
+             initialRoute = "auth/Login"; // Go directly to login
+           } else {
+             // 🔴 NEW USER (never used the app)
+             userType = "NEW_USER";
+             initialRoute = "SplashScreen"; // Start with beautiful splash screen
+           }
+         } else {
+           // 🟠 LOADING STATE (still checking user status)
+           userType = "LOADING";
+           initialRoute = "SplashScreen"; // Show beautiful splash while determining status
+         }
 
   console.log("🎯 [Layout] Navigation Decision:", {
     userType,
@@ -384,12 +384,12 @@ function RootLayoutNav() {
         backgroundColor="transparent"
         translucent={true}
       />
-      <Stack
-        screenOptions={{ headerShown: false }}
-        initialRouteName={initialRoute}
-      >
-        <Stack.Screen name="SplashScreen" />
-        <Stack.Screen name="WelcomeOnboarding" />
+             <Stack
+               screenOptions={{ headerShown: false }}
+               initialRouteName={initialRoute}
+             >
+               <Stack.Screen name="SplashScreen" options={{ headerShown: false }} />
+               <Stack.Screen name="WelcomeOnboarding" />
         <Stack.Screen name="auth/Login" />
         <Stack.Screen name="auth/Register" />
         <Stack.Screen name="(tabs)" />
