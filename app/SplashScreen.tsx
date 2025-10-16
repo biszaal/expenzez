@@ -106,18 +106,14 @@ export default function SplashScreen() {
           },
         ]}
       >
-        {/* Glass Morphism Logo Container */}
-        <View style={styles.logoContainer}>
-          <BlurView intensity={20} style={styles.glassBackground}>
-            <View style={styles.glassInner}>
-                <Image
-                  source={require("../assets/images/icon.png")}
-                  style={styles.logoImage}
-                  resizeMode="contain"
-                />
-            </View>
-          </BlurView>
-        </View>
+          {/* Logo with Curved Edges */}
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("../assets/images/icon.png")}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </View>
 
         {/* App Name */}
         <Text style={styles.appName}>Expenzez</Text>
@@ -171,11 +167,12 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     opacity: 1,
+    borderRadius: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   appName: {
     fontSize: 36,
