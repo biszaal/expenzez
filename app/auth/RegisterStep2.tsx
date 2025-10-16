@@ -21,10 +21,14 @@ const genderOptions = [
 // Helper function to format date as YYYY-MM-DD (EXACTLY 10 characters for AWS Cognito)
 const formatDateForCognito = (date: Date): string => {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   const formatted = `${year}-${month}-${day}`;
-  console.log("📅 [RegisterStep2] Formatted date:", { original: date, formatted, length: formatted.length });
+  console.log("📅 [RegisterStep2] Formatted date:", {
+    original: date,
+    formatted,
+    length: formatted.length,
+  });
   return formatted;
 };
 
@@ -44,7 +48,7 @@ export default function RegisterStep2({
     console.log("🔍 [RegisterStep2] Parsing date:", dateString);
 
     // Remove any timestamp portion if present (T00:00:00.000Z)
-    const dateOnly = dateString.split('T')[0];
+    const dateOnly = dateString.split("T")[0];
 
     if (dateOnly.includes("/")) {
       // MM/DD/YYYY format - parse manually to avoid timezone issues
@@ -73,7 +77,11 @@ export default function RegisterStep2({
       // Format as YYYY-MM-DD (EXACTLY 10 characters for AWS Cognito)
       const formattedDate = formatDateForCognito(currentDate);
       console.log("📅 [RegisterStep2] Android - Setting date:", formattedDate);
-      console.log("📅 [RegisterStep2] Android - Date length:", formattedDate.length);
+      console.log(
+        "📅 [RegisterStep2] Android - Date length:",
+        formattedDate.length
+      );
+      console.log("📅 [RegisterStep2] Android - Date type:", typeof formattedDate);
       onChange("dob", formattedDate);
     } else {
       // On iOS, just update the temp date, don't close picker
@@ -88,6 +96,7 @@ export default function RegisterStep2({
     const formattedDate = formatDateForCognito(tempDate);
     console.log("📅 [RegisterStep2] iOS - Setting date:", formattedDate);
     console.log("📅 [RegisterStep2] iOS - Date length:", formattedDate.length);
+    console.log("📅 [RegisterStep2] iOS - Date type:", typeof formattedDate);
     onChange("dob", formattedDate);
     setShowDatePicker(false);
   };
