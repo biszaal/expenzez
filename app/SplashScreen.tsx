@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "../contexts/ThemeContext";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 
@@ -87,43 +89,52 @@ export default function SplashScreen() {
   }, []);
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.primary[500] }]}
+    <LinearGradient
+      colors={[colors.primary[600], colors.primary[400], colors.accent[500]]}
+      style={styles.gradient}
     >
       <StatusBar
         barStyle="light-content"
-        backgroundColor={colors.primary[500]}
+        backgroundColor="transparent"
+        translucent={true}
       />
-
-      <Animated.View
-        style={[
-          styles.content,
-          {
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
-          },
-        ]}
-      >
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <View style={styles.logoBackground}>
-            <Image
-              source={require("../assets/images/transparent-logo.png")}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
+      
+      <SafeAreaView style={styles.container}>
+        <Animated.View
+          style={[
+            styles.content,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
+          {/* Glass Morphism Logo Container */}
+          <View style={styles.logoContainer}>
+            <BlurView intensity={20} style={styles.glassBackground}>
+              <View style={styles.glassInner}>
+                <Image
+                  source={require("../assets/images/transparent-logo.png")}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
+              </View>
+            </BlurView>
           </View>
-        </View>
 
-        {/* App Name */}
-        <Text style={styles.appName}>Expenzez</Text>
-        <Text style={styles.tagline}>Personal Finance Assistant</Text>
-      </Animated.View>
-    </SafeAreaView>
+          {/* App Name */}
+          <Text style={styles.appName}>Expenzez</Text>
+          <Text style={styles.tagline}>Personal Finance Assistant</Text>
+        </Animated.View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },
@@ -131,22 +142,32 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
   },
   logoContainer: {
-    marginBottom: 30,
+    marginBottom: 40,
   },
-  logoBackground: {
-    width: 180,
-    height: 180,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.3)",
+  glassBackground: {
+    width: 200,
+    height: 200,
+    borderRadius: 30,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  glassInner: {
+    flex: 1,
+    backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+    borderRadius: 30,
   },
   logoImage: {
     width: 120,
@@ -154,15 +175,21 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
   appName: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: "bold",
     color: "white",
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 12,
+    textShadowColor: "rgba(0,0,0,0.3)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   tagline: {
-    fontSize: 16,
-    color: "rgba(255,255,255,0.8)",
+    fontSize: 18,
+    color: "rgba(255,255,255,0.9)",
     textAlign: "center",
+    textShadowColor: "rgba(0,0,0,0.2)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });
