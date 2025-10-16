@@ -5,23 +5,12 @@ import {
   StyleSheet,
   Animated,
   StatusBar,
-  SafeAreaView,
   Dimensions,
   Image,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { useTheme } from "../contexts/ThemeContext";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SecureStore from "expo-secure-store";
-
-const { width, height } = Dimensions.get("window");
 
 export default function SplashScreen() {
-  const router = useRouter();
-  const { colors } = useTheme();
-
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
@@ -45,12 +34,15 @@ export default function SplashScreen() {
   }, []);
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.primary[500] }]}
-    >
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={colors.primary[500]}
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Gradient Background matching native splash */}
+      <LinearGradient
+        colors={["#667eea", "#764ba2"]}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       />
 
       <Animated.View
@@ -77,7 +69,7 @@ export default function SplashScreen() {
         <Text style={styles.appName}>Expenzez</Text>
         <Text style={styles.tagline}>Personal Finance Assistant</Text>
       </Animated.View>
-    </SafeAreaView>
+    </View>
   );
 }
 
