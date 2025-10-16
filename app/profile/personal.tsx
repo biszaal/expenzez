@@ -17,6 +17,7 @@ import { Header, Section, ListItem, Button } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 import { getProfile } from "../../services/dataSource";
+import { profileAPI } from "../../services/api/profileAPI";
 import { useAuth } from "../../app/auth/AuthContext";
 
 /**
@@ -159,11 +160,50 @@ export default function PersonalInformationScreen() {
   // Handle save changes
   const handleSave = async () => {
     try {
-      // TODO: Implement API call to update profile
+      console.log("💾 [PersonalInfo] Saving profile data:", formData);
+
+      const updateData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        dateOfBirth: formData.dateOfBirth,
+      };
+
+      console.log("📤 [PersonalInfo] Sending update request:", updateData);
+
+      // Call the API to update profile
+      const response = await profileAPI.updateProfile(updateData);
+
+      console.log("📥 [PersonalInfo] Update response:", response);
+
+      console.log("✅ [PersonalInfo] Profile updated successfully");
       setIsEditing(false);
       showSuccess("Profile updated successfully");
+
+      // Clear cache to force fresh data on next load
+      const { clearCachedData } = await import(
+        "../../services/config/apiCache"
+      );
+
+      // Clear the profile cache (uses "user_profile" key in cachedApiCall)
+      await clearCachedData("user_profile");
+
+      console.log("🧹 [PersonalInfo] Cleared profile cache");
+
+      // Refresh the profile data to show updated values
+      const updatedProfile = await getProfile({ forceRefresh: true });
+      if (updatedProfile) {
+        setFormData(updatedProfile);
+        console.log(
+          "🔄 [PersonalInfo] Refreshed profile data:",
+          updatedProfile
+        );
+      }
     } catch (error) {
-      showError("Failed to update profile");
+      console.error("❌ [PersonalInfo] Failed to update profile:", error);
+      showError("Failed to update profile. Please try again.");
     }
   };
 

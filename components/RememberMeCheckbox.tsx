@@ -7,14 +7,25 @@ interface RememberMeCheckboxProps {
   value: boolean;
   onValueChange: (value: boolean) => void;
   label?: string;
+  lightText?: boolean; // Use white text for dark backgrounds (gradient/glass design)
 }
 
 export const RememberMeCheckbox: React.FC<RememberMeCheckboxProps> = ({
   value,
   onValueChange,
   label = "Remember me on this device",
+  lightText = false,
 }) => {
   const { colors } = useTheme();
+
+  const textColor = lightText ? 'white' : colors.text.primary;
+  const checkboxBorderColor = lightText
+    ? 'rgba(255, 255, 255, 0.6)'
+    : value ? colors.primary[500] : colors.text.secondary;
+  const checkboxBackgroundColor = lightText
+    ? value ? 'rgba(255, 255, 255, 0.3)' : 'transparent'
+    : value ? colors.primary[500] : 'transparent';
+  const checkmarkColor = lightText ? 'white' : colors.background.primary;
 
   return (
     <TouchableOpacity
@@ -33,8 +44,8 @@ export const RememberMeCheckbox: React.FC<RememberMeCheckboxProps> = ({
           height: 20,
           borderRadius: 4,
           borderWidth: 2,
-          borderColor: value ? colors.primary[500] : colors.text.secondary,
-          backgroundColor: value ? colors.primary[500] : 'transparent',
+          borderColor: checkboxBorderColor,
+          backgroundColor: checkboxBackgroundColor,
           alignItems: 'center',
           justifyContent: 'center',
           marginRight: 12,
@@ -44,14 +55,14 @@ export const RememberMeCheckbox: React.FC<RememberMeCheckboxProps> = ({
           <Ionicons
             name="checkmark"
             size={14}
-            color={colors.background.primary}
+            color={checkmarkColor}
           />
         )}
       </View>
       <Text
         style={{
           fontSize: 14,
-          color: colors.text.primary,
+          color: textColor,
           flex: 1,
         }}
       >

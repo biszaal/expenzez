@@ -306,7 +306,7 @@ function RootLayoutNav() {
   const shouldTreatAsLoggedIn = isLoggedIn || hasValidSession;
 
   // Determine initial route - PIN is optional, no forced setup
-  let initialRoute = shouldTreatAsLoggedIn ? "(tabs)" : "auth/Login";
+  let initialRoute = shouldTreatAsLoggedIn ? "(tabs)" : "SplashScreen";
 
   return (
     <>
@@ -319,6 +319,8 @@ function RootLayoutNav() {
         screenOptions={{ headerShown: false }}
         initialRouteName={initialRoute}
       >
+        <Stack.Screen name="SplashScreen" />
+        <Stack.Screen name="WelcomeOnboarding" />
         <Stack.Screen name="auth/Login" />
         <Stack.Screen name="auth/Register" />
         <Stack.Screen name="(tabs)" />

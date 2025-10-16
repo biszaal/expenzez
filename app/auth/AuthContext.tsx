@@ -670,6 +670,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         errorName: error.name,
       });
 
+      // Debug: Log the error details to understand what we're receiving
+      console.log("🔍 [AuthContext] Login error details:", {
+        statusCode: error.statusCode,
+        responseStatus: error.response?.status,
+        responseData: error.response?.data,
+        message: error.message,
+        isEmailNotVerified: error.isEmailNotVerified,
+      });
+
       // Check if this is an email verification error
       if (
         error.statusCode === 403 ||

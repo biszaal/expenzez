@@ -284,6 +284,7 @@ export default function Login() {
                   </Typography>
                   <TextField
                     placeholder="Enter your username or email"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
                     value={identifier}
                     onChangeText={setIdentifier}
                     autoCapitalize="none"
@@ -299,6 +300,7 @@ export default function Login() {
                   </Typography>
                   <TextField
                     placeholder="Enter your password"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={true}
@@ -310,16 +312,20 @@ export default function Login() {
 
                 {/* Remember Me & Forgot Password Row */}
                 <View style={styles.optionsRow}>
-                  <RememberMeCheckbox
-                    value={rememberMe}
-                    onValueChange={setRememberMe}
-                    label="Remember me"
-                  />
+                  <View style={styles.rememberMeWrapper}>
+                    <RememberMeCheckbox
+                      value={rememberMe}
+                      onValueChange={setRememberMe}
+                      label="Remember me"
+                      lightText={true}
+                    />
+                  </View>
                   <TouchableOpacity
                     onPress={() => router.push("/auth/ForgotPassword")}
+                    style={styles.forgotButton}
                   >
                     <Typography variant="body" style={styles.forgotText}>
-                      Forgot?
+                      Forgot Password?
                     </Typography>
                   </TouchableOpacity>
                 </View>
@@ -405,15 +411,15 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: 24,
   },
   logoContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     alignItems: "center",
     justifyContent: "center",
@@ -421,15 +427,15 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.3)",
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "800",
     color: "white",
-    marginBottom: 8,
+    marginBottom: 6,
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.85)",
   },
   glassCard: {
     borderRadius: 30,
@@ -447,34 +453,43 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   inputLabel: {
     color: "white",
-    marginBottom: 8,
+    marginBottom: 6,
     fontSize: 14,
     fontWeight: "600",
   },
   input: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    borderRadius: 12,
+    borderColor: "rgba(255, 255, 255, 0.25)",
+    borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
+    paddingVertical: 12,
+    fontSize: 15,
     color: "white",
-    minHeight: 50,
+    minHeight: 48,
   },
   optionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    marginTop: 4,
+    marginBottom: 20,
+    gap: 12,
+  },
+  rememberMeWrapper: {
+    flex: 1,
+    minWidth: 0,
+  },
+  forgotButton: {
+    flexShrink: 0,
   },
   forgotText: {
     color: "white",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
   },
   signInButton: {
@@ -485,40 +500,40 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   buttonBlur: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 18,
+    paddingVertical: 16,
     paddingHorizontal: 32,
     gap: 10,
   },
   buttonText: {
     color: "white",
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "700",
     letterSpacing: 0.3,
   },
   dividerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 20,
+    marginVertical: 16,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
   },
   dividerText: {
     color: "rgba(255, 255, 255, 0.7)",
-    marginHorizontal: 16,
-    fontSize: 14,
+    marginHorizontal: 12,
+    fontSize: 13,
   },
   registerLink: {
     alignItems: "center",
-    marginTop: 16,
+    marginTop: 12,
     paddingVertical: 8,
   },
   registerText: {
