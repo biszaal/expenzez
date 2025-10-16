@@ -81,7 +81,10 @@ export default function RegisterStep2({
         "📅 [RegisterStep2] Android - Date length:",
         formattedDate.length
       );
-      console.log("📅 [RegisterStep2] Android - Date type:", typeof formattedDate);
+      console.log(
+        "📅 [RegisterStep2] Android - Date type:",
+        typeof formattedDate
+      );
       onChange("dob", formattedDate);
     } else {
       // On iOS, just update the temp date, don't close picker

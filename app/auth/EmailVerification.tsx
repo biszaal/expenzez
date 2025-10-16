@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,6 +42,20 @@ export default function EmailVerification() {
     }
   }, [params]);
 
+  // Auto-send verification code when coming from login (no password means not from registration)
+  useEffect(() => {
+    if (email && !password) {
+      console.log(
+        "📧 [EmailVerification] Auto-sending verification code for login flow",
+        { email, password, params }
+      );
+      // Use setTimeout to ensure component is fully mounted
+      setTimeout(() => {
+        handleResendCode();
+      }, 500);
+    }
+  }, [email, password]);
+
   useEffect(() => {
     if (resendTimer > 0) {
       const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
@@ -67,7 +86,10 @@ export default function EmailVerification() {
         // Auto-login after verification (from registration flow)
         showSuccess("Email verified! Logging you in...");
         try {
-          const autoLoginResult = await autoLoginAfterVerification(email, password);
+          const autoLoginResult = await autoLoginAfterVerification(
+            email,
+            password
+          );
           if (autoLoginResult.success) {
             showSuccess("Welcome! You're now logged in.");
             setTimeout(() => {
@@ -78,10 +100,10 @@ export default function EmailVerification() {
             setTimeout(() => {
               router.replace({
                 pathname: "/auth/Login",
-                params: { 
-                  email: email, 
-                  message: "Email verified! Please log in to continue." 
-                }
+                params: {
+                  email: email,
+                  message: "Email verified! Please log in to continue.",
+                },
               });
             }, 2000);
           }
@@ -91,10 +113,10 @@ export default function EmailVerification() {
           setTimeout(() => {
             router.replace({
               pathname: "/auth/Login",
-              params: { 
-                email: email, 
-                message: "Email verified! Please log in to continue." 
-              }
+              params: {
+                email: email,
+                message: "Email verified! Please log in to continue.",
+              },
             });
           }, 2000);
         }
@@ -104,17 +126,18 @@ export default function EmailVerification() {
         setTimeout(() => {
           router.replace({
             pathname: "/auth/Login",
-            params: { 
-              email: email, 
-              message: "Email verified successfully! Please enter your password." 
-            }
+            params: {
+              email: email,
+              message:
+                "Email verified successfully! Please enter your password.",
+            },
           });
         }, 1500);
       }
     } catch (error: any) {
       console.error("Verification error:", error);
       let errorMsg = "Verification failed. Please try again.";
-      
+
       if (error.response?.data?.message) {
         if (error.response.data.message.includes("Invalid verification code")) {
           errorMsg = "Invalid verification code. Please check and try again.";
@@ -125,7 +148,10 @@ export default function EmailVerification() {
             // Auto-login if email already verified (from registration)
             showSuccess("Email already verified! Logging you in...");
             try {
-              const autoLoginResult = await autoLoginAfterVerification(email, password);
+              const autoLoginResult = await autoLoginAfterVerification(
+                email,
+                password
+              );
               if (autoLoginResult.success) {
                 showSuccess("Welcome! You're now logged in.");
                 setTimeout(() => {
@@ -142,16 +168,16 @@ export default function EmailVerification() {
           setTimeout(() => {
             router.replace({
               pathname: "/auth/Login",
-              params: { 
-                email: email, 
-                message: "Email already verified! Please enter your password." 
-              }
+              params: {
+                email: email,
+                message: "Email already verified! Please enter your password.",
+              },
             });
           }, 1500);
           return;
         }
       }
-      
+
       showError(errorMsg);
     } finally {
       setIsVerifying(false);
@@ -159,29 +185,42 @@ export default function EmailVerification() {
   };
 
   const handleResendCode = async () => {
-    if (resendTimer > 0) return;
+    if (resendTimer > 0) {
+      console.log("⏰ [EmailVerification] Resend timer active, skipping");
+      return;
+    }
+
+    console.log("📧 [EmailVerification] Starting resend process", {
+      email,
+      password,
+      params,
+      resendTimer,
+    });
 
     setIsResending(true);
     try {
       // Send both email and username to backend, let it decide which to use
       const requestData: { email?: string; username?: string } = {};
-      
+
       if (params.email) {
         requestData.email = params.email as string;
       } else if (params.username) {
         requestData.username = params.username as string;
       } else {
         // Fallback to the email state (which might contain username)
-        if (email && email.includes('@')) {
+        if (email && email.includes("@")) {
           requestData.email = email;
         } else {
           requestData.username = email;
         }
       }
-      
-      console.log("Resending verification with data:", requestData);
+
+      console.log(
+        "📧 [EmailVerification] Resending verification with data:",
+        requestData
+      );
       const result = await authAPI.resendVerification(requestData);
-      
+
       // If no error thrown, resend was successful
       showSuccess("Verification code sent! Check your email.");
       setResendTimer(60); // 60 second cooldown
@@ -194,34 +233,69 @@ export default function EmailVerification() {
   };
 
   return (
-    <SafeAreaView style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background.primary }])}>
+    <SafeAreaView
+      style={StyleSheet.flatten([
+        styles.container,
+        { backgroundColor: colors.background.primary },
+      ])}
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.secondary }])}
+          style={StyleSheet.flatten([
+            styles.backButton,
+            { backgroundColor: colors.background.secondary },
+          ])}
           onPress={() => router.back()}
         >
           <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
         </TouchableOpacity>
-        
+
         <View style={styles.headerContent}>
-          <View style={StyleSheet.flatten([styles.iconContainer, { backgroundColor: colors.primary[100] }])}>
-            <Ionicons name="mail-outline" size={48} color={colors.primary[500]} />
+          <View
+            style={StyleSheet.flatten([
+              styles.iconContainer,
+              { backgroundColor: colors.primary[100] },
+            ])}
+          >
+            <Ionicons
+              name="mail-outline"
+              size={48}
+              color={colors.primary[500]}
+            />
           </View>
-          
-          <Typography variant="h2" style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])}>
+
+          <Typography
+            variant="h2"
+            style={StyleSheet.flatten([
+              styles.title,
+              { color: colors.text.primary },
+            ])}
+          >
             Verify Your Email
           </Typography>
-          
-          <Typography variant="body" style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])}>
-            {params.email ? 
-              "We've sent a 6-digit verification code to:" : 
-              "Enter the 6-digit verification code sent to your email:"
-            }
+
+          <Typography
+            variant="body"
+            style={StyleSheet.flatten([
+              styles.subtitle,
+              { color: colors.text.secondary },
+            ])}
+          >
+            {params.email
+              ? "We've sent a 6-digit verification code to:"
+              : "Enter the 6-digit verification code sent to your email:"}
           </Typography>
-          
-          <Typography variant="body" style={StyleSheet.flatten([styles.email, { color: colors.primary[500] }])} weight="semibold">
-            {params.email || (params.username ? "your registered email" : email)}
+
+          <Typography
+            variant="body"
+            style={StyleSheet.flatten([
+              styles.email,
+              { color: colors.primary[500] },
+            ])}
+            weight="semibold"
+          >
+            {params.email || email || (params.username ? `${params.username}@example.com` : "your registered email")}
           </Typography>
         </View>
       </View>
@@ -229,21 +303,33 @@ export default function EmailVerification() {
       {/* Verification Form */}
       <View style={styles.formContainer}>
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
+          <Typography
+            variant="body"
+            style={StyleSheet.flatten([
+              styles.inputLabel,
+              { color: colors.text.primary },
+            ])}
+            weight="medium"
+          >
             Verification Code
           </Typography>
           <TextField
             placeholder="Enter 6-digit code"
             value={verificationCode}
-            onChangeText={(text) => setVerificationCode(text.replace(/[^0-9]/g, '').slice(0, 6))}
+            onChangeText={(text) =>
+              setVerificationCode(text.replace(/[^0-9]/g, "").slice(0, 6))
+            }
             keyboardType="numeric"
-            style={StyleSheet.flatten([styles.input, {
-              backgroundColor: colors.background.tertiary,
-              borderColor: colors.border.medium,
-            }])}
+            style={StyleSheet.flatten([
+              styles.input,
+              {
+                backgroundColor: colors.background.tertiary,
+                borderColor: colors.border.medium,
+              },
+            ])}
             inputStyle={{
               color: colors.text.primary,
-              textAlign: 'center',
+              textAlign: "center",
               fontSize: 24,
               letterSpacing: 8,
             }}
@@ -254,16 +340,25 @@ export default function EmailVerification() {
         <Button
           title={isVerifying ? "Verifying..." : "Verify Email"}
           onPress={handleVerification}
-          style={StyleSheet.flatten([styles.verifyButton, { backgroundColor: colors.primary[500] }])}
+          style={StyleSheet.flatten([
+            styles.verifyButton,
+            { backgroundColor: colors.primary[500] },
+          ])}
           disabled={isVerifying || verificationCode.length !== 6}
         />
 
         {/* Resend Code */}
         <View style={styles.resendContainer}>
-          <Typography variant="body" style={StyleSheet.flatten([styles.resendText, { color: colors.text.secondary }])}>
+          <Typography
+            variant="body"
+            style={StyleSheet.flatten([
+              styles.resendText,
+              { color: colors.text.secondary },
+            ])}
+          >
             Didn&apos;t receive the code?
           </Typography>
-          
+
           <TouchableOpacity
             onPress={handleResendCode}
             disabled={isResending || resendTimer > 0}
@@ -272,14 +367,17 @@ export default function EmailVerification() {
             {isResending ? (
               <ActivityIndicator size="small" color={colors.primary[500]} />
             ) : (
-              <Typography 
-                variant="body" 
+              <Typography
+                variant="body"
                 style={StyleSheet.flatten([
-                  styles.resendButtonText, 
-                  { 
-                    color: resendTimer > 0 ? colors.text.tertiary : colors.primary[500] 
-                  }
-                ])} 
+                  styles.resendButtonText,
+                  {
+                    color:
+                      resendTimer > 0
+                        ? colors.text.tertiary
+                        : colors.primary[500],
+                  },
+                ])}
                 weight="medium"
               >
                 {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend Code"}
@@ -289,10 +387,29 @@ export default function EmailVerification() {
         </View>
 
         {/* Help Text */}
-        <View style={StyleSheet.flatten([styles.helpContainer, { backgroundColor: colors.background.tertiary, borderColor: colors.border.light }])}>
-          <Ionicons name="information-circle" size={20} color={colors.text.secondary} />
-          <Typography variant="caption" style={StyleSheet.flatten([styles.helpText, { color: colors.text.secondary }])}>
-            Check your spam folder if you don&apos;t see the email. The code expires in 24 hours.
+        <View
+          style={StyleSheet.flatten([
+            styles.helpContainer,
+            {
+              backgroundColor: colors.background.tertiary,
+              borderColor: colors.border.light,
+            },
+          ])}
+        >
+          <Ionicons
+            name="information-circle"
+            size={20}
+            color={colors.text.secondary}
+          />
+          <Typography
+            variant="caption"
+            style={StyleSheet.flatten([
+              styles.helpText,
+              { color: colors.text.secondary },
+            ])}
+          >
+            Check your spam folder if you don&apos;t see the email. The code
+            expires in 24 hours.
           </Typography>
         </View>
       </View>
@@ -313,35 +430,35 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: borderRadius.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing.lg,
   },
   headerContent: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   iconContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing.lg,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: spacing.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: spacing.xs,
   },
   email: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: spacing.xl,
   },
   formContainer: {
@@ -354,7 +471,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     marginBottom: spacing.sm,
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   input: {
     borderWidth: 1,
@@ -371,7 +488,7 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   resendContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: spacing.xl,
   },
   resendText: {
@@ -386,8 +503,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   helpContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     padding: spacing.md,
     borderRadius: borderRadius.md,
     borderWidth: 1,
