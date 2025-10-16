@@ -108,7 +108,7 @@ export default function SplashScreen() {
         <View style={styles.logoContainer}>
           <View style={styles.logoBackground}>
             <Image
-              source={require("../assets/images/transparent-logo.svg")}
+              source={require("../assets/images/icon.png")}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -136,9 +136,9 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   logoBackground: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     backgroundColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
@@ -149,8 +149,8 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   logoImage: {
-    width: 60,
-    height: 60,
+    width: 80,
+    height: 80,
   },
   appName: {
     fontSize: 32,
