@@ -7,10 +7,10 @@ import {
   StatusBar,
   SafeAreaView,
   Dimensions,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "../contexts/ThemeContext";
-import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 
@@ -107,7 +107,11 @@ export default function SplashScreen() {
         {/* Logo */}
         <View style={styles.logoContainer}>
           <View style={styles.logoBackground}>
-            <Ionicons name="wallet" size={60} color="white" />
+            <Image
+              source={require("../assets/images/icon.png")}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
         </View>
 
@@ -143,6 +147,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  logoImage: {
+    width: 60,
+    height: 60,
   },
   appName: {
     fontSize: 32,
