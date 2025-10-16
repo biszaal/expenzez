@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width, height } = Dimensions.get("window");
 const CARD_HEIGHT = height * 0.7;
@@ -32,7 +33,8 @@ export default function WelcomeOnboarding() {
     {
       id: "1",
       title: "Welcome to\nExpenzez",
-      description: "Your intelligent financial companion for smarter money management",
+      description:
+        "Your intelligent financial companion for smarter money management",
       icon: "wallet-outline",
       gradient: ["#667eea", "#764ba2"],
       accentColor: "#667eea",
@@ -48,7 +50,8 @@ export default function WelcomeOnboarding() {
     {
       id: "3",
       title: "Bank-Level\nSecurity",
-      description: "Enterprise-grade encryption keeps your data safe and private",
+      description:
+        "Enterprise-grade encryption keeps your data safe and private",
       icon: "shield-checkmark-outline",
       gradient: ["#4facfe", "#00f2fe"],
       accentColor: "#4facfe",
@@ -56,14 +59,15 @@ export default function WelcomeOnboarding() {
     {
       id: "4",
       title: "Stay in\nControl",
-      description: "Real-time notifications and budget tracking at your fingertips",
+      description:
+        "Real-time notifications and budget tracking at your fingertips",
       icon: "notifications-outline",
       gradient: ["#43e97b", "#38f9d7"],
       accentColor: "#43e97b",
     },
   ];
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (Platform.OS === "ios") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -74,14 +78,37 @@ export default function WelcomeOnboarding() {
         animated: true,
       });
     } else {
+      // User completed onboarding - set the flag
+      try {
+        await AsyncStorage.setItem("onboarding_completed", "true");
+        console.log("✅ [Onboarding] Onboarding completed flag set");
+      } catch (error) {
+        console.error(
+          "❌ [Onboarding] Failed to set onboarding_completed flag:",
+          error
+        );
+      }
+
       router.push("/auth/Login");
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
     if (Platform.OS === "ios") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+
+    // User skipped onboarding - set the flag so they don't see it again
+    try {
+      await AsyncStorage.setItem("onboarding_completed", "true");
+      console.log("✅ [Onboarding] Onboarding skipped - flag set");
+    } catch (error) {
+      console.error(
+        "❌ [Onboarding] Failed to set onboarding_completed flag:",
+        error
+      );
+    }
+
     router.push("/auth/Login");
   };
 
@@ -93,9 +120,7 @@ export default function WelcomeOnboarding() {
   );
 
   const onMomentumScrollEnd = (event: any) => {
-    const index = Math.round(
-      event.nativeEvent.contentOffset.x / width
-    );
+    const index = Math.round(event.nativeEvent.contentOffset.x / width);
     setCurrentIndex(index);
   };
 
@@ -241,7 +266,8 @@ export default function WelcomeOnboarding() {
             <TouchableOpacity
               style={[
                 styles.actionButton,
-                currentIndex === onboardingData.length - 1 && styles.actionButtonFull,
+                currentIndex === onboardingData.length - 1 &&
+                  styles.actionButtonFull,
               ]}
               onPress={handleNext}
               activeOpacity={0.9}

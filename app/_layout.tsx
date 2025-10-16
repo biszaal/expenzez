@@ -112,6 +112,8 @@ function RootLayoutNav() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasValidSession, setHasValidSession] = useState(false);
   const [showPinSetup, setShowPinSetup] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [onboardingStatusChecked, setOnboardingStatusChecked] = useState(false);
   const segments = useSegments();
 
   // Quick session check on app startup
@@ -138,18 +140,39 @@ function RootLayoutNav() {
     quickSessionCheck();
   }, []);
 
+  // Check onboarding completion status
   useEffect(() => {
-    // Wait for auth state to be loaded
+    const checkOnboardingStatus = async () => {
+      try {
+        const onboardingCompleted = await AsyncStorage.getItem(
+          "onboarding_completed"
+        );
+        const completed = onboardingCompleted === "true";
+        console.log("🎯 [Layout] Onboarding status check:", { completed });
+        setHasCompletedOnboarding(completed);
+        setOnboardingStatusChecked(true);
+      } catch (error) {
+        console.log("❌ [Layout] Error checking onboarding status:", error);
+        setHasCompletedOnboarding(false);
+        setOnboardingStatusChecked(true);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, []);
+
+  useEffect(() => {
+    // Wait for both auth state and onboarding status to be loaded
     console.log(
-      `🔄 [Layout] Loading state changed: auth.loading=${loading}, isLoading=${isLoading}`
+      `🔄 [Layout] Loading state changed: auth.loading=${loading}, isLoading=${isLoading}, onboardingStatusChecked=${onboardingStatusChecked}`
     );
-    if (!loading) {
+    if (!loading && onboardingStatusChecked) {
       console.log(
-        "✅ [Layout] Auth loading complete, setting isLoading to false"
+        "✅ [Layout] Auth and onboarding status loading complete, setting isLoading to false"
       );
       setIsLoading(false);
     }
-  }, [loading, isLoading]);
+  }, [loading, onboardingStatusChecked]);
 
   // PIN setup is now optional - no mandatory setup required
   useEffect(() => {
@@ -302,11 +325,57 @@ function RootLayoutNav() {
     );
   }
 
-  // Determine if user should be treated as logged in
+  // ========================================
+  // PROPER NAVIGATION LOGIC
+  // ========================================
+
+  // Step 1: Determine if user is logged in
   const shouldTreatAsLoggedIn = isLoggedIn || hasValidSession;
 
-  // Determine initial route - PIN is optional, no forced setup
-  let initialRoute = shouldTreatAsLoggedIn ? "(tabs)" : "SplashScreen";
+  // Step 2: Determine user type and appropriate route
+  let initialRoute;
+  let userType;
+
+  if (shouldTreatAsLoggedIn) {
+    // 🟢 LOGGED IN USER
+    userType = "LOGGED_IN";
+    initialRoute = "(tabs)"; // Go directly to main app
+  } else if (onboardingStatusChecked) {
+    if (hasCompletedOnboarding) {
+      // 🟡 RETURNING USER (not logged in, but has seen onboarding)
+      userType = "RETURNING_USER";
+      initialRoute = "auth/Login"; // Go directly to login
+    } else {
+      // 🔴 NEW USER (never used the app)
+      userType = "NEW_USER";
+      initialRoute = "SplashScreen"; // Start onboarding flow
+    }
+  } else {
+    // 🟠 LOADING STATE (still checking user status)
+    userType = "LOADING";
+    initialRoute = "SplashScreen"; // Show splash while determining status
+  }
+
+  console.log("🎯 [Layout] Navigation Decision:", {
+    userType,
+    isLoggedIn,
+    hasValidSession,
+    hasCompletedOnboarding,
+    onboardingStatusChecked,
+    initialRoute,
+    decision: {
+      "User Type": userType,
+      Route: initialRoute,
+      Reason:
+        userType === "LOGGED_IN"
+          ? "User is logged in"
+          : userType === "RETURNING_USER"
+            ? "User has completed onboarding before"
+            : userType === "NEW_USER"
+              ? "User has never seen onboarding"
+              : "Still loading user status",
+    },
+  });
 
   return (
     <>

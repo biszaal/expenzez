@@ -11,6 +11,8 @@ import {
 import { useRouter } from "expo-router";
 import { useTheme } from "../contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
 const { width, height } = Dimensions.get("window");
 
@@ -37,10 +39,49 @@ export default function SplashScreen() {
       }),
     ]).start();
 
+    // Check login status and onboarding status, then navigate accordingly
+    const checkAndNavigate = async () => {
+      try {
+        // Check if user is logged in
+        const storedLogin = await AsyncStorage.getItem("isLoggedIn");
+        const accessToken = await SecureStore.getItemAsync("accessToken", {
+          keychainService: "expenzez-tokens",
+        });
+        const isLoggedIn =
+          storedLogin === "true" && accessToken && accessToken !== "null";
+
+        if (isLoggedIn) {
+          // 🟢 LOGGED IN USER → Go to main app
+          console.log("🎯 [SplashScreen] LOGGED_IN_USER → Main App");
+          router.replace("/(tabs)");
+          return;
+        }
+
+        // User is not logged in, check onboarding status
+        const onboardingCompleted = await AsyncStorage.getItem(
+          "onboarding_completed"
+        );
+        const hasCompletedOnboarding = onboardingCompleted === "true";
+
+        if (hasCompletedOnboarding) {
+          // 🟡 RETURNING USER → Go to login
+          console.log("🎯 [SplashScreen] RETURNING_USER → Login");
+          router.replace("/auth/Login");
+        } else {
+          // 🔴 NEW USER → Show onboarding
+          console.log("🎯 [SplashScreen] NEW_USER → Onboarding");
+          router.replace("/WelcomeOnboarding");
+        }
+      } catch (error) {
+        console.error("❌ [SplashScreen] Error checking status:", error);
+        // Default to onboarding for new users if there's an error
+        console.log("🎯 [SplashScreen] ERROR_FALLBACK → Onboarding");
+        router.replace("/WelcomeOnboarding");
+      }
+    };
+
     // Auto navigate after 2 seconds
-    const timer = setTimeout(() => {
-      router.replace("/WelcomeOnboarding");
-    }, 2000);
+    const timer = setTimeout(checkAndNavigate, 2000);
 
     return () => clearTimeout(timer);
   }, []);
