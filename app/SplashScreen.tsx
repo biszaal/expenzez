@@ -155,11 +155,11 @@ const styles = StyleSheet.create({
   },
   glassInner: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.8)",
+    backgroundColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.3)",
+    borderColor: "rgba(255,255,255,0.5)",
     borderRadius: 30,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
