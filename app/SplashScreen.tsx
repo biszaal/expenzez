@@ -106,14 +106,16 @@ export default function SplashScreen() {
           },
         ]}
       >
-        {/* Logo with Curved Edges */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={require("../assets/images/icon.png")}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-        </View>
+          {/* Logo with Curved Edges */}
+          <View style={styles.logoContainer}>
+            <View style={styles.logoBackground}>
+              <Image
+                source={require("../assets/images/icon.png")}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
 
         {/* App Name */}
         <Text style={styles.appName}>Expenzez</Text>
@@ -135,6 +137,19 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     marginBottom: 40,
+  },
+  logoBackground: {
+    width: 180,
+    height: 180,
+    borderRadius: 30,
+    backgroundColor: "white",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.6,
+    shadowRadius: 16,
+    elevation: 16,
   },
   glassBackground: {
     width: 200,
@@ -164,15 +179,10 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   logoImage: {
-    width: 180,
-    height: 180,
+    width: 160,
+    height: 160,
     opacity: 1,
-    borderRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.6,
-    shadowRadius: 16,
-    elevation: 16,
+    borderRadius: 25,
   },
   appName: {
     fontSize: 36,
