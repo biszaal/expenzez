@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { useAuth } from "./auth/AuthContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -9,6 +9,16 @@ export default function Index() {
   const auth = useAuth();
   const isLoggedIn = auth?.isLoggedIn ?? false;
   const loading = auth?.loading ?? true;
+  const [minSplashTime, setMinSplashTime] = useState(true);
+
+  // Ensure splash screen shows for at least 2 seconds for better UX
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinSplashTime(false);
+    }, 2000); // Show splash for minimum 2 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const determineInitialRoute = async () => {
@@ -23,11 +33,15 @@ export default function Index() {
           isLoggedIn,
           loading,
           hasCompletedOnboarding,
+          minSplashTime,
         });
 
-        // Wait for auth to finish loading
-        if (loading) {
-          console.log("⏳ [Index] Waiting for auth to load...");
+        // Wait for both auth to finish loading AND minimum splash time
+        if (loading || minSplashTime) {
+          console.log("⏳ [Index] Waiting for loading to complete...", {
+            loading,
+            minSplashTime,
+          });
           return;
         }
 
@@ -49,14 +63,9 @@ export default function Index() {
       }
     };
 
-    // Add a slight delay to ensure all providers are ready
-    const timeout = setTimeout(() => {
-      determineInitialRoute();
-    }, 100);
+    determineInitialRoute();
+  }, [isLoggedIn, loading, router, minSplashTime]);
 
-    return () => clearTimeout(timeout);
-  }, [isLoggedIn, loading, router]);
-
-  // Show splash screen while determining route
+  // Show splash screen while app is loading
   return <SplashScreen />;
 }
