@@ -83,48 +83,49 @@ export default function RegisterStep3({
 
   return (
     <View style={styles.container}>
-      {/* Clean Progress Indicator */}
+      {/* Glass Progress Indicator */}
       <View style={styles.progressContainer}>
-        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
-          <Ionicons name="checkmark" size={16} color="#8B5CF6" />
+        <View style={styles.completedStep}>
+          <Ionicons name="checkmark" size={16} color="white" />
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
-          <Ionicons name="checkmark" size={16} color="#8B5CF6" />
+        <View style={styles.completedLine} />
+        <View style={styles.completedStep}>
+          <Ionicons name="checkmark" size={16} color="white" />
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }])}>
+        <View style={styles.completedLine} />
+        <View style={styles.activeStep}>
           <Typography variant="caption" style={styles.activeStepText}>3</Typography>
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
-          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>4</Typography>
+        <View style={styles.progressLine} />
+        <View style={styles.inactiveStep}>
+          <Typography variant="caption" style={styles.stepText}>4</Typography>
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
-          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>5</Typography>
+        <View style={styles.progressLine} />
+        <View style={styles.inactiveStep}>
+          <Typography variant="caption" style={styles.stepText}>5</Typography>
         </View>
       </View>
 
-      {/* Clean Header */}
+      {/* Glass Header */}
       <View style={styles.header}>
-        <Typography variant="h2" style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])}>
+        <Typography variant="h2" style={styles.title}>
           Account Security
         </Typography>
-        <Typography variant="body" style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])}>
+        <Typography variant="body" style={styles.subtitle}>
           Set up your login credentials
         </Typography>
       </View>
 
-      {/* Clean Form Fields */}
+      {/* Glass Form Fields */}
       <View style={styles.formFields}>
         {/* Email Field */}
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
+          <Typography variant="body" style={styles.inputLabel} weight="medium">
             Email Address
           </Typography>
           <TextField
             placeholder="Enter your email address"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={values.email}
             onChangeText={(v) => {
               onChange("email", v);
@@ -134,11 +135,7 @@ export default function RegisterStep3({
             autoCapitalize="none"
             autoCorrect={false}
             textContentType="emailAddress"
-            style={StyleSheet.flatten([styles.input, {
-              backgroundColor: colors.background.tertiary,
-              borderColor: colors.border.medium,
-              color: colors.text.primary
-            }])}
+            style={styles.input}
           />
           
           {/* Clean Email Status */}
@@ -165,11 +162,12 @@ export default function RegisterStep3({
 
         {/* Password Field */}
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
+          <Typography variant="body" style={styles.inputLabel} weight="medium">
             Password
           </Typography>
           <TextField
             placeholder="Create a strong password"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={values.password}
             onChangeText={(v) => {
               onChange("password", v);
@@ -179,21 +177,18 @@ export default function RegisterStep3({
             autoCapitalize="none"
             textContentType="newPassword"
             passwordRules="minlength: 8; required: lower; required: upper; required: digit; required: special;"
-            style={StyleSheet.flatten([styles.input, {
-              backgroundColor: colors.background.tertiary,
-              borderColor: colors.border.medium,
-              color: colors.text.primary
-            }])}
+            style={styles.input}
           />
         </View>
 
         {/* Confirm Password Field */}
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
+          <Typography variant="body" style={styles.inputLabel} weight="medium">
             Confirm Password
           </Typography>
           <TextField
             placeholder="Re-enter your password"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={values.confirmPassword}
             onChangeText={(v) => {
               onChange("confirmPassword", v);
@@ -202,74 +197,67 @@ export default function RegisterStep3({
             secureTextEntry={true}
             autoCapitalize="none"
             textContentType="newPassword"
-            style={StyleSheet.flatten([styles.input, {
-              backgroundColor: colors.background.tertiary,
-              borderColor: colors.border.medium,
-              color: colors.text.primary
-            }])}
+            style={styles.input}
           />
         </View>
 
-        {/* Clean Password Requirements */}
-        <View style={StyleSheet.flatten([styles.requirementsContainer, { 
-          backgroundColor: colors.background.tertiary, 
-          borderColor: colors.border.light
-        }])}>
-          <Typography variant="caption" style={StyleSheet.flatten([styles.requirementsTitle, { color: colors.text.secondary }])}>
+        {/* Glass Password Requirements */}
+        <View style={styles.requirementsContainer}>
+          <Typography variant="caption" style={styles.requirementsTitle}>
             Password requirements:
           </Typography>
-          
+
           <View style={styles.requirementItem}>
-            <Ionicons 
-              name={values.password.length >= 8 ? "checkmark-circle" : "ellipse-outline"} 
-              size={16} 
-              color={values.password.length >= 8 ? colors.success[500] : colors.text.tertiary} 
+            <Ionicons
+              name={values.password.length >= 8 ? "checkmark-circle" : "ellipse-outline"}
+              size={16}
+              color={values.password.length >= 8 ? "#10b981" : "rgba(255, 255, 255, 0.4)"}
             />
-            <Typography variant="caption" style={StyleSheet.flatten([styles.requirementText, { color: colors.text.tertiary }])}>
+            <Typography variant="caption" style={styles.requirementText}>
               At least 8 characters
             </Typography>
           </View>
-          
+
           <View style={styles.requirementItem}>
-            <Ionicons 
-              name={/[A-Z]/.test(values.password) ? "checkmark-circle" : "ellipse-outline"} 
-              size={16} 
-              color={/[A-Z]/.test(values.password) ? colors.success[500] : colors.text.tertiary} 
+            <Ionicons
+              name={/[A-Z]/.test(values.password) ? "checkmark-circle" : "ellipse-outline"}
+              size={16}
+              color={/[A-Z]/.test(values.password) ? "#10b981" : "rgba(255, 255, 255, 0.4)"}
             />
-            <Typography variant="caption" style={StyleSheet.flatten([styles.requirementText, { color: colors.text.tertiary }])}>
+            <Typography variant="caption" style={styles.requirementText}>
               One uppercase letter
             </Typography>
           </View>
-          
+
           <View style={styles.requirementItem}>
-            <Ionicons 
-              name={/[a-z]/.test(values.password) ? "checkmark-circle" : "ellipse-outline"} 
-              size={16} 
-              color={/[a-z]/.test(values.password) ? colors.success[500] : colors.text.tertiary} 
+            <Ionicons
+              name={/[a-z]/.test(values.password) ? "checkmark-circle" : "ellipse-outline"}
+              size={16}
+              color={/[a-z]/.test(values.password) ? "#10b981" : "rgba(255, 255, 255, 0.4)"}
             />
-            <Typography variant="caption" style={StyleSheet.flatten([styles.requirementText, { color: colors.text.tertiary }])}>
+            <Typography variant="caption" style={styles.requirementText}>
               One lowercase letter
             </Typography>
           </View>
-          
+
           <View style={styles.requirementItem}>
-            <Ionicons 
-              name={/\d/.test(values.password) ? "checkmark-circle" : "ellipse-outline"} 
-              size={16} 
-              color={/\d/.test(values.password) ? colors.success[500] : colors.text.tertiary} 
+            <Ionicons
+              name={/\d/.test(values.password) ? "checkmark-circle" : "ellipse-outline"}
+              size={16}
+              color={/\d/.test(values.password) ? "#10b981" : "rgba(255, 255, 255, 0.4)"}
             />
-            <Typography variant="caption" style={StyleSheet.flatten([styles.requirementText, { color: colors.text.tertiary }])}>
+            <Typography variant="caption" style={styles.requirementText}>
               One number
             </Typography>
           </View>
-          
+
           <View style={styles.requirementItem}>
-            <Ionicons 
-              name={/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(values.password) ? "checkmark-circle" : "ellipse-outline"} 
-              size={16} 
-              color={/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(values.password) ? colors.success[500] : colors.text.tertiary} 
+            <Ionicons
+              name={/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(values.password) ? "checkmark-circle" : "ellipse-outline"}
+              size={16}
+              color={/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(values.password) ? "#10b981" : "rgba(255, 255, 255, 0.4)"}
             />
-            <Typography variant="caption" style={StyleSheet.flatten([styles.requirementText, { color: colors.text.tertiary }])}>
+            <Typography variant="caption" style={styles.requirementText}>
               One special character
             </Typography>
           </View>
@@ -277,33 +265,30 @@ export default function RegisterStep3({
 
         {/* Error Message */}
         {currentError ? (
-          <View style={StyleSheet.flatten([styles.errorContainer, { 
-            backgroundColor: colors.error[50], 
-            borderColor: colors.error[200]
-          }])}>
-            <Ionicons name="warning" size={20} color={colors.error[500]} />
-            <Typography variant="body" style={StyleSheet.flatten([styles.errorText, { color: colors.error[700] }])}>
+          <View style={styles.errorContainer}>
+            <Ionicons name="warning" size={20} color="#ef4444" />
+            <Typography variant="body" style={styles.errorText}>
               {currentError}
             </Typography>
           </View>
         ) : null}
       </View>
 
-      {/* Navigation Buttons */}
+      {/* Glass Navigation Buttons */}
       <View style={styles.buttonContainer}>
-        <Button 
-          title="Back" 
-          onPress={onBack} 
-          style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }])}
-          textStyle={{ color: colors.text.primary }}
+        <Button
+          title="Back"
+          onPress={onBack}
+          style={styles.backButton}
+          textStyle={{ color: "white" }}
         />
-        <Button 
-          title="Continue" 
+        <Button
+          title="Continue"
           onPress={handleNext}
-          style={StyleSheet.flatten([styles.continueButton, { backgroundColor: '#8B5CF6' }])}
+          style={styles.continueButton}
           disabled={
-            !values.email || 
-            !values.password || 
+            !values.email ||
+            !values.password ||
             !values.confirmPassword ||
             !!emailStatus.error
           }
@@ -325,31 +310,57 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     paddingHorizontal: spacing.md,
   },
-  progressStep: {
+  completedStep: {
     width: 28,
     height: 28,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  completedStep: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderWidth: 2,
+    borderColor: 'white',
   },
   activeStep: {
-    shadowColor: '#8B5CF6',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderWidth: 2,
+    borderColor: 'white',
+    shadowColor: '#fff',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 2,
   },
+  inactiveStep: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  completedLine: {
+    width: 24,
+    height: 2,
+    marginHorizontal: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
   progressLine: {
     width: 24,
     height: 2,
     marginHorizontal: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
   },
   stepText: {
     fontSize: 12,
     fontWeight: '600',
+    color: 'white',
   },
   activeStepText: {
     fontSize: 12,
@@ -359,36 +370,41 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: spacing.xl,
-    paddingHorizontal: spacing.md,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: spacing.xs,
+    color: 'white',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
+    color: 'rgba(255, 255, 255, 0.85)',
   },
   formFields: {
-    paddingHorizontal: spacing.md,
     flex: 1,
   },
   inputContainer: {
-    marginBottom: spacing.lg,
+    marginBottom: 16,
   },
   inputLabel: {
-    marginBottom: spacing.xs,
+    color: 'white',
+    marginBottom: 6,
     fontSize: 14,
+    fontWeight: '600',
   },
   input: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    fontSize: 16,
-    minHeight: 44,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: 'white',
+    minHeight: 48,
   },
   statusContainer: {
     flexDirection: 'row',
@@ -400,16 +416,20 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
     fontSize: 12,
     lineHeight: 16,
+    color: 'white',
   },
   requirementsContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
-    borderRadius: borderRadius.md,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 14,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
   requirementsTitle: {
     fontSize: 12,
     marginBottom: spacing.sm,
+    color: 'rgba(255, 255, 255, 0.85)',
   },
   requirementItem: {
     flexDirection: 'row',
@@ -420,13 +440,16 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
     fontSize: 12,
     lineHeight: 16,
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: 14,
     borderWidth: 1,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderColor: 'rgba(239, 68, 68, 0.3)',
     marginBottom: spacing.lg,
   },
   errorText: {
@@ -434,25 +457,35 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     lineHeight: 18,
+    color: 'white',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
     marginTop: spacing.lg,
     gap: spacing.md,
   },
   backButton: {
     flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm + 2,
-    minHeight: 44,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 25,
+    paddingVertical: 16,
+    minHeight: 54,
   },
   continueButton: {
     flex: 1,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm + 2,
-    minHeight: 44,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    borderRadius: 25,
+    paddingVertical: 16,
+    minHeight: 54,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });
