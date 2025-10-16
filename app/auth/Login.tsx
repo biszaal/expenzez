@@ -1,7 +1,4 @@
-// Clean and Professional Login Screen
-import {
-  Ionicons,
-} from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import React, { useState, useEffect } from "react";
 import {
@@ -12,18 +9,25 @@ import {
   StyleSheet,
   StatusBar,
   ScrollView,
+  Dimensions,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../auth/AuthContext";
-import { TextField, Typography, LoadingScreen } from "../../components/ui";
+import { TextField, Typography } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
-import { spacing, borderRadius, layout } from "../../constants/theme";
 import { jwtDecode } from "jwt-decode";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from "expo-secure-store";
 import { useAlert } from "../../hooks/useAlert";
-import { AppleSignInButton, useAppleSignIn } from "../../components/auth/AppleSignInButton";
+import {
+  AppleSignInButton,
+  useAppleSignIn,
+} from "../../components/auth/AppleSignInButton";
 import { RememberMeCheckbox } from "../../components/RememberMeCheckbox";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
+
+const { width } = Dimensions.get("window");
 
 export default function Login() {
   const router = useRouter();
@@ -39,17 +43,8 @@ export default function Login() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [messageShown, setMessageShown] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
 
-  // Debug: Log when error message changes
-  useEffect(() => {
-    console.log("🔍 [Login] Error message state changed:", errorMessage);
-    if (errorMessage === "") {
-      console.log("🔍 [Login] Error message was CLEARED - stack trace:", new Error().stack);
-    }
-  }, [errorMessage]);
-
-  // Handle incoming parameters from registration redirect and login errors
+  // Handle incoming parameters from registration redirect
   useEffect(() => {
     if (params.email) {
       setIdentifier(params.email as string);
@@ -64,62 +59,45 @@ export default function Login() {
   }, [params, messageShown]);
 
   const handleLogin = async () => {
-
     if (!identifier || !password) {
-      setErrorMessage("Please fill in all fields");
+      showError("Please fill in all fields");
       return;
     }
     setIsLoading(true);
     try {
-      console.log("🔍 [Login] Attempting login with:", {
-        identifier: identifier.trim(),
-        passwordLength: password.length,
-        rememberMe
-      });
       const result = await login(identifier.trim(), password, rememberMe);
-      console.log("🔍 [Login] AuthContext login result:", result);
       if (result.success) {
-        // Optionally, auto-redirect to main app
-        const idToken = await SecureStore.getItemAsync("idToken", { keychainService: 'expenzez-tokens' });
+        const idToken = await SecureStore.getItemAsync("idToken", {
+          keychainService: "expenzez-tokens",
+        });
         if (idToken) {
           jwtDecode(idToken);
         }
         setIsNavigating(true);
-        
-        // Immediate navigation without delay
         router.replace("/(tabs)");
-        return; // Return early to prevent finally block from executing
+        return;
       } else {
-        // Debug: Log the result error for debugging
-        console.log("Login failed with error:", result.error);
-
-        // Check if it's an email verification error using the new flag
         if (result.needsEmailVerification) {
-          console.log("Detected email verification error, redirecting to EmailVerification page");
-          // Immediately redirect to email verification
           router.replace({
             pathname: "/auth/EmailVerification",
             params: {
-              email: result.email || (identifier.includes("@") ? identifier : ""),
-              username: result.username || (!identifier.includes("@") ? identifier : ""),
+              email:
+                result.email || (identifier.includes("@") ? identifier : ""),
+              username:
+                result.username ||
+                (!identifier.includes("@") ? identifier : ""),
               message: "Please verify your email to complete login.",
             },
           });
           return;
         }
 
-        // Check if it's an email verification error from error message (fallback)
         if (
           result.error &&
           (result.error.toLowerCase().includes("not confirmed") ||
             result.error.toLowerCase().includes("not verified") ||
-            result.error.toLowerCase().includes("verify") ||
-            result.error.toLowerCase().includes("email address not verified"))
+            result.error.toLowerCase().includes("verify"))
         ) {
-          console.log(
-            "Detected email verification error from message, redirecting to EmailVerification page"
-          );
-          // Immediately redirect to email verification
           router.replace({
             pathname: "/auth/EmailVerification",
             params: {
@@ -131,26 +109,15 @@ export default function Login() {
           return;
         }
 
-        // Only show error if not email verification issue
         showError(result.error || "Login failed. Please try again.");
       }
     } catch (error: any) {
-      console.log("🚨 [Login] EXCEPTION CAUGHT - AuthContext login threw an error instead of returning result");
-      console.error("Login error details:", error);
-
-      // Check for email verification error first - redirect immediately
       if (
         error.statusCode === 403 ||
         error.response?.status === 403 ||
         error.isEmailNotVerified ||
-        error.response?.data?.error === "UserNotConfirmedException" ||
-        error.response?.data?.message?.toLowerCase().includes("not confirmed") ||
-        error.response?.data?.message?.toLowerCase().includes("not verified") ||
-        error.response?.data?.message?.toLowerCase().includes("verify") ||
-        error.message?.toLowerCase().includes("not verified")
+        error.response?.data?.error === "UserNotConfirmedException"
       ) {
-        // Immediately redirect to email verification without showing error
-        console.log("Detected email verification error in catch block, redirecting");
         router.replace({
           pathname: "/auth/EmailVerification",
           params: {
@@ -162,46 +129,35 @@ export default function Login() {
         return;
       }
 
-      // Detect network/server error
       if (
         error?.message?.includes("Network Error") ||
-        error?.message?.includes("timeout") ||
-        error?.toString().includes("Network Error") ||
-        error?.toString().includes("timeout")
+        error?.message?.includes("timeout")
       ) {
-        setErrorMessage(
-          "Unable to connect to server. Please check your internet connection or try again later."
+        showError(
+          "Unable to connect to server. Please check your internet connection."
         );
       } else {
-        // Extract specific error message from various possible sources
         let userErrorMessage = "Login failed. Please try again.";
 
         if (error.response?.data?.message) {
-          // Backend specific error message (most detailed)
           userErrorMessage = error.response.data.message;
         } else if (error.message && error.message !== "API request failed") {
-          // Transformed error message from error handler
           userErrorMessage = error.message;
         } else if (error.response?.data?.error) {
-          // Fallback to error field
           userErrorMessage = error.response.data.error;
         }
 
-        // Handle specific login error scenarios with user-friendly messages
-        if (userErrorMessage.toLowerCase().includes("incorrect") || userErrorMessage.toLowerCase().includes("password")) {
-          userErrorMessage = "Incorrect username or password. Please try again.";
-        } else if (userErrorMessage.toLowerCase().includes("locked") || userErrorMessage.toLowerCase().includes("attempts")) {
-          userErrorMessage = "Account temporarily locked due to too many failed attempts. Please try again later.";
-        } else if (userErrorMessage.toLowerCase().includes("too many")) {
-          userErrorMessage = "Too many login attempts. Please wait a moment and try again.";
-        } else if (userErrorMessage.toLowerCase().includes("reset required")) {
-          userErrorMessage = "Password reset required. Please reset your password to continue.";
+        if (
+          userErrorMessage.toLowerCase().includes("incorrect") ||
+          userErrorMessage.toLowerCase().includes("password")
+        ) {
+          userErrorMessage =
+            "Incorrect username or password. Please try again.";
         }
 
         showError(userErrorMessage);
       }
     } finally {
-      console.log("🔍 [Login] Finally block executing, setting isLoading to false");
       setIsLoading(false);
     }
   };
@@ -209,21 +165,16 @@ export default function Login() {
   const handleAppleLogin = async () => {
     try {
       setIsLoading(true);
-
-      // 🚨 SECURITY: Clear all existing tokens before Apple Sign-In to prevent data leakage
-      console.log('🚨 [Login] SECURITY: Clearing all tokens before Apple Sign-In');
-      const { tokenManager } = await import('../../services/tokenManager');
+      const { tokenManager } = await import("../../services/tokenManager");
       await tokenManager.clearAllTokens();
 
       const credential = await handleAppleSignIn();
-      
+
       if (!credential) {
-        // User canceled the sign-in process - do not show error, just return silently
         return;
       }
-      
+
       if (credential) {
-        // Use the loginWithApple method from AuthContext
         const result = await loginWithApple(
           credential.identityToken,
           credential.authorizationCode,
@@ -232,10 +183,9 @@ export default function Login() {
           credential.fullName,
           rememberMe
         );
-        
+
         if (result.success) {
           if (result.needsProfileCompletion) {
-            // Redirect to profile completion screen
             router.replace({
               pathname: "/auth/AppleProfileCompletion",
               params: {
@@ -244,340 +194,193 @@ export default function Login() {
             });
           } else {
             setIsNavigating(true);
-            
-            // Immediate navigation without delay
             router.replace("/(tabs)");
-            return; // Return early to prevent finally block from executing
+            return;
           }
         } else {
           showError(result.error || "Apple Sign In failed. Please try again.");
         }
       }
     } catch (error: any) {
-      console.error('🍎 [Login] Apple Sign In error:', error);
-      
-      // Handle different types of Apple Sign In errors
-      if (error.code === 'ERR_REQUEST_CANCELED') {
-        // User canceled - do not show error message
-        console.log('🍎 [Login] User canceled Apple Sign In');
+      if (error.code === "ERR_REQUEST_CANCELED") {
         return;
-      } else if (error.code === 'ERR_INVALID_RESPONSE') {
-        showError('Apple Sign In encountered an issue. Please try again.');
-      } else if (error.message?.includes('not available') || error.message?.includes('development build')) {
-        showError('Apple Sign In requires a development build. Please use "npx expo run:ios" or regular login for now.');
-      } else if (error.message?.includes('Dev Build Required')) {
-        showError('Apple Sign In is not supported in Expo Go. Please use regular login or create a development build.');
-      } else if (error.message?.includes('network')) {
-        showError('Network error during Apple Sign In. Please check your connection.');
-      } else {
-        // Generic fallback error
-        const errorMsg = error.message || 'Apple Sign In failed. Please try again or use regular login.';
-        showError(errorMsg);
       }
+      showError(
+        error.message || "Apple Sign In failed. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
   };
-  // Show full-screen loading only for navigation (success case)
+
   if (isNavigating) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#6366F1",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
+      <LinearGradient
+        colors={["#667eea", "#764ba2"]}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
-        <View
-          style={{
-            width: 100,
-            height: 100,
-            backgroundColor: "white",
-            borderRadius: 50,
-            justifyContent: "center",
-            alignItems: "center",
-            marginBottom: 20,
-          }}
-        >
-          <Ionicons name="shield-checkmark" size={60} color="#6366F1" />
+        <View style={styles.successContainer}>
+          <View style={styles.successIconContainer}>
+            <Ionicons name="shield-checkmark" size={60} color="white" />
+          </View>
+          <Typography variant="h2" style={styles.successTitle}>
+            Success!
+          </Typography>
+          <Typography variant="body" style={styles.successSubtitle}>
+            Loading your dashboard...
+          </Typography>
         </View>
-        <Typography
-          variant="h2"
-          style={{ color: "white", marginBottom: 10, textAlign: "center" }}
-        >
-          Success!
-        </Typography>
-        <Typography
-          variant="body"
-          style={{ color: "rgba(255,255,255,0.8)", textAlign: "center" }}
-        >
-          Loading your dashboard...
-        </Typography>
-      </View>
+      </LinearGradient>
     );
   }
 
   return (
-    <>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor={colors.background.primary}
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Gradient Background */}
+      <LinearGradient
+        colors={["#667eea", "#764ba2"]}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       />
-      <View
-        style={StyleSheet.flatten([
-          styles.container,
-          {
-            backgroundColor: colors.background.primary,
-          },
-        ])}
-      >
-        <SafeAreaView style={styles.safeArea}>
-          <KeyboardAvoidingView
-            style={styles.keyboardView}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
+
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <ScrollView
-              style={styles.scrollView}
-              contentContainerStyle={styles.scrollContent}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Clean Header Section */}
-              <View style={styles.header}>
-                <View
-                  style={StyleSheet.flatten([
-                    styles.logoContainer,
-                    { backgroundColor: colors.primary[500] },
-                  ])}
-                >
-                  <Ionicons name="wallet-outline" size={32} color="white" />
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.logoContainer}>
+                <View style={styles.logoCircle}>
+                  <Ionicons name="wallet" size={40} color="white" />
+                </View>
+              </View>
+              <Typography variant="h1" style={styles.title}>
+                Welcome Back
+              </Typography>
+              <Typography variant="body" style={styles.subtitle}>
+                Sign in to continue to Expenzez
+              </Typography>
+            </View>
+
+            {/* Glass Form Container */}
+            <BlurView intensity={40} tint="light" style={styles.glassCard}>
+              <View style={styles.formContent}>
+                {/* Username Field */}
+                <View style={styles.inputContainer}>
+                  <Typography variant="body" style={styles.inputLabel}>
+                    Username or Email
+                  </Typography>
+                  <TextField
+                    placeholder="Enter your username or email"
+                    value={identifier}
+                    onChangeText={setIdentifier}
+                    autoCapitalize="none"
+                    editable={!isLoading}
+                    style={styles.input}
+                  />
                 </View>
 
-                <Typography
-                  variant="h1"
-                  style={StyleSheet.flatten([
-                    styles.welcomeTitle,
-                    { color: colors.text.primary },
-                  ])}
-                  align="center"
-                >
-                  Welcome Back
-                </Typography>
-                <Typography
-                  variant="body"
-                  style={StyleSheet.flatten([
-                    styles.welcomeSubtitle,
-                    { color: colors.text.secondary },
-                  ])}
-                  align="center"
-                >
-                  Sign in to your account
-                </Typography>
-              </View>
+                {/* Password Field */}
+                <View style={styles.inputContainer}>
+                  <Typography variant="body" style={styles.inputLabel}>
+                    Password
+                  </Typography>
+                  <TextField
+                    placeholder="Enter your password"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={true}
+                    autoCapitalize="none"
+                    editable={!isLoading}
+                    style={styles.input}
+                  />
+                </View>
 
-              {/* Clean Login Form */}
-              <View
-                style={StyleSheet.flatten([
-                  styles.formContainer,
-                  { backgroundColor: colors.background.secondary },
-                ])}
-              >
-                <View style={styles.formContent}>
-
-                  {/* Clean Input Fields */}
-                  <View style={styles.inputContainer}>
-                    <Typography
-                      variant="body"
-                      style={StyleSheet.flatten([
-                        styles.inputLabel,
-                        { color: colors.text.primary },
-                      ])}
-                      weight="medium"
-                    >
-                      Username
-                    </Typography>
-                    <TextField
-                      placeholder="Enter your username"
-                      value={identifier}
-                      onChangeText={setIdentifier}
-                      autoCapitalize="none"
-                      editable={!isLoading}
-                      style={StyleSheet.flatten([
-                        styles.input,
-                        {
-                          backgroundColor: isLoading ? colors.background.secondary : colors.background.tertiary,
-                          borderColor: colors.border.medium,
-                          color: colors.text.primary,
-                          opacity: isLoading ? 0.6 : 1,
-                        },
-                      ])}
-                    />
-                    {/* Show helpful message when redirected from registration */}
-                    {(params.email || params.phone) && (
-                      <View
-                        style={StyleSheet.flatten([
-                          styles.redirectInfo,
-                          {
-                            backgroundColor: colors.success[50],
-                            borderColor: colors.success[200],
-                          },
-                        ])}
-                      >
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={16}
-                          color={colors.success[500]}
-                        />
-                        <Typography
-                          variant="caption"
-                          style={StyleSheet.flatten([
-                            styles.redirectText,
-                            { color: colors.success[700] },
-                          ])}
-                        >
-                          We found your account! Please enter your password to
-                          continue.
-                        </Typography>
-                      </View>
-                    )}
-                  </View>
-
-                  <View style={styles.inputContainer}>
-                    <Typography
-                      variant="body"
-                      style={StyleSheet.flatten([
-                        styles.inputLabel,
-                        { color: colors.text.primary },
-                      ])}
-                      weight="medium"
-                    >
-                      Password
-                    </Typography>
-                    <TextField
-                      placeholder="Enter your password"
-                      value={password}
-                      onChangeText={setPassword}
-                      secureTextEntry={true}
-                      autoCapitalize="none"
-                      editable={!isLoading}
-                      style={StyleSheet.flatten([
-                        styles.input,
-                        {
-                          backgroundColor: isLoading ? colors.background.secondary : colors.background.tertiary,
-                          borderColor: colors.border.medium,
-                          color: colors.text.primary,
-                          opacity: isLoading ? 0.6 : 1,
-                        },
-                      ])}
-                    />
-                  </View>
-
-                  {/* Remember Me Checkbox */}
-                  <View style={styles.checkboxContainer}>
-                    <RememberMeCheckbox
-                      value={rememberMe}
-                      onValueChange={setRememberMe}
-                      label="Remember me on this device"
-                    />
-                  </View>
-
-                  {/* Forgot Password */}
+                {/* Remember Me & Forgot Password Row */}
+                <View style={styles.optionsRow}>
+                  <RememberMeCheckbox
+                    value={rememberMe}
+                    onValueChange={setRememberMe}
+                    label="Remember me"
+                  />
                   <TouchableOpacity
-                    style={styles.forgotPassword}
                     onPress={() => router.push("/auth/ForgotPassword")}
                   >
-                    <Typography
-                      variant="body"
-                      style={{ color: colors.primary[500] }}
-                    >
-                      Forgot password?
+                    <Typography variant="body" style={styles.forgotText}>
+                      Forgot?
                     </Typography>
                   </TouchableOpacity>
+                </View>
 
-                  {/* Enhanced Login Button */}
-                  <View
-                    style={StyleSheet.flatten([
-                      styles.loginButton,
-                      {
-                        backgroundColor: isLoading ? colors.primary[300] : colors.primary[500],
-                      },
-                    ])}
-                  >
-                    <TouchableOpacity
-                      style={styles.loginButtonInner}
-                      onPress={handleLogin}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                          <Typography
-                            variant="body"
-                            weight="semibold"
-                            style={{ color: "white" }}
-                          >
-                            Signing in...
-                          </Typography>
-                        </View>
-                      ) : (
-                        <Typography
-                          variant="body"
-                          weight="semibold"
-                          style={{ color: "white" }}
-                        >
+                {/* Sign In Button */}
+                <TouchableOpacity
+                  style={styles.signInButton}
+                  onPress={handleLogin}
+                  disabled={isLoading}
+                  activeOpacity={0.9}
+                >
+                  <BlurView intensity={30} tint="light" style={styles.buttonBlur}>
+                    {isLoading ? (
+                      <Typography variant="body" style={styles.buttonText}>
+                        Signing in...
+                      </Typography>
+                    ) : (
+                      <>
+                        <Typography variant="body" style={styles.buttonText}>
                           Sign In
                         </Typography>
-                      )}
-                    </TouchableOpacity>
-                  </View>
+                        <Ionicons name="arrow-forward" size={20} color="white" />
+                      </>
+                    )}
+                  </BlurView>
+                </TouchableOpacity>
 
-                  {/* Apple Sign In */}
-                  <AppleSignInButton
-                    onPress={handleAppleLogin}
-                    type="sign-in"
-                    disabled={isLoading}
-                  />
-
-                  {/* Or Divider */}
-                  <View style={styles.dividerContainer}>
-                    <View style={[styles.dividerLine, { backgroundColor: colors.border.medium }]} />
-                    <Typography
-                      variant="caption"
-                      style={[styles.dividerText, { color: colors.text.secondary }]}
-                    >
-                      or
-                    </Typography>
-                    <View style={[styles.dividerLine, { backgroundColor: colors.border.medium }]} />
-                  </View>
-
-                  {/* Register Link */}
-                  <TouchableOpacity
-                    style={styles.registerLink}
-                    onPress={() => router.push("/auth/Register")}
-                  >
-                    <Typography
-                      variant="body"
-                      style={{ color: colors.text.secondary }}
-                      align="center"
-                    >
-                      New to Expenzez?{" "}
-                      <Typography
-                        variant="body"
-                        style={{ color: colors.primary[500] }}
-                        weight="semibold"
-                      >
-                        Create Account
-                      </Typography>
-                    </Typography>
-                  </TouchableOpacity>
-
+                {/* Divider */}
+                <View style={styles.dividerContainer}>
+                  <View style={styles.dividerLine} />
+                  <Typography variant="caption" style={styles.dividerText}>
+                    or
+                  </Typography>
+                  <View style={styles.dividerLine} />
                 </View>
+
+                {/* Apple Sign In */}
+                <AppleSignInButton
+                  onPress={handleAppleLogin}
+                  type="sign-in"
+                  disabled={isLoading}
+                />
+
+                {/* Register Link */}
+                <TouchableOpacity
+                  style={styles.registerLink}
+                  onPress={() => router.push("/auth/Register")}
+                >
+                  <Typography variant="body" style={styles.registerText}>
+                    New to Expenzez?{" "}
+                    <Typography variant="body" style={styles.registerTextBold}>
+                      Create Account
+                    </Typography>
+                  </Typography>
+                </TouchableOpacity>
               </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </SafeAreaView>
-      </View>
-    </>
+            </BlurView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -597,138 +400,160 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
-    paddingHorizontal: layout.screenPadding,
-    paddingVertical: spacing.lg,
+    paddingHorizontal: 30,
+    paddingVertical: 20,
   },
-
-  // Clean Header
   header: {
     alignItems: "center",
-    marginBottom: spacing.lg,
+    marginBottom: 30,
   },
   logoContainer: {
+    marginBottom: 20,
+  },
+  logoCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.lg,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
-  welcomeTitle: {
+  title: {
     fontSize: 32,
-    fontWeight: "bold",
-    marginBottom: spacing.sm,
+    fontWeight: "800",
+    color: "white",
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
-  welcomeSubtitle: {
+  subtitle: {
     fontSize: 16,
-    textAlign: "center",
-    maxWidth: "80%",
-    lineHeight: 22,
+    color: "rgba(255, 255, 255, 0.9)",
   },
-
-  // Clean Form
-  formContainer: {
-    borderRadius: borderRadius.lg,
+  glassCard: {
+    borderRadius: 30,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.3,
+    shadowRadius: 30,
+    elevation: 10,
   },
   formContent: {
-    padding: spacing.lg,
+    padding: 24,
   },
-
-  // Clean Inputs
   inputContainer: {
-    marginBottom: spacing.md,
+    marginBottom: 20,
   },
   inputLabel: {
-    marginBottom: spacing.xs,
+    color: "white",
+    marginBottom: 8,
     fontSize: 14,
+    fontWeight: "600",
   },
   input: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 16,
-    minHeight: layout.inputHeight,
+    color: "white",
+    minHeight: 50,
   },
-
-  // Remember Me Checkbox
-  checkboxContainer: {
-    marginBottom: spacing.sm,
-    paddingVertical: spacing.xs,
+  optionsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
   },
-
-  // Clean Buttons
-  forgotPassword: {
-    alignSelf: "flex-end",
-    marginBottom: spacing.md,
-    paddingVertical: spacing.xs,
+  forgotText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "600",
   },
-  loginButton: {
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
-    minHeight: layout.buttonHeight,
+  signInButton: {
+    borderRadius: 25,
+    overflow: "hidden",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+    marginBottom: 20,
   },
-  loginButtonInner: {
-    flex: 1,
+  buttonBlur: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: spacing.sm + 2,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+    gap: 10,
   },
-  registerLink: {
-    alignSelf: "center",
-    marginBottom: spacing.md,
-    paddingVertical: spacing.sm,
+  buttonText: {
+    color: "white",
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
-
-  // Divider Styles
   dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
   },
   dividerLine: {
     flex: 1,
     height: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
   },
   dividerText: {
-    marginHorizontal: spacing.md,
-    fontSize: 12,
-  },
-
-  // Redirect Info Styles
-  redirectInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: spacing.sm,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1,
-    marginTop: spacing.xs,
-    gap: spacing.xs,
-  },
-  redirectText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  errorBanner: {
-    padding: spacing.md,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1,
-    marginBottom: spacing.md,
-  },
-  errorBannerText: {
+    color: "rgba(255, 255, 255, 0.7)",
+    marginHorizontal: 16,
     fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
+  },
+  registerLink: {
+    alignItems: "center",
+    marginTop: 16,
+    paddingVertical: 8,
+  },
+  registerText: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 15,
+  },
+  registerTextBold: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  successContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  successIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    borderWidth: 3,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  successTitle: {
+    color: "white",
+    marginBottom: 10,
+    fontSize: 32,
+    fontWeight: "800",
+  },
+  successSubtitle: {
+    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: 16,
   },
 });
