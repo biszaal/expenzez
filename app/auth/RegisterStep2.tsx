@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity, Platform, StyleSheet, Modal } from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  Platform,
+  StyleSheet,
+  Modal,
+} from "react-native";
 import { Button, Typography } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
 import { spacing, borderRadius } from "../../constants/theme";
@@ -20,14 +26,38 @@ export default function RegisterStep2({
 }: any) {
   const { colors } = useTheme();
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [tempDate, setTempDate] = useState(values.dob ? new Date(values.dob) : new Date());
+  // Parse date from MM/DD/YYYY format or fallback to ISO format for backward compatibility
+  const parseDate = (dateString: string) => {
+    if (!dateString) return new Date();
+
+    console.log("🔍 [RegisterStep2] Parsing date:", dateString);
+
+    if (dateString.includes("/")) {
+      // MM/DD/YYYY format - parse manually to avoid timezone issues
+      const [month, day, year] = dateString.split("/").map(Number);
+      const parsedDate = new Date(year, month - 1, day); // month is 0-indexed
+      console.log("🔍 [RegisterStep2] Parsed MM/DD/YYYY:", parsedDate);
+      return parsedDate;
+    } else {
+      // ISO format (YYYY-MM-DD) - parse manually to avoid timezone issues
+      const [year, month, day] = dateString.split("-").map(Number);
+      const parsedDate = new Date(year, month - 1, day); // month is 0-indexed
+      console.log("🔍 [RegisterStep2] Parsed ISO:", parsedDate);
+      return parsedDate;
+    }
+  };
+
+  const [tempDate, setTempDate] = useState(
+    values.dob ? parseDate(values.dob) : new Date()
+  );
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       // On Android, automatically close and save
       const currentDate = selectedDate || tempDate;
       setShowDatePicker(false);
-      const formattedDate = currentDate.toISOString().split('T')[0];
+      // Format date as ISO (YYYY-MM-DD) for backend validation
+      const formattedDate = currentDate.toISOString().split("T")[0];
       onChange("dob", formattedDate);
     } else {
       // On iOS, just update the temp date, don't close picker
@@ -39,14 +69,15 @@ export default function RegisterStep2({
 
   const handleDateConfirm = () => {
     // Save the selected date
-    const formattedDate = tempDate.toISOString().split('T')[0];
+    // Format date as ISO (YYYY-MM-DD) for backend validation
+    const formattedDate = tempDate.toISOString().split("T")[0];
     onChange("dob", formattedDate);
     setShowDatePicker(false);
   };
 
   const handleDateCancel = () => {
     // Reset to original date and close
-    setTempDate(values.dob ? new Date(values.dob) : new Date());
+    setTempDate(values.dob ? parseDate(values.dob) : new Date());
     setShowDatePicker(false);
   };
 
@@ -57,7 +88,8 @@ export default function RegisterStep2({
     onNext();
   };
 
-  const selectedDate = values.dob ? new Date(values.dob) : new Date();
+  // Parse date from MM/DD/YYYY format or fallback to ISO format for backward compatibility
+  const selectedDate = values.dob ? parseDate(values.dob) : new Date();
   const maxDate = new Date();
   maxDate.setFullYear(maxDate.getFullYear() - 13); // Minimum age 13
   const minDate = new Date();
@@ -73,62 +105,177 @@ export default function RegisterStep2({
     <View style={styles.container}>
       {/* Clean Progress Indicator */}
       <View style={styles.progressContainer}>
-        <View style={StyleSheet.flatten([styles.progressStep, styles.completedStep, { backgroundColor: colors.background.tertiary, borderColor: '#8B5CF6' }])}>
+        <View
+          style={StyleSheet.flatten([
+            styles.progressStep,
+            styles.completedStep,
+            {
+              backgroundColor: colors.background.tertiary,
+              borderColor: "#8B5CF6",
+            },
+          ])}
+        >
           <Ionicons name="checkmark" size={16} color="#8B5CF6" />
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: '#8B5CF6' }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, styles.activeStep, { backgroundColor: '#8B5CF6' }])}>
-          <Typography variant="caption" style={styles.activeStepText}>2</Typography>
+        <View
+          style={StyleSheet.flatten([
+            styles.progressLine,
+            { backgroundColor: "#8B5CF6" },
+          ])}
+        />
+        <View
+          style={StyleSheet.flatten([
+            styles.progressStep,
+            styles.activeStep,
+            { backgroundColor: "#8B5CF6" },
+          ])}
+        >
+          <Typography variant="caption" style={styles.activeStepText}>
+            2
+          </Typography>
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
-          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>3</Typography>
+        <View
+          style={StyleSheet.flatten([
+            styles.progressLine,
+            { backgroundColor: colors.border.medium },
+          ])}
+        />
+        <View
+          style={StyleSheet.flatten([
+            styles.progressStep,
+            { backgroundColor: colors.background.tertiary },
+          ])}
+        >
+          <Typography
+            variant="caption"
+            style={StyleSheet.flatten([
+              styles.stepText,
+              { color: colors.text.tertiary },
+            ])}
+          >
+            3
+          </Typography>
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
-          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>4</Typography>
+        <View
+          style={StyleSheet.flatten([
+            styles.progressLine,
+            { backgroundColor: colors.border.medium },
+          ])}
+        />
+        <View
+          style={StyleSheet.flatten([
+            styles.progressStep,
+            { backgroundColor: colors.background.tertiary },
+          ])}
+        >
+          <Typography
+            variant="caption"
+            style={StyleSheet.flatten([
+              styles.stepText,
+              { color: colors.text.tertiary },
+            ])}
+          >
+            4
+          </Typography>
         </View>
-        <View style={StyleSheet.flatten([styles.progressLine, { backgroundColor: colors.border.medium }])} />
-        <View style={StyleSheet.flatten([styles.progressStep, { backgroundColor: colors.background.tertiary }])}>
-          <Typography variant="caption" style={StyleSheet.flatten([styles.stepText, { color: colors.text.tertiary }])}>5</Typography>
+        <View
+          style={StyleSheet.flatten([
+            styles.progressLine,
+            { backgroundColor: colors.border.medium },
+          ])}
+        />
+        <View
+          style={StyleSheet.flatten([
+            styles.progressStep,
+            { backgroundColor: colors.background.tertiary },
+          ])}
+        >
+          <Typography
+            variant="caption"
+            style={StyleSheet.flatten([
+              styles.stepText,
+              { color: colors.text.tertiary },
+            ])}
+          >
+            5
+          </Typography>
         </View>
       </View>
 
       {/* Clean Header */}
       <View style={styles.header}>
-        <Typography variant="h2" style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])}>
+        <Typography
+          variant="h2"
+          style={StyleSheet.flatten([
+            styles.title,
+            { color: colors.text.primary },
+          ])}
+        >
           Personal Details
         </Typography>
-        <Typography variant="body" style={StyleSheet.flatten([styles.subtitle, { color: colors.text.secondary }])}>
+        <Typography
+          variant="body"
+          style={StyleSheet.flatten([
+            styles.subtitle,
+            { color: colors.text.secondary },
+          ])}
+        >
           Tell us about yourself
         </Typography>
       </View>
 
       {/* Clean Form Fields */}
       <View style={styles.formFields}>
-
         {/* Date of Birth */}
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
+          <Typography
+            variant="body"
+            style={StyleSheet.flatten([
+              styles.inputLabel,
+              { color: colors.text.primary },
+            ])}
+            weight="medium"
+          >
             Date of Birth
           </Typography>
           <TouchableOpacity
             onPress={openDatePicker}
-            style={StyleSheet.flatten([styles.dateInput, {
-              backgroundColor: colors.background.tertiary,
-              borderColor: colors.border.medium,
-            }])}
+            style={StyleSheet.flatten([
+              styles.dateInput,
+              {
+                backgroundColor: colors.background.tertiary,
+                borderColor: colors.border.medium,
+              },
+            ])}
           >
-            <Typography variant="body" style={{ color: values.dob ? colors.text.primary : colors.text.tertiary }}>
-              {values.dob ? selectedDate.toLocaleDateString() : "Select your date of birth"}
+            <Typography
+              variant="body"
+              style={{
+                color: values.dob ? colors.text.primary : colors.text.tertiary,
+              }}
+            >
+              {values.dob
+                ? selectedDate.toLocaleDateString()
+                : "Select your date of birth"}
             </Typography>
-            <Ionicons name="calendar-outline" size={20} color={colors.text.secondary} />
+            <Ionicons
+              name="calendar-outline"
+              size={20}
+              color={colors.text.secondary}
+            />
           </TouchableOpacity>
         </View>
 
         {/* Gender Selection */}
         <View style={styles.inputContainer}>
-          <Typography variant="body" style={StyleSheet.flatten([styles.inputLabel, { color: colors.text.primary }])} weight="medium">
+          <Typography
+            variant="body"
+            style={StyleSheet.flatten([
+              styles.inputLabel,
+              { color: colors.text.primary },
+            ])}
+            weight="medium"
+          >
             Gender
           </Typography>
           <View style={styles.genderContainer}>
@@ -136,26 +283,39 @@ export default function RegisterStep2({
               <TouchableOpacity
                 key={option.value}
                 onPress={() => onChange("gender", option.value)}
-                style={StyleSheet.flatten([styles.genderOption, {
-                  backgroundColor: values.gender === option.value 
-                    ? '#8B5CF6' 
-                    : colors.background.tertiary,
-                  borderColor: values.gender === option.value 
-                    ? '#8B5CF6' 
-                    : colors.border.medium,
-                }])}
+                style={StyleSheet.flatten([
+                  styles.genderOption,
+                  {
+                    backgroundColor:
+                      values.gender === option.value
+                        ? "#8B5CF6"
+                        : colors.background.tertiary,
+                    borderColor:
+                      values.gender === option.value
+                        ? "#8B5CF6"
+                        : colors.border.medium,
+                  },
+                ])}
               >
-                <Ionicons 
-                  name={option.icon as any} 
-                  size={24} 
-                  color={values.gender === option.value ? 'white' : colors.text.secondary}
+                <Ionicons
+                  name={option.icon as any}
+                  size={24}
+                  color={
+                    values.gender === option.value
+                      ? "white"
+                      : colors.text.secondary
+                  }
                   style={styles.genderIcon}
                 />
-                <Typography 
-                  variant="body" 
+                <Typography
+                  variant="body"
                   style={{
-                    color: values.gender === option.value ? 'white' : colors.text.primary,
-                    fontWeight: values.gender === option.value ? '600' : 'normal'
+                    color:
+                      values.gender === option.value
+                        ? "white"
+                        : colors.text.primary,
+                    fontWeight:
+                      values.gender === option.value ? "600" : "normal",
                   }}
                   align="center"
                 >
@@ -169,41 +329,71 @@ export default function RegisterStep2({
 
       {/* Navigation Buttons */}
       <View style={styles.buttonContainer}>
-        <Button 
-          title="Back" 
-          onPress={onBack} 
-          style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.tertiary, borderColor: colors.border.medium }])}
+        <Button
+          title="Back"
+          onPress={onBack}
+          style={StyleSheet.flatten([
+            styles.backButton,
+            {
+              backgroundColor: colors.background.tertiary,
+              borderColor: colors.border.medium,
+            },
+          ])}
           textStyle={{ color: colors.text.primary }}
         />
-        <Button 
-          title="Continue" 
+        <Button
+          title="Continue"
           onPress={handleNext}
-          style={StyleSheet.flatten([styles.continueButton, { backgroundColor: '#8B5CF6' }])}
+          style={StyleSheet.flatten([
+            styles.continueButton,
+            { backgroundColor: "#8B5CF6" },
+          ])}
           disabled={!values.dob || !values.gender}
         />
       </View>
 
       {/* Date Picker Modal */}
-      {showDatePicker && Platform.OS === 'ios' && (
+      {showDatePicker && Platform.OS === "ios" && (
         <Modal
           visible={showDatePicker}
           transparent={true}
           animationType="slide"
         >
           <View style={styles.modalOverlay}>
-            <View style={StyleSheet.flatten([styles.modalContent, { backgroundColor: colors.background.primary }])}>
+            <View
+              style={StyleSheet.flatten([
+                styles.modalContent,
+                { backgroundColor: colors.background.primary },
+              ])}
+            >
               {/* Modal Header */}
-              <View style={StyleSheet.flatten([styles.modalHeader, { borderBottomColor: colors.border.light }])}>
+              <View
+                style={StyleSheet.flatten([
+                  styles.modalHeader,
+                  { borderBottomColor: colors.border.light },
+                ])}
+              >
                 <TouchableOpacity onPress={handleDateCancel}>
-                  <Typography variant="body" style={{ color: colors.primary.main }}>
+                  <Typography
+                    variant="body"
+                    style={{ color: colors.primary.main }}
+                  >
                     Cancel
                   </Typography>
                 </TouchableOpacity>
-                <Typography variant="body" style={{ color: colors.text.primary }} weight="medium">
+                <Typography
+                  variant="body"
+                  style={{ color: colors.text.primary }}
+                  weight="medium"
+                >
                   Select Date
                 </Typography>
                 <TouchableOpacity onPress={handleDateConfirm}>
-                  <Typography variant="body" style={{ color: colors.primary.main }} weight="medium">
+                  <Typography
+                    variant="body"
+                    style={{ color: colors.primary.main }}
+                    weight="medium"
+                  >
                     Done
                   </Typography>
                 </TouchableOpacity>
@@ -227,7 +417,7 @@ export default function RegisterStep2({
       )}
 
       {/* Android Date Picker */}
-      {showDatePicker && Platform.OS === 'android' && (
+      {showDatePicker && Platform.OS === "android" && (
         <DateTimePicker
           testID="dateTimePicker"
           value={tempDate}
@@ -249,9 +439,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   progressContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: spacing.xl,
     paddingHorizontal: spacing.md,
   },
@@ -259,14 +449,14 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   completedStep: {
     borderWidth: 2,
   },
   activeStep: {
-    shadowColor: '#8B5CF6',
+    shadowColor: "#8B5CF6",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -279,26 +469,26 @@ const styles = StyleSheet.create({
   },
   stepText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   activeStepText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: 'white',
+    fontWeight: "600",
+    color: "white",
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: spacing.xl,
     paddingHorizontal: spacing.md,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
   },
   formFields: {
@@ -317,14 +507,14 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     minHeight: 44,
   },
   genderContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   genderOption: {
     flex: 1,
@@ -333,16 +523,16 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: 80,
   },
   genderIcon: {
     marginBottom: spacing.sm,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     marginTop: spacing.lg,
     gap: spacing.md,
@@ -362,18 +552,18 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '50%',
+    maxHeight: "50%",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
