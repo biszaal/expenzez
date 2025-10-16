@@ -112,18 +112,6 @@ export default function WelcomeOnboarding() {
       />
 
       <SafeAreaView style={styles.safeArea}>
-        {/* Skip Button */}
-        {currentIndex < onboardingData.length - 1 && (
-          <TouchableOpacity
-            style={styles.skipButton}
-            onPress={handleSkip}
-            activeOpacity={0.6}
-          >
-            <Text style={styles.skipText}>Skip</Text>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255, 255, 255, 0.9)" />
-          </TouchableOpacity>
-        )}
-
         {/* Animated Scrollable Cards */}
         <Animated.ScrollView
           ref={scrollViewRef}
@@ -239,21 +227,35 @@ export default function WelcomeOnboarding() {
             })}
           </View>
 
-          {/* Action Button */}
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleNext}
-            activeOpacity={0.9}
-          >
-            <BlurView intensity={30} tint="light" style={styles.buttonBlur}>
-              <Text style={styles.buttonText}>
-                {currentIndex === onboardingData.length - 1
-                  ? "Get Started"
-                  : "Continue"}
-              </Text>
-              <Ionicons name="arrow-forward" size={20} color="white" />
-            </BlurView>
-          </TouchableOpacity>
+          {/* Action Buttons */}
+          <View style={styles.actionRow}>
+            {currentIndex < onboardingData.length - 1 && (
+              <TouchableOpacity
+                style={styles.skipButton}
+                onPress={handleSkip}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.skipText}>Skip</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                currentIndex === onboardingData.length - 1 && styles.actionButtonFull,
+              ]}
+              onPress={handleNext}
+              activeOpacity={0.9}
+            >
+              <BlurView intensity={30} tint="light" style={styles.buttonBlur}>
+                <Text style={styles.buttonText}>
+                  {currentIndex === onboardingData.length - 1
+                    ? "Get Started"
+                    : "Continue"}
+                </Text>
+                <Ionicons name="arrow-forward" size={20} color="white" />
+              </BlurView>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -268,18 +270,18 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  skipButton: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? 60 : 20,
-    right: 24,
-    zIndex: 10,
+  actionRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 12,
+  },
+  skipButton: {
+    paddingVertical: 18,
+    paddingHorizontal: 24,
   },
   skipText: {
-    color: "rgba(255, 255, 255, 0.9)",
-    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 17,
     fontWeight: "600",
   },
   cardContainer: {
@@ -358,6 +360,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   actionButton: {
+    flex: 1,
     borderRadius: 25,
     overflow: "hidden",
     shadowColor: "#000",
@@ -365,6 +368,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
+  },
+  actionButtonFull: {
+    flex: 0,
+    alignSelf: "stretch",
   },
   buttonBlur: {
     flexDirection: "row",
