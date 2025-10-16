@@ -5,7 +5,7 @@ import { AppState, Text, View, StatusBar } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import * as Linking from "expo-linking";
-import { useSegments, useRouter } from "expo-router";
+import { useSegments } from "expo-router";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
@@ -14,8 +14,7 @@ import { NetworkProvider } from "../contexts/NetworkContext";
 import { RevenueCatProvider } from "../contexts/RevenueCatContext";
 import { SubscriptionProvider } from "../contexts/SubscriptionContext";
 import BiometricSecurityLock from "../components/BiometricSecurityLock";
-import { AppLoadingScreen } from "../components/ui/AppLoadingScreen";
-import PinSetupScreen from "./auth/PinSetup";
+import SplashScreen from "./SplashScreen";
 
 // Global error handlers to catch crashes
 if (typeof global !== "undefined" && (global as any).ErrorUtils) {
@@ -273,21 +272,9 @@ function RootLayoutNav() {
 
   if (isLoading || loading || !securityInitialized) {
     console.log(
-      `🔄 [Layout] Showing loading screen: isLoading=${isLoading}, loading=${loading}, securityInitialized=${securityInitialized}`
+      `🔄 [Layout] Showing beautiful splash screen: isLoading=${isLoading}, loading=${loading}, securityInitialized=${securityInitialized}`
     );
-    const message = !securityInitialized
-      ? "Initializing security..."
-      : "Setting up your account...";
-    return (
-      <>
-        <StatusBar
-          barStyle={isDark ? "light-content" : "dark-content"}
-          backgroundColor="transparent"
-          translucent={true}
-        />
-        <AppLoadingScreen message={message} />
-      </>
-    );
+    return <SplashScreen />;
   }
 
   // PIN is now optional - no mandatory setup screen needed
@@ -336,25 +323,25 @@ function RootLayoutNav() {
   let initialRoute;
   let userType;
 
-         if (shouldTreatAsLoggedIn) {
-           // 🟢 LOGGED IN USER
-           userType = "LOGGED_IN";
-           initialRoute = "(tabs)"; // Go directly to main app
-         } else if (onboardingStatusChecked) {
-           if (hasCompletedOnboarding) {
-             // 🟡 RETURNING USER (not logged in, but has seen onboarding)
-             userType = "RETURNING_USER";
-             initialRoute = "auth/Login"; // Go directly to login
-           } else {
-             // 🔴 NEW USER (never used the app)
-             userType = "NEW_USER";
-             initialRoute = "WelcomeOnboarding"; // Start with onboarding
-           }
-         } else {
-           // 🟠 LOADING STATE (still checking user status)
-           userType = "LOADING";
-           initialRoute = "SplashScreen"; // Show beautiful splash while determining status
-         }
+  if (shouldTreatAsLoggedIn) {
+    // 🟢 LOGGED IN USER
+    userType = "LOGGED_IN";
+    initialRoute = "(tabs)"; // Go directly to main app
+  } else if (onboardingStatusChecked) {
+    if (hasCompletedOnboarding) {
+      // 🟡 RETURNING USER (not logged in, but has seen onboarding)
+      userType = "RETURNING_USER";
+      initialRoute = "auth/Login"; // Go directly to login
+    } else {
+      // 🔴 NEW USER (never used the app)
+      userType = "NEW_USER";
+      initialRoute = "WelcomeOnboarding"; // Start with onboarding
+    }
+  } else {
+    // 🟠 LOADING STATE (still checking user status)
+    userType = "LOADING";
+    initialRoute = "SplashScreen"; // Show beautiful splash while determining status
+  }
 
   console.log("🎯 [Layout] Navigation Decision:", {
     userType,
