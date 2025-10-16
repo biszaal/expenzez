@@ -157,7 +157,16 @@ function RootLayoutNav() {
       }
     };
 
-    checkOnboardingStatus();
+    // Add a timeout to prevent slow AsyncStorage operations
+    const timeout = setTimeout(() => {
+      console.log("⏰ [Layout] Onboarding check timeout - defaulting to not completed");
+      setHasCompletedOnboarding(false);
+      setOnboardingStatusChecked(true);
+    }, 1000); // 1 second timeout for AsyncStorage
+
+    checkOnboardingStatus().finally(() => {
+      clearTimeout(timeout);
+    });
   }, []);
 
   useEffect(() => {
@@ -173,13 +182,27 @@ function RootLayoutNav() {
     }
   }, [loading, onboardingStatusChecked]);
 
+  // Add immediate loading completion for faster navigation
+  useEffect(() => {
+    const quickTimeout = setTimeout(() => {
+      if (onboardingStatusChecked) {
+        console.log("🚀 [Layout] Quick navigation - completing loading immediately");
+        setIsLoading(false);
+      }
+    }, 500); // Very quick timeout for immediate navigation
+    
+    return () => clearTimeout(quickTimeout);
+  }, [onboardingStatusChecked]);
+
   // Add a timeout to prevent getting stuck on splash screen
   useEffect(() => {
     const timeout = setTimeout(() => {
-      console.log("🎯 [Layout] Loading timeout - forcing navigation after 3 seconds");
+      console.log(
+        "🎯 [Layout] Loading timeout - forcing navigation after 1.5 seconds"
+      );
       setIsLoading(false);
-    }, 3000); // 3 second timeout
-    
+    }, 1500); // 1.5 second timeout for faster navigation
+
     return () => clearTimeout(timeout);
   }, []);
 
@@ -293,6 +316,13 @@ function RootLayoutNav() {
   const currentRoute = segments.join("/");
   const isOnSecurityPage = currentRoute.includes("security");
 
+  // ========================================
+  // PROPER NAVIGATION LOGIC
+  // ========================================
+
+  // Step 1: Determine if user is logged in
+  const shouldTreatAsLoggedIn = isLoggedIn || hasValidSession;
+
   // Show security lock if app is locked, but NOT if user is trying to access security settings
   console.log("🔐 [Layout] Security check:", {
     isLoggedIn,
@@ -300,10 +330,13 @@ function RootLayoutNav() {
     isSecurityEnabled,
     currentRoute,
     isOnSecurityPage,
+    shouldTreatAsLoggedIn,
+    hasValidSession,
   });
 
   // Show security lock if app is locked - this takes priority over everything
-  if (isLoggedIn && isLocked && !isOnSecurityPage) {
+  // BUT only if user is actually logged in and not on security pages
+  if (shouldTreatAsLoggedIn && isLocked && !isOnSecurityPage) {
     console.log("🔐 [Layout] App is LOCKED - showing PIN screen ONLY");
     return (
       <>
@@ -321,13 +354,6 @@ function RootLayoutNav() {
       </>
     );
   }
-
-  // ========================================
-  // PROPER NAVIGATION LOGIC
-  // ========================================
-
-  // Step 1: Determine if user is logged in
-  const shouldTreatAsLoggedIn = isLoggedIn || hasValidSession;
 
   // Step 2: Determine user type and appropriate route
   let initialRoute;
