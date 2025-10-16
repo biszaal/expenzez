@@ -138,8 +138,8 @@ const styles = StyleSheet.create({
   logoBackground: {
     width: 180,
     height: 180,
-    borderRadius: 90,
-    backgroundColor: "rgba(255,255,255,0.3)",
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,1)",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
