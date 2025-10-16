@@ -110,11 +110,11 @@ export default function SplashScreen() {
         <View style={styles.logoContainer}>
           <BlurView intensity={20} style={styles.glassBackground}>
             <View style={styles.glassInner}>
-              <Image
-                source={require("../assets/images/transparent-logo.png")}
-                style={styles.logoImage}
-                resizeMode="contain"
-              />
+                <Image
+                  source={require("../assets/images/icon.png")}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
             </View>
           </BlurView>
         </View>
