@@ -114,17 +114,14 @@ export default function WelcomeOnboarding() {
       <SafeAreaView style={styles.safeArea}>
         {/* Skip Button */}
         {currentIndex < onboardingData.length - 1 && (
-          <View style={styles.skipButton}>
-            <BlurView intensity={25} tint="light" style={styles.skipContainer}>
-              <TouchableOpacity
-                onPress={handleSkip}
-                activeOpacity={0.7}
-                style={styles.skipTouchable}
-              >
-                <Text style={styles.skipText}>Skip</Text>
-              </TouchableOpacity>
-            </BlurView>
-          </View>
+          <TouchableOpacity
+            style={styles.skipButton}
+            onPress={handleSkip}
+            activeOpacity={0.6}
+          >
+            <Text style={styles.skipText}>Skip</Text>
+            <Ionicons name="chevron-forward" size={16} color="rgba(255, 255, 255, 0.9)" />
+          </TouchableOpacity>
         )}
 
         {/* Animated Scrollable Cards */}
@@ -274,29 +271,15 @@ const styles = StyleSheet.create({
   skipButton: {
     position: "absolute",
     top: Platform.OS === "ios" ? 60 : 20,
-    right: 20,
+    right: 24,
     zIndex: 10,
-    borderRadius: 20,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  skipContainer: {
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-  },
-  skipTouchable: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   skipText: {
-    color: "white",
-    fontSize: 15,
+    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: 16,
     fontWeight: "600",
   },
   cardContainer: {
