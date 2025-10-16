@@ -159,7 +159,9 @@ function RootLayoutNav() {
 
     // Add a timeout to prevent slow AsyncStorage operations
     const timeout = setTimeout(() => {
-      console.log("⏰ [Layout] Onboarding check timeout - defaulting to not completed");
+      console.log(
+        "⏰ [Layout] Onboarding check timeout - defaulting to not completed"
+      );
       setHasCompletedOnboarding(false);
       setOnboardingStatusChecked(true);
     }, 1000); // 1 second timeout for AsyncStorage
@@ -186,11 +188,13 @@ function RootLayoutNav() {
   useEffect(() => {
     const quickTimeout = setTimeout(() => {
       if (onboardingStatusChecked) {
-        console.log("🚀 [Layout] Quick navigation - completing loading immediately");
+        console.log(
+          "🚀 [Layout] Quick navigation - completing loading immediately"
+        );
         setIsLoading(false);
       }
     }, 500); // Very quick timeout for immediate navigation
-    
+
     return () => clearTimeout(quickTimeout);
   }, [onboardingStatusChecked]);
 
@@ -198,12 +202,25 @@ function RootLayoutNav() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       console.log(
-        "🎯 [Layout] Loading timeout - forcing navigation after 1.5 seconds"
+        "🎯 [Layout] Loading timeout - forcing navigation after 1 second"
       );
       setIsLoading(false);
-    }, 1500); // 1.5 second timeout for faster navigation
+    }, 1000); // 1 second timeout for faster navigation
 
     return () => clearTimeout(timeout);
+  }, []);
+
+  // Add an even more aggressive timeout to prevent getting stuck
+  useEffect(() => {
+    const aggressiveTimeout = setTimeout(() => {
+      console.log(
+        "🚨 [Layout] AGGRESSIVE TIMEOUT - Force completing all loading states"
+      );
+      setIsLoading(false);
+      setOnboardingStatusChecked(true);
+    }, 2000); // 2 second aggressive timeout
+
+    return () => clearTimeout(aggressiveTimeout);
   }, []);
 
   // PIN setup is now optional - no mandatory setup required
@@ -303,9 +320,10 @@ function RootLayoutNav() {
     return () => subscription?.remove();
   }, [auth]);
 
-  if (isLoading || loading || !securityInitialized) {
+  // Simplified loading condition - only show splash if actually loading
+  if (isLoading) {
     console.log(
-      `🔄 [Layout] Showing beautiful splash screen: isLoading=${isLoading}, loading=${loading}, securityInitialized=${securityInitialized}`
+      `🔄 [Layout] Showing beautiful splash screen: isLoading=${isLoading}`
     );
     return <SplashScreen />;
   }
