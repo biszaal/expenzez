@@ -41,8 +41,7 @@ export default function SplashScreen() {
       }),
     ]).start();
 
-    // Let the main navigation handle routing - don't auto-navigate from splash
-    // The _layout.tsx will handle the proper navigation flow
+    // Don't auto-navigate - let the parent component handle navigation
   }, []);
 
   return (
