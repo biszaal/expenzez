@@ -348,7 +348,7 @@ function RootLayoutNav() {
            } else {
              // 🔴 NEW USER (never used the app)
              userType = "NEW_USER";
-             initialRoute = "SplashScreen"; // Start with beautiful splash screen
+             initialRoute = "WelcomeOnboarding"; // Start with onboarding
            }
          } else {
            // 🟠 LOADING STATE (still checking user status)
@@ -384,12 +384,12 @@ function RootLayoutNav() {
         backgroundColor="transparent"
         translucent={true}
       />
-             <Stack
-               screenOptions={{ headerShown: false }}
-               initialRouteName={initialRoute}
-             >
-               <Stack.Screen name="SplashScreen" options={{ headerShown: false }} />
-               <Stack.Screen name="WelcomeOnboarding" />
+      <Stack
+        screenOptions={{ headerShown: false }}
+        initialRouteName={initialRoute}
+      >
+        <Stack.Screen name="SplashScreen" options={{ headerShown: false }} />
+        <Stack.Screen name="WelcomeOnboarding" />
         <Stack.Screen name="auth/Login" />
         <Stack.Screen name="auth/Register" />
         <Stack.Screen name="(tabs)" />
