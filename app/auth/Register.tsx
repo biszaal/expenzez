@@ -87,6 +87,12 @@ export default function Register() {
 
     // CRITICAL: Ensure birthdate is EXACTLY 10 characters in YYYY-MM-DD format for AWS Cognito
     if (submitValues.dob) {
+      console.log("🔍 [Register] Original birthdate received:", {
+        value: submitValues.dob,
+        length: submitValues.dob.length,
+        type: typeof submitValues.dob
+      });
+      
       // Remove any timestamp portion if present (T00:00:00.000Z)
       const dateOnly = submitValues.dob.split('T')[0];
 

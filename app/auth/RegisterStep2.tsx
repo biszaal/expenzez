@@ -73,6 +73,7 @@ export default function RegisterStep2({
       // Format as YYYY-MM-DD (EXACTLY 10 characters for AWS Cognito)
       const formattedDate = formatDateForCognito(currentDate);
       console.log("📅 [RegisterStep2] Android - Setting date:", formattedDate);
+      console.log("📅 [RegisterStep2] Android - Date length:", formattedDate.length);
       onChange("dob", formattedDate);
     } else {
       // On iOS, just update the temp date, don't close picker
@@ -86,6 +87,7 @@ export default function RegisterStep2({
     // Format as YYYY-MM-DD (EXACTLY 10 characters for AWS Cognito)
     const formattedDate = formatDateForCognito(tempDate);
     console.log("📅 [RegisterStep2] iOS - Setting date:", formattedDate);
+    console.log("📅 [RegisterStep2] iOS - Date length:", formattedDate.length);
     onChange("dob", formattedDate);
     setShowDatePicker(false);
   };
