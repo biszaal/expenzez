@@ -18,6 +18,16 @@ const genderOptions = [
   { label: "Other", value: "other", icon: "person" },
 ];
 
+// Helper function to format date as YYYY-MM-DD (EXACTLY 10 characters for AWS Cognito)
+const formatDateForCognito = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const formatted = `${year}-${month}-${day}`;
+  console.log("📅 [RegisterStep2] Formatted date:", { original: date, formatted, length: formatted.length });
+  return formatted;
+};
+
 export default function RegisterStep2({
   values,
   onChange,
@@ -26,21 +36,25 @@ export default function RegisterStep2({
 }: any) {
   const { colors } = useTheme();
   const [showDatePicker, setShowDatePicker] = useState(false);
-  // Parse date from MM/DD/YYYY format or fallback to ISO format for backward compatibility
+
+  // Parse date from string format - handles both ISO (YYYY-MM-DD) and MM/DD/YYYY
   const parseDate = (dateString: string) => {
     if (!dateString) return new Date();
 
     console.log("🔍 [RegisterStep2] Parsing date:", dateString);
 
-    if (dateString.includes("/")) {
+    // Remove any timestamp portion if present (T00:00:00.000Z)
+    const dateOnly = dateString.split('T')[0];
+
+    if (dateOnly.includes("/")) {
       // MM/DD/YYYY format - parse manually to avoid timezone issues
-      const [month, day, year] = dateString.split("/").map(Number);
+      const [month, day, year] = dateOnly.split("/").map(Number);
       const parsedDate = new Date(year, month - 1, day); // month is 0-indexed
       console.log("🔍 [RegisterStep2] Parsed MM/DD/YYYY:", parsedDate);
       return parsedDate;
     } else {
       // ISO format (YYYY-MM-DD) - parse manually to avoid timezone issues
-      const [year, month, day] = dateString.split("-").map(Number);
+      const [year, month, day] = dateOnly.split("-").map(Number);
       const parsedDate = new Date(year, month - 1, day); // month is 0-indexed
       console.log("🔍 [RegisterStep2] Parsed ISO:", parsedDate);
       return parsedDate;
@@ -56,8 +70,9 @@ export default function RegisterStep2({
       // On Android, automatically close and save
       const currentDate = selectedDate || tempDate;
       setShowDatePicker(false);
-      // Format date as ISO (YYYY-MM-DD) for backend validation
-      const formattedDate = currentDate.toISOString().split("T")[0];
+      // Format as YYYY-MM-DD (EXACTLY 10 characters for AWS Cognito)
+      const formattedDate = formatDateForCognito(currentDate);
+      console.log("📅 [RegisterStep2] Android - Setting date:", formattedDate);
       onChange("dob", formattedDate);
     } else {
       // On iOS, just update the temp date, don't close picker
@@ -68,9 +83,9 @@ export default function RegisterStep2({
   };
 
   const handleDateConfirm = () => {
-    // Save the selected date
-    // Format date as ISO (YYYY-MM-DD) for backend validation
-    const formattedDate = tempDate.toISOString().split("T")[0];
+    // Format as YYYY-MM-DD (EXACTLY 10 characters for AWS Cognito)
+    const formattedDate = formatDateForCognito(tempDate);
+    console.log("📅 [RegisterStep2] iOS - Setting date:", formattedDate);
     onChange("dob", formattedDate);
     setShowDatePicker(false);
   };
@@ -97,7 +112,7 @@ export default function RegisterStep2({
 
   // Update tempDate when showDatePicker is opened
   const openDatePicker = () => {
-    setTempDate(values.dob ? new Date(values.dob) : new Date());
+    setTempDate(values.dob ? parseDate(values.dob) : new Date());
     setShowDatePicker(true);
   };
 

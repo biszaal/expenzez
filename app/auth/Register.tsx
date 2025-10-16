@@ -85,6 +85,30 @@ export default function Register() {
       return;
     }
 
+    // CRITICAL: Ensure birthdate is EXACTLY 10 characters in YYYY-MM-DD format for AWS Cognito
+    if (submitValues.dob) {
+      // Remove any timestamp portion if present (T00:00:00.000Z)
+      const dateOnly = submitValues.dob.split('T')[0];
+
+      // Validate format is YYYY-MM-DD (10 characters exactly)
+      if (dateOnly.length !== 10 || !/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
+        console.error("❌ [Register] Invalid birthdate format:", {
+          original: submitValues.dob,
+          dateOnly,
+          length: dateOnly.length
+        });
+        showError("Invalid date format. Please select your date of birth again.");
+        return;
+      }
+
+      // Update with date-only format
+      submitValues.dob = dateOnly;
+      console.log("✅ [Register] Birthdate validated and formatted:", {
+        value: submitValues.dob,
+        length: submitValues.dob.length
+      });
+    }
+
     // DEBUG: Log all values before submission
     console.log("🔍 [Register] ALL VALUES:", submitValues);
     console.log("🔍 [Register] Phone number specifically:", {
@@ -109,6 +133,7 @@ export default function Register() {
       hasPassword: !!submitValues.password,
       passwordLength: submitValues.password?.length,
       birthdate: submitValues.dob,
+      birthdate_length: submitValues.dob?.length || 0,
       address: submitValues.address,
       gender: submitValues.gender
     });
