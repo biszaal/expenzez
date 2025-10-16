@@ -173,6 +173,16 @@ function RootLayoutNav() {
     }
   }, [loading, onboardingStatusChecked]);
 
+  // Add a timeout to prevent getting stuck on splash screen
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      console.log("🎯 [Layout] Loading timeout - forcing navigation after 3 seconds");
+      setIsLoading(false);
+    }, 3000); // 3 second timeout
+    
+    return () => clearTimeout(timeout);
+  }, []);
+
   // PIN setup is now optional - no mandatory setup required
   useEffect(() => {
     setShowPinSetup(false);
