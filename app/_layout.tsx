@@ -328,6 +328,14 @@ function RootLayoutNav() {
     return <SplashScreen />;
   }
 
+  // CRITICAL: Wait for security context to initialize before checking lock state
+  if (!securityInitialized) {
+    console.log(
+      "⏳ [Layout] Waiting for security context to initialize..."
+    );
+    return <SplashScreen />;
+  }
+
   // PIN is now optional - no mandatory setup screen needed
 
   // Check if current route is the security settings page or related security pages
@@ -346,6 +354,7 @@ function RootLayoutNav() {
     isLoggedIn,
     isLocked,
     isSecurityEnabled,
+    securityInitialized,
     currentRoute,
     isOnSecurityPage,
     shouldTreatAsLoggedIn,
