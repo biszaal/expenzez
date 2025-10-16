@@ -119,9 +119,7 @@ export default function WelcomeOnboarding() {
             onPress={handleSkip}
             activeOpacity={0.7}
           >
-            <BlurView intensity={20} tint="light" style={styles.skipBlur}>
-              <Text style={styles.skipText}>Skip</Text>
-            </BlurView>
+            <Text style={styles.skipText}>Skip</Text>
           </TouchableOpacity>
         )}
 
@@ -274,18 +272,16 @@ const styles = StyleSheet.create({
     top: Platform.OS === "ios" ? 60 : 20,
     right: 20,
     zIndex: 10,
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  skipBlur: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   skipText: {
     color: "white",
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   cardContainer: {
     width,
