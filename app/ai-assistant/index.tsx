@@ -68,11 +68,13 @@ export default function AIAssistantScreen() {
   const [showInsights, setShowInsights] = useState(true);
   // Premium features removed - all users have free access
   const scrollViewRef = useRef<ScrollView>(null);
-  
+
   // Rate limiting state
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
-  const [rateLimitType, setRateLimitType] = useState<'hourly' | 'daily' | 'monthly' | null>(null);
+  const [rateLimitType, setRateLimitType] = useState<
+    "hourly" | "daily" | "monthly" | null
+  >(null);
 
   // Fetch chat history on mount
   useEffect(() => {
@@ -329,24 +331,42 @@ export default function AIAssistantScreen() {
         console.error("❌ Fallback also failed:", fallbackErr);
 
         // Check if it's a rate limiting error and show appropriate message
-        let errorMsg = "I'm experiencing some technical difficulties. Please try again in a moment, or check your internet connection.";
-        
-        if (fallbackErr?.code === 'RATE_LIMITED' || fallbackErr?.message?.includes('rate limit') || fallbackErr?.message?.includes('Too many requests')) {
-          errorMsg = "You're chatting too fast! Please wait a moment before sending another message. 🕐";
+        let errorMsg =
+          "I'm experiencing some technical difficulties. Please try again in a moment, or check your internet connection.";
+
+        if (
+          fallbackErr?.code === "RATE_LIMITED" ||
+          fallbackErr?.message?.includes("rate limit") ||
+          fallbackErr?.message?.includes("Too many requests")
+        ) {
+          errorMsg =
+            "You're chatting too fast! Please wait a moment before sending another message. 🕐";
           setIsRateLimited(true);
           setRateLimitCountdown(60); // 1 minute
-          setRateLimitType('hourly');
-        } else if (fallbackErr?.code === 'AI_MONTHLY_LIMIT' || fallbackErr?.message?.includes('monthly limit')) {
-          errorMsg = "You've used all your AI chats for this month. Upgrade to Premium for unlimited AI assistance! 💎";
-          setRateLimitType('monthly');
-        } else if (fallbackErr?.code === 'AI_DAILY_LIMIT' || fallbackErr?.message?.includes('daily limit')) {
-          errorMsg = "You've reached your daily AI chat limit. Try again tomorrow or upgrade to Premium! 🌅";
-          setRateLimitType('daily');
-        } else if (fallbackErr?.code === 'AI_RATE_LIMITED' || fallbackErr?.message?.includes('hour')) {
-          errorMsg = "You've reached your AI chat limit for this hour. Please wait a bit before asking more questions. ⏰";
+          setRateLimitType("hourly");
+        } else if (
+          fallbackErr?.code === "AI_MONTHLY_LIMIT" ||
+          fallbackErr?.message?.includes("monthly limit")
+        ) {
+          errorMsg =
+            "You've used all your AI chats for this month. Upgrade to Premium for unlimited AI assistance! 💎";
+          setRateLimitType("monthly");
+        } else if (
+          fallbackErr?.code === "AI_DAILY_LIMIT" ||
+          fallbackErr?.message?.includes("daily limit")
+        ) {
+          errorMsg =
+            "You've reached your daily AI chat limit. Try again tomorrow or upgrade to Premium! 🌅";
+          setRateLimitType("daily");
+        } else if (
+          fallbackErr?.code === "AI_RATE_LIMITED" ||
+          fallbackErr?.message?.includes("hour")
+        ) {
+          errorMsg =
+            "You've reached your AI chat limit for this hour. Please wait a bit before asking more questions. ⏰";
           setIsRateLimited(true);
           setRateLimitCountdown(3600); // 1 hour
-          setRateLimitType('hourly');
+          setRateLimitType("hourly");
         }
 
         setMessages((prev) => [
@@ -1140,9 +1160,12 @@ export default function AIAssistantScreen() {
                   flex: 1,
                 }}
               >
-                {rateLimitType === 'hourly' && `Please wait ${Math.floor(rateLimitCountdown / 60)}:${(rateLimitCountdown % 60).toString().padStart(2, '0')} before sending another message`}
-                {rateLimitType === 'daily' && "Daily limit reached. Try again tomorrow or upgrade to Premium!"}
-                {rateLimitType === 'monthly' && "Monthly limit reached. Upgrade to Premium for unlimited AI assistance!"}
+                {rateLimitType === "hourly" &&
+                  `Please wait ${Math.floor(rateLimitCountdown / 60)}:${(rateLimitCountdown % 60).toString().padStart(2, "0")} before sending another message`}
+                {rateLimitType === "daily" &&
+                  "Daily limit reached. Try again tomorrow or upgrade to Premium!"}
+                {rateLimitType === "monthly" &&
+                  "Monthly limit reached. Upgrade to Premium for unlimited AI assistance!"}
               </Text>
             </View>
           )}
