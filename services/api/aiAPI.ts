@@ -31,6 +31,45 @@ export const aiService = {
         }
         financialContext.totalBalance = totalBalance;
 
+        // Calculate comprehensive financial metrics for AI
+        const transactions = financialContext.recentTransactions;
+        const totalTransactions = transactions.length;
+        
+        // Calculate total spending (negative amounts)
+        const spendingTransactions = transactions.filter((tx: any) => parseFloat(tx.amount) < 0);
+        const totalSpending = spendingTransactions.reduce((sum: number, tx: any) => {
+          return sum + Math.abs(parseFloat(tx.amount) || 0);
+        }, 0);
+        
+        // Calculate total income (positive amounts)
+        const incomeTransactions = transactions.filter((tx: any) => parseFloat(tx.amount) > 0);
+        const totalIncome = incomeTransactions.reduce((sum: number, tx: any) => {
+          return sum + parseFloat(tx.amount) || 0;
+        }, 0);
+        
+        // Calculate average transaction amount
+        const avgTransactionAmount = totalTransactions > 0 ? totalSpending / spendingTransactions.length : 0;
+        
+        // Calculate top spending categories
+        const categorySpending: { [key: string]: number } = {};
+        spendingTransactions.forEach((tx: any) => {
+          const category = tx.category || 'Other';
+          categorySpending[category] = (categorySpending[category] || 0) + Math.abs(parseFloat(tx.amount) || 0);
+        });
+        
+        const topCategories = Object.entries(categorySpending)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 5)
+          .map(([category, amount]) => ({ category, amount }));
+
+        // Set all required financial context properties
+        financialContext.totalTransactions = totalTransactions;
+        financialContext.totalSpending = totalSpending;
+        financialContext.totalIncome = totalIncome;
+        financialContext.avgTransactionAmount = avgTransactionAmount;
+        financialContext.topCategories = topCategories;
+        financialContext.currentBalance = totalBalance;
+
         // Calculate monthly spending from manual transactions
         const currentMonth = new Date().toISOString().substring(0, 7);
         const monthlySpending = financialContext.recentTransactions
@@ -40,6 +79,16 @@ export const aiService = {
 
         // Set account info for manual mode
         financialContext.accounts = [{ name: "Manual Entry", type: "Manual Account" }];
+
+        // Debug: Log the financial context being sent to AI
+        console.log('📊 [AI] Financial context being sent to backend:', {
+          totalTransactions: financialContext.totalTransactions,
+          totalSpending: financialContext.totalSpending,
+          totalIncome: financialContext.totalIncome,
+          currentBalance: financialContext.currentBalance,
+          topCategories: financialContext.topCategories,
+          recentTransactionsCount: financialContext.recentTransactions?.length || 0
+        });
 
         // 💰 SUBSCRIPTION OPTIMIZATION: Analyze recurring bills for duplicates
         try {
