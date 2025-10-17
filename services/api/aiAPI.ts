@@ -1,64 +1,90 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from "expo-secure-store";
 import { aiAPI } from "../config/apiClient";
 import { transactionAPI } from "./transactionAPI";
 import { goalsAPI, GoalsResponse } from "./goalsAPI";
 import { achievementAPI, AchievementResponse } from "./achievementAPI";
-import { savingsInsightsAPI, SavingsInsightsResponse } from "./savingsInsightsAPI";
+import {
+  savingsInsightsAPI,
+  SavingsInsightsResponse,
+} from "./savingsInsightsAPI";
 import { BillsAPI } from "./billsAPI";
 
 export const aiService = {
   // AI Assistant functionality
   getAIInsight: async (message: string) => {
     try {
-      const token = await SecureStore.getItemAsync("accessToken", { keychainService: 'expenzez-tokens' });
+      const token = await SecureStore.getItemAsync("accessToken", {
+        keychainService: "expenzez-tokens",
+      });
 
       // 📱 MANUAL INPUT MODE: Gather user's financial context from manual transactions
       let financialContext: any = {};
 
       try {
         // Get all transactions for comprehensive analysis
-        const transactionsResponse = await transactionAPI.getTransactions({ limit: 1000 });
-        financialContext.recentTransactions = transactionsResponse.transactions || [];
+        const transactionsResponse = await transactionAPI.getTransactions({
+          limit: 1000,
+        });
+        financialContext.recentTransactions =
+          transactionsResponse.transactions || [];
 
         // Calculate total balance from transaction data
         let totalBalance = 0;
         if (financialContext.recentTransactions.length > 0) {
-          totalBalance = financialContext.recentTransactions.reduce((sum: number, tx: any) => {
-            const amount = parseFloat(tx.amount) || 0;
-            return sum + amount; // Positive for income, negative for expenses
-          }, 0);
+          totalBalance = financialContext.recentTransactions.reduce(
+            (sum: number, tx: any) => {
+              const amount = parseFloat(tx.amount) || 0;
+              return sum + amount; // Positive for income, negative for expenses
+            },
+            0
+          );
         }
         financialContext.totalBalance = totalBalance;
 
         // Calculate comprehensive financial metrics for AI
         const transactions = financialContext.recentTransactions;
         const totalTransactions = transactions.length;
-        
+
         // Calculate total spending (negative amounts)
-        const spendingTransactions = transactions.filter((tx: any) => parseFloat(tx.amount) < 0);
-        const totalSpending = spendingTransactions.reduce((sum: number, tx: any) => {
-          return sum + Math.abs(parseFloat(tx.amount) || 0);
-        }, 0);
-        
+        const spendingTransactions = transactions.filter(
+          (tx: any) => parseFloat(tx.amount) < 0
+        );
+        const totalSpending = spendingTransactions.reduce(
+          (sum: number, tx: any) => {
+            return sum + Math.abs(parseFloat(tx.amount) || 0);
+          },
+          0
+        );
+
         // Calculate total income (positive amounts)
-        const incomeTransactions = transactions.filter((tx: any) => parseFloat(tx.amount) > 0);
-        const totalIncome = incomeTransactions.reduce((sum: number, tx: any) => {
-          return sum + parseFloat(tx.amount) || 0;
-        }, 0);
-        
+        const incomeTransactions = transactions.filter(
+          (tx: any) => parseFloat(tx.amount) > 0
+        );
+        const totalIncome = incomeTransactions.reduce(
+          (sum: number, tx: any) => {
+            return sum + parseFloat(tx.amount) || 0;
+          },
+          0
+        );
+
         // Calculate average transaction amount
-        const avgTransactionAmount = totalTransactions > 0 ? totalSpending / spendingTransactions.length : 0;
-        
+        const avgTransactionAmount =
+          totalTransactions > 0
+            ? totalSpending / spendingTransactions.length
+            : 0;
+
         // Calculate top spending categories
         const categorySpending: { [key: string]: number } = {};
         spendingTransactions.forEach((tx: any) => {
-          const category = tx.category || 'Other';
-          categorySpending[category] = (categorySpending[category] || 0) + Math.abs(parseFloat(tx.amount) || 0);
+          const category = tx.category || "Other";
+          categorySpending[category] =
+            (categorySpending[category] || 0) +
+            Math.abs(parseFloat(tx.amount) || 0);
         });
-        
+
         const topCategories = Object.entries(categorySpending)
-          .sort(([,a], [,b]) => b - a)
+          .sort(([, a], [, b]) => b - a)
           .slice(0, 5)
           .map(([category, amount]) => ({ category, amount }));
 
@@ -72,22 +98,34 @@ export const aiService = {
 
         // Calculate monthly spending from manual transactions
         const currentMonth = new Date().toISOString().substring(0, 7);
-        const monthlySpending = financialContext.recentTransactions
-          ?.filter((tx: any) => tx.date?.startsWith(currentMonth) && (tx.type === 'debit' || tx.amount < 0))
-          ?.reduce((sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount) || 0), 0) || 0;
+        const monthlySpending =
+          financialContext.recentTransactions
+            ?.filter(
+              (tx: any) =>
+                tx.date?.startsWith(currentMonth) &&
+                (tx.type === "debit" || tx.amount < 0)
+            )
+            ?.reduce(
+              (sum: number, tx: any) =>
+                sum + Math.abs(parseFloat(tx.amount) || 0),
+              0
+            ) || 0;
         financialContext.monthlySpending = monthlySpending;
 
         // Set account info for manual mode
-        financialContext.accounts = [{ name: "Manual Entry", type: "Manual Account" }];
+        financialContext.accounts = [
+          { name: "Manual Entry", type: "Manual Account" },
+        ];
 
         // Debug: Log the financial context being sent to AI
-        console.log('📊 [AI] Financial context being sent to backend:', {
+        console.log("📊 [AI] Financial context being sent to backend:", {
           totalTransactions: financialContext.totalTransactions,
           totalSpending: financialContext.totalSpending,
           totalIncome: financialContext.totalIncome,
           currentBalance: financialContext.currentBalance,
           topCategories: financialContext.topCategories,
-          recentTransactionsCount: financialContext.recentTransactions?.length || 0
+          recentTransactionsCount:
+            financialContext.recentTransactions?.length || 0,
         });
 
         // 💰 SUBSCRIPTION OPTIMIZATION: Analyze recurring bills for duplicates
@@ -98,14 +136,13 @@ export const aiService = {
             financialContext.subscriptionOptimization = {
               hasDuplicates: false,
               opportunities: [],
-              summary: "Subscription analysis available in premium version"
+              summary: "Subscription analysis available in premium version",
             };
           }
         } catch (billError) {
           console.log("AI subscription analysis warning:", billError);
           // Continue without subscription analysis
         }
-
       } catch (contextError) {
         console.log("AI context gathering error:", contextError);
         // Continue without context - AI will use general responses
@@ -113,19 +150,28 @@ export const aiService = {
 
       const response = await aiAPI.post("/ai/insight", {
         message,
-        financialContext
+        financialContext,
       });
 
-      console.log('📥 [AI] Backend response:', JSON.stringify(response.data));
+      console.log("📥 [AI] Backend response:", JSON.stringify(response.data));
 
       // Check if backend returned success but no actual answer OR returned generic error message
-      const hasNoAnswer = !response.data.answer && !response.data.response && !response.data.message;
-      const isGenericError = response.data.answer === "Sorry, I couldn't generate an answer." ||
-                            response.data.answer === "Sorry, I could not generate an answer.";
-      const isSuccessOnly = response.data.message === "Success" && !response.data.answer && !response.data.response;
+      const hasNoAnswer =
+        !response.data.answer &&
+        !response.data.response &&
+        !response.data.message;
+      const isGenericError =
+        response.data.answer === "Sorry, I couldn't generate an answer." ||
+        response.data.answer === "Sorry, I could not generate an answer.";
+      const isSuccessOnly =
+        response.data.message === "Success" &&
+        !response.data.answer &&
+        !response.data.response;
 
       if (response.data && (hasNoAnswer || isGenericError || isSuccessOnly)) {
-        console.log('⚠️ [AI] Backend returned generic error or no answer (Success only), using fallback');
+        console.log(
+          "⚠️ [AI] Backend returned generic error or no answer (Success only), using fallback"
+        );
         // Treat as if endpoint returned 404 - trigger fallback
         throw { response: { status: 404 } };
       }
@@ -133,8 +179,12 @@ export const aiService = {
       return response.data;
     } catch (error: any) {
       // Enhanced fallback for when AI endpoints might not be available
-      if (error.response?.status === 404 || error.response?.status === 500 || error.response?.status === 502 || error.response?.status === 503) {
-
+      if (
+        error.response?.status === 404 ||
+        error.response?.status === 500 ||
+        error.response?.status === 502 ||
+        error.response?.status === 503
+      ) {
         // Generate contextual fallback responses using manual transaction data
         const lowerMessage = message.toLowerCase();
         let fallbackResponse = "";
@@ -142,70 +192,115 @@ export const aiService = {
         // Use manual transaction data for context
         let financialContext: any = {};
         try {
-          const transactionsResponse = await transactionAPI.getTransactions({ limit: 1000 });
-          financialContext.recentTransactions = transactionsResponse.transactions || [];
+          const transactionsResponse = await transactionAPI.getTransactions({
+            limit: 1000,
+          });
+          financialContext.recentTransactions =
+            transactionsResponse.transactions || [];
 
           // Calculate balance from manual transaction data
           let totalBalance = 0;
           if (financialContext.recentTransactions.length > 0) {
-            totalBalance = financialContext.recentTransactions.reduce((sum: number, tx: any) => {
-              const amount = parseFloat(tx.amount) || 0;
-              return sum + amount;
-            }, 0);
+            totalBalance = financialContext.recentTransactions.reduce(
+              (sum: number, tx: any) => {
+                const amount = parseFloat(tx.amount) || 0;
+                return sum + amount;
+              },
+              0
+            );
           }
           financialContext.totalBalance = totalBalance;
 
           const currentMonth = new Date().toISOString().substring(0, 7);
-          const monthlySpending = financialContext.recentTransactions
-            ?.filter((tx: any) => tx.date?.startsWith(currentMonth) && (tx.type === 'debit' || tx.amount < 0))
-            ?.reduce((sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount) || 0), 0) || 0;
+          const monthlySpending =
+            financialContext.recentTransactions
+              ?.filter(
+                (tx: any) =>
+                  tx.date?.startsWith(currentMonth) &&
+                  (tx.type === "debit" || tx.amount < 0)
+              )
+              ?.reduce(
+                (sum: number, tx: any) =>
+                  sum + Math.abs(parseFloat(tx.amount) || 0),
+                0
+              ) || 0;
           financialContext.monthlySpending = monthlySpending;
         } catch {
           // If we can't get context, use empty context
         }
 
-        const { totalBalance, monthlySpending, recentTransactions } = financialContext;
-        const hasFinancialData = totalBalance !== undefined && recentTransactions?.length > 0;
+        const { totalBalance, monthlySpending, recentTransactions } =
+          financialContext;
+        const hasFinancialData =
+          totalBalance !== undefined && recentTransactions?.length > 0;
 
-        if (lowerMessage.includes('balance') || lowerMessage.includes('money')) {
+        if (
+          lowerMessage.includes("balance") ||
+          lowerMessage.includes("money")
+        ) {
           if (hasFinancialData) {
-            fallbackResponse = `Based on your manually entered transactions, your calculated balance is £${totalBalance?.toFixed(2) || '0.00'}. `;
-            fallbackResponse += totalBalance > 1000 ? "Your balance looks healthy! Consider setting aside some money for savings." : "Keep track of your spending to help build up your balance over time.";
+            fallbackResponse = `Based on your manually entered transactions, your calculated balance is £${totalBalance?.toFixed(2) || "0.00"}. `;
+            fallbackResponse +=
+              totalBalance > 1000
+                ? "Your balance looks healthy! Consider setting aside some money for savings."
+                : "Keep track of your spending to help build up your balance over time.";
           } else {
-            fallbackResponse = "I can help analyze your finances once you add some transactions. Try adding expenses manually or importing CSV data to get personalized insights.";
+            fallbackResponse =
+              "I can help analyze your finances once you add some transactions. Try adding expenses manually or importing CSV data to get personalized insights.";
           }
-        } else if (lowerMessage.includes('spending') || lowerMessage.includes('spend')) {
+        } else if (
+          lowerMessage.includes("spending") ||
+          lowerMessage.includes("spend")
+        ) {
           if (hasFinancialData && monthlySpending > 0) {
             fallbackResponse = `You've spent £${monthlySpending.toFixed(2)} this month based on your manual entries. `;
             if (monthlySpending > Math.abs(totalBalance) * 0.5) {
-              fallbackResponse += "Your spending is quite high. Consider reviewing your expenses to identify areas where you can cut back.";
+              fallbackResponse +=
+                "Your spending is quite high. Consider reviewing your expenses to identify areas where you can cut back.";
             } else {
-              fallbackResponse += "Your spending appears to be manageable. Keep tracking your expenses to maintain good financial health.";
+              fallbackResponse +=
+                "Your spending appears to be manageable. Keep tracking your expenses to maintain good financial health.";
             }
           } else {
-            fallbackResponse = "I can analyze your spending patterns once you add some transactions. Use 'Add Expense' or 'Import CSV' to get detailed spending insights.";
+            fallbackResponse =
+              "I can analyze your spending patterns once you add some transactions. Use 'Add Expense' or 'Import CSV' to get detailed spending insights.";
           }
-        } else if (lowerMessage.includes('expense') || lowerMessage.includes('expenses')) {
+        } else if (
+          lowerMessage.includes("expense") ||
+          lowerMessage.includes("expenses")
+        ) {
           if (hasFinancialData) {
             // Analyze expenses in detail
-            const expenses = recentTransactions.filter((tx: any) => tx.amount < 0);
-            const totalExpenses = expenses.reduce((sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount)), 0);
-            const avgExpense = expenses.length > 0 ? totalExpenses / expenses.length : 0;
+            const expenses = recentTransactions.filter(
+              (tx: any) => tx.amount < 0
+            );
+            const totalExpenses = expenses.reduce(
+              (sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount)),
+              0
+            );
+            const avgExpense =
+              expenses.length > 0 ? totalExpenses / expenses.length : 0;
 
             // Calculate current month expenses
             const currentMonth = new Date().toISOString().substring(0, 7);
-            const currentMonthExpenses = expenses.filter((tx: any) => tx.date?.startsWith(currentMonth));
-            const currentMonthTotal = currentMonthExpenses.reduce((sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount)), 0);
+            const currentMonthExpenses = expenses.filter((tx: any) =>
+              tx.date?.startsWith(currentMonth)
+            );
+            const currentMonthTotal = currentMonthExpenses.reduce(
+              (sum: number, tx: any) => sum + Math.abs(parseFloat(tx.amount)),
+              0
+            );
 
             // Categorize expenses
             const categories: Record<string, number> = {};
             expenses.forEach((tx: any) => {
-              const category = tx.category || 'Other';
-              categories[category] = (categories[category] || 0) + Math.abs(parseFloat(tx.amount));
+              const category = tx.category || "Other";
+              categories[category] =
+                (categories[category] || 0) + Math.abs(parseFloat(tx.amount));
             });
 
             const topCategories = Object.entries(categories)
-              .sort(([,a], [,b]) => b - a)
+              .sort(([, a], [, b]) => b - a)
               .slice(0, 3)
               .map(([cat, amount]) => `${cat}: £${amount.toFixed(2)}`);
 
@@ -213,7 +308,7 @@ export const aiService = {
             fallbackResponse += `💰 **Total Expenses**: £${totalExpenses.toFixed(2)}\n`;
             fallbackResponse += `📅 **This Month**: £${currentMonthTotal.toFixed(2)} (${currentMonthExpenses.length} transactions)\n`;
             fallbackResponse += `📈 **Average Expense**: £${avgExpense.toFixed(2)}\n\n`;
-            fallbackResponse += `**Top Categories:**\n${topCategories.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\n`;
+            fallbackResponse += `**Top Categories:**\n${topCategories.map((c, i) => `${i + 1}. ${c}`).join("\n")}\n\n`;
 
             if (currentMonthTotal > totalExpenses * 0.3) {
               fallbackResponse += `⚠️ **Insight**: Your spending this month is quite high (${((currentMonthTotal / totalExpenses) * 100).toFixed(0)}% of total). Consider reviewing your recent purchases.`;
@@ -221,87 +316,119 @@ export const aiService = {
               fallbackResponse += `✅ **Insight**: Your spending looks consistent. Keep tracking to maintain good financial habits!`;
             }
           } else {
-            fallbackResponse = "I can analyze your expenses once you add some transactions. Use 'Add Expense' or 'Import CSV' to get detailed spending insights.";
+            fallbackResponse =
+              "I can analyze your expenses once you add some transactions. Use 'Add Expense' or 'Import CSV' to get detailed spending insights.";
           }
-        } else if (lowerMessage.includes('transaction') || lowerMessage.includes('payment')) {
+        } else if (
+          lowerMessage.includes("transaction") ||
+          lowerMessage.includes("payment")
+        ) {
           if (hasFinancialData) {
             fallbackResponse = `I can see your ${recentTransactions.length} manually entered transactions. `;
-            fallbackResponse += "Check the transactions tab to review and categorize them for better budgeting insights.";
+            fallbackResponse +=
+              "Check the transactions tab to review and categorize them for better budgeting insights.";
           } else {
-            fallbackResponse = "Your transactions will appear here once you add them manually or import CSV data. Use the 'Add Expense' button to get started.";
+            fallbackResponse =
+              "Your transactions will appear here once you add them manually or import CSV data. Use the 'Add Expense' button to get started.";
           }
-        } else if (lowerMessage.includes('budget') || lowerMessage.includes('save')) {
+        } else if (
+          lowerMessage.includes("budget") ||
+          lowerMessage.includes("save")
+        ) {
           if (hasFinancialData && totalBalance > 0) {
             const suggestedSavings = Math.max(totalBalance * 0.1, 50);
             fallbackResponse = `Based on your calculated balance of £${totalBalance.toFixed(2)}, I suggest setting aside £${suggestedSavings.toFixed(2)} for savings. `;
-            fallbackResponse += "Try the 50/30/20 rule: 50% for needs, 30% for wants, and 20% for savings and debt repayment.";
+            fallbackResponse +=
+              "Try the 50/30/20 rule: 50% for needs, 30% for wants, and 20% for savings and debt repayment.";
           } else {
-            fallbackResponse = "To help with budgeting, I need to see your transaction data. Add expenses manually or import CSV data to get personalized budget recommendations.";
+            fallbackResponse =
+              "To help with budgeting, I need to see your transaction data. Add expenses manually or import CSV data to get personalized budget recommendations.";
           }
-        } else if (lowerMessage.includes('subscription') || lowerMessage.includes('duplicate') || lowerMessage.includes('cancel')) {
+        } else if (
+          lowerMessage.includes("subscription") ||
+          lowerMessage.includes("duplicate") ||
+          lowerMessage.includes("cancel")
+        ) {
           // Check for subscription optimization opportunities
           try {
             const bills = await BillsAPI.getBills();
             if (bills.length > 0) {
               // Basic subscription analysis without optimizer
-              fallbackResponse = "I can help you analyze your subscriptions for potential savings. Add your recurring bills in the Bills tab, and I'll provide insights on optimizing your subscriptions.";
+              fallbackResponse =
+                "I can help you analyze your subscriptions for potential savings. Add your recurring bills in the Bills tab, and I'll provide insights on optimizing your subscriptions.";
             } else {
-              fallbackResponse = "I can help you analyze subscriptions once you add some recurring bills. Go to the Bills tab to add your subscriptions, and I'll analyze them for potential savings.";
+              fallbackResponse =
+                "I can help you analyze subscriptions once you add some recurring bills. Go to the Bills tab to add your subscriptions, and I'll analyze them for potential savings.";
             }
           } catch (error) {
-            fallbackResponse = "I can analyze your subscriptions for duplicates and suggest cancellations to save money. Add your recurring bills in the Bills tab, and I'll help you optimize your spending!";
+            fallbackResponse =
+              "I can analyze your subscriptions for duplicates and suggest cancellations to save money. Add your recurring bills in the Bills tab, and I'll help you optimize your spending!";
           }
-        } else if (lowerMessage.includes('how do i cancel') || lowerMessage.includes('how to cancel')) {
+        } else if (
+          lowerMessage.includes("how do i cancel") ||
+          lowerMessage.includes("how to cancel")
+        ) {
           // Extract service name from message
           const serviceMatch = lowerMessage.match(/cancel\s+(.+)/);
           if (serviceMatch) {
-            const serviceName = serviceMatch[1].replace(/\?/g, '').trim();
-            const guide = SubscriptionOptimizer.generateCancellationGuide(serviceName);
+            const serviceName = serviceMatch[1].replace(/\?/g, "").trim();
+            const guide =
+              SubscriptionOptimizer.generateCancellationGuide(serviceName);
             fallbackResponse = `📱 **How to Cancel ${guide.service}**\n\n`;
             fallbackResponse += `⏱️ Average time: ${guide.averageTime}\n\n`;
-            fallbackResponse += guide.steps.join('\n');
+            fallbackResponse += guide.steps.join("\n");
             if (guide.warning) {
               fallbackResponse += `\n\n⚠️ ${guide.warning}`;
             }
           } else {
-            fallbackResponse = "Which subscription would you like to cancel? Just ask me 'How do I cancel Netflix?' or mention any other service, and I'll provide step-by-step instructions.";
+            fallbackResponse =
+              "Which subscription would you like to cancel? Just ask me 'How do I cancel Netflix?' or mention any other service, and I'll provide step-by-step instructions.";
           }
-        } else if (lowerMessage.includes('keep all') || lowerMessage.includes('keep my subscription') || lowerMessage.includes('don\'t cancel')) {
+        } else if (
+          lowerMessage.includes("keep all") ||
+          lowerMessage.includes("keep my subscription") ||
+          lowerMessage.includes("don't cancel")
+        ) {
           // User wants to keep all their subscriptions
           try {
             const bills = await BillsAPI.getBills();
-            const duplicates = await SubscriptionOptimizer.analyzeBillsWithPreferences(bills);
+            const duplicates =
+              await SubscriptionOptimizer.analyzeBillsWithPreferences(bills);
 
             if (duplicates.length > 0) {
               // Save preference for each duplicate category
               for (const duplicate of duplicates) {
-                const subscriptionNames = duplicate.subscriptions.map(s => s.name);
+                const subscriptionNames = duplicate.subscriptions.map(
+                  (s) => s.name
+                );
                 await SubscriptionOptimizer.saveUserPreference(
                   duplicate.category,
                   subscriptionNames,
-                  'keep_all'
+                  "keep_all"
                 );
               }
 
               fallbackResponse = `✅ Understood! I've noted that you want to keep all your subscriptions. I won't suggest canceling them again for the next 90 days.\n\n`;
               fallbackResponse += `If you change your mind later, just ask me "Analyze my subscriptions" and I'll check again.`;
             } else {
-              fallbackResponse = "I don\'t have any cancellation recommendations active right now. If you want to review your subscriptions, just ask me 'Analyze my subscriptions'.";
+              fallbackResponse =
+                "I don\'t have any cancellation recommendations active right now. If you want to review your subscriptions, just ask me 'Analyze my subscriptions'.";
             }
           } catch (error) {
-            fallbackResponse = "I've noted your preference. If you'd like me to analyze your subscriptions in the future, just ask!";
+            fallbackResponse =
+              "I've noted your preference. If you'd like me to analyze your subscriptions in the future, just ask!";
           }
         } else {
           // Generic financial advice fallback for manual input mode
           fallbackResponse = hasFinancialData
-            ? `Hello! I can see you have ${recentTransactions?.length || 0} manually entered transaction${recentTransactions?.length === 1 ? '' : 's'} with a calculated balance of £${totalBalance?.toFixed(2) || '0.00'}. Feel free to ask me about your spending patterns, budgeting tips, or financial goals!`
+            ? `Hello! I can see you have ${recentTransactions?.length || 0} manually entered transaction${recentTransactions?.length === 1 ? "" : "s"} with a calculated balance of £${totalBalance?.toFixed(2) || "0.00"}. Feel free to ask me about your spending patterns, budgeting tips, or financial goals!`
             : "Hello! I'm your AI financial assistant. I can help you with budgeting, spending analysis, and financial planning. Add expenses manually or import CSV data to get personalized insights, or ask me any general financial questions!";
         }
 
         return {
           success: true,
           answer: fallbackResponse,
-          isFallback: true
+          isFallback: true,
         };
       } else {
         throw error;
@@ -318,7 +445,7 @@ export const aiService = {
       if (error.response?.status === 404 || error.response?.status === 401) {
         return {
           success: true,
-          messages: []
+          messages: [],
         };
       }
       throw error;
@@ -356,9 +483,10 @@ export const aiService = {
     try {
       // Create reportMonth in YYYY-MM format
       const now = new Date();
-      const reportMonth = month && year
-        ? `${year}-${month.padStart(2, '0')}`
-        : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const reportMonth =
+        month && year
+          ? `${year}-${month.padStart(2, "0")}`
+          : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
       const response = await aiAPI.get(`/ai/monthly-report/${reportMonth}`);
       return response.data;
@@ -367,7 +495,7 @@ export const aiService = {
       if (error.response?.status === 404 || error.response?.status === 401) {
         return {
           success: false,
-          message: "Monthly report unavailable - feature coming soon!"
+          message: "Monthly report unavailable - feature coming soon!",
         };
       }
 
@@ -376,9 +504,11 @@ export const aiService = {
   },
 
   // Generate proactive insights based on user's financial data
-  generateProactiveInsights: async (userId: string): Promise<ProactiveInsight[]> => {
+  generateProactiveInsights: async (
+    userId: string
+  ): Promise<ProactiveInsight[]> => {
     try {
-      console.log('🧠 [AI] Generating proactive insights for user:', userId);
+      console.log("🧠 [AI] Generating proactive insights for user:", userId);
 
       const insights: ProactiveInsight[] = [];
 
@@ -389,79 +519,112 @@ export const aiService = {
       let transactionsData: any = null;
 
       try {
-        const [goals, achievements, savings, transactions] = await Promise.allSettled([
-          goalsAPI.getUserGoals(userId),
-          achievementAPI.getUserAchievements(userId),
-          savingsInsightsAPI.getSavingsOpportunities(userId),
-          transactionAPI.getTransactions({ limit: 20 })
-        ]);
+        const [goals, achievements, savings, transactions] =
+          await Promise.allSettled([
+            goalsAPI.getUserGoals(userId),
+            achievementAPI.getUserAchievements(userId),
+            savingsInsightsAPI.getSavingsOpportunities(userId),
+            transactionAPI.getTransactions({ limit: 20 }),
+          ]);
 
-        if (goals.status === 'fulfilled') goalsData = goals.value;
-        if (achievements.status === 'fulfilled') achievementsData = achievements.value;
-        if (savings.status === 'fulfilled') savingsData = savings.value;
-        if (transactions.status === 'fulfilled') transactionsData = transactions.value;
+        if (goals.status === "fulfilled") goalsData = goals.value;
+        if (achievements.status === "fulfilled")
+          achievementsData = achievements.value;
+        if (savings.status === "fulfilled") savingsData = savings.value;
+        if (transactions.status === "fulfilled")
+          transactionsData = transactions.value;
       } catch (error) {
-        console.log('AI insights: Error gathering context, proceeding with available data');
+        console.log(
+          "AI insights: Error gathering context, proceeding with available data"
+        );
       }
 
       // Goal-based insights
       if (goalsData) {
         // New goal milestone reached
-        if (achievementsData?.newAchievements?.some(a => a.type === 'goal_milestone')) {
+        if (
+          achievementsData?.newAchievements?.some(
+            (a) => a.type === "goal_milestone"
+          )
+        ) {
           insights.push({
-            id: 'goal_milestone_celebration',
-            type: 'celebration',
-            title: '🎉 Goal Milestone Reached!',
-            message: "Congratulations! You've hit a major milestone. This is a great time to review your progress and maybe set your next target even higher.",
-            priority: 'high',
+            id: "goal_milestone_celebration",
+            type: "celebration",
+            title: "🎉 Goal Milestone Reached!",
+            message:
+              "Congratulations! You've hit a major milestone. This is a great time to review your progress and maybe set your next target even higher.",
+            priority: "high",
             actionable: true,
-            suggestedActions: ['Review goal progress', 'Set new milestone', 'Celebrate your success'],
-            relatedGoalId: achievementsData.newAchievements.find(a => a.type === 'goal_milestone')?.goalId
+            suggestedActions: [
+              "Review goal progress",
+              "Set new milestone",
+              "Celebrate your success",
+            ],
+            relatedGoalId: achievementsData.newAchievements.find(
+              (a) => a.type === "goal_milestone"
+            )?.goalId,
           });
         }
 
         // Goals falling behind - add safety check
-        const behindGoals = (goalsData.goalProgress && Array.isArray(goalsData.goalProgress))
-          ? goalsData.goalProgress.filter(p => !p.isOnTrack)
-          : [];
+        const behindGoals =
+          goalsData.goalProgress && Array.isArray(goalsData.goalProgress)
+            ? goalsData.goalProgress.filter((p) => !p.isOnTrack)
+            : [];
         if (behindGoals.length > 0) {
           insights.push({
-            id: 'goals_behind_schedule',
-            type: 'warning',
-            title: '⚠️ Some Goals Need Attention',
-            message: `You have ${behindGoals.length} goal${behindGoals.length > 1 ? 's' : ''} that might need a strategy adjustment. Let's see how we can get back on track.`,
-            priority: 'medium',
+            id: "goals_behind_schedule",
+            type: "warning",
+            title: "⚠️ Some Goals Need Attention",
+            message: `You have ${behindGoals.length} goal${behindGoals.length > 1 ? "s" : ""} that might need a strategy adjustment. Let's see how we can get back on track.`,
+            priority: "medium",
             actionable: true,
-            suggestedActions: ['Review goal timeline', 'Increase monthly savings', 'Consider goal adjustment'],
-            relatedGoalId: behindGoals[0].goalId
+            suggestedActions: [
+              "Review goal timeline",
+              "Increase monthly savings",
+              "Consider goal adjustment",
+            ],
+            relatedGoalId: behindGoals[0].goalId,
           });
         }
 
         // No active goals
         if (goalsData.activeGoals.length === 0) {
           insights.push({
-            id: 'no_active_goals',
-            type: 'suggestion',
-            title: '🎯 Ready to Set Your First Goal?',
-            message: "Financial goals are the foundation of wealth building. Even a small emergency fund of £500 can make a huge difference in your financial confidence.",
-            priority: 'high',
+            id: "no_active_goals",
+            type: "suggestion",
+            title: "🎯 Ready to Set Your First Goal?",
+            message:
+              "Financial goals are the foundation of wealth building. Even a small emergency fund of £500 can make a huge difference in your financial confidence.",
+            priority: "high",
             actionable: true,
-            suggestedActions: ['Set emergency fund goal', 'Plan vacation savings', 'Start retirement planning']
+            suggestedActions: [
+              "Set emergency fund goal",
+              "Plan vacation savings",
+              "Start retirement planning",
+            ],
           });
         }
       }
 
       // Achievement-based insights
-      if (achievementsData?.newAchievements && achievementsData.newAchievements.length > 0) {
+      if (
+        achievementsData?.newAchievements &&
+        achievementsData.newAchievements.length > 0
+      ) {
         const latestAchievement = achievementsData.newAchievements[0];
         insights.push({
-          id: 'new_achievement_earned',
-          type: 'celebration',
-          title: '🏆 New Achievement Unlocked!',
+          id: "new_achievement_earned",
+          type: "celebration",
+          title: "🏆 New Achievement Unlocked!",
           message: `You've earned "${latestAchievement.title}"! You're building excellent financial habits. Keep up the momentum!`,
-          priority: 'high',
+          priority: "high",
           actionable: true,
-          suggestedActions: ['Share your success', 'Set next challenge', 'Review progress']
+          suggestedActions: [
+            "Share your success",
+            "Set next challenge",
+            "Review progress",
+          ],
         });
       }
 
@@ -469,13 +632,17 @@ export const aiService = {
       if (savingsData?.opportunities && savingsData.opportunities.length > 0) {
         const topOpportunity = savingsData.opportunities[0];
         insights.push({
-          id: 'top_savings_opportunity',
-          type: 'tip',
-          title: '💡 Quick Savings Tip',
+          id: "top_savings_opportunity",
+          type: "tip",
+          title: "💡 Quick Savings Tip",
           message: `You could save £${topOpportunity.potentialMonthlySavings}/month by ${topOpportunity.title.toLowerCase()}. ${topOpportunity.description}`,
-          priority: 'medium',
+          priority: "medium",
           actionable: true,
-          suggestedActions: topOpportunity.actionSteps?.slice(0, 3) || ['Review expenses', 'Make changes', 'Track savings']
+          suggestedActions: topOpportunity.actionSteps?.slice(0, 3) || [
+            "Review expenses",
+            "Make changes",
+            "Track savings",
+          ],
         });
       }
 
@@ -484,13 +651,17 @@ export const aiService = {
         const { level, pointsToNextLevel } = achievementsData.progress;
         if (pointsToNextLevel <= 50) {
           insights.push({
-            id: 'level_up_soon',
-            type: 'motivation',
-            title: '🚀 Almost Level Up!',
+            id: "level_up_soon",
+            type: "motivation",
+            title: "🚀 Almost Level Up!",
             message: `You're only ${pointsToNextLevel} points away from level ${level + 1}! Complete a few more financial actions to unlock the next level.`,
-            priority: 'low',
+            priority: "low",
             actionable: true,
-            suggestedActions: ['Add transactions', 'Review budget', 'Set new goal']
+            suggestedActions: [
+              "Add transactions",
+              "Review budget",
+              "Set new goal",
+            ],
           });
         }
       }
@@ -503,44 +674,59 @@ export const aiService = {
       // Monthly check-in
       if (dayOfMonth >= 28) {
         insights.push({
-          id: 'monthly_review',
-          type: 'suggestion',
-          title: '📊 Month-End Review Time',
-          message: "It's the end of the month! This is a perfect time to review your spending, check goal progress, and plan for next month.",
-          priority: 'medium',
+          id: "monthly_review",
+          type: "suggestion",
+          title: "📊 Month-End Review Time",
+          message:
+            "It's the end of the month! This is a perfect time to review your spending, check goal progress, and plan for next month.",
+          priority: "medium",
           actionable: true,
-          suggestedActions: ['Review monthly spending', 'Check goal progress', 'Plan next month budget']
+          suggestedActions: [
+            "Review monthly spending",
+            "Check goal progress",
+            "Plan next month budget",
+          ],
         });
       }
 
       // Weekend planning
       if (dayOfWeek === 0 || dayOfWeek === 6) {
         insights.push({
-          id: 'weekend_planning',
-          type: 'suggestion',
-          title: '🌟 Weekend Financial Planning',
-          message: "Weekends are great for financial planning! Take 10 minutes to review your goals and maybe set up some automated savings.",
-          priority: 'low',
+          id: "weekend_planning",
+          type: "suggestion",
+          title: "🌟 Weekend Financial Planning",
+          message:
+            "Weekends are great for financial planning! Take 10 minutes to review your goals and maybe set up some automated savings.",
+          priority: "low",
           actionable: true,
-          suggestedActions: ['Review goals', 'Set up auto-save', 'Plan week ahead']
+          suggestedActions: [
+            "Review goals",
+            "Set up auto-save",
+            "Plan week ahead",
+          ],
         });
       }
 
       console.log(`✅ [AI] Generated ${insights.length} proactive insights`);
       return insights;
     } catch (error: any) {
-      console.error('❌ [AI] Error generating proactive insights:', error);
+      console.error("❌ [AI] Error generating proactive insights:", error);
       // Return basic insights even if API calls fail
       return [
         {
-          id: 'welcome_insight',
-          type: 'tip',
-          title: '💡 Financial Tip',
-          message: "Start small but start today! Even saving £5 a week adds up to £260 a year. Every small step counts towards your financial freedom.",
-          priority: 'medium',
+          id: "welcome_insight",
+          type: "tip",
+          title: "💡 Financial Tip",
+          message:
+            "Start small but start today! Even saving £5 a week adds up to £260 a year. Every small step counts towards your financial freedom.",
+          priority: "medium",
           actionable: true,
-          suggestedActions: ['Set weekly savings goal', 'Track daily expenses', 'Review spending habits']
-        }
+          suggestedActions: [
+            "Set weekly savings goal",
+            "Track daily expenses",
+            "Review spending habits",
+          ],
+        },
       ];
     }
   },
@@ -552,12 +738,12 @@ export const aiService = {
       const starters: string[] = [];
 
       // Generate contextual conversation starters based on insights
-      if (insights.some(i => i.type === 'celebration')) {
+      if (insights.some((i) => i.type === "celebration")) {
         starters.push("Tell me about my recent achievements");
         starters.push("How am I doing with my financial goals?");
       }
 
-      if (insights.some(i => i.type === 'warning')) {
+      if (insights.some((i) => i.type === "warning")) {
         starters.push("Help me get back on track with my goals");
         starters.push("What can I do to improve my savings rate?");
       }
@@ -577,20 +763,20 @@ export const aiService = {
         "Help me create a budget",
         "Give me a financial tip",
         "How am I doing with my goals?",
-        "What should I focus on next?"
+        "What should I focus on next?",
       ];
     }
-  }
+  },
 };
 
 // Types for proactive insights
 export interface ProactiveInsight {
   id: string;
-  type: 'tip' | 'warning' | 'celebration' | 'suggestion' | 'motivation';
+  type: "tip" | "warning" | "celebration" | "suggestion" | "motivation";
   title: string;
   message: string;
   description?: string;
-  priority: 'low' | 'medium' | 'high';
+  priority: "low" | "medium" | "high";
   actionable: boolean;
   suggestedActions: string[];
   relatedGoalId?: string;
