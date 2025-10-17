@@ -71,8 +71,14 @@ export default function EditTransactionModal({
 
   useEffect(() => {
     if (transaction) {
-      setDescription(transaction.description || "");
+      // Set merchant (primary identifier)
       setMerchant(transaction.merchant || transaction.description || "");
+
+      // Only set description if it's different from merchant (to avoid duplication)
+      const desc = transaction.description || "";
+      const merch = transaction.merchant || transaction.description || "";
+      setDescription(desc !== merch ? desc : "");
+
       setAmount(Math.abs(transaction.originalAmount || transaction.amount).toFixed(2));
       setCategory(transaction.category || "Other");
       setDate(dayjs(transaction.date).format("YYYY-MM-DD"));
