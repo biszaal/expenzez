@@ -618,7 +618,7 @@ export default function TransactionsScreen() {
                   >
                     <View style={styles.merchantLogo}>
                       <Text style={styles.logoText}>
-                        {getMerchantLogo(transaction.description)}
+                        {getMerchantLogo(transaction.merchant)}
                       </Text>
                     </View>
 
@@ -629,7 +629,7 @@ export default function TransactionsScreen() {
                           { color: colors.text.primary },
                         ]}
                       >
-                        {getMerchantInfo(transaction.description).name}
+                        {transaction.merchant}
                       </Text>
                       <View style={styles.accountInfo}>
                         <Text
@@ -701,7 +701,7 @@ export default function TransactionsScreen() {
                   >
                     <View style={styles.merchantLogo}>
                       <Text style={styles.logoText}>
-                        {getMerchantLogo(transaction.description)}
+                        {getMerchantLogo(transaction.merchant)}
                       </Text>
                     </View>
 
@@ -712,7 +712,7 @@ export default function TransactionsScreen() {
                           { color: colors.text.primary },
                         ]}
                       >
-                        {getMerchantInfo(transaction.description).name}
+                        {transaction.merchant}
                       </Text>
                       <View style={styles.accountInfo}>
                         <Text
