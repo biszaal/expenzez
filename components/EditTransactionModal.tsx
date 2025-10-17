@@ -61,6 +61,7 @@ export default function EditTransactionModal({
   const { colors } = useTheme();
 
   const [description, setDescription] = useState("");
+  const [merchant, setMerchant] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [date, setDate] = useState("");
@@ -70,7 +71,8 @@ export default function EditTransactionModal({
 
   useEffect(() => {
     if (transaction) {
-      setDescription(transaction.description || transaction.merchant || "");
+      setDescription(transaction.description || "");
+      setMerchant(transaction.merchant || transaction.description || "");
       setAmount(Math.abs(transaction.originalAmount || transaction.amount).toFixed(2));
       setCategory(transaction.category || "Other");
       setDate(dayjs(transaction.date).format("YYYY-MM-DD"));
@@ -81,8 +83,8 @@ export default function EditTransactionModal({
   const handleSave = async () => {
     if (!transaction) return;
 
-    if (!description.trim()) {
-      Alert.alert("Validation Error", "Please enter a description");
+    if (!merchant.trim()) {
+      Alert.alert("Validation Error", "Please enter a merchant/transaction name");
       return;
     }
 
@@ -95,7 +97,8 @@ export default function EditTransactionModal({
     setSaving(true);
     try {
       const updates: Partial<Transaction> = {
-        description: description.trim(),
+        merchant: merchant.trim(),
+        description: description.trim() || merchant.trim(),
         amount: type === "credit" ? numAmount : -numAmount,
         originalAmount: numAmount,
         category,
@@ -261,10 +264,31 @@ export default function EditTransactionModal({
             </View>
           </View>
 
+          {/* Merchant/Name */}
+          <View style={styles.section}>
+            <Text style={[styles.label, { color: colors.text.secondary }]}>
+              Merchant/Name
+            </Text>
+            <View
+              style={[
+                styles.inputContainer,
+                { backgroundColor: colors.background.secondary },
+              ]}
+            >
+              <TextInput
+                style={[styles.input, { color: colors.text.primary }]}
+                value={merchant}
+                onChangeText={setMerchant}
+                placeholder="Enter merchant or transaction name"
+                placeholderTextColor={colors.text.tertiary}
+              />
+            </View>
+          </View>
+
           {/* Description */}
           <View style={styles.section}>
             <Text style={[styles.label, { color: colors.text.secondary }]}>
-              Description
+              Description (Optional)
             </Text>
             <View
               style={[
@@ -276,7 +300,7 @@ export default function EditTransactionModal({
                 style={[styles.input, { color: colors.text.primary }]}
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Enter description"
+                placeholder="Enter additional notes"
                 placeholderTextColor={colors.text.tertiary}
               />
             </View>
