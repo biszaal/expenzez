@@ -774,8 +774,8 @@ export default function SecurityScreen() {
           </View>
         )}
 
-        {/* Biometric Authentication Section */}
-        {hasBiometric && localSecurityEnabled && (
+        {/* Biometric Authentication Section - Always show when security is enabled */}
+        {localSecurityEnabled && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
               Biometric Authentication
@@ -816,18 +816,23 @@ export default function SecurityScreen() {
                         { color: colors.text.secondary },
                       ]}
                     >
-                      Use fingerprint or face ID
+                      {hasBiometric
+                        ? "Use fingerprint or face ID"
+                        : "Not available on this device"}
                     </Text>
                   </View>
                 </View>
                 <Switch
-                  value={isBiometricEnabled}
+                  value={isBiometricEnabled && hasBiometric}
                   onValueChange={handleBiometricToggle}
+                  disabled={!hasBiometric}
                   trackColor={{
                     false: colors.gray[200],
                     true: colors.success[500],
                   }}
-                  thumbColor={isBiometricEnabled ? "white" : colors.gray[300]}
+                  thumbColor={
+                    isBiometricEnabled && hasBiometric ? "white" : colors.gray[300]
+                  }
                 />
               </View>
             </View>

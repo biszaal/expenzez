@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState } from "react";
-import { AppState, Text, View, StatusBar } from "react-native";
+import { AppState, Text, View, StatusBar, Modal, TouchableOpacity, Alert, ActivityIndicator, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import * as Linking from "expo-linking";
@@ -15,6 +15,8 @@ import { RevenueCatProvider } from "../contexts/RevenueCatContext";
 import { SubscriptionProvider } from "../contexts/SubscriptionContext";
 import BiometricSecurityLock from "../components/BiometricSecurityLock";
 import SplashScreen from "./SplashScreen";
+import PinInput from "../components/PinInput";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Global error handlers to catch crashes
 if (typeof global !== "undefined" && (global as any).ErrorUtils) {
@@ -104,7 +106,9 @@ function RootLayoutNav() {
     isLocked,
     isSecurityEnabled,
     needsPinSetup,
+    hasServerPin,
     unlockApp,
+    validateAndSyncPin,
     isInitialized: securityInitialized,
   } = useSecurity();
   const { isDark } = useTheme();
@@ -114,6 +118,11 @@ function RootLayoutNav() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [onboardingStatusChecked, setOnboardingStatusChecked] = useState(false);
   const segments = useSegments();
+
+  // PIN sync modal state
+  const [showPinSyncModal, setShowPinSyncModal] = useState(false);
+  const [syncPinInput, setSyncPinInput] = useState("");
+  const [isSyncingPin, setIsSyncingPin] = useState(false);
 
   // Quick session check on app startup
   useEffect(() => {
@@ -227,6 +236,69 @@ function RootLayoutNav() {
   useEffect(() => {
     setShowPinSetup(false);
   }, []);
+
+  // Show PIN sync modal when user has server PIN but not local PIN
+  useEffect(() => {
+    if (isLoggedIn && isSecurityEnabled && needsPinSetup && hasServerPin && !showPinSyncModal) {
+      console.log("🔐 [Layout] User has server PIN but no local PIN - showing sync modal");
+      setShowPinSyncModal(true);
+    }
+  }, [isLoggedIn, isSecurityEnabled, needsPinSetup, hasServerPin]);
+
+  // Handle PIN sync submission
+  const handlePinSync = async () => {
+    if (syncPinInput.length !== 5) {
+      return;
+    }
+
+    setIsSyncingPin(true);
+    try {
+      const success = await validateAndSyncPin(syncPinInput);
+
+      if (success) {
+        Alert.alert(
+          "PIN Synced Successfully",
+          "Your PIN has been synced to this device. You can now use it to unlock the app.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                setShowPinSyncModal(false);
+                setSyncPinInput("");
+              }
+            }
+          ]
+        );
+      } else {
+        setSyncPinInput("");
+        Alert.alert(
+          "Incorrect PIN",
+          "The PIN you entered is incorrect. Please try again.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("❌ [Layout] Error syncing PIN:", error);
+      setSyncPinInput("");
+      Alert.alert(
+        "Sync Failed",
+        "Failed to sync your PIN. Please try again or contact support.",
+        [{ text: "OK" }]
+      );
+    } finally {
+      setIsSyncingPin(false);
+    }
+  };
+
+  // Auto-submit when PIN is complete
+  useEffect(() => {
+    if (syncPinInput.length === 5 && !isSyncingPin) {
+      const timeout = setTimeout(() => {
+        handlePinSync();
+      }, 200);
+      return () => clearTimeout(timeout);
+    }
+  }, [syncPinInput, isSyncingPin]);
 
   useEffect(() => {
     // Ensure in-app browser closes and returns to app after OAuth redirect
@@ -434,6 +506,47 @@ function RootLayoutNav() {
         backgroundColor="transparent"
         translucent={true}
       />
+
+      {/* PIN Sync Modal - Show when user has PIN on server but not locally */}
+      <Modal
+        visible={showPinSyncModal}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => {
+          // Can't dismiss this modal - user must enter PIN
+        }}
+      >
+        <SafeAreaView style={pinSyncStyles.container}>
+          <View style={pinSyncStyles.content}>
+            <Text style={pinSyncStyles.title}>Welcome Back!</Text>
+            <Text style={pinSyncStyles.subtitle}>
+              You have App Lock enabled on your account. Please enter your 5-digit PIN to sync it to this device.
+            </Text>
+
+            <View style={pinSyncStyles.pinContainer}>
+              <PinInput
+                pin={syncPinInput}
+                onPinChange={setSyncPinInput}
+                isLoading={isSyncingPin}
+                maxLength={5}
+                showBiometric={false}
+              />
+            </View>
+
+            {isSyncingPin && (
+              <View style={pinSyncStyles.loadingContainer}>
+                <ActivityIndicator size="small" color="#6F76C8" />
+                <Text style={pinSyncStyles.loadingText}>Verifying PIN...</Text>
+              </View>
+            )}
+
+            <Text style={pinSyncStyles.hint}>
+              Enter the PIN you created on another device
+            </Text>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
       <Stack
         screenOptions={{ headerShown: false }}
         initialRouteName={initialRoute}
@@ -458,6 +571,7 @@ function RootLayoutNav() {
         <Stack.Screen name="import-csv" />
         <Stack.Screen name="settings/index" />
         <Stack.Screen name="CompleteProfile" />
+        <Stack.Screen name="debug-security" />
       </Stack>
     </>
   );
@@ -484,3 +598,53 @@ export default function RootLayout() {
     </ErrorBoundary>
   );
 }
+
+const pinSyncStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#6B7280",
+    textAlign: "center",
+    lineHeight: 24,
+    marginBottom: 48,
+    paddingHorizontal: 16,
+  },
+  pinContainer: {
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: "#6F76C8",
+    marginLeft: 8,
+    fontWeight: "500",
+  },
+  hint: {
+    fontSize: 14,
+    color: "#9CA3AF",
+    textAlign: "center",
+    marginTop: 24,
+  },
+});

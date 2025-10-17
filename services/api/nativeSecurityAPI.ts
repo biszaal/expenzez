@@ -103,7 +103,70 @@ export const nativeSecurityAPI = {
   },
 
   /**
-   * Validate PIN using local fallback (server endpoint not available in current AWS deployment)
+   * Validate PIN for cross-device sync (validates against server first, then stores locally)
+   * Used when user logs in from a new device and needs to sync their PIN
+   */
+  validatePinForSync: async (request: ValidatePinRequest): Promise<SecurityValidationResponse> => {
+    try {
+      console.log('🔐 [NativeSecurityAPI] Validating PIN for cross-device sync using SERVER...');
+
+      // Validate PIN format
+      if (!/^\d{5}$/.test(request.pin)) {
+        console.log('🔐 [NativeSecurityAPI] ❌ Invalid PIN format');
+        return { success: false, error: 'PIN must be exactly 5 digits' };
+      }
+
+      // Validate against SERVER (where the original PIN is stored)
+      try {
+        console.log('🔐 [NativeSecurityAPI] Sending PIN validation request to server...');
+        const response = await api.post('/security/validate-pin', {
+          pin: request.pin,
+          deviceId: request.deviceId,
+        });
+
+        if (response.status === 200 && response.data?.success) {
+          console.log('🔐 [NativeSecurityAPI] ✅ Server PIN validation successful - syncing to local device');
+
+          // PIN is correct on server, now store it locally for this device
+          await nativeCryptoStorage.storePinHash(request.pin);
+          console.log('🔐 [NativeSecurityAPI] ✅ PIN synced to local device');
+
+          // Update local security settings
+          await nativeCryptoStorage.setSecuritySettings({
+            securityEnabled: true,
+            biometricEnabled: false, // User can enable biometric later
+          });
+          console.log('🔐 [NativeSecurityAPI] ✅ Local security settings updated');
+
+          // Create session for this device
+          await nativeCryptoStorage.createSession(request.deviceId);
+          console.log('🔐 [NativeSecurityAPI] ✅ Session created for new device');
+
+          return { success: true };
+        } else {
+          console.log('🔐 [NativeSecurityAPI] ❌ Server PIN validation failed');
+          return { success: false, error: response.data?.error || 'Invalid PIN' };
+        }
+      } catch (serverError: any) {
+        console.error('🔐 [NativeSecurityAPI] ❌ Server validation error:', serverError);
+
+        // If server is unreachable, we can't sync the PIN
+        return {
+          success: false,
+          error: 'Unable to connect to server. Please check your internet connection.'
+        };
+      }
+    } catch (error: any) {
+      console.error('🔐 [NativeSecurityAPI] ❌ PIN sync validation error:', error);
+      return {
+        success: false,
+        error: error.message || 'Validation failed'
+      };
+    }
+  },
+
+  /**
+   * Validate PIN using local fallback (for normal PIN unlocking on a device that already has PIN)
    */
   validatePin: async (request: ValidatePinRequest): Promise<SecurityValidationResponse> => {
     try {
