@@ -21,6 +21,7 @@ interface SecurityContextType {
   isLocked: boolean;
   isSecurityEnabled: boolean;
   needsPinSetup: boolean;
+  hasServerPin: boolean;
   isInitialized: boolean;
   securityPreferences: UserSecurityPreferences | null;
   lockApp: () => void;
@@ -30,6 +31,7 @@ interface SecurityContextType {
   disableSecurity: () => Promise<void>;
   checkSecurityStatus: () => Promise<void>;
   syncSecurityPreferences: () => Promise<void>;
+  validateAndSyncPin: (pin: string) => Promise<boolean>;
 }
 
 const SecurityContext = createContext<SecurityContextType | undefined>(
@@ -45,6 +47,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLocked, setIsLocked] = useState(false);
   const [isSecurityEnabled, setIsSecurityEnabled] = useState(false);
   const [needsPinSetup, setNeedsPinSetup] = useState(false);
+  const [hasServerPin, setHasServerPin] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [securityPreferences, setSecurityPreferences] =
     useState<UserSecurityPreferences | null>(null);
@@ -337,9 +340,23 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
             needsPinSetup: securityStatus.needsPinSetup,
           });
 
+          // CRITICAL: Detect if user has PIN on server but not on this device
+          // If appLock is enabled globally AND this device needs PIN setup,
+          // that means they have a PIN on another device
+          const userHasPinOnServer =
+            securityStatus.preferences.appLockEnabled &&
+            securityStatus.needsPinSetup;
+
+          console.log("🔐 [SecurityContext] Cross-device PIN detection:", {
+            appLockEnabled: securityStatus.preferences.appLockEnabled,
+            needsPinSetup: securityStatus.needsPinSetup,
+            hasServerPin: userHasPinOnServer,
+          });
+
           // Update state based on server preferences
           setIsSecurityEnabled(securityStatus.preferences.appLockEnabled);
           setNeedsPinSetup(securityStatus.needsPinSetup);
+          setHasServerPin(userHasPinOnServer);
 
           // Determine lock state
           if (securityStatus.preferences.appLockEnabled) {
@@ -391,6 +408,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
         setIsSecurityEnabled(false);
         setIsLocked(false);
         setNeedsPinSetup(false);
+        setHasServerPin(false);
         setSecurityPreferences(null);
 
         await AsyncStorage.setItem(SECURITY_ENABLED_KEY, "false");
@@ -463,10 +481,14 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
           );
           hasPinOnServer = false;
         }
+
+        // Update hasServerPin state for cross-device PIN sync UI
+        setHasServerPin(hasPinOnServer);
       } else {
         console.log(
           "🔐 [SecurityContext] User not logged in, skipping server PIN check"
         );
+        setHasServerPin(false);
       }
 
       // For production app, prioritize database (server) PIN as source of truth
@@ -879,10 +901,74 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
     }, 100);
   }, [isLoggedIn, syncSecurityPreferences, checkSecurityStatus]);
 
+  const validateAndSyncPin = useCallback(
+    async (pin: string): Promise<boolean> => {
+      try {
+        console.log(
+          "🔐 [SecurityContext] Validating PIN against server for cross-device sync..."
+        );
+
+        const deviceId = await deviceManager.getDeviceId();
+
+        // Use the new validatePinForSync function that validates against SERVER first
+        // This is different from validatePin which only checks locally
+        const validation = await nativeSecurityAPI.validatePinForSync({
+          pin,
+          deviceId,
+        });
+
+        if (validation.success) {
+          console.log(
+            "✅ [SecurityContext] PIN validated successfully against server and synced locally"
+          );
+
+          // The validatePinForSync function already:
+          // 1. Validated PIN against server
+          // 2. Stored PIN locally via nativeCryptoStorage.storePinHash()
+          // 3. Updated security settings
+          // 4. Created session
+
+          // Also save to AsyncStorage for backward compatibility
+          await AsyncStorage.setItem("@expenzez_app_password", pin);
+
+          // Update states
+          setNeedsPinSetup(false);
+          setIsLocked(false);
+          setHasServerPin(false); // Clear this flag since PIN is now synced
+
+          // Update last unlock time
+          await AsyncStorage.setItem(
+            "@expenzez_last_unlock",
+            Date.now().toString()
+          );
+
+          console.log(
+            "✅ [SecurityContext] Cross-device PIN sync completed successfully"
+          );
+          return true;
+        } else {
+          console.log(
+            "❌ [SecurityContext] PIN validation failed:",
+            validation.error
+          );
+          return false;
+        }
+      } catch (error) {
+        console.error(
+          "❌ [SecurityContext] Error validating and syncing PIN:",
+          error
+        );
+        return false;
+      }
+    },
+    []
+  );
+
   const value: SecurityContextType = {
     isLocked,
     isSecurityEnabled,
     needsPinSetup,
+    hasServerPin,
     isInitialized,
     securityPreferences,
     lockApp,
@@ -892,6 +978,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
     disableSecurity,
     checkSecurityStatus,
     syncSecurityPreferences,
+    validateAndSyncPin,
   };
 
   return (
