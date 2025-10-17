@@ -68,6 +68,11 @@ export default function AIAssistantScreen() {
   const [showInsights, setShowInsights] = useState(true);
   // Premium features removed - all users have free access
   const scrollViewRef = useRef<ScrollView>(null);
+  
+  // Rate limiting state
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
+  const [rateLimitType, setRateLimitType] = useState<'hourly' | 'daily' | 'monthly' | null>(null);
 
   // Fetch chat history on mount
   useEffect(() => {
@@ -215,6 +220,26 @@ export default function AIAssistantScreen() {
     }
   }, [messages]);
 
+  // Countdown timer for rate limiting
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRateLimited && rateLimitCountdown > 0) {
+      interval = setInterval(() => {
+        setRateLimitCountdown((prev) => {
+          if (prev <= 1) {
+            setIsRateLimited(false);
+            setRateLimitType(null);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRateLimited, rateLimitCountdown]);
+
   const sendMessage = async (messageText?: string) => {
     const messageToSend = messageText || input.trim();
     if (!messageToSend || loading) return;
@@ -303,9 +328,26 @@ export default function AIAssistantScreen() {
       } catch (fallbackErr) {
         console.error("❌ Fallback also failed:", fallbackErr);
 
-        // Only show generic error if fallback completely fails
-        const errorMsg =
-          "I'm experiencing some technical difficulties. Please try again in a moment, or check your internet connection.";
+        // Check if it's a rate limiting error and show appropriate message
+        let errorMsg = "I'm experiencing some technical difficulties. Please try again in a moment, or check your internet connection.";
+        
+        if (fallbackErr?.code === 'RATE_LIMITED' || fallbackErr?.message?.includes('rate limit') || fallbackErr?.message?.includes('Too many requests')) {
+          errorMsg = "You're chatting too fast! Please wait a moment before sending another message. 🕐";
+          setIsRateLimited(true);
+          setRateLimitCountdown(60); // 1 minute
+          setRateLimitType('hourly');
+        } else if (fallbackErr?.code === 'AI_MONTHLY_LIMIT' || fallbackErr?.message?.includes('monthly limit')) {
+          errorMsg = "You've used all your AI chats for this month. Upgrade to Premium for unlimited AI assistance! 💎";
+          setRateLimitType('monthly');
+        } else if (fallbackErr?.code === 'AI_DAILY_LIMIT' || fallbackErr?.message?.includes('daily limit')) {
+          errorMsg = "You've reached your daily AI chat limit. Try again tomorrow or upgrade to Premium! 🌅";
+          setRateLimitType('daily');
+        } else if (fallbackErr?.code === 'AI_RATE_LIMITED' || fallbackErr?.message?.includes('hour')) {
+          errorMsg = "You've reached your AI chat limit for this hour. Please wait a bit before asking more questions. ⏰";
+          setIsRateLimited(true);
+          setRateLimitCountdown(3600); // 1 hour
+          setRateLimitType('hourly');
+        }
 
         setMessages((prev) => [
           ...prev,
@@ -1068,6 +1110,43 @@ export default function AIAssistantScreen() {
               </Animated.View>
             )}
           </ScrollView>
+          {/* Rate Limiting Banner */}
+          {isRateLimited && (
+            <View
+              style={{
+                position: "absolute",
+                bottom: 80,
+                left: 16,
+                right: 16,
+                backgroundColor: colors.warning[500],
+                borderRadius: 12,
+                padding: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 3,
+              }}
+            >
+              <Ionicons name="time-outline" size={20} color="#fff" />
+              <Text
+                style={{
+                  color: "#fff",
+                  fontSize: 14,
+                  fontWeight: "500",
+                  marginLeft: 8,
+                  flex: 1,
+                }}
+              >
+                {rateLimitType === 'hourly' && `Please wait ${Math.floor(rateLimitCountdown / 60)}:${(rateLimitCountdown % 60).toString().padStart(2, '0')} before sending another message`}
+                {rateLimitType === 'daily' && "Daily limit reached. Try again tomorrow or upgrade to Premium!"}
+                {rateLimitType === 'monthly' && "Monthly limit reached. Upgrade to Premium for unlimited AI assistance!"}
+              </Text>
+            </View>
+          )}
+
           {/* Enhanced Input Bar */}
           <View
             style={{
@@ -1108,8 +1187,8 @@ export default function AIAssistantScreen() {
                 placeholderTextColor={colors.text.tertiary}
                 value={input}
                 onChangeText={setInput}
-                editable={!loading}
-                onSubmitEditing={() => sendMessage()}
+                editable={!loading && !isRateLimited}
+                onSubmitEditing={() => !isRateLimited && sendMessage()}
                 returnKeyType="send"
                 multiline
                 textAlignVertical="center"
@@ -1132,8 +1211,8 @@ export default function AIAssistantScreen() {
                   shadowRadius: 4,
                   elevation: 2,
                 }}
-                onPress={() => sendMessage()}
-                disabled={!input.trim() || loading}
+                onPress={() => !isRateLimited && sendMessage()}
+                disabled={!input.trim() || loading || isRateLimited}
               >
                 {loading ? (
                   <ActivityIndicator size="small" color="#fff" />

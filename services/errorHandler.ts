@@ -113,7 +113,11 @@ const USER_FRIENDLY_MESSAGES: Record<string, string> = {
   [FrontendErrorCodes.SERVER_UNAVAILABLE]:
     "Our servers are temporarily unavailable. Please try again later.",
   [FrontendErrorCodes.RATE_LIMITED]:
-    "Too many requests. Please wait a moment before trying again.",
+    "You're chatting too fast! Please wait a moment before sending another message.",
+  // AI-specific rate limiting messages
+  AI_RATE_LIMITED: "You've reached your AI chat limit for this hour. Please wait a bit before asking more questions.",
+  AI_MONTHLY_LIMIT: "You've used all your AI chats for this month. Upgrade to Premium for unlimited AI assistance!",
+  AI_DAILY_LIMIT: "You've reached your daily AI chat limit. Try again tomorrow or upgrade to Premium.",
   [FrontendErrorCodes.BIOMETRIC_AUTH_FAILED]:
     "Biometric authentication failed. Please try again or use your PIN.",
   [FrontendErrorCodes.INSUFFICIENT_PERMISSIONS]:
@@ -149,6 +153,9 @@ const RECOVERY_ACTIONS: Record<string, string[]> = {
     "show_maintenance_message",
   ],
   [FrontendErrorCodes.RATE_LIMITED]: ["wait_and_retry", "show_cooldown_timer"],
+  AI_RATE_LIMITED: ["wait_and_retry", "show_cooldown_timer", "suggest_premium"],
+  AI_MONTHLY_LIMIT: ["suggest_premium", "show_upgrade_prompt"],
+  AI_DAILY_LIMIT: ["wait_and_retry", "suggest_premium", "show_tomorrow_message"],
   [FrontendErrorCodes.BIOMETRIC_AUTH_FAILED]: [
     "retry_biometric",
     "fallback_to_pin",
@@ -339,11 +346,32 @@ class ErrorHandlerService {
       }
 
       if (status === 429) {
+        // Check if it's an AI-specific rate limit
+        const isAIEndpoint = context?.endpoint?.includes('/ai/') || context?.additionalData?.apiType === 'AI';
+        const errorMessage = error.response?.data?.message || error.message || '';
+        
+        let rateLimitCode = FrontendErrorCodes.RATE_LIMITED;
+        let rateLimitMessage = "You're chatting too fast! Please wait a moment before sending another message.";
+        
+        if (isAIEndpoint) {
+          // Check for specific AI rate limit messages
+          if (errorMessage.includes('monthly limit') || errorMessage.includes('monthly')) {
+            rateLimitCode = 'AI_MONTHLY_LIMIT';
+            rateLimitMessage = "You've used all your AI chats for this month. Upgrade to Premium for unlimited AI assistance!";
+          } else if (errorMessage.includes('daily limit') || errorMessage.includes('daily')) {
+            rateLimitCode = 'AI_DAILY_LIMIT';
+            rateLimitMessage = "You've reached your daily AI chat limit. Try again tomorrow or upgrade to Premium.";
+          } else if (errorMessage.includes('hour') || errorMessage.includes('rate limit')) {
+            rateLimitCode = 'AI_RATE_LIMITED';
+            rateLimitMessage = "You've reached your AI chat limit for this hour. Please wait a bit before asking more questions.";
+          }
+        }
+        
         return new ExpenzezFrontendError(
-          FrontendErrorCodes.RATE_LIMITED,
-          "Too many requests",
+          rateLimitCode,
+          rateLimitMessage,
           429,
-          { originalError: error.message },
+          { originalError: error.message, isAIEndpoint },
           context,
           false,
           true,
