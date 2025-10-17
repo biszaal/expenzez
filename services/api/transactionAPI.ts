@@ -117,6 +117,27 @@ export const transactionAPI = {
     return response.data;
   },
 
+  // Update transaction
+  updateTransaction: async (
+    transactionId: string,
+    data: Partial<TransactionCreateData>
+  ): Promise<TransactionCreateResponse> => {
+    const response = await api.put(`/transactions/${transactionId}`, data);
+    return response.data;
+  },
+
+  // Delete transaction
+  deleteTransaction: async (transactionId: string): Promise<{ message: string; success: boolean }> => {
+    const response = await api.delete(`/transactions/${transactionId}`);
+    return response.data;
+  },
+
+  // Get single transaction
+  getTransaction: async (transactionId: string): Promise<Transaction> => {
+    const response = await api.get(`/transactions/${transactionId}`);
+    return response.data.transaction;
+  },
+
   // Helper method to convert expense data to transaction format
   convertExpenseToTransaction: (expenseData: any): TransactionCreateData => {
     const isIncome = expenseData.tags?.includes("income");

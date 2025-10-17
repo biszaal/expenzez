@@ -21,6 +21,7 @@ import { TransactionSkeleton } from "../../components/ui/SkeletonLoader";
 import { transactionAPI } from "../../services/api/transactionAPI";
 import { getMerchantInfo } from "../../services/merchantService";
 import MonthFilter from "../../components/ui/MonthFilter";
+import EditTransactionModal from "../../components/EditTransactionModal";
 import dayjs from "dayjs";
 
 interface Transaction {
@@ -61,6 +62,10 @@ export default function TransactionsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMonth, setSelectedMonth] = useState<string>(""); // Empty = show all
   const [lastUpdated, setLastUpdated] = useState(dayjs().format("HH:mm"));
+
+  // Edit modal state
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   const fetchTransactions = async (showRefresh = false) => {
     try {
@@ -156,6 +161,55 @@ export default function TransactionsScreen() {
 
   const onRefresh = () => {
     fetchTransactions(true);
+  };
+
+  // Handle edit transaction
+  const handleEditTransaction = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setEditModalVisible(true);
+  };
+
+  // Handle save transaction
+  const handleSaveTransaction = async (
+    transactionId: string,
+    updates: Partial<Transaction>
+  ) => {
+    try {
+      await transactionAPI.updateTransaction(transactionId, updates);
+
+      // Update the local state
+      setTransactions((prevTransactions) =>
+        prevTransactions.map((tx) =>
+          tx.id === transactionId ? { ...tx, ...updates } : tx
+        )
+      );
+
+      showSuccess("Transaction updated successfully");
+      setEditModalVisible(false);
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      showError("Failed to update transaction");
+      throw error;
+    }
+  };
+
+  // Handle delete transaction
+  const handleDeleteTransaction = async (transactionId: string) => {
+    try {
+      await transactionAPI.deleteTransaction(transactionId);
+
+      // Remove from local state
+      setTransactions((prevTransactions) =>
+        prevTransactions.filter((tx) => tx.id !== transactionId)
+      );
+
+      showSuccess("Transaction deleted successfully");
+      setEditModalVisible(false);
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+      showError("Failed to delete transaction");
+      throw error;
+    }
   };
 
   useEffect(() => {
@@ -554,12 +608,13 @@ export default function TransactionsScreen() {
                 </View>
 
                 {pendingTransactions.map((transaction) => (
-                  <View
+                  <TouchableOpacity
                     key={transaction.id}
                     style={[
                       styles.transactionCard,
                       { backgroundColor: colors.background.secondary },
                     ]}
+                    onPress={() => handleEditTransaction(transaction)}
                   >
                     <View style={styles.merchantLogo}>
                       <Text style={styles.logoText}>
@@ -606,8 +661,14 @@ export default function TransactionsScreen() {
                         {transaction.type === "credit" ? "+" : ""}£
                         {Math.abs(transaction.originalAmount).toFixed(2)}
                       </Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color={colors.text.tertiary}
+                        style={styles.chevronIcon}
+                      />
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             )}
@@ -630,12 +691,13 @@ export default function TransactionsScreen() {
                 </Text>
 
                 {group.transactions.map((transaction) => (
-                  <View
+                  <TouchableOpacity
                     key={transaction.id}
                     style={[
                       styles.transactionCard,
                       { backgroundColor: colors.background.secondary },
                     ]}
+                    onPress={() => handleEditTransaction(transaction)}
                   >
                     <View style={styles.merchantLogo}>
                       <Text style={styles.logoText}>
@@ -682,8 +744,14 @@ export default function TransactionsScreen() {
                         {transaction.type === "credit" ? "+" : ""}£
                         {Math.abs(transaction.originalAmount).toFixed(2)}
                       </Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color={colors.text.tertiary}
+                        style={styles.chevronIcon}
+                      />
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             ))}
@@ -704,6 +772,18 @@ export default function TransactionsScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Edit Transaction Modal */}
+      <EditTransactionModal
+        visible={editModalVisible}
+        transaction={selectedTransaction}
+        onClose={() => {
+          setEditModalVisible(false);
+          setSelectedTransaction(null);
+        }}
+        onSave={handleSaveTransaction}
+        onDelete={handleDeleteTransaction}
+      />
     </SafeAreaView>
   );
 }
@@ -873,6 +953,9 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 16,
     fontWeight: "700",
+  },
+  chevronIcon: {
+    marginTop: spacing.xs,
   },
 
   // Empty States
