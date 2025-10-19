@@ -151,10 +151,11 @@ export default function EditBudgetPage() {
       let allocatedBudget = 0;
       categoryWeights.forEach((item, index) => {
         const normalizedWeight = item.weight / totalWeight;
-        const suggestedBudget = index === categoryWeights.length - 1
-          ? budgetAmount - allocatedBudget // Last category gets remainder to avoid rounding errors
-          : Math.round(budgetAmount * normalizedWeight);
-        
+        const suggestedBudget =
+          index === categoryWeights.length - 1
+            ? budgetAmount - allocatedBudget // Last category gets remainder to avoid rounding errors
+            : Math.round(budgetAmount * normalizedWeight);
+
         // Ensure budget is never negative
         newBudgets[item.id] = Math.max(0, suggestedBudget).toString();
         allocatedBudget += suggestedBudget;
@@ -173,17 +174,28 @@ export default function EditBudgetPage() {
   }, [mainBudget, categories.length]);
 
   // Save budget to database
-  const saveBudgetToDatabase = async (budgetAmount: number) => {
+  const saveBudgetToDatabase = async (
+    budgetAmount: number,
+    categoryBudgetsByName: Record<string, number>
+  ) => {
     try {
-      // Save to backend database
+      // Save to backend database with category budgets
       await budgetAPI.updateBudgetPreferences({
         monthlySpendingLimit: budgetAmount,
-        updatedAt: new Date().toISOString(),
+        categoryBudgets: categoryBudgetsByName,
+        alertThreshold: 80,
+        currency: "GBP",
       });
 
-      console.log("Budget saved successfully to database:", budgetAmount);
+      console.log(
+        "Budget and category budgets saved successfully to DynamoDB:",
+        {
+          mainBudget: budgetAmount,
+          categoryBudgets: categoryBudgetsByName,
+        }
+      );
     } catch (error) {
-      console.error("Error saving budget to database:", error);
+      console.error("Error saving budget to DynamoDB:", error);
       throw error;
     }
   };
@@ -299,9 +311,6 @@ export default function EditBudgetPage() {
         return;
       }
 
-      // Save main budget to database and storage
-      await saveBudgetToDatabase(budgetAmount);
-
       // Convert category budgets by mapping category IDs back to names
       const categoryBudgetsByName: Record<string, number> = {};
       categories.forEach((cat) => {
@@ -311,24 +320,12 @@ export default function EditBudgetPage() {
         }
       });
 
-      // Save category budgets to database
-      try {
-        await budgetAPI.updateBudgetPreferences({
-          monthlySpendingLimit: budgetAmount,
-          categoryBudgets: categoryBudgetsByName,
-          alertThreshold: 80,
-          currency: "GBP",
-          updatedAt: new Date().toISOString(),
-        });
-        console.log("✅ Budget preferences saved to database");
+      // Save main budget and category budgets to DynamoDB
+      await saveBudgetToDatabase(budgetAmount, categoryBudgetsByName);
 
-        Alert.alert("Success", "Budgets saved successfully!", [
-          { text: "OK", onPress: () => router.back() },
-        ]);
-      } catch (dbError) {
-        console.error("❌ Error saving to database:", dbError);
-        throw dbError; // Re-throw to be caught by outer catch block
-      }
+      Alert.alert("Success", "Budgets saved successfully to DynamoDB!", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
     } catch (error) {
       console.error("Error saving budget:", error);
       Alert.alert("Error", "Failed to save budget. Please try again.");
