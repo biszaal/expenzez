@@ -341,8 +341,10 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
           });
 
           // Check if PIN sync was recently completed to prevent re-triggering
-          const pinSyncComplete = await AsyncStorage.getItem("@expenzez_pin_sync_complete");
-          
+          const pinSyncComplete = await AsyncStorage.getItem(
+            "@expenzez_pin_sync_complete"
+          );
+
           // CRITICAL: Detect if user has PIN on server but not on this device
           // If appLock is enabled globally AND this device needs PIN setup,
           // that means they have a PIN on another device
@@ -941,6 +943,12 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
 
           // Also save to AsyncStorage for backward compatibility
           await AsyncStorage.setItem("@expenzez_app_password", pin);
+          
+          // CRITICAL: Also store in AsyncStorage for legacy compatibility
+          // The app checks AsyncStorage for PIN existence, not just secure storage
+          await AsyncStorage.setItem("@expenzez_has_pin", "true");
+          
+          console.log("🔐 [SecurityContext] ✅ PIN stored in both secure storage and AsyncStorage");
 
           // Update states immediately to prevent modal from showing again
           setNeedsPinSetup(false);
