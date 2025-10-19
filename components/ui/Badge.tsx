@@ -23,6 +23,11 @@ export default function Badge({
 }: BadgeProps) {
   const { colors } = useTheme();
 
+  // Early return if colors is not available
+  if (!colors) {
+    return null;
+  }
+
   const getVariantStyles = () => {
     switch (variant) {
       case "success":

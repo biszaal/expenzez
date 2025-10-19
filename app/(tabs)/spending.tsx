@@ -6,6 +6,8 @@ import React, {
   useCallback,
   useRef,
 } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { budgetAPI } from "../../services/api";
 import {
   ScrollView,
   Text,
@@ -21,12 +23,10 @@ import { useTheme } from "../../contexts/ThemeContext";
 // import { useSubscription } from "../../contexts/SubscriptionContext"; // Removed unused import
 import { SpendingSkeleton } from "../../components/ui/SkeletonLoader";
 import { spacing } from "../../constants/theme";
-import { budgetAPI } from "../../services/api";
 import { balanceAPI } from "../../services/api/balanceAPI";
 import { useXP } from "../../hooks/useXP";
 import { transactionAPI } from "../../services/api/transactionAPI";
 import { getMerchantInfo } from "../../services/merchantService";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { ChartData, ChartDataPoint } from "../../components/charts";
@@ -256,11 +256,29 @@ export default function SpendingPage() {
     };
   }, [monthlyTransactions]);
 
-  // Budget calculations
-  const totalBudget = categoryData.reduce(
-    (sum, cat) => sum + (cat.defaultBudget || 0),
-    0
-  );
+  // Budget state
+  const [userBudget, setUserBudget] = useState(2000); // Default budget
+
+  // Load user's budget from database
+  const loadUserBudget = async () => {
+    try {
+      const budgetPreferences = await budgetAPI.getBudgetPreferences();
+      if (budgetPreferences.monthlySpendingLimit) {
+        setUserBudget(budgetPreferences.monthlySpendingLimit);
+      }
+    } catch (error) {
+      console.error("Error loading user budget from database:", error);
+      // Keep default budget if database fails
+    }
+  };
+
+  // Load budget on component mount
+  useEffect(() => {
+    loadUserBudget();
+  }, []);
+
+  // Budget calculations - use user's budget instead of category defaults
+  const totalBudget = userBudget;
   const monthlySpentPercentage =
     totalBudget > 0
       ? ((monthlyData?.monthlyTotalSpent || 0) / totalBudget) * 100

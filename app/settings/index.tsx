@@ -10,20 +10,29 @@ import {
   Switch,
   Alert,
   Linking,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme, ColorScheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../auth/AuthContext";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
+import { useSubscription } from "../../hooks/useSubscription";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { colors, colorScheme, setColorScheme, isDark } = useTheme();
   const { logout } = useAuth();
-  // Subscription features removed - all users have free access
+  const {
+    isPremium,
+    isLoading: subscriptionLoading,
+    subscriptionStatus,
+    restorePurchases,
+    trialMessage,
+  } = useSubscription();
 
   // Local state for settings
   const [currency, setCurrency] = useState("GBP");
+  const [restoringPurchases, setRestoringPurchases] = useState(false);
 
   const themeOptions = [
     {
@@ -119,6 +128,28 @@ export default function SettingsPage() {
       },
       { text: "Help Center", onPress: () => router.push("/help") },
     ]);
+  };
+
+  const handleRestorePurchases = async () => {
+    setRestoringPurchases(true);
+    try {
+      const result = await restorePurchases();
+      if (result.success) {
+        Alert.alert(
+          "Success",
+          "Your premium subscription has been successfully restored!"
+        );
+      } else {
+        Alert.alert(
+          "No Purchases Found",
+          "We couldn't find any previous purchases to restore."
+        );
+      }
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to restore purchases.");
+    } finally {
+      setRestoringPurchases(false);
+    }
   };
 
   return (
@@ -398,6 +429,169 @@ export default function SettingsPage() {
             </TouchableOpacity>
           </View>
 
+          {/* Subscription */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              Subscription
+            </Text>
+
+            {/* Subscription Status Card */}
+            <View
+              style={[
+                styles.subscriptionCard,
+                {
+                  backgroundColor: isPremium
+                    ? colors.primary[50] || "rgba(124, 58, 237, 0.05)"
+                    : colors.background.primary,
+                  borderColor: isPremium
+                    ? colors.primary[200] || "rgba(124, 58, 237, 0.2)"
+                    : colors.border.light,
+                },
+                shadows.sm,
+              ]}
+            >
+              <View style={styles.subscriptionHeader}>
+                <View style={styles.subscriptionTitleRow}>
+                  <Ionicons
+                    name={isPremium ? "diamond" : "diamond-outline"}
+                    size={24}
+                    color={isPremium ? colors.primary[500] : colors.text.secondary}
+                  />
+                  <Text
+                    style={[
+                      styles.subscriptionTitle,
+                      { color: colors.text.primary },
+                    ]}
+                  >
+                    {subscriptionLoading ? (
+                      <ActivityIndicator size="small" color={colors.primary[500]} />
+                    ) : isPremium ? (
+                      "Premium"
+                    ) : (
+                      "Free Plan"
+                    )}
+                  </Text>
+                  {isPremium && subscriptionStatus.isInTrial && (
+                    <View
+                      style={[
+                        styles.trialBadge,
+                        { backgroundColor: colors.warning[500] },
+                      ]}
+                    >
+                      <Text style={styles.trialBadgeText}>TRIAL</Text>
+                    </View>
+                  )}
+                </View>
+
+                {isPremium ? (
+                  <View style={styles.subscriptionDetails}>
+                    {subscriptionStatus.isInTrial && trialMessage && (
+                      <Text
+                        style={[
+                          styles.subscriptionDetailText,
+                          { color: colors.warning[600] || colors.text.secondary },
+                        ]}
+                      >
+                        {trialMessage}
+                      </Text>
+                    )}
+                    {subscriptionStatus.expiryDate && (
+                      <Text
+                        style={[
+                          styles.subscriptionDetailText,
+                          { color: colors.text.secondary },
+                        ]}
+                      >
+                        {subscriptionStatus.isCancelled
+                          ? `Access until ${subscriptionStatus.expiryDate.toLocaleDateString()}`
+                          : `Renews ${subscriptionStatus.expiryDate.toLocaleDateString()}`}
+                      </Text>
+                    )}
+                  </View>
+                ) : (
+                  <Text
+                    style={[
+                      styles.subscriptionDescription,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
+                    Unlock unlimited AI queries, budgets, analytics, and more
+                  </Text>
+                )}
+              </View>
+
+              {/* Action Buttons */}
+              <View style={styles.subscriptionActions}>
+                {!isPremium ? (
+                  <TouchableOpacity
+                    style={[
+                      styles.upgradeButton,
+                      { backgroundColor: colors.primary[500] },
+                    ]}
+                    onPress={() => router.push("/subscription/plans")}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="diamond" size={18} color="white" />
+                    <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[
+                      styles.manageButton,
+                      {
+                        backgroundColor: colors.background.secondary,
+                        borderColor: colors.border.light,
+                      },
+                    ]}
+                    onPress={() => router.push("/subscription/plans")}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name="settings-outline"
+                      size={18}
+                      color={colors.text.primary}
+                    />
+                    <Text
+                      style={[
+                        styles.manageButtonText,
+                        { color: colors.text.primary },
+                      ]}
+                    >
+                      Manage Subscription
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                <TouchableOpacity
+                  style={styles.restoreLink}
+                  onPress={handleRestorePurchases}
+                  disabled={restoringPurchases}
+                  activeOpacity={0.7}
+                >
+                  {restoringPurchases ? (
+                    <ActivityIndicator size="small" color={colors.primary[500]} />
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="refresh"
+                        size={14}
+                        color={colors.primary[500]}
+                      />
+                      <Text
+                        style={[
+                          styles.restoreLinkText,
+                          { color: colors.primary[500] },
+                        ]}
+                      >
+                        Restore Purchases
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
           {/* Account */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
@@ -501,8 +695,6 @@ export default function SettingsPage() {
               />
             </TouchableOpacity>
           </View>
-
-          {/* Subscription features removed - all users have free access */}
 
           {/* Legal */}
           <View style={styles.section}>
@@ -851,5 +1043,77 @@ const styles = StyleSheet.create({
     color: "white",
     flex: 1,
     textAlign: "center",
+  },
+  subscriptionCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 16,
+  },
+  subscriptionHeader: {
+    marginBottom: 16,
+  },
+  subscriptionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 8,
+  },
+  subscriptionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    flex: 1,
+  },
+  subscriptionDetails: {
+    marginTop: 8,
+    gap: 4,
+  },
+  subscriptionDetailText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  subscriptionDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 4,
+  },
+  subscriptionActions: {
+    gap: 12,
+  },
+  upgradeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
+  upgradeButtonText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  manageButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  manageButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  restoreLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+  },
+  restoreLinkText: {
+    fontSize: 13,
+    fontWeight: "500",
   },
 });

@@ -20,6 +20,8 @@ import { spacing, borderRadius, typography } from "../../constants/theme";
 import { useRouter } from "expo-router";
 import MarkdownRenderer from "../../components/ui/MarkdownRenderer";
 import type { ProactiveInsight } from "../../services/api/aiAPI";
+import { useSubscription } from "../../hooks/useSubscription";
+import { PremiumFeature, FREE_TIER_LIMITS } from "../../services/subscriptionService";
 
 interface Message {
   role: "user" | "assistant";
@@ -49,10 +51,12 @@ export default function AIAssistantScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
-  // Subscription features removed - all users have free access
+  const { isPremium, hasFeatureAccess } = useSubscription();
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [aiQueriesToday, setAiQueriesToday] = useState(0);
   const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(
     null
   );
@@ -246,13 +250,37 @@ export default function AIAssistantScreen() {
     const messageToSend = messageText || input.trim();
     if (!messageToSend || loading) return;
 
-    // All users have free access to AI assistant
+    // Check premium status and AI query limit
+    const access = hasFeatureAccess(PremiumFeature.AI_CHAT, { aiQueriesToday });
+
+    if (!access.hasAccess) {
+      // Show upgrade prompt
+      Alert.alert(
+        "Daily AI Limit Reached",
+        `You've used all ${FREE_TIER_LIMITS.MAX_AI_QUERIES_PER_DAY} free AI queries today. Upgrade to Premium for unlimited AI conversations!`,
+        [
+          {
+            text: "Maybe Later",
+            style: "cancel",
+          },
+          {
+            text: "Upgrade to Premium",
+            style: "default",
+            onPress: () => router.push("/subscription/plans"),
+          },
+        ]
+      );
+      return;
+    }
 
     const userMessage: Message = { role: "user", content: messageToSend };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
     setShowInsights(false); // Hide insights after first message
+
+    // Increment AI query count
+    setAiQueriesToday((prev) => prev + 1);
 
     try {
       // Save user message (don't block on failure)

@@ -43,6 +43,11 @@ export default function ListItem({
 }: ListItemProps) {
   const { colors } = useTheme();
 
+  // Early return if colors is not available
+  if (!colors) {
+    return null;
+  }
+
   const getVariantColors = () => {
     switch (variant) {
       case "danger":

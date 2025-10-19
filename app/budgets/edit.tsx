@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Dimensions,
+  Animated,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -17,6 +20,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 
+const { width } = Dimensions.get("window");
+
 export default function EditBudgetPage() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -24,117 +29,142 @@ export default function EditBudgetPage() {
   const [budgets, setBudgets] = useState<Record<string, string>>({});
   const [mainBudget, setMainBudget] = useState<string>("2000");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(50));
 
-  // Generate categories dynamically from transaction data (same logic as spending tab)
+  // Load user's saved budget on component mount
+  useEffect(() => {
+    loadUserBudget();
+  }, []);
+
+  // Animation on mount
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  // Load user's saved budget from database
+  const loadUserBudget = async () => {
+    try {
+      const budgetPreferences = await budgetAPI.getBudgetPreferences();
+      if (budgetPreferences.monthlySpendingLimit) {
+        setMainBudget(budgetPreferences.monthlySpendingLimit.toString());
+      }
+    } catch (error) {
+      console.error("Error loading user budget from database:", error);
+      // Fallback to default if database fails
+      setMainBudget("2000");
+    }
+  };
+
+  // Save budget to database
+  const saveBudgetToDatabase = async (budgetAmount: number) => {
+    try {
+      // Save to backend database
+      await budgetAPI.updateBudgetPreferences({
+        monthlySpendingLimit: budgetAmount,
+        updatedAt: new Date().toISOString(),
+      });
+
+      console.log("Budget saved successfully to database:", budgetAmount);
+    } catch (error) {
+      console.error("Error saving budget to database:", error);
+      throw error;
+    }
+  };
+
+  // Generate categories dynamically from transaction data
   const generateCategoriesFromTransactions = (transactions: any[]) => {
-    const categoryMap = new Map<string, { count: number; totalSpent: number }>();
-    
-    transactions.forEach(tx => {
-      if (tx.amount < 0) { // Only expenses
+    const categoryMap = new Map<
+      string,
+      { count: number; totalSpent: number }
+    >();
+
+    transactions.forEach((tx) => {
+      if (tx.amount < 0) {
+        // Only expenses
         const category = tx.category || "Other";
-        const existing = categoryMap.get(category) || { count: 0, totalSpent: 0 };
+        const existing = categoryMap.get(category) || {
+          count: 0,
+          totalSpent: 0,
+        };
         categoryMap.set(category, {
           count: existing.count + 1,
-          totalSpent: existing.totalSpent + Math.abs(tx.amount)
+          totalSpent: existing.totalSpent + Math.abs(tx.amount),
         });
       }
     });
 
-    const categories = Array.from(categoryMap.entries()).map(([name, data], index) => ({
-      id: name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase(),
-      name,
-      icon: getCategoryIcon(name),
-      color: getCategoryColor(name, index)
-    }));
+    const categories = Array.from(categoryMap.entries()).map(
+      ([name, data], index) => ({
+        id: name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase(),
+        name,
+        icon: getCategoryIcon(name),
+        color: getCategoryColor(name, index),
+      })
+    );
 
     return categories;
   };
 
   const getCategoryIcon = (categoryName: string) => {
-    const name = categoryName.toLowerCase();
-    if (name.includes('food') || name.includes('dining') || name.includes('restaurant')) return 'restaurant-outline';
-    if (name.includes('transport') || name.includes('travel') || name.includes('uber') || name.includes('taxi')) return 'car-outline';
-    if (name.includes('shop') || name.includes('retail') || name.includes('amazon')) return 'bag-outline';
-    if (name.includes('entertainment') || name.includes('game') || name.includes('movie')) return 'game-controller-outline';
-    if (name.includes('bill') || name.includes('utility') || name.includes('electric') || name.includes('gas')) return 'flash-outline';
-    if (name.includes('health') || name.includes('fitness') || name.includes('gym') || name.includes('medical')) return 'fitness-outline';
-    return 'pricetag-outline';
+    const iconMap: Record<string, string> = {
+      "Food & Dining": "restaurant",
+      Transportation: "car",
+      Shopping: "bag",
+      Entertainment: "film",
+      Bills: "receipt",
+      Health: "medical",
+      Other: "ellipsis-horizontal",
+    };
+    return iconMap[categoryName] || "ellipsis-horizontal";
   };
 
   const getCategoryColor = (categoryName: string, index: number) => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3', '#95A5A6'];
+    const colors = [
+      "#FF6B6B",
+      "#4ECDC4",
+      "#45B7D1",
+      "#96CEB4",
+      "#FFEAA7",
+      "#DDA0DD",
+      "#98D8C8",
+      "#F7DC6F",
+      "#BB8FCE",
+      "#85C1E9",
+    ];
     return colors[index % colors.length];
   };
 
-  React.useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Load existing budgets from database
-        let budgetPreferences;
-        try {
-          budgetPreferences = await budgetAPI.getBudgetPreferences();
-          setMainBudget(String(budgetPreferences.monthlyBudget));
-          console.log("✅ Budget preferences loaded from database:", budgetPreferences);
-        } catch (budgetError) {
-          console.error("❌ Error fetching budget preferences:", budgetError);
-          // Fallback to AsyncStorage if database fails
-          const storedMainBudget = await AsyncStorage.getItem('mainBudget');
-          if (storedMainBudget) {
-            setMainBudget(storedMainBudget);
-          }
-        }
-
-        // Fetch transactions to generate categories
-        const transactionsData = await transactionAPI.getTransactions({ limit: 1000 });
-        let allTransactions: any[] = [];
-        
-        if (transactionsData.success && transactionsData.transactions && Array.isArray(transactionsData.transactions)) {
-          allTransactions = transactionsData.transactions.map((tx: any, idx: number) => ({
-            id: tx.transactionId || tx.id || `tx-${idx}`,
-            amount: tx.type === 'debit' ? -Math.abs(Number(tx.amount || 0)) : Math.abs(Number(tx.amount || 0)),
-            category: tx.category || "Other",
-            date: tx.date || tx.createdAt || new Date().toISOString(),
-          }));
-        }
-
-        const dynamicCategories = generateCategoriesFromTransactions(allTransactions);
-        setCategories(dynamicCategories);
-
-        // Set up budget state
-        const initialBudgets: Record<string, string> = {};
-        let categoryBudgets = {};
-        
-        // Use database category budgets if available, otherwise fallback to AsyncStorage
-        if (budgetPreferences && budgetPreferences.categoryBudgets) {
-          categoryBudgets = budgetPreferences.categoryBudgets;
-        } else {
-          const storedCategoryBudgets = await AsyncStorage.getItem('categoryBudgets');
-          categoryBudgets = storedCategoryBudgets ? JSON.parse(storedCategoryBudgets) : {};
-        }
-        
-        dynamicCategories.forEach(cat => {
-          // Use stored budget if available, otherwise default to 0
-          initialBudgets[cat.id] = String(categoryBudgets[cat.name] || categoryBudgets[cat.id] || 0);
-        });
-        
-        setBudgets(initialBudgets);
-      } catch (error) {
-        console.error("Error loading budget data:", error);
-        Alert.alert("Error", "Failed to load budget data. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
-
-  const handleBudgetChange = (id: string, value: string) => {
-    setBudgets((prev) => ({ ...prev, [id]: value.replace(/[^0-9.]/g, "") }));
+  const handleMainBudgetChange = (text: string) => {
+    // Only allow numbers and one decimal point
+    const cleaned = text.replace(/[^0-9.]/g, "");
+    const parts = cleaned.split(".");
+    if (parts.length <= 2) {
+      setMainBudget(cleaned);
+    }
   };
 
-  const handleMainBudgetChange = (value: string) => {
-    setMainBudget(value.replace(/[^0-9.]/g, ""));
+  const handleCategoryBudgetChange = (categoryId: string, value: string) => {
+    const cleaned = value.replace(/[^0-9.]/g, "");
+    const parts = cleaned.split(".");
+    if (parts.length <= 2) {
+      setBudgets((prev) => ({
+        ...prev,
+        [categoryId]: cleaned,
+      }));
+    }
   };
 
   const totalAssigned = Object.values(budgets).reduce(
@@ -150,58 +180,111 @@ export default function EditBudgetPage() {
       Alert.alert("Over Budget", "Assigned budgets exceed the main budget.");
       return;
     }
-    
+
     try {
+      setSaving(true);
+
+      const budgetAmount = parseFloat(mainBudget);
+      if (isNaN(budgetAmount) || budgetAmount <= 0) {
+        Alert.alert("Invalid Amount", "Please enter a valid budget amount.");
+        return;
+      }
+
+      // Save main budget to database and storage
+      await saveBudgetToDatabase(budgetAmount);
+
       // Convert category budgets by mapping category IDs back to names
       const categoryBudgetsByName: Record<string, number> = {};
-      categories.forEach(cat => {
+      categories.forEach((cat) => {
         const budgetValue = parseFloat(budgets[cat.id]) || 0;
         if (budgetValue > 0) {
           categoryBudgetsByName[cat.name] = budgetValue;
         }
       });
 
-      // Save to database
+      // Save category budgets to database
       try {
         await budgetAPI.updateBudgetPreferences({
-          monthlyBudget: parseFloat(mainBudget) || 0,
+          monthlySpendingLimit: budgetAmount,
           categoryBudgets: categoryBudgetsByName,
-          alertThreshold: 80, // Keep existing alert threshold
-          currency: "GBP"
+          alertThreshold: 80,
+          currency: "GBP",
+          updatedAt: new Date().toISOString(),
         });
         console.log("✅ Budget preferences saved to database");
-        
+
         Alert.alert("Success", "Budgets saved successfully!", [
-          { text: "OK", onPress: () => router.back() }
+          { text: "OK", onPress: () => router.back() },
         ]);
       } catch (dbError) {
         console.error("❌ Error saving to database:", dbError);
-        
-        // Fallback to AsyncStorage if database fails
-        await AsyncStorage.setItem('mainBudget', mainBudget);
-        
-        const numericBudgets: Record<string, number> = {};
-        Object.entries(budgets).forEach(([id, value]) => {
-          numericBudgets[id] = parseFloat(value) || 0;
-        });
-        await AsyncStorage.setItem('categoryBudgets', JSON.stringify(numericBudgets));
-        
-        Alert.alert("Success", "Budgets saved locally (database unavailable)!", [
-          { text: "OK", onPress: () => router.back() }
-        ]);
+        throw dbError; // Re-throw to be caught by outer catch block
       }
     } catch (error) {
-      console.error("Error saving budgets:", error);
-      Alert.alert("Error", "Failed to save budgets. Please try again.");
+      console.error("Error saving budget:", error);
+      Alert.alert("Error", "Failed to save budget. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
-  if (loading)
+  // Load data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+
+        // Load transactions to generate categories
+        const transactionsResponse = await transactionAPI.getTransactions({
+          limit: 1000,
+        });
+        const transactions = transactionsResponse.transactions || [];
+
+        // Generate categories from transactions
+        const generatedCategories =
+          generateCategoriesFromTransactions(transactions);
+        setCategories(generatedCategories);
+
+        // Load existing category budgets
+        try {
+          const savedBudgets = await AsyncStorage.getItem("categoryBudgets");
+          if (savedBudgets) {
+            const parsed = JSON.parse(savedBudgets);
+            setBudgets(parsed);
+          }
+        } catch (error) {
+          console.log("No existing category budgets found");
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+        Alert.alert("Error", "Failed to load budget data. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>Loading...</Text>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: colors.background.secondary,
+        }}
+      >
+        <ActivityIndicator size="large" color={colors.primary[500]} />
+        <Text
+          style={{ color: colors.text.primary, marginTop: 16, fontSize: 16 }}
+        >
+          Loading budget data...
+        </Text>
       </View>
     );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -209,13 +292,15 @@ export default function EditBudgetPage() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {/* Header */}
-      <View
+      <Animated.View
         style={{
           flexDirection: "row",
           alignItems: "center",
           paddingTop: 48,
           paddingHorizontal: 20,
           marginBottom: 8,
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
         }}
       >
         <Pressable
@@ -235,193 +320,345 @@ export default function EditBudgetPage() {
         >
           Edit Budgets
         </Text>
-      </View>
-      <ScrollView
+      </Animated.View>
+
+      <Animated.ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20, paddingBottom: 140 }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {/* Main Budget */}
-        <View
+        {/* Main Budget Card */}
+        <Animated.View
           style={{
-            backgroundColor: colors.background.primary,
-            borderRadius: 18,
-            padding: 20,
-            marginBottom: 24,
-            shadowColor: colors.primary[500],
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            elevation: 2,
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
           }}
         >
-          <Text
-            style={{
-              color: colors.text.primary,
-              fontWeight: "700",
-              fontSize: 20,
-              marginBottom: 8,
-            }}
-          >
-            Main Budget (£)
-          </Text>
-          <TextInput
-            style={{
-              backgroundColor: colors.background.secondary,
-              borderRadius: 8,
-              padding: 14,
-              fontSize: 20,
-              color: colors.text.primary,
-              borderWidth: 1,
-              borderColor: colors.border.light,
-              fontWeight: "bold",
-              marginBottom: 10,
-            }}
-            keyboardType="numeric"
-            value={mainBudget}
-            onChangeText={handleMainBudgetChange}
-            placeholder="Enter main budget (£)"
-            accessibilityLabel="Set main budget"
-          />
-          <Text
-            style={{
-              color: overBudget
-                ? typeof colors.error === "string"
-                  ? colors.error
-                  : colors.error[500]
-                : typeof colors.text.secondary === "string"
-                  ? colors.text.secondary
-                  : colors.text.secondary[500],
-              fontWeight: "600",
-              fontSize: 16,
-            }}
-          >
-            Assigned: £{totalAssigned.toFixed(2)} / £{mainBudgetNum.toFixed(2)}
-          </Text>
-          {overBudget && (
-            <Text
-              style={{
-                color:
-                  typeof colors.error === "string"
-                    ? colors.error
-                    : colors.error[500],
-                marginTop: 4,
-                fontWeight: "600",
-              }}
-            >
-              Assigned budgets exceed the main budget!
-            </Text>
-          )}
-        </View>
-        {/* Category Budgets */}
-        {categories.map((cat) => (
           <View
-            key={cat.id}
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 22,
               backgroundColor: colors.background.primary,
-              borderRadius: 18,
-              paddingVertical: 20,
-              paddingHorizontal: 18,
+              borderRadius: 20,
+              padding: 24,
+              marginBottom: 24,
               shadowColor: colors.primary[500],
-              shadowOpacity: 0.08,
-              shadowRadius: 10,
-              elevation: 2,
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 8,
             }}
           >
-            {/* Icon */}
             <View
               style={{
-                marginRight: 16,
-                backgroundColor: colors.background.secondary,
-                borderRadius: 999,
-                padding: 10,
-              }}
-            >
-              <Ionicons
-                name={cat.icon || "pricetag-outline"}
-                size={28}
-                color={colors.primary[500]}
-              />
-            </View>
-            {/* Name and Input */}
-            <View
-              style={{
-                flex: 1,
                 flexDirection: "row",
                 alignItems: "center",
-                justifyContent: "space-between",
+                marginBottom: 20,
+              }}
+            >
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: colors.primary[100],
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 16,
+                }}
+              >
+                <Ionicons name="wallet" size={24} color={colors.primary[600]} />
+              </View>
+              <View>
+                <Text
+                  style={{
+                    color: colors.text.primary,
+                    fontWeight: "700",
+                    fontSize: 20,
+                    marginBottom: 4,
+                  }}
+                >
+                  Monthly Budget
+                </Text>
+                <Text
+                  style={{
+                    color: colors.text.secondary,
+                    fontSize: 14,
+                  }}
+                >
+                  Set your monthly spending limit
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: colors.background.secondary,
+                borderRadius: 16,
+                padding: 16,
+                marginBottom: 16,
               }}
             >
               <Text
                 style={{
-                  color: colors.text.primary,
+                  color: colors.text.secondary,
+                  fontSize: 16,
+                  marginBottom: 8,
                   fontWeight: "600",
-                  fontSize: 18,
-                  marginRight: 12,
-                  flexShrink: 1,
                 }}
-                numberOfLines={1}
               >
-                {cat.name}
+                Budget Amount (£)
               </Text>
               <TextInput
                 style={{
-                  backgroundColor: colors.background.secondary,
-                  borderRadius: 10,
-                  paddingVertical: 12,
-                  paddingHorizontal: 16,
-                  fontSize: 18,
+                  backgroundColor: colors.background.primary,
+                  borderRadius: 12,
+                  padding: 16,
+                  fontSize: 24,
                   color: colors.text.primary,
-                  borderWidth: 1,
-                  borderColor: colors.border.light,
-                  minWidth: 90,
-                  textAlign: "right",
+                  fontWeight: "bold",
+                  borderWidth: 2,
+                  borderColor: colors.primary[200],
                 }}
                 keyboardType="numeric"
-                value={budgets[cat.id]}
-                onChangeText={(v) => handleBudgetChange(cat.id, v)}
-                placeholder="£0"
-                accessibilityLabel={`Set budget for ${cat.name}`}
+                value={mainBudget}
+                onChangeText={handleMainBudgetChange}
+                placeholder="2000"
+                placeholderTextColor={colors.text.tertiary}
+                accessibilityLabel="Set main budget"
               />
             </View>
+
+            <View
+              style={{
+                backgroundColor: overBudget
+                  ? colors.error[50]
+                  : colors.success[50],
+                borderRadius: 12,
+                padding: 16,
+                borderWidth: 1,
+                borderColor: overBudget
+                  ? colors.error[200]
+                  : colors.success[200],
+              }}
+            >
+              <Text
+                style={{
+                  color: overBudget ? colors.error[700] : colors.success[700],
+                  fontWeight: "600",
+                  fontSize: 16,
+                  textAlign: "center",
+                }}
+              >
+                {overBudget ? (
+                  <>
+                    ⚠️ Over budget by £
+                    {(totalAssigned - mainBudgetNum).toFixed(2)}
+                  </>
+                ) : (
+                  <>
+                    Assigned: £{totalAssigned.toFixed(2)} / £
+                    {mainBudgetNum.toFixed(2)}
+                    {remaining > 0 && (
+                      <Text style={{ color: colors.text.secondary }}>
+                        {" "}
+                        (£{remaining.toFixed(2)} remaining)
+                      </Text>
+                    )}
+                  </>
+                )}
+              </Text>
+            </View>
           </View>
-        ))}
-      </ScrollView>
-      {/* Sticky Save Button */}
-      <View
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: colors.background.secondary,
-          padding: 20,
-          borderTopWidth: 1,
-          borderTopColor: colors.border.light,
-        }}
-      >
-        <Pressable
+        </Animated.View>
+
+        {/* Category Budgets */}
+        {categories.length > 0 && (
+          <Animated.View
+            style={{
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: colors.background.primary,
+                borderRadius: 20,
+                padding: 24,
+                marginBottom: 24,
+                shadowColor: colors.primary[500],
+                shadowOpacity: 0.1,
+                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 8,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 20,
+                }}
+              >
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    backgroundColor: colors.primary[100],
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 16,
+                  }}
+                >
+                  <Ionicons name="list" size={24} color={colors.primary[600]} />
+                </View>
+                <View>
+                  <Text
+                    style={{
+                      color: colors.text.primary,
+                      fontWeight: "700",
+                      fontSize: 20,
+                      marginBottom: 4,
+                    }}
+                  >
+                    Category Budgets
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.text.secondary,
+                      fontSize: 14,
+                    }}
+                  >
+                    Set limits for each spending category
+                  </Text>
+                </View>
+              </View>
+
+              {categories.map((category, index) => (
+                <Animated.View
+                  key={category.id}
+                  style={{
+                    backgroundColor: colors.background.secondary,
+                    borderRadius: 16,
+                    padding: 16,
+                    marginBottom: 12,
+                    borderWidth: 1,
+                    borderColor: colors.border.light,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        backgroundColor: category.color + "20",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: 12,
+                      }}
+                    >
+                      <Ionicons
+                        name={category.icon as any}
+                        size={16}
+                        color={category.color}
+                      />
+                    </View>
+                    <Text
+                      style={{
+                        color: colors.text.primary,
+                        fontWeight: "600",
+                        fontSize: 16,
+                        flex: 1,
+                      }}
+                    >
+                      {category.name}
+                    </Text>
+                  </View>
+
+                  <TextInput
+                    style={{
+                      backgroundColor: colors.background.primary,
+                      borderRadius: 12,
+                      padding: 12,
+                      fontSize: 18,
+                      color: colors.text.primary,
+                      fontWeight: "600",
+                      borderWidth: 1,
+                      borderColor: colors.border.light,
+                    }}
+                    keyboardType="numeric"
+                    value={budgets[category.id] || ""}
+                    onChangeText={(value) =>
+                      handleCategoryBudgetChange(category.id, value)
+                    }
+                    placeholder="0"
+                    placeholderTextColor={colors.text.tertiary}
+                  />
+                </Animated.View>
+              ))}
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Save Button */}
+        <Animated.View
           style={{
-            backgroundColor: overBudget
-              ? colors.border.light
-              : colors.primary[500],
-            borderRadius: 14,
-            paddingVertical: 18,
-            alignItems: "center",
-            opacity: overBudget ? 0.6 : 1,
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
           }}
-          onPress={handleSave}
-          accessibilityRole="button"
-          accessibilityLabel="Save budgets"
-          disabled={overBudget}
         >
-          <Text style={{ color: "#FFF", fontWeight: "bold", fontSize: 20 }}>
-            Save
-          </Text>
-        </Pressable>
-      </View>
+          <Pressable
+            onPress={handleSave}
+            disabled={saving}
+            style={{
+              backgroundColor: saving
+                ? colors.primary[300]
+                : colors.primary[500],
+              borderRadius: 16,
+              padding: 18,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              shadowColor: colors.primary[500],
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 6,
+            }}
+          >
+            {saving ? (
+              <ActivityIndicator
+                size="small"
+                color="white"
+                style={{ marginRight: 8 }}
+              />
+            ) : (
+              <Ionicons
+                name="checkmark-circle"
+                size={20}
+                color="white"
+                style={{ marginRight: 8 }}
+              />
+            )}
+            <Text
+              style={{
+                color: "white",
+                fontWeight: "700",
+                fontSize: 18,
+              }}
+            >
+              {saving ? "Saving..." : "Save Budget"}
+            </Text>
+          </Pressable>
+        </Animated.View>
+      </Animated.ScrollView>
     </KeyboardAvoidingView>
   );
 }
