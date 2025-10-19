@@ -911,6 +911,11 @@ export default function SpendingPage() {
 
   // Animation effects - with proper reset on month change
   useEffect(() => {
+    // Only animate if we have a valid percentage
+    if (monthlySpentPercentage === undefined || monthlySpentPercentage === null) {
+      return;
+    }
+
     // Stop any ongoing animations
     animatedProgress.stopAnimation();
     animatedScale.stopAnimation();
@@ -919,21 +924,26 @@ export default function SpendingPage() {
     animatedProgress.setValue(0);
     animatedScale.setValue(0.9);
     
-    // Animate to the correct percentage
-    Animated.parallel([
-      Animated.timing(animatedProgress, {
-        toValue: Math.min(monthlySpentPercentage / 100, 1), // Cap at 1 (100%) to prevent double rotation
-        duration: 1500,
-        easing: Easing.bezier(0.4, 0, 0.2, 1),
-        useNativeDriver: false,
-      }),
-      Animated.timing(animatedScale, {
-        toValue: 1,
-        duration: 800,
-        easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
-        useNativeDriver: true,
-      }),
-    ]).start();
+    // Small delay to ensure reset is complete before starting animation
+    const timer = setTimeout(() => {
+      // Animate to the correct percentage
+      Animated.parallel([
+        Animated.timing(animatedProgress, {
+          toValue: Math.min(monthlySpentPercentage / 100, 1), // Cap at 1 (100%) to prevent double rotation
+          duration: 1500,
+          easing: Easing.bezier(0.4, 0, 0.2, 1),
+          useNativeDriver: false,
+        }),
+        Animated.timing(animatedScale, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 50);
+
+    return () => clearTimeout(timer);
   }, [selectedMonth, monthlySpentPercentage]);
 
   // Regenerate categories with dynamic budgets when month changes
