@@ -85,7 +85,7 @@ export const SpendingCategoryListClean: React.FC<
         return (
           <SpendingItemCard
             key={category.id}
-            item={category}
+            item={{ ...category, monthlySpent: category.monthlySpent || 0 }}
             totalSpending={totalSpending}
             formatAmount={formatAmount}
             currency={currency}
