@@ -39,7 +39,7 @@ export default function PersonalInformationScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Initialize form with user data from AuthContext
   useEffect(() => {
     if (user && !formData) {
@@ -53,7 +53,10 @@ export default function PersonalInformationScreen() {
         occupation: user.occupation || "",
         company: user.company || "",
       };
-      console.log("🔄 [Personal] Initializing form with user data:", initialData);
+      console.log(
+        "🔄 [Personal] Initializing form with user data:",
+        initialData
+      );
       setFormData(initialData);
     }
   }, [user]);
@@ -408,7 +411,6 @@ export default function PersonalInformationScreen() {
                   }
                   editable={isEditing}
                   placeholder="Enter first name"
-                  
                 />
               </View>
               <View
@@ -436,7 +438,6 @@ export default function PersonalInformationScreen() {
                   onChangeText={(value) => handleFieldChange("lastName", value)}
                   editable={isEditing}
                   placeholder="Enter last name"
-                  
                 />
               </View>
             </View>
@@ -462,7 +463,6 @@ export default function PersonalInformationScreen() {
                 onChangeText={(value) => handleFieldChange("email", value)}
                 editable={isEditing}
                 placeholder="Enter email address"
-                
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
@@ -489,7 +489,6 @@ export default function PersonalInformationScreen() {
                 onChangeText={(value) => handleFieldChange("phone", value)}
                 editable={isEditing}
                 placeholder="Enter phone number"
-                
                 keyboardType="phone-pad"
               />
             </View>
@@ -517,7 +516,6 @@ export default function PersonalInformationScreen() {
                 }
                 editable={isEditing}
                 placeholder="YYYY-MM-DD"
-                
               />
             </View>
           </View>
@@ -548,7 +546,6 @@ export default function PersonalInformationScreen() {
                 onChangeText={(value) => handleFieldChange("address", value)}
                 editable={isEditing}
                 placeholder="Enter your address"
-                
                 multiline
                 numberOfLines={3}
               />
@@ -580,7 +577,6 @@ export default function PersonalInformationScreen() {
                 onChangeText={(value) => handleFieldChange("occupation", value)}
                 editable={isEditing}
                 placeholder="Enter your occupation"
-                
               />
             </View>
 
@@ -605,7 +601,6 @@ export default function PersonalInformationScreen() {
                 onChangeText={(value) => handleFieldChange("company", value)}
                 editable={isEditing}
                 placeholder="Enter your company name"
-                
               />
             </View>
           </View>
