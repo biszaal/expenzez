@@ -951,14 +951,16 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
           console.log(
             "🔐 [SecurityContext] ✅ PIN stored in both secure storage and AsyncStorage"
           );
-          
+
           // Verify PIN was stored correctly
-          const hasLocalPinAfterSync = await AsyncStorage.getItem("@expenzez_app_password");
+          const hasLocalPinAfterSync = await AsyncStorage.getItem(
+            "@expenzez_app_password"
+          );
           const hasPinFlag = await AsyncStorage.getItem("@expenzez_has_pin");
           console.log("🔐 [SecurityContext] PIN storage verification:", {
             hasLocalPin: !!hasLocalPinAfterSync,
             hasPinFlag: hasPinFlag === "true",
-            pinLength: hasLocalPinAfterSync?.length || 0
+            pinLength: hasLocalPinAfterSync?.length || 0,
           });
 
           // Update states immediately to prevent modal from showing again

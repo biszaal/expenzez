@@ -2,15 +2,15 @@
  * Native Crypto PIN Storage - Using expo-crypto instead of CryptoJS
  * This eliminates memory issues and crashes that CryptoJS causes on iOS
  */
-import * as SecureStore from 'expo-secure-store';
-import * as Crypto from 'expo-crypto';
+import * as SecureStore from "expo-secure-store";
+import * as Crypto from "expo-crypto";
 
 const SECURE_KEYS = {
-  PIN_HASH: 'secure_pin_hash',
-  PIN_SALT: 'secure_pin_salt',
-  DEVICE_KEY: 'secure_device_key',
-  SESSION_TOKEN: 'secure_session_token',
-  SESSION_EXPIRY: 'secure_session_expiry',
+  PIN_HASH: "secure_pin_hash",
+  PIN_SALT: "secure_pin_salt",
+  DEVICE_KEY: "secure_device_key",
+  SESSION_TOKEN: "secure_session_token",
+  SESSION_EXPIRY: "secure_session_expiry",
 } as const;
 
 export class NativeCryptoStorage {
@@ -24,29 +24,29 @@ export class NativeCryptoStorage {
     if (this.initialized) return;
 
     try {
-      console.log('🔒 [NativeCrypto] Initializing native crypto storage...');
-      
+      console.log("🔒 [NativeCrypto] Initializing native crypto storage...");
+
       // Generate or retrieve device key
       this.deviceKey = await SecureStore.getItemAsync(SECURE_KEYS.DEVICE_KEY);
-      
+
       if (!this.deviceKey) {
-        console.log('🔒 [NativeCrypto] Generating new device key...');
+        console.log("🔒 [NativeCrypto] Generating new device key...");
         // Generate a random device key using native crypto
         const randomBytes = await Crypto.getRandomBytesAsync(32);
         this.deviceKey = Array.from(randomBytes)
-          .map(b => b.toString(16).padStart(2, '0'))
-          .join('');
-        
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+
         await SecureStore.setItemAsync(SECURE_KEYS.DEVICE_KEY, this.deviceKey);
-        console.log('🔒 [NativeCrypto] ✅ Device key generated and stored');
+        console.log("🔒 [NativeCrypto] ✅ Device key generated and stored");
       } else {
-        console.log('🔒 [NativeCrypto] ✅ Device key retrieved');
+        console.log("🔒 [NativeCrypto] ✅ Device key retrieved");
       }
 
       this.initialized = true;
-      console.log('🔒 [NativeCrypto] ✅ Native crypto storage initialized');
+      console.log("🔒 [NativeCrypto] ✅ Native crypto storage initialized");
     } catch (error) {
-      console.error('🔒 [NativeCrypto] ❌ Failed to initialize:', error);
+      console.error("🔒 [NativeCrypto] ❌ Failed to initialize:", error);
       throw error;
     }
   }
@@ -57,8 +57,8 @@ export class NativeCryptoStorage {
   private async generateSecureSalt(): Promise<string> {
     const saltBytes = await Crypto.getRandomBytesAsync(32);
     return Array.from(saltBytes)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
   }
 
   /**
@@ -70,27 +70,27 @@ export class NativeCryptoStorage {
         await this.initialize();
       }
 
-      console.log('🔒 [NativeCrypto] Starting native PIN hashing...');
-      
+      console.log("🔒 [NativeCrypto] Starting native PIN hashing...");
+
       // Generate secure salt
       const salt = await this.generateSecureSalt();
-      console.log('🔒 [NativeCrypto] Salt generated');
-      
+      console.log("🔒 [NativeCrypto] Salt generated");
+
       // Combine PIN + salt + device key for security
       const saltedPin = `${pin}_${salt}_${this.deviceKey}`;
-      
+
       // Use native SHA-256 (much faster and memory-efficient than PBKDF2)
       const hash = await Crypto.digestStringAsync(
         Crypto.CryptoDigestAlgorithm.SHA256,
         saltedPin,
         { encoding: Crypto.CryptoEncoding.HEX }
       );
-      
-      console.log('🔒 [NativeCrypto] ✅ Native PIN hashing complete');
+
+      console.log("🔒 [NativeCrypto] ✅ Native PIN hashing complete");
       return { hash, salt };
     } catch (error) {
-      console.error('🔒 [NativeCrypto] ❌ Failed to hash PIN:', error);
-      throw new Error('Failed to hash PIN with native crypto');
+      console.error("🔒 [NativeCrypto] ❌ Failed to hash PIN:", error);
+      throw new Error("Failed to hash PIN with native crypto");
     }
   }
 
@@ -106,28 +106,31 @@ export class NativeCryptoStorage {
       // Get stored hash and salt
       const storedHash = await SecureStore.getItemAsync(SECURE_KEYS.PIN_HASH);
       const storedSalt = await SecureStore.getItemAsync(SECURE_KEYS.PIN_SALT);
-      
+
       if (!storedHash || !storedSalt) {
-        console.log('🔒 [NativeCrypto] ❌ No PIN hash found');
+        console.log("🔒 [NativeCrypto] ❌ No PIN hash found");
         return false;
       }
 
       // Recreate the hash with the same parameters
       const saltedPin = `${pin}_${storedSalt}_${this.deviceKey}`;
-      
+
       const computedHash = await Crypto.digestStringAsync(
         Crypto.CryptoDigestAlgorithm.SHA256,
         saltedPin,
         { encoding: Crypto.CryptoEncoding.HEX }
       );
-      
+
       // Constant-time comparison
       const isValid = this.constantTimeCompare(computedHash, storedHash);
-      
-      console.log('🔒 [NativeCrypto] PIN verification:', isValid ? '✅ Valid' : '❌ Invalid');
+
+      console.log(
+        "🔒 [NativeCrypto] PIN verification:",
+        isValid ? "✅ Valid" : "❌ Invalid"
+      );
       return isValid;
     } catch (error) {
-      console.error('🔒 [NativeCrypto] ❌ Failed to verify PIN:', error);
+      console.error("🔒 [NativeCrypto] ❌ Failed to verify PIN:", error);
       return false;
     }
   }
@@ -137,27 +140,27 @@ export class NativeCryptoStorage {
    */
   async storePinHash(pin: string): Promise<void> {
     try {
-      console.log('🔒 [NativeCrypto] Starting PIN hash storage...');
-      
+      console.log("🔒 [NativeCrypto] Starting PIN hash storage...");
+
       const { hash, salt } = await this.hashPin(pin);
-      
-      console.log('🔒 [NativeCrypto] Storing hash in secure store...');
+
+      console.log("🔒 [NativeCrypto] Storing hash in secure store...");
       await SecureStore.setItemAsync(SECURE_KEYS.PIN_HASH, hash);
       await SecureStore.setItemAsync(SECURE_KEYS.PIN_SALT, salt);
-      
-      console.log('🔒 [NativeCrypto] ✅ PIN hash stored securely');
-      
+
+      console.log("🔒 [NativeCrypto] ✅ PIN hash stored securely");
+
       // Verify storage worked
       const storedHash = await SecureStore.getItemAsync(SECURE_KEYS.PIN_HASH);
       const storedSalt = await SecureStore.getItemAsync(SECURE_KEYS.PIN_SALT);
-      console.log('🔒 [NativeCrypto] Storage verification:', {
+      console.log("🔒 [NativeCrypto] Storage verification:", {
         hashStored: !!storedHash,
         saltStored: !!storedSalt,
         hashLength: storedHash?.length || 0,
-        saltLength: storedSalt?.length || 0
+        saltLength: storedSalt?.length || 0,
       });
     } catch (error) {
-      console.error('🔒 [NativeCrypto] ❌ Failed to store PIN hash:', error);
+      console.error("🔒 [NativeCrypto] ❌ Failed to store PIN hash:", error);
       throw error;
     }
   }
@@ -169,17 +172,17 @@ export class NativeCryptoStorage {
     try {
       const hash = await SecureStore.getItemAsync(SECURE_KEYS.PIN_HASH);
       const salt = await SecureStore.getItemAsync(SECURE_KEYS.PIN_SALT);
-      
-      console.log('🔒 [NativeCrypto] Checking PIN hash existence:', {
+
+      console.log("🔒 [NativeCrypto] Checking PIN hash existence:", {
         hasHash: !!hash,
         hasSalt: !!salt,
         hashLength: hash?.length || 0,
-        saltLength: salt?.length || 0
+        saltLength: salt?.length || 0,
       });
-      
+
       return !!(hash && salt);
     } catch (error) {
-      console.error('🔒 [NativeCrypto] ❌ Failed to check PIN hash:', error);
+      console.error("🔒 [NativeCrypto] ❌ Failed to check PIN hash:", error);
       return false;
     }
   }
@@ -190,14 +193,17 @@ export class NativeCryptoStorage {
   async createSession(deviceId: string): Promise<void> {
     try {
       const sessionToken = await this.generateSecureSalt(); // Random session token
-      const expiryTime = Date.now() + (15 * 60 * 1000); // 15 minutes (increased from 5)
-      
+      const expiryTime = Date.now() + 15 * 60 * 1000; // 15 minutes (increased from 5)
+
       await SecureStore.setItemAsync(SECURE_KEYS.SESSION_TOKEN, sessionToken);
-      await SecureStore.setItemAsync(SECURE_KEYS.SESSION_EXPIRY, expiryTime.toString());
-      
-      console.log('🔒 [NativeCrypto] ✅ Session created');
+      await SecureStore.setItemAsync(
+        SECURE_KEYS.SESSION_EXPIRY,
+        expiryTime.toString()
+      );
+
+      console.log("🔒 [NativeCrypto] ✅ Session created");
     } catch (error) {
-      console.error('🔒 [NativeCrypto] ❌ Failed to create session:', error);
+      console.error("🔒 [NativeCrypto] ❌ Failed to create session:", error);
     }
   }
 
@@ -207,14 +213,16 @@ export class NativeCryptoStorage {
   async isSessionValid(): Promise<boolean> {
     try {
       const token = await SecureStore.getItemAsync(SECURE_KEYS.SESSION_TOKEN);
-      const expiryStr = await SecureStore.getItemAsync(SECURE_KEYS.SESSION_EXPIRY);
-      
+      const expiryStr = await SecureStore.getItemAsync(
+        SECURE_KEYS.SESSION_EXPIRY
+      );
+
       if (!token || !expiryStr) return false;
-      
+
       const expiry = parseInt(expiryStr);
       return Date.now() < expiry;
     } catch (error) {
-      console.error('🔒 [NativeCrypto] ❌ Failed to check session:', error);
+      console.error("🔒 [NativeCrypto] ❌ Failed to check session:", error);
       return false;
     }
   }
@@ -226,9 +234,9 @@ export class NativeCryptoStorage {
     try {
       await SecureStore.deleteItemAsync(SECURE_KEYS.SESSION_TOKEN);
       await SecureStore.deleteItemAsync(SECURE_KEYS.SESSION_EXPIRY);
-      console.log('🔒 [NativeCrypto] ✅ Session cleared');
+      console.log("🔒 [NativeCrypto] ✅ Session cleared");
     } catch (error) {
-      console.error('🔒 [NativeCrypto] ❌ Failed to clear session:', error);
+      console.error("🔒 [NativeCrypto] ❌ Failed to clear session:", error);
     }
   }
 
@@ -240,9 +248,12 @@ export class NativeCryptoStorage {
       await SecureStore.deleteItemAsync(SECURE_KEYS.PIN_HASH);
       await SecureStore.deleteItemAsync(SECURE_KEYS.PIN_SALT);
       await this.clearSession();
-      console.log('🔒 [NativeCrypto] ✅ All security data cleared');
+      console.log("🔒 [NativeCrypto] ✅ All security data cleared");
     } catch (error) {
-      console.error('🔒 [NativeCrypto] ❌ Failed to clear security data:', error);
+      console.error(
+        "🔒 [NativeCrypto] ❌ Failed to clear security data:",
+        error
+      );
       throw error;
     }
   }
@@ -253,7 +264,7 @@ export class NativeCryptoStorage {
   async getSecuritySettings() {
     const hasPin = await this.hasPinHash();
     const hasSession = await this.isSessionValid();
-    
+
     return {
       securityEnabled: hasPin,
       biometricEnabled: false, // We'll add biometric support later
@@ -269,7 +280,7 @@ export class NativeCryptoStorage {
    */
   async setSecuritySettings(settings: any) {
     // For now, just log the settings
-    console.log('🔒 [NativeCrypto] Security settings updated:', settings);
+    console.log("🔒 [NativeCrypto] Security settings updated:", settings);
   }
 
   /**
