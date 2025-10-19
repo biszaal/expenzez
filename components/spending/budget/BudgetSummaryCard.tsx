@@ -204,7 +204,10 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                     strokeDasharray={`${2 * Math.PI * 88}`}
                     strokeDashoffset={animatedProgress.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [2 * Math.PI * 88, 2 * Math.PI * 88 * (1 - Math.min(100, monthlySpentPercentage) / 100)],
+                      outputRange: [
+                        2 * Math.PI * 88,
+                        2 * Math.PI * 88 * (1 - monthlySpentPercentage / 100),
+                      ],
                     })}
                     transform={`rotate(-90 100 100)`}
                   />
