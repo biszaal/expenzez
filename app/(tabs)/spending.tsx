@@ -909,8 +909,16 @@ export default function SpendingPage() {
     console.log("Selected point:", point);
   }, []);
 
-  // Animation effects
+  // Animation effects - with proper reset on month change
   useEffect(() => {
+    // Stop any ongoing animations
+    animatedProgress.stopAnimation();
+    animatedScale.stopAnimation();
+    
+    // Reset to start position
+    animatedProgress.setValue(0);
+    animatedScale.setValue(0.9);
+    
     // Animate to the correct percentage
     Animated.parallel([
       Animated.timing(animatedProgress, {
@@ -926,7 +934,7 @@ export default function SpendingPage() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [monthlySpentPercentage, animatedProgress, animatedScale]);
+  }, [selectedMonth, monthlySpentPercentage]);
 
   // Regenerate categories with dynamic budgets when month changes
   useEffect(() => {
