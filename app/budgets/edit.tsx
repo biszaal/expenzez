@@ -69,14 +69,16 @@ export default function EditBudgetPage() {
   };
 
   // Smart auto-fill budgets based on historical spending
-  const autoFillBudgets = () => {
-    const totalBudget = parseFloat(mainBudget) || 0;
-    if (totalBudget <= 0 || categories.length === 0) {
+  const autoFillBudgets = (budgetAmount: number) => {
+    if (budgetAmount <= 0 || categories.length === 0) {
       return;
     }
 
     // Calculate total historical spending across all categories
-    const totalSpent = categories.reduce((sum, cat) => sum + (cat.totalSpent || 0), 0);
+    const totalSpent = categories.reduce(
+      (sum, cat) => sum + (cat.totalSpent || 0),
+      0
+    );
 
     const newBudgets: Record<string, string> = {};
 
@@ -84,25 +86,27 @@ export default function EditBudgetPage() {
       // Distribute based on spending proportions
       categories.forEach((cat) => {
         const proportion = (cat.totalSpent || 0) / totalSpent;
-        const suggestedBudget = Math.round(totalBudget * proportion);
+        const suggestedBudget = Math.round(budgetAmount * proportion);
         newBudgets[cat.id] = suggestedBudget.toString();
       });
     } else {
       // Equal distribution if no spending history
-      const equalAmount = Math.floor(totalBudget / categories.length);
+      const equalAmount = Math.floor(budgetAmount / categories.length);
       categories.forEach((cat) => {
         newBudgets[cat.id] = equalAmount.toString();
       });
     }
 
     setBudgets(newBudgets);
-    
-    Alert.alert(
-      "Budgets Auto-Filled",
-      "Category budgets have been distributed based on your historical spending patterns. You can adjust them manually.",
-      [{ text: "OK" }]
-    );
   };
+
+  // Auto-fill budgets when main budget or categories change
+  useEffect(() => {
+    const budgetAmount = parseFloat(mainBudget) || 0;
+    if (budgetAmount > 0 && categories.length > 0) {
+      autoFillBudgets(budgetAmount);
+    }
+  }, [mainBudget, categories.length]);
 
   // Save budget to database
   const saveBudgetToDatabase = async (budgetAmount: number) => {
@@ -132,8 +136,10 @@ export default function EditBudgetPage() {
         // Only expenses
         const rawCategory = tx.category || "Other";
         // Normalize category: capitalize first letter, lowercase rest
-        const category = rawCategory.charAt(0).toUpperCase() + rawCategory.slice(1).toLowerCase();
-        
+        const category =
+          rawCategory.charAt(0).toUpperCase() +
+          rawCategory.slice(1).toLowerCase();
+
         const existing = categoryMap.get(category) || {
           count: 0,
           totalSpent: 0,
@@ -462,7 +468,6 @@ export default function EditBudgetPage() {
                 value={mainBudget}
                 onChangeText={handleMainBudgetChange}
                 placeholder="2000"
-                
                 accessibilityLabel="Set main budget"
               />
             </View>
@@ -535,68 +540,46 @@ export default function EditBudgetPage() {
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  justifyContent: "space-between",
                   marginBottom: 20,
                 }}
               >
-                <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-                  <View
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 24,
-                      backgroundColor: colors.primary[100],
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: 16,
-                    }}
-                  >
-                    <Ionicons name="list" size={24} color={colors.primary[600]} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        color: colors.text.primary,
-                        fontWeight: "700",
-                        fontSize: 20,
-                        marginBottom: 4,
-                      }}
-                    >
-                      Category Budgets
-                    </Text>
-                    <Text
-                      style={{
-                        color: colors.text.secondary,
-                        fontSize: 14,
-                      }}
-                    >
-                      Set limits for each spending category
-                    </Text>
-                  </View>
-                </View>
-                <Pressable
-                  onPress={autoFillBudgets}
+                <View
                   style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 10,
-                    borderRadius: 12,
-                    backgroundColor: colors.primary[500],
-                    flexDirection: "row",
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    backgroundColor: colors.primary[100],
                     alignItems: "center",
-                    gap: 6,
+                    justifyContent: "center",
+                    marginRight: 16,
                   }}
                 >
-                  <Ionicons name="sparkles" size={16} color="#FFFFFF" />
+                  <Ionicons
+                    name="list"
+                    size={24}
+                    color={colors.primary[600]}
+                  />
+                </View>
+                <View>
                   <Text
                     style={{
-                      color: "#FFFFFF",
-                      fontWeight: "600",
+                      color: colors.text.primary,
+                      fontWeight: "700",
+                      fontSize: 20,
+                      marginBottom: 4,
+                    }}
+                  >
+                    Category Budgets
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.text.secondary,
                       fontSize: 14,
                     }}
                   >
-                    Auto-Fill
+                    Auto-filled based on your spending
                   </Text>
-                </Pressable>
+                </View>
               </View>
 
               {categories.map((category, index) => (
@@ -664,7 +647,6 @@ export default function EditBudgetPage() {
                       handleCategoryBudgetChange(category.id, value)
                     }
                     placeholder="0"
-                    
                   />
                 </Animated.View>
               ))}
