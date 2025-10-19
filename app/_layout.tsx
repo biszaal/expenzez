@@ -240,6 +240,7 @@ function RootLayoutNav() {
   }, []);
 
   // Show PIN sync modal when user has server PIN but not local PIN
+  // Instead of showing a separate modal, we'll use the normal PIN lock screen
   useEffect(() => {
     if (
       isLoggedIn &&
@@ -249,9 +250,10 @@ function RootLayoutNav() {
       !showPinSyncModal
     ) {
       console.log(
-        "🔐 [Layout] User has server PIN but no local PIN - showing sync modal"
+        "🔐 [Layout] User has server PIN but no local PIN - will use normal PIN lock screen for sync"
       );
-      setShowPinSyncModal(true);
+      // Don't show the modal, let the normal PIN lock screen handle it
+      // setShowPinSyncModal(true);
     }
   }, [
     isLoggedIn,
@@ -545,9 +547,9 @@ function RootLayoutNav() {
         translucent={true}
       />
 
-      {/* PIN Sync Modal - Show when user has PIN on server but not locally */}
+      {/* PIN Sync Modal - DISABLED - Using normal PIN lock screen instead */}
       <Modal
-        visible={showPinSyncModal}
+        visible={false}
         animationType="slide"
         presentationStyle="fullScreen"
         onRequestClose={() => {
