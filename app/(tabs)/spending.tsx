@@ -623,7 +623,7 @@ export default function SpendingPage() {
           { name: "Transport", icon: "car", color: "#45B7D1" },
           {
             name: "Entertainment",
-            icon: "musical-notes",
+            icon: "ticket",
             color: "#96CEB4",
           },
           { name: "Bills & Utilities", icon: "flash", color: "#FFEAA7" },
