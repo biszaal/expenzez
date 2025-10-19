@@ -1,11 +1,19 @@
-import { Stack } from "expo-router";
+import { Stack, useSegments } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import React, { useEffect, useState } from "react";
-import { AppState, Text, View, StatusBar, Modal, TouchableOpacity, Alert, ActivityIndicator, StyleSheet } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  AppState,
+  Text,
+  View,
+  StatusBar,
+  Modal,
+  Alert,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import * as Linking from "expo-linking";
-import { useSegments } from "expo-router";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
@@ -114,7 +122,6 @@ function RootLayoutNav() {
   const { isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [hasValidSession, setHasValidSession] = useState(false);
-  const [showPinSetup, setShowPinSetup] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [onboardingStatusChecked, setOnboardingStatusChecked] = useState(false);
   const segments = useSegments();
@@ -191,7 +198,7 @@ function RootLayoutNav() {
       );
       setIsLoading(false);
     }
-  }, [loading, onboardingStatusChecked]);
+  }, [loading, onboardingStatusChecked, isLoading]);
 
   // Add immediate loading completion for faster navigation
   useEffect(() => {
@@ -232,45 +239,62 @@ function RootLayoutNav() {
     return () => clearTimeout(aggressiveTimeout);
   }, []);
 
-  // PIN setup is now optional - no mandatory setup required
-  useEffect(() => {
-    setShowPinSetup(false);
-  }, []);
-
   // Show PIN sync modal when user has server PIN but not local PIN
   useEffect(() => {
-    if (isLoggedIn && isSecurityEnabled && needsPinSetup && hasServerPin && !showPinSyncModal) {
-      console.log("🔐 [Layout] User has server PIN but no local PIN - showing sync modal");
+    if (
+      isLoggedIn &&
+      isSecurityEnabled &&
+      needsPinSetup &&
+      hasServerPin &&
+      !showPinSyncModal
+    ) {
+      console.log(
+        "🔐 [Layout] User has server PIN but no local PIN - showing sync modal"
+      );
       setShowPinSyncModal(true);
     }
-  }, [isLoggedIn, isSecurityEnabled, needsPinSetup, hasServerPin]);
+  }, [
+    isLoggedIn,
+    isSecurityEnabled,
+    needsPinSetup,
+    hasServerPin,
+    showPinSyncModal,
+  ]);
 
   // Handle PIN sync submission
-  const handlePinSync = async () => {
+  const handlePinSync = useCallback(async () => {
     if (syncPinInput.length !== 5) {
+      console.log("🔐 [Layout] PIN length not 5, skipping sync");
       return;
     }
 
+    console.log("🔐 [Layout] Starting PIN sync process...");
     setIsSyncingPin(true);
+
     try {
       const success = await validateAndSyncPin(syncPinInput);
+      console.log("🔐 [Layout] PIN sync result:", success);
 
       if (success) {
+        console.log("✅ [Layout] PIN sync successful, closing modal");
+
+        // Add a small delay before closing modal to ensure state updates
+        setTimeout(() => {
+          setShowPinSyncModal(false);
+          setSyncPinInput("");
+          setIsSyncingPin(false);
+        }, 500);
+
         Alert.alert(
           "PIN Synced Successfully",
           "Your PIN has been synced to this device. You can now use it to unlock the app.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                setShowPinSyncModal(false);
-                setSyncPinInput("");
-              }
-            }
-          ]
+          [{ text: "OK" }]
         );
       } else {
+        console.log("❌ [Layout] PIN sync failed, clearing input");
         setSyncPinInput("");
+        setIsSyncingPin(false);
+
         Alert.alert(
           "Incorrect PIN",
           "The PIN you entered is incorrect. Please try again.",
@@ -280,25 +304,40 @@ function RootLayoutNav() {
     } catch (error) {
       console.error("❌ [Layout] Error syncing PIN:", error);
       setSyncPinInput("");
+      setIsSyncingPin(false);
+
       Alert.alert(
         "Sync Failed",
         "Failed to sync your PIN. Please try again or contact support.",
         [{ text: "OK" }]
       );
-    } finally {
-      setIsSyncingPin(false);
     }
-  };
+  }, [syncPinInput, validateAndSyncPin]);
 
   // Auto-submit when PIN is complete
   useEffect(() => {
     if (syncPinInput.length === 5 && !isSyncingPin) {
+      console.log("🔐 [Layout] PIN complete, auto-submitting in 200ms");
       const timeout = setTimeout(() => {
         handlePinSync();
       }, 200);
       return () => clearTimeout(timeout);
     }
-  }, [syncPinInput, isSyncingPin]);
+  }, [syncPinInput, isSyncingPin, handlePinSync]);
+
+  // Add a timeout to prevent the modal from getting stuck
+  useEffect(() => {
+    if (showPinSyncModal) {
+      const timeout = setTimeout(() => {
+        console.log("🔐 [Layout] PIN sync modal timeout - closing modal");
+        setShowPinSyncModal(false);
+        setSyncPinInput("");
+        setIsSyncingPin(false);
+      }, 30000); // 30 second timeout
+
+      return () => clearTimeout(timeout);
+    }
+  }, [showPinSyncModal]);
 
   useEffect(() => {
     // Ensure in-app browser closes and returns to app after OAuth redirect
@@ -402,9 +441,7 @@ function RootLayoutNav() {
 
   // CRITICAL: Wait for security context to initialize before checking lock state
   if (!securityInitialized) {
-    console.log(
-      "⏳ [Layout] Waiting for security context to initialize..."
-    );
+    console.log("⏳ [Layout] Waiting for security context to initialize...");
     return <SplashScreen />;
   }
 
@@ -516,11 +553,29 @@ function RootLayoutNav() {
           // Can't dismiss this modal - user must enter PIN
         }}
       >
-        <SafeAreaView style={pinSyncStyles.container}>
+        <SafeAreaView
+          style={[
+            pinSyncStyles.container,
+            { backgroundColor: isDark ? "#1F2937" : "#FFFFFF" },
+          ]}
+        >
           <View style={pinSyncStyles.content}>
-            <Text style={pinSyncStyles.title}>Welcome Back!</Text>
-            <Text style={pinSyncStyles.subtitle}>
-              You have App Lock enabled on your account. Please enter your 5-digit PIN to sync it to this device.
+            <Text
+              style={[
+                pinSyncStyles.title,
+                { color: isDark ? "#FFFFFF" : "#1F2937" },
+              ]}
+            >
+              Welcome Back!
+            </Text>
+            <Text
+              style={[
+                pinSyncStyles.subtitle,
+                { color: isDark ? "#D1D5DB" : "#6B7280" },
+              ]}
+            >
+              You have App Lock enabled on your account. Please enter your
+              5-digit PIN to sync it to this device.
             </Text>
 
             <View style={pinSyncStyles.pinContainer}>
@@ -535,12 +590,27 @@ function RootLayoutNav() {
 
             {isSyncingPin && (
               <View style={pinSyncStyles.loadingContainer}>
-                <ActivityIndicator size="small" color="#6F76C8" />
-                <Text style={pinSyncStyles.loadingText}>Verifying PIN...</Text>
+                <ActivityIndicator
+                  size="small"
+                  color={isDark ? "#8B5CF6" : "#6F76C8"}
+                />
+                <Text
+                  style={[
+                    pinSyncStyles.loadingText,
+                    { color: isDark ? "#8B5CF6" : "#6F76C8" },
+                  ]}
+                >
+                  Verifying PIN...
+                </Text>
               </View>
             )}
 
-            <Text style={pinSyncStyles.hint}>
+            <Text
+              style={[
+                pinSyncStyles.hint,
+                { color: isDark ? "#9CA3AF" : "#9CA3AF" },
+              ]}
+            >
               Enter the PIN you created on another device
             </Text>
           </View>
@@ -602,7 +672,6 @@ export default function RootLayout() {
 const pinSyncStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   content: {
     flex: 1,

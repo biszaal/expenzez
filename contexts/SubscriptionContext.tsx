@@ -1,4 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+/**
+ * Subscription Context (Legacy Adapter)
+ *
+ * This file maintains backwards compatibility with the old subscription context
+ * while using the new RevenueCat implementation under the hood.
+ *
+ * @deprecated Use useRevenueCat or the new useSubscription hook from hooks/useSubscription.ts instead
+ */
+
+import React, { createContext, useContext, useMemo } from 'react';
+import { useRevenueCat } from './RevenueCatContext';
 
 interface Subscription {
   tier: 'free' | 'premium';
@@ -19,32 +29,45 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   isLoading: false,
 });
 
+/**
+ * Legacy SubscriptionProvider - now uses RevenueCat under the hood
+ * @deprecated This provider is no longer needed. RevenueCatProvider is used instead.
+ */
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [subscription, setSubscription] = useState<Subscription>({ tier: 'free' });
-  const [isTrialActive, setIsTrialActive] = useState(false);
-  const [daysUntilTrialExpires, setDaysUntilTrialExpires] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const {
+    isPro,
+    isLoading,
+    isInTrialPeriod,
+    subscriptionExpiryDate,
+  } = useRevenueCat();
 
-  // All users have free access
-  useEffect(() => {
-    setSubscription({ tier: 'free' });
-    setIsTrialActive(false);
-    setDaysUntilTrialExpires(null);
-    setIsLoading(false);
-  }, []);
+  const value = useMemo(() => {
+    const daysUntilTrialExpires = subscriptionExpiryDate
+      ? Math.ceil((subscriptionExpiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      : null;
+
+    return {
+      subscription: {
+        tier: isPro ? ('premium' as const) : ('free' as const),
+        trialEndDate: subscriptionExpiryDate?.toISOString(),
+      },
+      isTrialActive: isInTrialPeriod,
+      daysUntilTrialExpires,
+      isLoading,
+    };
+  }, [isPro, isLoading, isInTrialPeriod, subscriptionExpiryDate]);
 
   return (
-    <SubscriptionContext.Provider value={{ 
-      subscription, 
-      isTrialActive, 
-      daysUntilTrialExpires, 
-      isLoading 
-    }}>
+    <SubscriptionContext.Provider value={value}>
       {children}
     </SubscriptionContext.Provider>
   );
 };
 
+/**
+ * Legacy useSubscription hook
+ * @deprecated Use the new useSubscription from hooks/useSubscription.ts instead
+ */
 export const useSubscription = () => {
   const context = useContext(SubscriptionContext);
   if (!context) {

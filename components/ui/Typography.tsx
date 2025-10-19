@@ -29,6 +29,13 @@ export default function Typography({
 }: TypographyProps) {
   const { colors } = useTheme();
 
+  // Early return if colors is not available
+  if (!colors) {
+    return (
+      <Text style={[styles.base, styles[variant], style]}>{children}</Text>
+    );
+  }
+
   const getColorStyle = () => {
     switch (color) {
       case "primary":

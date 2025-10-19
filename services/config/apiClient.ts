@@ -203,6 +203,7 @@ api.interceptors.response.use(
       '/insights/savings-opportunities', // Savings insights - optional feature
       '/achievements', // Achievement system - optional gamification feature
       '/savings-insights', // Savings insights - optional feature (alternative endpoint)
+      '/goals', // Goals system - optional feature with fallback data
     ];
     const isOptionalEndpoint = optionalEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
 
@@ -352,7 +353,7 @@ aiAPI.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
-    
+
     // Create error context for better logging
     const errorContext = {
       endpoint: originalRequest.url,
@@ -362,18 +363,35 @@ aiAPI.interceptors.response.use(
         apiType: 'AI'
       }
     };
-    
+
     // Don't attempt token refresh for auth endpoints - they're supposed to return 401 sometimes
     const authEndpoints = [
       '/auth/login',
-      '/auth/register', 
+      '/auth/register',
       '/auth/confirm-signup',
       '/auth/resend-verification',
       '/auth/forgot-password',
       '/auth/confirm-forgot-password'
     ];
-    
+
     const isAuthEndpoint = authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
+
+    // Check for optional AI endpoints that should fail silently
+    const optionalAIEndpoints = [
+      '/ai/chat-history',
+      '/ai/chat-message',
+      '/ai/predict', // Predictive analytics - optional feature
+    ];
+    const isOptionalAIEndpoint = optionalAIEndpoints.some(endpoint => originalRequest.url?.includes(endpoint));
+
+    // For optional AI endpoints, fail silently without token refresh or error handler
+    if (isOptionalAIEndpoint && (error.response?.status === 401 || error.response?.status === 404 || error.response?.status === 503)) {
+      console.log(`[AI API] Optional endpoint ${originalRequest.url} failed (${error.response?.status}) - continuing without this feature`);
+      // Mark this error as expected so error handler skips logging
+      error.isOptionalEndpoint = true;
+      error.suppressErrorLogging = true;
+      return Promise.reject(error);
+    }
     
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       console.log(`[AI API] 401 Unauthorized: ${originalRequest.url} - Attempting token refresh`);

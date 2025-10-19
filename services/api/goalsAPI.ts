@@ -102,7 +102,12 @@ export const goalsAPI = {
 
       return response.data;
     } catch (error: any) {
-      console.error('❌ [GoalsAPI] Error fetching user goals:', error);
+      // Handle 404 as optional endpoint - log as info instead of error
+      if (error?.statusCode === 404 || error?.response?.status === 404) {
+        console.log('🔄 [GoalsAPI] Goals endpoint not available (404), using fallback data');
+      } else {
+        console.error('❌ [GoalsAPI] Error fetching user goals:', error);
+      }
 
       // Provide fallback data for development
       const fallbackData: GoalsResponse = {

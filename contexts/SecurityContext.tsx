@@ -354,6 +354,13 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
           });
 
           // Update state based on server preferences
+          console.log("🔐 [SecurityContext] Updating security states:", {
+            appLockEnabled: securityStatus.preferences.appLockEnabled,
+            needsPinSetup: securityStatus.needsPinSetup,
+            hasDevicePIN: securityStatus.hasDevicePIN,
+            hasServerPin: userHasPinOnServer,
+          });
+
           setIsSecurityEnabled(securityStatus.preferences.appLockEnabled);
           setNeedsPinSetup(securityStatus.needsPinSetup);
           setHasServerPin(userHasPinOnServer);
@@ -941,6 +948,15 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
             "@expenzez_last_unlock",
             Date.now().toString()
           );
+
+          // CRITICAL: Refresh security status from server to update all states
+          console.log(
+            "🔄 [SecurityContext] Refreshing security status after PIN sync..."
+          );
+          // Small delay to ensure server has processed the PIN sync
+          setTimeout(async () => {
+            await checkSecurityStatus();
+          }, 1000);
 
           console.log(
             "✅ [SecurityContext] Cross-device PIN sync completed successfully"

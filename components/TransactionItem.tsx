@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
-import { formatCurrency } from '../utils/formatters';
-import { getMerchantInfo } from '../services/merchantService';
-import dayjs from 'dayjs';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { useTheme } from "../contexts/ThemeContext";
+import { formatCurrency } from "../utils/formatters";
+import { getMerchantInfo } from "../services/merchantService";
+import dayjs from "dayjs";
 
 export interface Transaction {
   id: string;
@@ -15,7 +15,7 @@ export interface Transaction {
   accountId?: string;
   accountName?: string;
   institution?: string | { name: string; logo?: string };
-  type?: 'debit' | 'credit';
+  type?: "debit" | "credit";
   balance?: number;
   merchant?: string;
   [key: string]: any;
@@ -27,53 +27,69 @@ interface TransactionItemProps {
   showAccount?: boolean;
 }
 
-export default function TransactionItem({ 
-  transaction, 
-  showDate = false, 
-  showAccount = true 
+export default function TransactionItem({
+  transaction,
+  showDate = false,
+  showAccount = true,
 }: TransactionItemProps) {
   const { colors } = useTheme();
-  
+
+  // Early return if colors is not available
+  if (!colors) {
+    return null;
+  }
+
   // Get merchant information
   const merchantInfo = getMerchantInfo(transaction.description);
-  
+
   // Determine if it's income or expense
   const isIncome = transaction.amount > 0;
   const displayAmount = Math.abs(transaction.amount);
-  
+
   // Format the time if showing date
-  const timeString = showDate && transaction.date 
-    ? dayjs(transaction.date).format('HH:mm')
-    : null;
-  
+  const timeString =
+    showDate && transaction.date
+      ? dayjs(transaction.date).format("HH:mm")
+      : null;
+
   // Get account name or type for display
-  const accountDisplay = transaction.accountName || 
-    (transaction.accountId ? `${transaction.accountId.slice(-4)}` : 'Account');
+  const accountDisplay =
+    transaction.accountName ||
+    (transaction.accountId ? `${transaction.accountId.slice(-4)}` : "Account");
 
   // Get category color for indicator
   const getCategoryColor = (category?: string) => {
     const categoryColors: Record<string, string> = {
-      'food': '#F59E0B',
-      'transport': '#3B82F6',
-      'entertainment': '#8B5CF6',
-      'shopping': '#EC4899',
-      'bills': '#EF4444',
-      'health': '#10B981',
-      'other': '#6B7280',
+      food: "#F59E0B",
+      transport: "#3B82F6",
+      entertainment: "#8B5CF6",
+      shopping: "#EC4899",
+      bills: "#EF4444",
+      health: "#10B981",
+      other: "#6B7280",
     };
-    const normalizedCategory = category?.toLowerCase() || 'other';
-    return categoryColors[normalizedCategory] || categoryColors['other'];
+    const normalizedCategory = category?.toLowerCase() || "other";
+    return categoryColors[normalizedCategory] || categoryColors["other"];
   };
 
   const categoryColor = getCategoryColor(transaction.category);
 
   return (
-    <View style={[styles.container, { borderBottomColor: colors.border.light }]}>
+    <View
+      style={[styles.container, { borderBottomColor: colors.border.light }]}
+    >
       {/* Category color indicator */}
-      <View style={[styles.categoryIndicator, { backgroundColor: categoryColor }]} />
+      <View
+        style={[styles.categoryIndicator, { backgroundColor: categoryColor }]}
+      />
 
       {/* Left: Logo */}
-      <View style={[styles.logoContainer, { backgroundColor: colors.background.tertiary }]}>
+      <View
+        style={[
+          styles.logoContainer,
+          { backgroundColor: colors.background.tertiary },
+        ]}
+      >
         <Text style={styles.logoText}>{merchantInfo.logo}</Text>
       </View>
 
@@ -88,7 +104,12 @@ export default function TransactionItem({
 
         <View style={styles.metaRow}>
           {transaction.category && (
-            <View style={[styles.categoryBadge, { backgroundColor: `${categoryColor}15` }]}>
+            <View
+              style={[
+                styles.categoryBadge,
+                { backgroundColor: `${categoryColor}15` },
+              ]}
+            >
               <Text style={[styles.categoryText, { color: categoryColor }]}>
                 {transaction.category}
               </Text>
@@ -115,13 +136,12 @@ export default function TransactionItem({
           style={[
             styles.amount,
             {
-              color: isIncome
-                ? colors.success[500]
-                : colors.text.primary
-            }
+              color: isIncome ? colors.success[500] : colors.text.primary,
+            },
           ]}
         >
-          {isIncome ? '+' : ''}{formatCurrency(displayAmount)}
+          {isIncome ? "+" : ""}
+          {formatCurrency(displayAmount)}
         </Text>
       </View>
     </View>
@@ -130,8 +150,8 @@ export default function TransactionItem({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 16,
     paddingHorizontal: 16,
     paddingLeft: 8,
@@ -147,8 +167,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
   },
   logoText: {
@@ -156,20 +176,20 @@ const styles = StyleSheet.create({
   },
   detailsContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     gap: 4,
   },
   merchantName: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: "600",
     lineHeight: 22,
     marginBottom: 2,
   },
   metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   categoryBadge: {
     paddingHorizontal: 8,
@@ -178,22 +198,22 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
+    fontWeight: "600",
+    textTransform: "capitalize",
   },
   metaText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     lineHeight: 18,
   },
   amountContainer: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+    alignItems: "flex-end",
+    justifyContent: "center",
     minWidth: 90,
   },
   amount: {
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: "700",
     lineHeight: 22,
   },
 });
