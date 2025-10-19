@@ -385,10 +385,7 @@ export default function HomeScreen() {
             .startOf("month")
             .format("YYYY-MM-DD"),
           endDate: dayjs().endOf("month").format("YYYY-MM-DD"),
-          limit: 1000, // Load more for fallback balance calculation
-          // Add timestamp to force fresh data
-          _timestamp: Date.now(),
-          _forceRefresh: true, // Additional flag to force server refresh
+          limit: 1000 // Load more for fallback balance calculation
         })
         .catch((error) => {
           console.error("❌ Error loading transactions:", error);
