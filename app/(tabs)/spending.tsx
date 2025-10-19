@@ -621,7 +621,7 @@ export default function SpendingPage() {
           { name: "Food & Dining", icon: "restaurant", color: "#FF6B6B" },
           { name: "Shopping", icon: "bag", color: "#4ECDC4" },
           { name: "Transport", icon: "car", color: "#45B7D1" },
-          { name: "Entertainment", icon: "game-controller", color: "#96CEB4" },
+          { name: "Entertainment", icon: "film", color: "#96CEB4" },
           { name: "Bills & Utilities", icon: "flash", color: "#FFEAA7" },
           { name: "Health & Fitness", icon: "fitness", color: "#DDA0DD" },
         ];
@@ -645,22 +645,26 @@ export default function SpendingPage() {
 
           // Try to find budget with exact match or normalized name
           let categoryBudget = categoryBudgets[cat.name];
-          
+
           // If not found, try normalized versions
           if (!categoryBudget) {
             // Try lowercase
             const lowerCaseName = cat.name.toLowerCase();
-            categoryBudget = Object.keys(categoryBudgets).find(key => 
-              key.toLowerCase() === lowerCaseName
-            ) ? categoryBudgets[Object.keys(categoryBudgets).find(key => 
-              key.toLowerCase() === lowerCaseName
-            )!] : null;
+            categoryBudget = Object.keys(categoryBudgets).find(
+              (key) => key.toLowerCase() === lowerCaseName
+            )
+              ? categoryBudgets[
+                  Object.keys(categoryBudgets).find(
+                    (key) => key.toLowerCase() === lowerCaseName
+                  )!
+                ]
+              : null;
           }
 
           console.log(`🔍 Category budget lookup for "${cat.name}":`, {
             exactMatch: categoryBudgets[cat.name],
             normalizedMatch: categoryBudget,
-            usingBudget: categoryBudget || Math.round(dynamicBudget)
+            usingBudget: categoryBudget || Math.round(dynamicBudget),
           });
 
           categoryMap.set(cat.name, {
