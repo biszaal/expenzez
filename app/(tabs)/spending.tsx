@@ -621,7 +621,7 @@ export default function SpendingPage() {
           { name: "Food & Dining", icon: "restaurant", color: "#FF6B6B" },
           { name: "Shopping", icon: "bag", color: "#4ECDC4" },
           { name: "Transport", icon: "car", color: "#45B7D1" },
-          { name: "Entertainment", icon: "film", color: "#96CEB4" },
+          { name: "Entertainment", icon: "game-controller-outline", color: "#96CEB4" },
           { name: "Bills & Utilities", icon: "flash", color: "#FFEAA7" },
           { name: "Health & Fitness", icon: "fitness", color: "#DDA0DD" },
         ];
