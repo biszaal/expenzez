@@ -643,13 +643,32 @@ export default function SpendingPage() {
             }
           }
 
+          // Try to find budget with exact match or normalized name
+          let categoryBudget = categoryBudgets[cat.name];
+          
+          // If not found, try normalized versions
+          if (!categoryBudget) {
+            // Try lowercase
+            const lowerCaseName = cat.name.toLowerCase();
+            categoryBudget = Object.keys(categoryBudgets).find(key => 
+              key.toLowerCase() === lowerCaseName
+            ) ? categoryBudgets[Object.keys(categoryBudgets).find(key => 
+              key.toLowerCase() === lowerCaseName
+            )!] : null;
+          }
+
+          console.log(`🔍 Category budget lookup for "${cat.name}":`, {
+            exactMatch: categoryBudgets[cat.name],
+            normalizedMatch: categoryBudget,
+            usingBudget: categoryBudget || Math.round(dynamicBudget)
+          });
+
           categoryMap.set(cat.name, {
             id: `category-${index}`,
             name: cat.name,
             icon: cat.icon,
             color: cat.color,
-            defaultBudget:
-              categoryBudgets[cat.name] || Math.round(dynamicBudget),
+            defaultBudget: categoryBudget || Math.round(dynamicBudget),
           });
         });
 
