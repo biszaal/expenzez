@@ -128,6 +128,7 @@ export const nativeSecurityAPI = {
           console.log('🔐 [NativeSecurityAPI] ✅ Server PIN validation successful - syncing to local device');
 
           // PIN is correct on server, now store it locally for this device
+          console.log('🔐 [NativeSecurityAPI] Storing PIN hash locally...');
           await nativeCryptoStorage.storePinHash(request.pin);
           console.log('🔐 [NativeSecurityAPI] ✅ PIN synced to local device');
 
