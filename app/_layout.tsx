@@ -278,18 +278,19 @@ function RootLayoutNav() {
       if (success) {
         console.log("✅ [Layout] PIN sync successful, closing modal");
 
-        // Add a small delay before closing modal to ensure state updates
-        setTimeout(() => {
-          setShowPinSyncModal(false);
-          setSyncPinInput("");
-          setIsSyncingPin(false);
-        }, 500);
+        // Immediately close modal and clear state
+        setShowPinSyncModal(false);
+        setSyncPinInput("");
+        setIsSyncingPin(false);
 
-        Alert.alert(
-          "PIN Synced Successfully",
-          "Your PIN has been synced to this device. You can now use it to unlock the app.",
-          [{ text: "OK" }]
-        );
+        // Show success message after a brief delay
+        setTimeout(() => {
+          Alert.alert(
+            "PIN Synced Successfully",
+            "Your PIN has been synced to this device. You can now use it to unlock the app.",
+            [{ text: "OK" }]
+          );
+        }, 100);
       } else {
         console.log("❌ [Layout] PIN sync failed, clearing input");
         setSyncPinInput("");

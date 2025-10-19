@@ -340,12 +340,16 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
             needsPinSetup: securityStatus.needsPinSetup,
           });
 
+          // Check if PIN sync was recently completed to prevent re-triggering
+          const pinSyncComplete = await AsyncStorage.getItem("@expenzez_pin_sync_complete");
+          
           // CRITICAL: Detect if user has PIN on server but not on this device
           // If appLock is enabled globally AND this device needs PIN setup,
           // that means they have a PIN on another device
           const userHasPinOnServer =
             securityStatus.preferences.appLockEnabled &&
-            securityStatus.needsPinSetup;
+            securityStatus.needsPinSetup &&
+            pinSyncComplete !== "true"; // Don't show sync modal if sync was just completed
 
           console.log("🔐 [SecurityContext] Cross-device PIN detection:", {
             appLockEnabled: securityStatus.preferences.appLockEnabled,
@@ -938,7 +942,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
           // Also save to AsyncStorage for backward compatibility
           await AsyncStorage.setItem("@expenzez_app_password", pin);
 
-          // Update states
+          // Update states immediately to prevent modal from showing again
           setNeedsPinSetup(false);
           setIsLocked(false);
           setHasServerPin(false); // Clear this flag since PIN is now synced
@@ -949,6 +953,9 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
             Date.now().toString()
           );
 
+          // Mark that PIN sync is complete to prevent re-triggering
+          await AsyncStorage.setItem("@expenzez_pin_sync_complete", "true");
+
           // CRITICAL: Refresh security status from server to update all states
           console.log(
             "🔄 [SecurityContext] Refreshing security status after PIN sync..."
@@ -956,6 +963,8 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
           // Small delay to ensure server has processed the PIN sync
           setTimeout(async () => {
             await checkSecurityStatus();
+            // Clear the PIN sync flag after successful status check
+            await AsyncStorage.removeItem("@expenzez_pin_sync_complete");
           }, 1000);
 
           console.log(
