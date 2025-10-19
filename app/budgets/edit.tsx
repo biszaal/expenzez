@@ -68,7 +68,35 @@ export default function EditBudgetPage() {
     }
   };
 
-  // Smart auto-fill budgets based on historical spending
+  // Smart budget distribution weights based on typical spending patterns
+  const getSmartWeights = (): Record<string, number> => {
+    // Common budget allocation percentages (should add up to 1.0)
+    return {
+      "Food & dining": 0.25, // 25% - Groceries and dining out
+      Food: 0.25,
+      Groceries: 0.2,
+      Dining: 0.15,
+      Restaurant: 0.15,
+      Shopping: 0.15, // 15% - Retail and personal items
+      Retail: 0.15,
+      Transportation: 0.12, // 12% - Gas, public transit, car
+      Transport: 0.12,
+      Car: 0.1,
+      Gas: 0.08,
+      Bills: 0.2, // 20% - Utilities, phone, internet
+      Utilities: 0.15,
+      Entertainment: 0.1, // 10% - Movies, hobbies, fun
+      Recreation: 0.1,
+      Health: 0.08, // 8% - Medical, fitness, wellness
+      Healthcare: 0.08,
+      Fitness: 0.05,
+      Personal: 0.05, // 5% - Personal care
+      Education: 0.05, // 5% - Learning, courses
+      Other: 0.05, // 5% - Miscellaneous
+    };
+  };
+
+  // Smart auto-fill budgets based on historical spending or smart weights
   const autoFillBudgets = (budgetAmount: number) => {
     if (budgetAmount <= 0 || categories.length === 0) {
       return;
@@ -83,18 +111,55 @@ export default function EditBudgetPage() {
     const newBudgets: Record<string, string> = {};
 
     if (totalSpent > 0) {
-      // Distribute based on spending proportions
+      // Distribute based on actual spending proportions
       categories.forEach((cat) => {
         const proportion = (cat.totalSpent || 0) / totalSpent;
         const suggestedBudget = Math.round(budgetAmount * proportion);
         newBudgets[cat.id] = suggestedBudget.toString();
       });
     } else {
-      // Equal distribution if no spending history
-      const equalAmount = Math.floor(budgetAmount / categories.length);
+      // Smart distribution based on typical spending patterns
+      const smartWeights = getSmartWeights();
+      let allocatedBudget = 0;
+      let remainingCategories = 0;
+
+      // First pass: allocate based on known weights
       categories.forEach((cat) => {
-        newBudgets[cat.id] = equalAmount.toString();
+        const categoryName = cat.name.toLowerCase();
+        let weight = smartWeights[cat.name] || 0;
+
+        // Check for partial matches if exact match not found
+        if (weight === 0) {
+          const matchingKey = Object.keys(smartWeights).find(
+            (key) =>
+              categoryName.includes(key.toLowerCase()) ||
+              key.toLowerCase().includes(categoryName)
+          );
+          weight = matchingKey ? smartWeights[matchingKey] : 0;
+        }
+
+        if (weight > 0) {
+          const suggestedBudget = Math.round(budgetAmount * weight);
+          newBudgets[cat.id] = suggestedBudget.toString();
+          allocatedBudget += suggestedBudget;
+        } else {
+          remainingCategories++;
+        }
       });
+
+      // Second pass: distribute remaining budget to unknown categories
+      if (remainingCategories > 0) {
+        const remainingBudget = budgetAmount - allocatedBudget;
+        const perCategoryRemainder = Math.floor(
+          remainingBudget / remainingCategories
+        );
+
+        categories.forEach((cat) => {
+          if (!newBudgets[cat.id]) {
+            newBudgets[cat.id] = perCategoryRemainder.toString();
+          }
+        });
+      }
     }
 
     setBudgets(newBudgets);
@@ -554,11 +619,7 @@ export default function EditBudgetPage() {
                     marginRight: 16,
                   }}
                 >
-                  <Ionicons
-                    name="list"
-                    size={24}
-                    color={colors.primary[600]}
-                  />
+                  <Ionicons name="list" size={24} color={colors.primary[600]} />
                 </View>
                 <View>
                   <Text
