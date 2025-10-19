@@ -912,18 +912,21 @@ export default function SpendingPage() {
   // Animation effects - with proper reset on month change
   useEffect(() => {
     // Only animate if we have a valid percentage
-    if (monthlySpentPercentage === undefined || monthlySpentPercentage === null) {
+    if (
+      monthlySpentPercentage === undefined ||
+      monthlySpentPercentage === null
+    ) {
       return;
     }
 
     // Stop any ongoing animations
     animatedProgress.stopAnimation();
     animatedScale.stopAnimation();
-    
+
     // Reset to start position
     animatedProgress.setValue(0);
     animatedScale.setValue(0.9);
-    
+
     // Small delay to ensure reset is complete before starting animation
     const timer = setTimeout(() => {
       // Animate to the correct percentage

@@ -68,6 +68,42 @@ export default function EditBudgetPage() {
     }
   };
 
+  // Smart auto-fill budgets based on historical spending
+  const autoFillBudgets = () => {
+    const totalBudget = parseFloat(mainBudget) || 0;
+    if (totalBudget <= 0 || categories.length === 0) {
+      return;
+    }
+
+    // Calculate total historical spending across all categories
+    const totalSpent = categories.reduce((sum, cat) => sum + (cat.totalSpent || 0), 0);
+
+    const newBudgets: Record<string, string> = {};
+
+    if (totalSpent > 0) {
+      // Distribute based on spending proportions
+      categories.forEach((cat) => {
+        const proportion = (cat.totalSpent || 0) / totalSpent;
+        const suggestedBudget = Math.round(totalBudget * proportion);
+        newBudgets[cat.id] = suggestedBudget.toString();
+      });
+    } else {
+      // Equal distribution if no spending history
+      const equalAmount = Math.floor(totalBudget / categories.length);
+      categories.forEach((cat) => {
+        newBudgets[cat.id] = equalAmount.toString();
+      });
+    }
+
+    setBudgets(newBudgets);
+    
+    Alert.alert(
+      "Budgets Auto-Filled",
+      "Category budgets have been distributed based on your historical spending patterns. You can adjust them manually.",
+      [{ text: "OK" }]
+    );
+  };
+
   // Save budget to database
   const saveBudgetToDatabase = async (budgetAmount: number) => {
     try {
@@ -94,7 +130,10 @@ export default function EditBudgetPage() {
     transactions.forEach((tx) => {
       if (tx.amount < 0) {
         // Only expenses
-        const category = tx.category || "Other";
+        const rawCategory = tx.category || "Other";
+        // Normalize category: capitalize first letter, lowercase rest
+        const category = rawCategory.charAt(0).toUpperCase() + rawCategory.slice(1).toLowerCase();
+        
         const existing = categoryMap.get(category) || {
           count: 0,
           totalSpent: 0,
@@ -108,7 +147,7 @@ export default function EditBudgetPage() {
 
     const categories = Array.from(categoryMap.entries()).map(
       ([name, data], index) => ({
-        id: name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase(),
+        id: `${name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase()}_${index}`,
         name,
         icon: getCategoryIcon(name),
         color: getCategoryColor(name, index),
@@ -496,42 +535,68 @@ export default function EditBudgetPage() {
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
+                  justifyContent: "space-between",
                   marginBottom: 20,
                 }}
               >
-                <View
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
-                    backgroundColor: colors.primary[100],
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: 16,
-                  }}
-                >
-                  <Ionicons name="list" size={24} color={colors.primary[600]} />
-                </View>
-                <View>
-                  <Text
+                <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+                  <View
                     style={{
-                      color: colors.text.primary,
-                      fontWeight: "700",
-                      fontSize: 20,
-                      marginBottom: 4,
+                      width: 48,
+                      height: 48,
+                      borderRadius: 24,
+                      backgroundColor: colors.primary[100],
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 16,
                     }}
                   >
-                    Category Budgets
-                  </Text>
+                    <Ionicons name="list" size={24} color={colors.primary[600]} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        color: colors.text.primary,
+                        fontWeight: "700",
+                        fontSize: 20,
+                        marginBottom: 4,
+                      }}
+                    >
+                      Category Budgets
+                    </Text>
+                    <Text
+                      style={{
+                        color: colors.text.secondary,
+                        fontSize: 14,
+                      }}
+                    >
+                      Set limits for each spending category
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  onPress={autoFillBudgets}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                    borderRadius: 12,
+                    backgroundColor: colors.primary[500],
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <Ionicons name="sparkles" size={16} color="#FFFFFF" />
                   <Text
                     style={{
-                      color: colors.text.secondary,
+                      color: "#FFFFFF",
+                      fontWeight: "600",
                       fontSize: 14,
                     }}
                   >
-                    Set limits for each spending category
+                    Auto-Fill
                   </Text>
-                </View>
+                </Pressable>
               </View>
 
               {categories.map((category, index) => (
