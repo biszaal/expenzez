@@ -50,7 +50,7 @@
         "NSFaceIDUsageDescription": "This app uses Face ID for secure authentication and app access.",
         "NSLocationWhenInUseUsageDescription": "This app uses location data to categorize expenses and find nearby merchants."
       },
-      "bundleIdentifier": "com.biszaal.expenzez"
+      "bundleIdentifier": "com.biszaaltech.expenzez"
     },
     "android": {
       "adaptiveIcon": {
@@ -67,7 +67,7 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION"
       ],
-      "package": "com.biszaal.expenzez"
+      "package": "com.biszaaltech.expenzez"
     },
     "web": {
       "bundler": "metro",
@@ -99,6 +99,6 @@
         "projectId": "abdbfccb-cbc1-4be7-8fcc-76ac70f61747"
       }
     },
-    "owner": "biszaal"
+    "owner": "biszaaltech"
   }
 }
