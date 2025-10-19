@@ -38,11 +38,15 @@ export const nativeSecurityAPI = {
    */
   initialize: async (): Promise<void> => {
     try {
-      console.log('🔐 [NativeSecurityAPI] Initializing native security system...');
+      console.log(
+        "🔐 [NativeSecurityAPI] Initializing native security system..."
+      );
       await nativeCryptoStorage.initialize();
-      console.log('🔐 [NativeSecurityAPI] ✅ Native security system initialized');
+      console.log(
+        "🔐 [NativeSecurityAPI] ✅ Native security system initialized"
+      );
     } catch (error) {
-      console.error('🔐 [NativeSecurityAPI] ❌ Failed to initialize:', error);
+      console.error("🔐 [NativeSecurityAPI] ❌ Failed to initialize:", error);
       throw error;
     }
   },
@@ -50,17 +54,23 @@ export const nativeSecurityAPI = {
   /**
    * Set up a new 5-digit PIN with server-side storage for cross-device sync
    */
-  setupPin: async (request: SetPinRequest): Promise<SecurityValidationResponse> => {
+  setupPin: async (
+    request: SetPinRequest
+  ): Promise<SecurityValidationResponse> => {
     try {
-      console.log('🔐 [NativeSecurityAPI] Setting up PIN with server-side storage...');
+      console.log(
+        "🔐 [NativeSecurityAPI] Setting up PIN with server-side storage..."
+      );
 
       // Validate PIN format
       if (!/^\d{5}$/.test(request.pin)) {
-        console.log('🔐 [NativeSecurityAPI] ❌ Invalid PIN format');
-        return { success: false, error: 'PIN must be exactly 5 digits' };
+        console.log("🔐 [NativeSecurityAPI] ❌ Invalid PIN format");
+        return { success: false, error: "PIN must be exactly 5 digits" };
       }
 
-      console.log('🔐 [NativeSecurityAPI] PIN format valid, storing on server for cross-device sync...');
+      console.log(
+        "🔐 [NativeSecurityAPI] PIN format valid, storing on server for cross-device sync..."
+      );
 
       // Store PIN on server (hashed) for cross-device access
       const payload = {
@@ -69,14 +79,18 @@ export const nativeSecurityAPI = {
         biometricEnabled: request.biometricEnabled || false,
       };
 
-      const response = await api.post('/security/setup-pin', payload);
+      const response = await api.post("/security/setup-pin", payload);
 
       if (response.status === 200) {
-        console.log('🔐 [NativeSecurityAPI] ✅ PIN stored on server for cross-device sync');
+        console.log(
+          "🔐 [NativeSecurityAPI] ✅ PIN stored on server for cross-device sync"
+        );
 
         // Also store locally as backup/cache
         await nativeCryptoStorage.storePinHash(request.pin);
-        console.log('🔐 [NativeSecurityAPI] ✅ PIN also cached locally as backup');
+        console.log(
+          "🔐 [NativeSecurityAPI] ✅ PIN also cached locally as backup"
+        );
 
         // Update local security settings
         await nativeCryptoStorage.setSecuritySettings({
@@ -86,18 +100,23 @@ export const nativeSecurityAPI = {
 
         // Create a local session
         await nativeCryptoStorage.createSession(request.deviceId);
-        console.log('🔐 [NativeSecurityAPI] ✅ Local session created');
+        console.log("🔐 [NativeSecurityAPI] ✅ Local session created");
 
         return { success: true };
       } else {
-        console.log('🔐 [NativeSecurityAPI] ❌ Server PIN storage failed:', response.status);
-        return { success: false, error: 'Failed to store PIN on server' };
+        console.log(
+          "🔐 [NativeSecurityAPI] ❌ Server PIN storage failed:",
+          response.status
+        );
+        return { success: false, error: "Failed to store PIN on server" };
       }
     } catch (error: any) {
-      console.error('🔐 [NativeSecurityAPI] ❌ PIN setup failed:', error);
+      console.error("🔐 [NativeSecurityAPI] ❌ PIN setup failed:", error);
       return {
         success: false,
-        error: error.message || 'Failed to set up PIN. Please check your internet connection.'
+        error:
+          error.message ||
+          "Failed to set up PIN. Please check your internet connection.",
       };
     }
   },
@@ -106,62 +125,84 @@ export const nativeSecurityAPI = {
    * Validate PIN for cross-device sync (validates against server first, then stores locally)
    * Used when user logs in from a new device and needs to sync their PIN
    */
-  validatePinForSync: async (request: ValidatePinRequest): Promise<SecurityValidationResponse> => {
+  validatePinForSync: async (
+    request: ValidatePinRequest
+  ): Promise<SecurityValidationResponse> => {
     try {
-      console.log('🔐 [NativeSecurityAPI] Validating PIN for cross-device sync using SERVER...');
+      console.log(
+        "🔐 [NativeSecurityAPI] Validating PIN for cross-device sync using SERVER..."
+      );
 
       // Validate PIN format
       if (!/^\d{5}$/.test(request.pin)) {
-        console.log('🔐 [NativeSecurityAPI] ❌ Invalid PIN format');
-        return { success: false, error: 'PIN must be exactly 5 digits' };
+        console.log("🔐 [NativeSecurityAPI] ❌ Invalid PIN format");
+        return { success: false, error: "PIN must be exactly 5 digits" };
       }
 
       // Validate against SERVER (where the original PIN is stored)
       try {
-        console.log('🔐 [NativeSecurityAPI] Sending PIN validation request to server...');
-        const response = await api.post('/security/validate-pin', {
+        console.log(
+          "🔐 [NativeSecurityAPI] Sending PIN validation request to server..."
+        );
+        const response = await api.post("/security/validate-pin", {
           pin: request.pin,
           deviceId: request.deviceId,
         });
 
         if (response.status === 200 && response.data?.success) {
-          console.log('🔐 [NativeSecurityAPI] ✅ Server PIN validation successful - syncing to local device');
+          console.log(
+            "🔐 [NativeSecurityAPI] ✅ Server PIN validation successful - syncing to local device"
+          );
 
           // PIN is correct on server, now store it locally for this device
-          console.log('🔐 [NativeSecurityAPI] Storing PIN hash locally...');
+          console.log("🔐 [NativeSecurityAPI] Storing PIN hash locally...");
           await nativeCryptoStorage.storePinHash(request.pin);
-          console.log('🔐 [NativeSecurityAPI] ✅ PIN synced to local device');
+          console.log("🔐 [NativeSecurityAPI] ✅ PIN synced to local device");
 
           // Update local security settings
           await nativeCryptoStorage.setSecuritySettings({
             securityEnabled: true,
             biometricEnabled: false, // User can enable biometric later
           });
-          console.log('🔐 [NativeSecurityAPI] ✅ Local security settings updated');
+          console.log(
+            "🔐 [NativeSecurityAPI] ✅ Local security settings updated"
+          );
 
           // Create session for this device
           await nativeCryptoStorage.createSession(request.deviceId);
-          console.log('🔐 [NativeSecurityAPI] ✅ Session created for new device');
+          console.log(
+            "🔐 [NativeSecurityAPI] ✅ Session created for new device"
+          );
 
           return { success: true };
         } else {
-          console.log('🔐 [NativeSecurityAPI] ❌ Server PIN validation failed');
-          return { success: false, error: response.data?.error || 'Invalid PIN' };
+          console.log("🔐 [NativeSecurityAPI] ❌ Server PIN validation failed");
+          return {
+            success: false,
+            error: response.data?.error || "Invalid PIN",
+          };
         }
       } catch (serverError: any) {
-        console.error('🔐 [NativeSecurityAPI] ❌ Server validation error:', serverError);
+        console.error(
+          "🔐 [NativeSecurityAPI] ❌ Server validation error:",
+          serverError
+        );
 
         // If server is unreachable, we can't sync the PIN
         return {
           success: false,
-          error: 'Unable to connect to server. Please check your internet connection.'
+          error:
+            "Unable to connect to server. Please check your internet connection.",
         };
       }
     } catch (error: any) {
-      console.error('🔐 [NativeSecurityAPI] ❌ PIN sync validation error:', error);
+      console.error(
+        "🔐 [NativeSecurityAPI] ❌ PIN sync validation error:",
+        error
+      );
       return {
         success: false,
-        error: error.message || 'Validation failed'
+        error: error.message || "Validation failed",
       };
     }
   },
@@ -169,41 +210,46 @@ export const nativeSecurityAPI = {
   /**
    * Validate PIN using local fallback (for normal PIN unlocking on a device that already has PIN)
    */
-  validatePin: async (request: ValidatePinRequest): Promise<SecurityValidationResponse> => {
+  validatePin: async (
+    request: ValidatePinRequest
+  ): Promise<SecurityValidationResponse> => {
     try {
-      console.log('🔐 [NativeSecurityAPI] Validating PIN using local verification...');
+      console.log(
+        "🔐 [NativeSecurityAPI] Validating PIN using local verification..."
+      );
 
       // Use local validation since server endpoint is not deployed to AWS yet
       const settings = await nativeCryptoStorage.getSecuritySettings();
       if (!settings.securityEnabled) {
-        console.log('🔐 [NativeSecurityAPI] Security not enabled locally');
-        return { success: false, error: 'Security not enabled' };
+        console.log("🔐 [NativeSecurityAPI] Security not enabled locally");
+        return { success: false, error: "Security not enabled" };
       }
 
       // Check if PIN exists locally
       const hasPinHash = await nativeCryptoStorage.hasPinHash();
       if (!hasPinHash) {
-        console.log('🔐 [NativeSecurityAPI] No local PIN found');
-        return { success: false, error: 'No PIN set up locally' };
+        console.log("🔐 [NativeSecurityAPI] No local PIN found");
+        return { success: false, error: "No PIN set up locally" };
       }
 
       // Verify PIN using local crypto
       const isValidPin = await nativeCryptoStorage.verifyPin(request.pin);
 
       if (isValidPin) {
-        console.log('🔐 [NativeSecurityAPI] ✅ Local PIN validation successful');
+        console.log(
+          "🔐 [NativeSecurityAPI] ✅ Local PIN validation successful"
+        );
         await nativeCryptoStorage.createSession(request.deviceId);
         return { success: true };
       } else {
-        console.log('🔐 [NativeSecurityAPI] ❌ Local PIN validation failed');
-        return { success: false, error: 'Invalid PIN' };
+        console.log("🔐 [NativeSecurityAPI] ❌ Local PIN validation failed");
+        return { success: false, error: "Invalid PIN" };
       }
-
     } catch (error: any) {
-      console.error('🔐 [NativeSecurityAPI] ❌ PIN validation error:', error);
+      console.error("🔐 [NativeSecurityAPI] ❌ PIN validation error:", error);
       return {
         success: false,
-        error: 'Validation failed'
+        error: "Validation failed",
       };
     }
   },
@@ -211,31 +257,36 @@ export const nativeSecurityAPI = {
   /**
    * Get security settings
    */
-  getSecuritySettings: async (deviceId: string): Promise<SecuritySettings | null> => {
+  getSecuritySettings: async (
+    deviceId: string
+  ): Promise<SecuritySettings | null> => {
     try {
-      console.log('🔐 [NativeSecurityAPI] Getting security settings...');
-      
+      console.log("🔐 [NativeSecurityAPI] Getting security settings...");
+
       const settings = await nativeCryptoStorage.getSecuritySettings();
       const hasPinHash = await nativeCryptoStorage.hasPinHash();
-      
+
       if (hasPinHash && settings.securityEnabled) {
         const securitySettings: SecuritySettings = {
-          userId: 'current_user',
-          encryptedPin: 'NATIVE_CRYPTO_STORED',
+          userId: "current_user",
+          encryptedPin: "NATIVE_CRYPTO_STORED",
           biometricEnabled: settings.biometricEnabled,
           deviceId,
           lastUpdated: settings.lastUpdated,
           createdAt: settings.createdAt,
         };
-        
-        console.log('🔐 [NativeSecurityAPI] ✅ Security settings found');
+
+        console.log("🔐 [NativeSecurityAPI] ✅ Security settings found");
         return securitySettings;
       }
 
-      console.log('🔐 [NativeSecurityAPI] No security settings found');
+      console.log("🔐 [NativeSecurityAPI] No security settings found");
       return null;
     } catch (error: any) {
-      console.error('🔐 [NativeSecurityAPI] ❌ Failed to get security settings:', error);
+      console.error(
+        "🔐 [NativeSecurityAPI] ❌ Failed to get security settings:",
+        error
+      );
       return null;
     }
   },
@@ -243,18 +294,26 @@ export const nativeSecurityAPI = {
   /**
    * Update biometric settings
    */
-  updateBiometricSettings: async (deviceId: string, enabled: boolean): Promise<SecurityValidationResponse> => {
+  updateBiometricSettings: async (
+    deviceId: string,
+    enabled: boolean
+  ): Promise<SecurityValidationResponse> => {
     try {
-      console.log('🔐 [NativeSecurityAPI] Updating biometric settings...');
-      
-      await nativeCryptoStorage.setSecuritySettings({ biometricEnabled: enabled });
-      
+      console.log("🔐 [NativeSecurityAPI] Updating biometric settings...");
+
+      await nativeCryptoStorage.setSecuritySettings({
+        biometricEnabled: enabled,
+      });
+
       return { success: true };
     } catch (error: any) {
-      console.error('🔐 [NativeSecurityAPI] ❌ Failed to update biometric settings:', error);
-      return { 
-        success: false, 
-        error: 'Failed to update biometric settings' 
+      console.error(
+        "🔐 [NativeSecurityAPI] ❌ Failed to update biometric settings:",
+        error
+      );
+      return {
+        success: false,
+        error: "Failed to update biometric settings",
       };
     }
   },
@@ -262,33 +321,37 @@ export const nativeSecurityAPI = {
   /**
    * Change PIN
    */
-  changePin: async (deviceId: string, oldPin: string, newPin: string): Promise<SecurityValidationResponse> => {
+  changePin: async (
+    deviceId: string,
+    oldPin: string,
+    newPin: string
+  ): Promise<SecurityValidationResponse> => {
     try {
-      console.log('🔐 [NativeSecurityAPI] Changing PIN...');
-      
+      console.log("🔐 [NativeSecurityAPI] Changing PIN...");
+
       // Validate old PIN
       const oldPinValid = await nativeCryptoStorage.verifyPin(oldPin);
       if (!oldPinValid) {
-        return { success: false, error: 'Current PIN is incorrect' };
+        return { success: false, error: "Current PIN is incorrect" };
       }
 
       // Validate new PIN format
       if (!/^\d{5}$/.test(newPin)) {
-        return { success: false, error: 'New PIN must be exactly 5 digits' };
+        return { success: false, error: "New PIN must be exactly 5 digits" };
       }
 
       // Store new PIN
       await nativeCryptoStorage.storePinHash(newPin);
-      
+
       // Create new session
       await nativeCryptoStorage.createSession(deviceId);
-      
+
       return { success: true };
     } catch (error: any) {
-      console.error('🔐 [NativeSecurityAPI] ❌ Failed to change PIN:', error);
-      return { 
-        success: false, 
-        error: 'Failed to change PIN' 
+      console.error("🔐 [NativeSecurityAPI] ❌ Failed to change PIN:", error);
+      return {
+        success: false,
+        error: "Failed to change PIN",
       };
     }
   },
@@ -298,16 +361,16 @@ export const nativeSecurityAPI = {
    */
   removePin: async (deviceId: string): Promise<SecurityValidationResponse> => {
     try {
-      console.log('🔐 [NativeSecurityAPI] Removing PIN and security data...');
-      
+      console.log("🔐 [NativeSecurityAPI] Removing PIN and security data...");
+
       await nativeCryptoStorage.clearAllSecurityData();
-      
+
       return { success: true };
     } catch (error: any) {
-      console.error('🔐 [NativeSecurityAPI] ❌ Failed to remove PIN:', error);
-      return { 
-        success: false, 
-        error: 'Failed to remove PIN' 
+      console.error("🔐 [NativeSecurityAPI] ❌ Failed to remove PIN:", error);
+      return {
+        success: false,
+        error: "Failed to remove PIN",
       };
     }
   },
@@ -319,7 +382,10 @@ export const nativeSecurityAPI = {
     try {
       return await nativeCryptoStorage.isSessionValid();
     } catch (error) {
-      console.error('🔐 [NativeSecurityAPI] ❌ Session validation failed:', error);
+      console.error(
+        "🔐 [NativeSecurityAPI] ❌ Session validation failed:",
+        error
+      );
       return false;
     }
   },
@@ -331,9 +397,12 @@ export const nativeSecurityAPI = {
     try {
       const deviceId = await deviceManager.getDeviceId();
       await nativeCryptoStorage.createSession(deviceId); // Refresh the session
-      console.log('🔐 [NativeSecurityAPI] ✅ Session extended');
+      console.log("🔐 [NativeSecurityAPI] ✅ Session extended");
     } catch (error) {
-      console.error('🔐 [NativeSecurityAPI] ❌ Failed to extend session:', error);
+      console.error(
+        "🔐 [NativeSecurityAPI] ❌ Failed to extend session:",
+        error
+      );
     }
   },
 
@@ -344,7 +413,10 @@ export const nativeSecurityAPI = {
     try {
       await nativeCryptoStorage.clearSession();
     } catch (error) {
-      console.error('🔐 [NativeSecurityAPI] ❌ Failed to clear session:', error);
+      console.error(
+        "🔐 [NativeSecurityAPI] ❌ Failed to clear session:",
+        error
+      );
     }
   },
 
@@ -353,7 +425,7 @@ export const nativeSecurityAPI = {
    */
   hasPinSetup: async (): Promise<boolean> => {
     try {
-      console.log('🔐 [NativeSecurityAPI] Checking if PIN is set up...');
+      console.log("🔐 [NativeSecurityAPI] Checking if PIN is set up...");
 
       // First check server-side (works across all devices)
       try {
@@ -362,22 +434,32 @@ export const nativeSecurityAPI = {
 
         if (response.status === 200 && response.data?.success) {
           const hasServerPin = response.data.status?.hasDevicePIN;
-          console.log('🔐 [NativeSecurityAPI] Server PIN check result:', { hasServerPin });
+          console.log("🔐 [NativeSecurityAPI] Server PIN check result:", {
+            hasServerPin,
+          });
 
           if (hasServerPin) {
             return true;
           }
         }
       } catch (serverError) {
-        console.log('🔐 [NativeSecurityAPI] Server PIN check failed, checking locally:', serverError.message);
+        console.log(
+          "🔐 [NativeSecurityAPI] Server PIN check failed, checking locally:",
+          serverError.message
+        );
       }
 
       // Fallback to local check
       const hasLocalPin = await nativeCryptoStorage.hasPinHash();
-      console.log('🔐 [NativeSecurityAPI] Local PIN check result:', { hasLocalPin });
+      console.log("🔐 [NativeSecurityAPI] Local PIN check result:", {
+        hasLocalPin,
+      });
       return hasLocalPin;
     } catch (error) {
-      console.error('🔐 [NativeSecurityAPI] ❌ Failed to check PIN setup:', error);
+      console.error(
+        "🔐 [NativeSecurityAPI] ❌ Failed to check PIN setup:",
+        error
+      );
       return false;
     }
   },
@@ -389,7 +471,10 @@ export const nativeSecurityAPI = {
     try {
       return await nativeCryptoStorage.getSecuritySettings();
     } catch (error) {
-      console.error('🔐 [NativeSecurityAPI] ❌ Failed to get current settings:', error);
+      console.error(
+        "🔐 [NativeSecurityAPI] ❌ Failed to get current settings:",
+        error
+      );
       return {
         securityEnabled: false,
         biometricEnabled: false,

@@ -146,6 +146,16 @@ export class NativeCryptoStorage {
       await SecureStore.setItemAsync(SECURE_KEYS.PIN_SALT, salt);
       
       console.log('🔒 [NativeCrypto] ✅ PIN hash stored securely');
+      
+      // Verify storage worked
+      const storedHash = await SecureStore.getItemAsync(SECURE_KEYS.PIN_HASH);
+      const storedSalt = await SecureStore.getItemAsync(SECURE_KEYS.PIN_SALT);
+      console.log('🔒 [NativeCrypto] Storage verification:', {
+        hashStored: !!storedHash,
+        saltStored: !!storedSalt,
+        hashLength: storedHash?.length || 0,
+        saltLength: storedSalt?.length || 0
+      });
     } catch (error) {
       console.error('🔒 [NativeCrypto] ❌ Failed to store PIN hash:', error);
       throw error;
@@ -159,6 +169,14 @@ export class NativeCryptoStorage {
     try {
       const hash = await SecureStore.getItemAsync(SECURE_KEYS.PIN_HASH);
       const salt = await SecureStore.getItemAsync(SECURE_KEYS.PIN_SALT);
+      
+      console.log('🔒 [NativeCrypto] Checking PIN hash existence:', {
+        hasHash: !!hash,
+        hasSalt: !!salt,
+        hashLength: hash?.length || 0,
+        saltLength: salt?.length || 0
+      });
+      
       return !!(hash && salt);
     } catch (error) {
       console.error('🔒 [NativeCrypto] ❌ Failed to check PIN hash:', error);
