@@ -39,6 +39,24 @@ export default function PersonalInformationScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Initialize form with user data from AuthContext
+  useEffect(() => {
+    if (user && !formData) {
+      const initialData = {
+        firstName: user.given_name || user.firstName || "",
+        lastName: user.family_name || user.lastName || "",
+        email: user.email || "",
+        phone: user.phone_number || user.phone || "",
+        address: user.address || "",
+        dateOfBirth: user.birthdate || user.dateOfBirth || "",
+        occupation: user.occupation || "",
+        company: user.company || "",
+      };
+      console.log("🔄 [Personal] Initializing form with user data:", initialData);
+      setFormData(initialData);
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchProfile = async () => {

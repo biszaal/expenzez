@@ -566,140 +566,140 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
               Date Range
             </Text>
-              <View style={styles.dateRangeContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.dateButton,
-                    { backgroundColor: colors.background.primary },
-                  ]}
-                  onPress={() => {
-                    Alert.alert(
-                      "Select Start Date",
-                      "Choose a preset or custom date range",
-                      [
-                        {
-                          text: "Start of Year",
-                          onPress: () =>
-                            setDateRange({
-                              ...dateRange,
-                              startDate: new Date(new Date().getFullYear(), 0, 1),
-                            }),
-                        },
-                        {
-                          text: "3 Months Ago",
-                          onPress: () =>
-                            setDateRange({
-                              ...dateRange,
-                              startDate: new Date(
-                                new Date().setMonth(new Date().getMonth() - 3)
-                              ),
-                            }),
-                        },
-                        {
-                          text: "6 Months Ago",
-                          onPress: () =>
-                            setDateRange({
-                              ...dateRange,
-                              startDate: new Date(
-                                new Date().setMonth(new Date().getMonth() - 6)
-                              ),
-                            }),
-                        },
-                        {
-                          text: "1 Year Ago",
-                          onPress: () =>
-                            setDateRange({
-                              ...dateRange,
-                              startDate: new Date(
-                                new Date().setFullYear(
-                                  new Date().getFullYear() - 1
-                                )
-                              ),
-                            }),
-                        },
-                        { text: "Cancel", style: "cancel" },
-                      ]
-                    );
-                  }}
-                >
-                  <Ionicons
-                    name="calendar-outline"
-                    size={20}
-                    color={colors.primary[500]}
-                  />
-                  <View style={styles.dateInfo}>
-                    <Text
-                      style={[styles.dateLabel, { color: colors.text.secondary }]}
-                    >
-                      From
-                    </Text>
-                    <Text
-                      style={[styles.dateValue, { color: colors.text.primary }]}
-                    >
-                      {dateRange.startDate.toLocaleDateString()}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
+            <View style={styles.dateRangeContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.dateButton,
+                  { backgroundColor: colors.background.primary },
+                ]}
+                onPress={() => {
+                  Alert.alert(
+                    "Select Start Date",
+                    "Choose a preset or custom date range",
+                    [
+                      {
+                        text: "Start of Year",
+                        onPress: () =>
+                          setDateRange({
+                            ...dateRange,
+                            startDate: new Date(new Date().getFullYear(), 0, 1),
+                          }),
+                      },
+                      {
+                        text: "3 Months Ago",
+                        onPress: () =>
+                          setDateRange({
+                            ...dateRange,
+                            startDate: new Date(
+                              new Date().setMonth(new Date().getMonth() - 3)
+                            ),
+                          }),
+                      },
+                      {
+                        text: "6 Months Ago",
+                        onPress: () =>
+                          setDateRange({
+                            ...dateRange,
+                            startDate: new Date(
+                              new Date().setMonth(new Date().getMonth() - 6)
+                            ),
+                          }),
+                      },
+                      {
+                        text: "1 Year Ago",
+                        onPress: () =>
+                          setDateRange({
+                            ...dateRange,
+                            startDate: new Date(
+                              new Date().setFullYear(
+                                new Date().getFullYear() - 1
+                              )
+                            ),
+                          }),
+                      },
+                      { text: "Cancel", style: "cancel" },
+                    ]
+                  );
+                }}
+              >
+                <Ionicons
+                  name="calendar-outline"
+                  size={20}
+                  color={colors.primary[500]}
+                />
+                <View style={styles.dateInfo}>
+                  <Text
+                    style={[styles.dateLabel, { color: colors.text.secondary }]}
+                  >
+                    From
+                  </Text>
+                  <Text
+                    style={[styles.dateValue, { color: colors.text.primary }]}
+                  >
+                    {dateRange.startDate.toLocaleDateString()}
+                  </Text>
+                </View>
+              </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[
-                    styles.dateButton,
-                    { backgroundColor: colors.background.primary },
-                  ]}
-                  onPress={() => {
-                    Alert.alert(
-                      "Select End Date",
-                      "Choose when to end the export range",
-                      [
-                        {
-                          text: "Today",
-                          onPress: () =>
-                            setDateRange({ ...dateRange, endDate: new Date() }),
-                        },
-                        {
-                          text: "End of Last Month",
-                          onPress: () =>
-                            setDateRange({
-                              ...dateRange,
-                              endDate: new Date(
-                                new Date().getFullYear(),
-                                new Date().getMonth(),
-                                0
-                              ),
-                            }),
-                        },
-                        {
-                          text: "End of Year",
-                          onPress: () =>
-                            setDateRange({
-                              ...dateRange,
-                              endDate: new Date(new Date().getFullYear(), 11, 31),
-                            }),
-                        },
-                        { text: "Cancel", style: "cancel" },
-                      ]
-                    );
-                  }}
-                >
-                  <Ionicons
-                    name="calendar-outline"
-                    size={20}
-                    color={colors.primary[500]}
-                  />
-                  <View style={styles.dateInfo}>
-                    <Text
-                      style={[styles.dateLabel, { color: colors.text.secondary }]}
-                    >
-                      To
-                    </Text>
-                    <Text
-                      style={[styles.dateValue, { color: colors.text.primary }]}
-                    >
-                      {dateRange.endDate.toLocaleDateString()}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={[
+                  styles.dateButton,
+                  { backgroundColor: colors.background.primary },
+                ]}
+                onPress={() => {
+                  Alert.alert(
+                    "Select End Date",
+                    "Choose when to end the export range",
+                    [
+                      {
+                        text: "Today",
+                        onPress: () =>
+                          setDateRange({ ...dateRange, endDate: new Date() }),
+                      },
+                      {
+                        text: "End of Last Month",
+                        onPress: () =>
+                          setDateRange({
+                            ...dateRange,
+                            endDate: new Date(
+                              new Date().getFullYear(),
+                              new Date().getMonth(),
+                              0
+                            ),
+                          }),
+                      },
+                      {
+                        text: "End of Year",
+                        onPress: () =>
+                          setDateRange({
+                            ...dateRange,
+                            endDate: new Date(new Date().getFullYear(), 11, 31),
+                          }),
+                      },
+                      { text: "Cancel", style: "cancel" },
+                    ]
+                  );
+                }}
+              >
+                <Ionicons
+                  name="calendar-outline"
+                  size={20}
+                  color={colors.primary[500]}
+                />
+                <View style={styles.dateInfo}>
+                  <Text
+                    style={[styles.dateLabel, { color: colors.text.secondary }]}
+                  >
+                    To
+                  </Text>
+                  <Text
+                    style={[styles.dateValue, { color: colors.text.primary }]}
+                  >
+                    {dateRange.endDate.toLocaleDateString()}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
 
             <Text style={[styles.dateNote, { color: colors.text.secondary }]}>
               Default range: Start of current year to today
