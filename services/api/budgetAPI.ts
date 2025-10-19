@@ -2,6 +2,7 @@ import { api } from '../config/apiClient';
 
 export interface BudgetPreferences {
   monthlyBudget: number;
+  monthlySpendingLimit: number;
   categoryBudgets: {
     [categoryName: string]: number;
   };

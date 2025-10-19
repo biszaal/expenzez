@@ -199,12 +199,16 @@ interface DetectedBill {
   name: string;
   merchant: string;
   amount: number;
-  frequency: string;
+  frequency: "weekly" | "monthly" | "quarterly" | "yearly";
   category: string;
-  status: "active" | "cancelled" | "inactive";
   nextDueDate: string;
-  confidence: number;
+  lastPaymentDate: string;
+  accountId: string;
   bankName: string;
+  confidence: number;
+  transactions: any[];
+  averageAmount: number;
+  status: "active" | "cancelled" | "irregular";
 }
 
 interface EnhancedBillsListProps {

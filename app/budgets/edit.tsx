@@ -423,7 +423,7 @@ export default function EditBudgetPage() {
                 value={mainBudget}
                 onChangeText={handleMainBudgetChange}
                 placeholder="2000"
-                placeholderTextColor={colors.text.tertiary}
+                
                 accessibilityLabel="Set main budget"
               />
             </View>
@@ -599,7 +599,7 @@ export default function EditBudgetPage() {
                       handleCategoryBudgetChange(category.id, value)
                     }
                     placeholder="0"
-                    placeholderTextColor={colors.text.tertiary}
+                    
                   />
                 </Animated.View>
               ))}

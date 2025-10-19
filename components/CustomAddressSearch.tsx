@@ -223,7 +223,7 @@ export default function CustomAddressSearch({
           value={query}
           onChangeText={handleQueryChange}
           placeholder="Search for your address..."
-          placeholderTextColor={colors.text.tertiary}
+          
           style={{
             flex: 1,
             fontSize: 16,

@@ -390,7 +390,7 @@ export default function PersonalInformationScreen() {
                   }
                   editable={isEditing}
                   placeholder="Enter first name"
-                  placeholderTextColor={colors.text.tertiary}
+                  
                 />
               </View>
               <View
@@ -418,7 +418,7 @@ export default function PersonalInformationScreen() {
                   onChangeText={(value) => handleFieldChange("lastName", value)}
                   editable={isEditing}
                   placeholder="Enter last name"
-                  placeholderTextColor={colors.text.tertiary}
+                  
                 />
               </View>
             </View>
@@ -444,7 +444,7 @@ export default function PersonalInformationScreen() {
                 onChangeText={(value) => handleFieldChange("email", value)}
                 editable={isEditing}
                 placeholder="Enter email address"
-                placeholderTextColor={colors.text.tertiary}
+                
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
@@ -471,7 +471,7 @@ export default function PersonalInformationScreen() {
                 onChangeText={(value) => handleFieldChange("phone", value)}
                 editable={isEditing}
                 placeholder="Enter phone number"
-                placeholderTextColor={colors.text.tertiary}
+                
                 keyboardType="phone-pad"
               />
             </View>
@@ -499,7 +499,7 @@ export default function PersonalInformationScreen() {
                 }
                 editable={isEditing}
                 placeholder="YYYY-MM-DD"
-                placeholderTextColor={colors.text.tertiary}
+                
               />
             </View>
           </View>
@@ -530,7 +530,7 @@ export default function PersonalInformationScreen() {
                 onChangeText={(value) => handleFieldChange("address", value)}
                 editable={isEditing}
                 placeholder="Enter your address"
-                placeholderTextColor={colors.text.tertiary}
+                
                 multiline
                 numberOfLines={3}
               />
@@ -562,7 +562,7 @@ export default function PersonalInformationScreen() {
                 onChangeText={(value) => handleFieldChange("occupation", value)}
                 editable={isEditing}
                 placeholder="Enter your occupation"
-                placeholderTextColor={colors.text.tertiary}
+                
               />
             </View>
 
@@ -587,7 +587,7 @@ export default function PersonalInformationScreen() {
                 onChangeText={(value) => handleFieldChange("company", value)}
                 editable={isEditing}
                 placeholder="Enter your company name"
-                placeholderTextColor={colors.text.tertiary}
+                
               />
             </View>
           </View>

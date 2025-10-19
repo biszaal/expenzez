@@ -170,7 +170,7 @@ export default function TextField({
         <TextInput
           style={inputStyleArray}
           placeholder={placeholder}
-          placeholderTextColor={colors.text.tertiary}
+          
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={secureTextEntry && !showPassword}

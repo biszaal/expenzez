@@ -172,7 +172,7 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
             value={title}
             onChangeText={setTitle}
             placeholder="Enter goal title"
-            placeholderTextColor={colors.text.tertiary}
+            
           />
         </View>
 
@@ -183,7 +183,7 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
             value={description}
             onChangeText={setDescription}
             placeholder="Describe your goal"
-            placeholderTextColor={colors.text.tertiary}
+            
             multiline
             numberOfLines={3}
           />
@@ -196,7 +196,7 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
             value={targetAmount}
             onChangeText={setTargetAmount}
             placeholder="0.00"
-            placeholderTextColor={colors.text.tertiary}
+            
             keyboardType="numeric"
           />
         </View>
@@ -208,7 +208,7 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
             value={targetDate}
             onChangeText={setTargetDate}
             placeholder="YYYY-MM-DD"
-            placeholderTextColor={colors.text.tertiary}
+            
           />
           <Text style={styles.inputHint}>Format: 2024-12-31</Text>
         </View>
@@ -261,7 +261,7 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
                 value={autoSaveAmount}
                 onChangeText={setAutoSaveAmount}
                 placeholder="0.00"
-                placeholderTextColor={colors.text.tertiary}
+                
                 keyboardType="numeric"
               />
             </View>

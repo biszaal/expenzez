@@ -305,7 +305,7 @@ export default function ExpenseManagementPage() {
                 borderColor: colors.border.light,
               }]}
               placeholder="0.00"
-              placeholderTextColor={colors.text.tertiary}
+              
               keyboardType="decimal-pad"
               value={editAmount}
               onChangeText={setEditAmount}
@@ -381,7 +381,7 @@ export default function ExpenseManagementPage() {
                 textAlignVertical: 'top',
               }]}
               placeholder="Description (optional)"
-              placeholderTextColor={colors.text.tertiary}
+              
               value={editDescription}
               onChangeText={setEditDescription}
               multiline
@@ -395,7 +395,7 @@ export default function ExpenseManagementPage() {
                 borderColor: colors.border.light,
               }]}
               placeholder="Enter tags separated by commas"
-              placeholderTextColor={colors.text.tertiary}
+              
               value={editTags}
               onChangeText={setEditTags}
             />

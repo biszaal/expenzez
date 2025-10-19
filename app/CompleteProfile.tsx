@@ -151,7 +151,7 @@ export default function CompleteProfileScreen() {
                     handleFieldChange("firstName", value)
                   }
                   placeholder="Enter first name"
-                  placeholderTextColor={colors.text.tertiary}
+                  
                 />
               </View>
               <View
@@ -174,7 +174,7 @@ export default function CompleteProfileScreen() {
                   value={formData.lastName}
                   onChangeText={(value) => handleFieldChange("lastName", value)}
                   placeholder="Enter last name"
-                  placeholderTextColor={colors.text.tertiary}
+                  
                 />
               </View>
             </View>
@@ -195,7 +195,7 @@ export default function CompleteProfileScreen() {
                 value={formData.email}
                 onChangeText={(value) => handleFieldChange("email", value)}
                 placeholder="Enter email address"
-                placeholderTextColor={colors.text.tertiary}
+                
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
@@ -217,7 +217,7 @@ export default function CompleteProfileScreen() {
                 value={formData.phone}
                 onChangeText={(value) => handleFieldChange("phone", value)}
                 placeholder="Enter phone number"
-                placeholderTextColor={colors.text.tertiary}
+                
                 keyboardType="phone-pad"
               />
             </View>
@@ -252,7 +252,7 @@ export default function CompleteProfileScreen() {
                   handleFieldChange("dateOfBirth", value)
                 }
                 placeholder="YYYY-MM-DD"
-                placeholderTextColor={colors.text.tertiary}
+                
               />
             </View>
 
@@ -273,7 +273,7 @@ export default function CompleteProfileScreen() {
                 value={formData.address}
                 onChangeText={(value) => handleFieldChange("address", value)}
                 placeholder="Enter your address"
-                placeholderTextColor={colors.text.tertiary}
+                
                 multiline
                 numberOfLines={3}
               />
@@ -295,7 +295,7 @@ export default function CompleteProfileScreen() {
                 value={formData.occupation}
                 onChangeText={(value) => handleFieldChange("occupation", value)}
                 placeholder="Enter your occupation"
-                placeholderTextColor={colors.text.tertiary}
+                
               />
             </View>
 
@@ -315,7 +315,7 @@ export default function CompleteProfileScreen() {
                 value={formData.company}
                 onChangeText={(value) => handleFieldChange("company", value)}
                 placeholder="Enter your company name"
-                placeholderTextColor={colors.text.tertiary}
+                
               />
             </View>
           </View>

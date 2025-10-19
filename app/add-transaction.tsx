@@ -342,7 +342,7 @@ export default function AddTransactionScreen() {
                 onChangeText={setAmount}
                 keyboardType="numeric"
                 placeholder="0.00"
-                placeholderTextColor={colors.text.tertiary}
+                
                 autoFocus
               />
             </View>
@@ -356,7 +356,7 @@ export default function AddTransactionScreen() {
               value={description}
               onChangeText={setDescription}
               placeholder={`What's this ${transactionType} for?`}
-              placeholderTextColor={colors.text.tertiary}
+              
               multiline
               numberOfLines={2}
             />

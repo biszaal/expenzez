@@ -556,7 +556,7 @@ export default function TransactionsScreen() {
             <TextInput
               style={[styles.searchInput, { color: colors.text.primary }]}
               placeholder="Search"
-              placeholderTextColor={colors.text.tertiary}
+              
               value={searchQuery}
               onChangeText={setSearchQuery}
             />

@@ -305,7 +305,6 @@ export default function EmailVerification() {
                   </Typography>
                   <TextField
                     placeholder="000000"
-                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
                     value={verificationCode}
                     onChangeText={(text) =>
                       setVerificationCode(text.replace(/[^0-9]/g, "").slice(0, 6))
