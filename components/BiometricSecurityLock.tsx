@@ -814,7 +814,7 @@ export default function BiometricSecurityLock({
                 <TextInput
                   style={[styles.passwordInput, { color: colors.text.primary }]}
                   placeholder="Password"
-                  placeholderTextColor={colors.text.secondary}
+                  
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry

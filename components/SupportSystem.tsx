@@ -407,7 +407,7 @@ Thank you!`;
                   value={contactFormData.subject}
                   onChangeText={(text) => setContactFormData(prev => ({ ...prev, subject: text }))}
                   placeholder="Brief description of your issue"
-                  placeholderTextColor={colors.text.tertiary}
+                  
                 />
 
                 <Text style={[styles.formLabel, { color: colors.text.primary }]}>
@@ -450,7 +450,7 @@ Thank you!`;
                   value={contactFormData.message}
                   onChangeText={(text) => setContactFormData(prev => ({ ...prev, message: text }))}
                   placeholder="Please provide details about your issue..."
-                  placeholderTextColor={colors.text.tertiary}
+                  
                   multiline
                   numberOfLines={6}
                   textAlignVertical="top"

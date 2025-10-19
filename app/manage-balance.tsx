@@ -186,7 +186,7 @@ export default function ManageBalanceScreen() {
               <TextInput
                 style={styles.amountInput}
                 placeholder="Enter new balance"
-                placeholderTextColor={colors.text.secondary}
+                
                 value={newBalance}
                 onChangeText={setNewBalance}
                 keyboardType="numeric"

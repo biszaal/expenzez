@@ -147,7 +147,7 @@ export default function CreateBudgetScreen() {
             value={name}
             onChangeText={setName}
             placeholder="Enter budget name"
-            placeholderTextColor={colors.text.secondary}
+            
           />
         </View>
 
@@ -226,7 +226,7 @@ export default function CreateBudgetScreen() {
               value={amount}
               onChangeText={setAmount}
               placeholder="0.00"
-              placeholderTextColor={colors.text.secondary}
+              
               keyboardType="decimal-pad"
             />
           </View>

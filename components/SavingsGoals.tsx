@@ -433,7 +433,7 @@ export default function SavingsGoals({
                 value={formData.title}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, title: text }))}
                 placeholder="e.g., Emergency Fund"
-                placeholderTextColor={colors.text.tertiary}
+                
               />
             </View>
 
@@ -445,7 +445,7 @@ export default function SavingsGoals({
                 value={formData.description}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
                 placeholder="Optional description..."
-                placeholderTextColor={colors.text.tertiary}
+                
                 multiline
                 numberOfLines={3}
               />
@@ -491,7 +491,7 @@ export default function SavingsGoals({
                 value={formData.targetAmount}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, targetAmount: text }))}
                 placeholder="0.00"
-                placeholderTextColor={colors.text.tertiary}
+                
                 keyboardType="numeric"
               />
             </View>
@@ -504,7 +504,7 @@ export default function SavingsGoals({
                 value={formData.currentAmount}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, currentAmount: text }))}
                 placeholder="0.00"
-                placeholderTextColor={colors.text.tertiary}
+                
                 keyboardType="numeric"
               />
             </View>
@@ -517,7 +517,7 @@ export default function SavingsGoals({
                 value={formData.targetDate}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, targetDate: text }))}
                 placeholder="YYYY-MM-DD"
-                placeholderTextColor={colors.text.tertiary}
+                
               />
             </View>
           </ScrollView>
@@ -575,7 +575,7 @@ export default function SavingsGoals({
                     value={addAmount}
                     onChangeText={setAddAmount}
                     placeholder="0.00"
-                    placeholderTextColor={colors.text.tertiary}
+                    
                     keyboardType="numeric"
                     autoFocus
                   />

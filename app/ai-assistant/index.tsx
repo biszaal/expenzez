@@ -1235,7 +1235,7 @@ export default function AIAssistantScreen() {
                   paddingVertical: 4,
                 }}
                 placeholder="Ask me about your spending, budgets, or goals..."
-                placeholderTextColor={colors.text.tertiary}
+                
                 value={input}
                 onChangeText={setInput}
                 editable={!loading && !isRateLimited}

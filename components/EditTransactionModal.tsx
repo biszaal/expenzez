@@ -208,7 +208,7 @@ export default function EditTransactionModal({
                 onChangeText={setAmount}
                 keyboardType="decimal-pad"
                 placeholder="0.00"
-                placeholderTextColor={colors.text.tertiary}
+                
               />
             </View>
           </View>
@@ -286,7 +286,7 @@ export default function EditTransactionModal({
                 value={merchant}
                 onChangeText={setMerchant}
                 placeholder="Enter merchant or transaction name"
-                placeholderTextColor={colors.text.tertiary}
+                
               />
             </View>
           </View>
@@ -307,7 +307,7 @@ export default function EditTransactionModal({
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Enter additional notes"
-                placeholderTextColor={colors.text.tertiary}
+                
               />
             </View>
           </View>
@@ -369,7 +369,7 @@ export default function EditTransactionModal({
                 value={date}
                 onChangeText={setDate}
                 placeholder="YYYY-MM-DD"
-                placeholderTextColor={colors.text.tertiary}
+                
               />
             </View>
           </View>

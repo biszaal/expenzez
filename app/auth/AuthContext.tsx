@@ -9,7 +9,6 @@ import { deviceManager } from "../../services/deviceManager";
 import { securityAPI } from "../../services/api/securityAPI";
 import { sessionManager } from "../../services/sessionManager";
 import { deviceAPI } from "../../services/api/deviceAPI";
-import { SecureSubscriptionService } from "../../services/secureSubscriptionService";
 
 interface User {
   id: string;

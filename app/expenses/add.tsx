@@ -105,7 +105,7 @@ export default function AddExpensePage() {
             },
           ]}
           placeholder="0.00"
-          placeholderTextColor={colors.text.tertiary}
+          
           keyboardType="decimal-pad"
           value={amount}
           onChangeText={setAmount}
@@ -192,7 +192,7 @@ export default function AddExpensePage() {
             },
           ]}
           placeholder="Description (optional)"
-          placeholderTextColor={colors.text.tertiary}
+          
           value={description}
           onChangeText={setDescription}
           multiline
