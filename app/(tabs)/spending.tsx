@@ -911,6 +911,10 @@ export default function SpendingPage() {
 
   // Animation effects
   useEffect(() => {
+    // Reset animation values when month changes
+    animatedProgress.setValue(0);
+    animatedScale.setValue(0.9);
+    
     Animated.parallel([
       Animated.timing(animatedProgress, {
         toValue: Math.min(monthlySpentPercentage / 100, 1), // Cap at 1 (100%) to prevent double rotation
@@ -925,7 +929,7 @@ export default function SpendingPage() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [monthlySpentPercentage, animatedProgress, animatedScale]);
+  }, [monthlySpentPercentage, selectedMonth, animatedProgress, animatedScale]);
 
   // Regenerate categories with dynamic budgets when month changes
   useEffect(() => {
