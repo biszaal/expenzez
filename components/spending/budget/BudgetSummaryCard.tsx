@@ -206,7 +206,7 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                       inputRange: [0, 1],
                       outputRange: [
                         2 * Math.PI * 88,
-                        2 * Math.PI * 88 * (1 - monthlySpentPercentage / 100),
+                        2 * Math.PI * 88 * (1 - animatedProgress),
                       ],
                     })}
                     transform={`rotate(-90 100 100)`}

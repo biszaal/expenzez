@@ -65,9 +65,6 @@ export default function SpendingPage() {
   // Animation values
   const animatedProgress = useMemo(() => new Animated.Value(0), []);
   const animatedScale = useMemo(() => new Animated.Value(0.9), []);
-  
-  // Track previous month to detect changes
-  const prevMonthRef = useRef(selectedMonth);
 
   // Ref to prevent multiple simultaneous fetchData calls
   const fetchingRef = useRef(false);
@@ -914,31 +911,22 @@ export default function SpendingPage() {
 
   // Animation effects
   useEffect(() => {
-    // Only reset and animate if we have valid data
-    if (monthlySpentPercentage >= 0) {
-      // Only reset animation values when month actually changes
-      if (prevMonthRef.current !== selectedMonth) {
-        animatedProgress.setValue(0);
-        animatedScale.setValue(0.9);
-        prevMonthRef.current = selectedMonth;
-      }
-      
-      Animated.parallel([
-        Animated.timing(animatedProgress, {
-          toValue: Math.min(monthlySpentPercentage / 100, 1), // Cap at 1 (100%) to prevent double rotation
-          duration: 1500,
-          easing: Easing.bezier(0.4, 0, 0.2, 1),
-          useNativeDriver: false,
-        }),
-        Animated.timing(animatedScale, {
-          toValue: 1,
-          duration: 800,
-          easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [monthlySpentPercentage, selectedMonth, animatedProgress, animatedScale]);
+    // Animate to the correct percentage
+    Animated.parallel([
+      Animated.timing(animatedProgress, {
+        toValue: Math.min(monthlySpentPercentage / 100, 1), // Cap at 1 (100%) to prevent double rotation
+        duration: 1500,
+        easing: Easing.bezier(0.4, 0, 0.2, 1),
+        useNativeDriver: false,
+      }),
+      Animated.timing(animatedScale, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [monthlySpentPercentage, animatedProgress, animatedScale]);
 
   // Regenerate categories with dynamic budgets when month changes
   useEffect(() => {
