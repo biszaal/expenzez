@@ -120,10 +120,10 @@ export default function EditBudgetPage() {
     } else {
       // Smart distribution based on typical spending patterns
       const smartWeights = getSmartWeights();
-      let allocatedBudget = 0;
-      let remainingCategories = 0;
+      const categoryWeights: Array<{ id: string; weight: number }> = [];
+      let totalWeight = 0;
 
-      // First pass: allocate based on known weights
+      // Assign weights to each category
       categories.forEach((cat) => {
         const categoryName = cat.name.toLowerCase();
         let weight = smartWeights[cat.name] || 0;
@@ -138,28 +138,27 @@ export default function EditBudgetPage() {
           weight = matchingKey ? smartWeights[matchingKey] : 0;
         }
 
-        if (weight > 0) {
-          const suggestedBudget = Math.round(budgetAmount * weight);
-          newBudgets[cat.id] = suggestedBudget.toString();
-          allocatedBudget += suggestedBudget;
-        } else {
-          remainingCategories++;
+        // Default weight for unknown categories
+        if (weight === 0) {
+          weight = 0.05; // 5% default
         }
+
+        categoryWeights.push({ id: cat.id, weight });
+        totalWeight += weight;
       });
 
-      // Second pass: distribute remaining budget to unknown categories
-      if (remainingCategories > 0) {
-        const remainingBudget = budgetAmount - allocatedBudget;
-        const perCategoryRemainder = Math.floor(
-          remainingBudget / remainingCategories
-        );
-
-        categories.forEach((cat) => {
-          if (!newBudgets[cat.id]) {
-            newBudgets[cat.id] = perCategoryRemainder.toString();
-          }
-        });
-      }
+      // Normalize weights to ensure they sum to 1.0
+      let allocatedBudget = 0;
+      categoryWeights.forEach((item, index) => {
+        const normalizedWeight = item.weight / totalWeight;
+        const suggestedBudget = index === categoryWeights.length - 1
+          ? budgetAmount - allocatedBudget // Last category gets remainder to avoid rounding errors
+          : Math.round(budgetAmount * normalizedWeight);
+        
+        // Ensure budget is never negative
+        newBudgets[item.id] = Math.max(0, suggestedBudget).toString();
+        allocatedBudget += suggestedBudget;
+      });
     }
 
     setBudgets(newBudgets);
