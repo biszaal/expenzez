@@ -267,7 +267,6 @@ export default function RegisterStep5({
               {/* Phone Number Field */}
               <TextField
                 placeholder="Enter phone number"
-                placeholderTextColor="rgba(255, 255, 255, 0.5)"
                 value={phoneNumber}
                 onChangeText={(text) => {
                   setPhoneNumber(text);

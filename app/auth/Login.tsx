@@ -284,7 +284,6 @@ export default function Login() {
                   </Typography>
                   <TextField
                     placeholder="Enter your username or email"
-                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
                     value={identifier}
                     onChangeText={setIdentifier}
                     autoCapitalize="none"
@@ -300,7 +299,6 @@ export default function Login() {
                   </Typography>
                   <TextField
                     placeholder="Enter your password"
-                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={true}

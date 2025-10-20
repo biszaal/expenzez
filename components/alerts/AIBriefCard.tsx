@@ -33,7 +33,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
   const [fadeAnim] = useState(new Animated.Value(0));
 
   // Early return if theme is not available
-  if (!theme || !theme.colors) {
+  if (!colors) {
     return null;
   }
 
@@ -83,10 +83,10 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
 
   if (loading) {
     return (
-      <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text }]}>
             Loading your daily brief...
           </Text>
         </View>
@@ -96,21 +96,21 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
 
   if (!brief) {
     return (
-      <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>📰</Text>
-          <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
             No Brief Available Yet
           </Text>
           <Text
-            style={[styles.emptyText, { color: theme.colors.textSecondary }]}
+            style={[styles.emptyText, { color: colors.textSecondary }]}
           >
             Your daily financial brief will be generated at 6:00 AM
           </Text>
           <TouchableOpacity
             style={[
               styles.refreshButton,
-              { backgroundColor: theme.colors.primary },
+              { backgroundColor: colors.primary },
             ]}
             onPress={handleRefresh}
           >
@@ -131,7 +131,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
     <Animated.View
       style={[
         styles.card,
-        { backgroundColor: theme.colors.card, opacity: fadeAnim },
+        { backgroundColor: colors.card, opacity: fadeAnim },
       ]}
     >
       {/* Header */}
@@ -139,13 +139,13 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
         <View style={styles.headerLeft}>
           <Text style={styles.headerIcon}>📰</Text>
           <View>
-            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>
               Daily Financial Brief
             </Text>
             <Text
               style={[
                 styles.headerSubtitle,
-                { color: theme.colors.textSecondary },
+                { color: colors.textSecondary },
               ]}
             >
               {brief.greeting}
@@ -156,14 +156,14 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
           <Ionicons
             name={expanded ? "chevron-up" : "chevron-down"}
             size={24}
-            color={theme.colors.textSecondary}
+            color={colors.textSecondary}
           />
         </TouchableOpacity>
       </View>
 
       {/* Spending Summary */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
           📊 Spending Summary
         </Text>
         <View style={styles.spendingGrid}>
@@ -171,12 +171,12 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
             <Text
               style={[
                 styles.spendingLabel,
-                { color: theme.colors.textSecondary },
+                { color: colors.textSecondary },
               ]}
             >
               Today
             </Text>
-            <Text style={[styles.spendingAmount, { color: theme.colors.text }]}>
+            <Text style={[styles.spendingAmount, { color: colors.text }]}>
               {briefsAPI.formatCurrency(brief.spendingSummary.todaySpent)}
             </Text>
           </View>
@@ -184,12 +184,12 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
             <Text
               style={[
                 styles.spendingLabel,
-                { color: theme.colors.textSecondary },
+                { color: colors.textSecondary },
               ]}
             >
               This Week
             </Text>
-            <Text style={[styles.spendingAmount, { color: theme.colors.text }]}>
+            <Text style={[styles.spendingAmount, { color: colors.text }]}>
               {briefsAPI.formatCurrency(brief.spendingSummary.weekSpent)}
             </Text>
             <Text
@@ -202,12 +202,12 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
             <Text
               style={[
                 styles.spendingLabel,
-                { color: theme.colors.textSecondary },
+                { color: colors.textSecondary },
               ]}
             >
               This Month
             </Text>
-            <Text style={[styles.spendingAmount, { color: theme.colors.text }]}>
+            <Text style={[styles.spendingAmount, { color: colors.text }]}>
               {briefsAPI.formatCurrency(brief.spendingSummary.monthSpent)}
             </Text>
             <Text
@@ -232,7 +232,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
 
       {/* Budget Status */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
           {budgetEmoji} Budget Status
         </Text>
         <View style={styles.budgetRow}>
@@ -243,7 +243,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
             <Text
               style={[
                 styles.budgetLabel,
-                { color: theme.colors.textSecondary },
+                { color: colors.textSecondary },
               ]}
             >
               On Track
@@ -256,7 +256,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
             <Text
               style={[
                 styles.budgetLabel,
-                { color: theme.colors.textSecondary },
+                { color: colors.textSecondary },
               ]}
             >
               At Risk
@@ -269,7 +269,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
             <Text
               style={[
                 styles.budgetLabel,
-                { color: theme.colors.textSecondary },
+                { color: colors.textSecondary },
               ]}
             >
               Exceeded
@@ -281,10 +281,10 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
           <View
             style={[
               styles.concernBox,
-              { backgroundColor: theme.colors.background },
+              { backgroundColor: colors.background },
             ]}
           >
-            <Text style={[styles.concernText, { color: theme.colors.text }]}>
+            <Text style={[styles.concernText, { color: colors.text }]}>
               ⚠️{" "}
               <Text style={{ fontWeight: "600" }}>
                 {brief.budgetStatus.topConcern.category}
@@ -302,7 +302,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
       {/* Insights */}
       {expanded && brief.insights.length > 0 && (
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
             💡 Today's Insights
           </Text>
           {brief.insights.map((insight, index) => (
@@ -310,7 +310,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
               key={index}
               style={[
                 styles.insightCard,
-                { backgroundColor: theme.colors.background },
+                { backgroundColor: colors.background },
               ]}
             >
               <View style={styles.insightHeader}>
@@ -318,7 +318,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
                   {briefsAPI.getInsightIcon(insight.type)}
                 </Text>
                 <Text
-                  style={[styles.insightTitle, { color: theme.colors.text }]}
+                  style={[styles.insightTitle, { color: colors.text }]}
                 >
                   {insight.title}
                 </Text>
@@ -326,7 +326,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
               <Text
                 style={[
                   styles.insightMessage,
-                  { color: theme.colors.textSecondary },
+                  { color: colors.textSecondary },
                 ]}
               >
                 {insight.message}
@@ -335,14 +335,14 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
                 <TouchableOpacity
                   style={[
                     styles.insightButton,
-                    { borderColor: theme.colors.primary },
+                    { borderColor: colors.primary },
                   ]}
                   onPress={() => handleInsightAction(insight.actionRoute)}
                 >
                   <Text
                     style={[
                       styles.insightButtonText,
-                      { color: theme.colors.primary },
+                      { color: colors.primary },
                     ]}
                   >
                     {insight.actionText}
@@ -350,7 +350,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
                   <Ionicons
                     name="arrow-forward"
                     size={16}
-                    color={theme.colors.primary}
+                    color={colors.primary}
                   />
                 </TouchableOpacity>
               )}
@@ -362,7 +362,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
       {/* Footer */}
       <View style={styles.footer}>
         <Text
-          style={[styles.footerText, { color: theme.colors.textSecondary }]}
+          style={[styles.footerText, { color: colors.textSecondary }]}
         >
           Generated{" "}
           {new Date(brief.generatedAt).toLocaleTimeString("en-GB", {
@@ -374,7 +374,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
           <Ionicons
             name="refresh"
             size={18}
-            color={theme.colors.textSecondary}
+            color={colors.textSecondary}
           />
         </TouchableOpacity>
       </View>
