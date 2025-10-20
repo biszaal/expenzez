@@ -260,7 +260,7 @@ const styles = {
     marginBottom: 4,
   },
   progressFill: {
-    height: "100%",
+    flex: 1,
     borderRadius: 3,
   },
   progressLabel: {

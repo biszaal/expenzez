@@ -71,7 +71,7 @@ export const SpendingMerchantList: React.FC<SpendingMerchantListProps> = ({
         return (
           <SpendingItemCard
             key={merchant.id}
-            item={merchant}
+            item={{ ...merchant, monthlySpent: merchant.monthlySpent || 0 }}
             totalSpending={totalSpending}
             formatAmount={formatAmount}
             currency={currency}

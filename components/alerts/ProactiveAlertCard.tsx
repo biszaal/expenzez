@@ -29,7 +29,7 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
   onDismiss,
   onAcknowledge,
 }) => {
-  const { theme } = useTheme();
+  const { colors } = useTheme();
   const router = useRouter();
   const [dismissing, setDismissing] = useState(false);
   const [acknowledging, setAcknowledging] = useState(false);

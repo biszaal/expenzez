@@ -30,14 +30,14 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
   showHeader = true,
   onViewAll,
 }) => {
-  const { theme } = useTheme();
+  const { colors } = useTheme();
   const [alerts, setAlerts] = useState<ProactiveAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unacknowledgedCount, setUnacknowledgedCount] = useState(0);
 
   // Early return if theme is not available
-  if (!theme || !theme.colors) {
+  if (!theme || !colors.colors) {
     return null;
   }
 
@@ -84,17 +84,17 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
   if (loading) {
     return (
       <View
-        style={[styles.container, { backgroundColor: theme.colors.background }]}
+        style={[styles.container, { backgroundColor: colors.colors.background }]}
       >
         {showHeader && (
           <View style={styles.header}>
-            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+            <Text style={[styles.headerTitle, { color: colors.colors.text }]}>
               📢 Proactive Alerts
             </Text>
           </View>
         )}
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={colors.colors.primary} />
         </View>
       </View>
     );
@@ -106,22 +106,22 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
   if (alerts.length === 0) {
     return (
       <View
-        style={[styles.container, { backgroundColor: theme.colors.background }]}
+        style={[styles.container, { backgroundColor: colors.colors.background }]}
       >
         {showHeader && (
           <View style={styles.header}>
-            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+            <Text style={[styles.headerTitle, { color: colors.colors.text }]}>
               📢 Proactive Alerts
             </Text>
           </View>
         )}
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>✅</Text>
-          <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+          <Text style={[styles.emptyTitle, { color: colors.colors.text }]}>
             All Caught Up!
           </Text>
           <Text
-            style={[styles.emptyText, { color: theme.colors.textSecondary }]}
+            style={[styles.emptyText, { color: colors.colors.textSecondary }]}
           >
             No pending alerts. We'll notify you of important financial events.
           </Text>
@@ -132,19 +132,19 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
 
   return (
     <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={[styles.container, { backgroundColor: colors.colors.background }]}
     >
       {showHeader && (
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+            <Text style={[styles.headerTitle, { color: colors.colors.text }]}>
               📢 Proactive Alerts
             </Text>
             {unacknowledgedCount > 0 && (
               <View
                 style={[
                   styles.badge,
-                  { backgroundColor: theme.colors.primary },
+                  { backgroundColor: colors.colors.primary },
                 ]}
               >
                 <Text style={styles.badgeText}>{unacknowledgedCount}</Text>
@@ -154,7 +154,7 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
           {hasMore && onViewAll && (
             <TouchableOpacity onPress={onViewAll}>
               <Text
-                style={[styles.viewAllText, { color: theme.colors.primary }]}
+                style={[styles.viewAllText, { color: colors.colors.primary }]}
               >
                 View All ({alerts.length})
               </Text>
@@ -177,7 +177,7 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={theme.colors.primary}
+            tintColor={colors.colors.primary}
           />
         }
         contentContainerStyle={styles.listContent}
@@ -187,12 +187,12 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
             <TouchableOpacity
               style={[
                 styles.viewMoreButton,
-                { backgroundColor: theme.colors.card },
+                { backgroundColor: colors.colors.card },
               ]}
               onPress={onViewAll}
             >
               <Text
-                style={[styles.viewMoreText, { color: theme.colors.primary }]}
+                style={[styles.viewMoreText, { color: colors.colors.primary }]}
               >
                 View {alerts.length - maxItems!} More Alert
                 {alerts.length - maxItems! !== 1 ? "s" : ""}
@@ -200,7 +200,7 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
               <Ionicons
                 name="chevron-forward"
                 size={20}
-                color={theme.colors.primary}
+                color={colors.colors.primary}
               />
             </TouchableOpacity>
           ) : null

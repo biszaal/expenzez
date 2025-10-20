@@ -36,7 +36,7 @@ export default function WelcomeOnboarding() {
       description:
         "Your intelligent financial companion for smarter money management",
       icon: "wallet-outline",
-      gradient: ["#667eea", "#764ba2"],
+      gradient: ["#667eea", "#764ba2"] as const,
       accentColor: "#667eea",
     },
     {
@@ -44,7 +44,7 @@ export default function WelcomeOnboarding() {
       title: "Smart\nAnalytics",
       description: "AI-powered insights to understand your spending patterns",
       icon: "analytics-outline",
-      gradient: ["#f093fb", "#f5576c"],
+      gradient: ["#f093fb", "#f5576c"] as const,
       accentColor: "#f5576c",
     },
     {
@@ -53,7 +53,7 @@ export default function WelcomeOnboarding() {
       description:
         "Enterprise-grade encryption keeps your data safe and private",
       icon: "shield-checkmark-outline",
-      gradient: ["#4facfe", "#00f2fe"],
+      gradient: ["#4facfe", "#00f2fe"] as const,
       accentColor: "#4facfe",
     },
     {
@@ -112,7 +112,7 @@ export default function WelcomeOnboarding() {
     router.push("/auth/Login");
   };
 
-  const scrollViewRef = useRef<Animated.ScrollView>(null);
+  const scrollViewRef = useRef<typeof Animated.ScrollView>(null);
 
   const onScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { x: scrollX } } }],

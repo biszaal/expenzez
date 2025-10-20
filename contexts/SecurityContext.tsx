@@ -16,6 +16,7 @@ import {
   enhancedSecurityAPI,
   UserSecurityPreferences,
 } from "../services/api/enhancedSecurityAPI";
+import { api } from "../services/config/apiClient";
 
 interface SecurityContextType {
   isLocked: boolean;
@@ -507,7 +508,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
       // For production app, prioritize database (server) PIN as source of truth
       // Local PIN is backup for offline scenarios
       // Re-check local PIN after potential server sync
-      const hasLocalPin = await AsyncStorage.getItem("@expenzez_app_password");
+      let hasLocalPin = await AsyncStorage.getItem("@expenzez_app_password");
 
       // DATABASE FIRST: If server has PIN, that's authoritative
       // Local PIN is only used if server is unavailable

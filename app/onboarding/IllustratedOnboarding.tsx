@@ -256,8 +256,8 @@ export default function IllustratedOnboarding() {
       subtitle: "Stay on Track",
       description:
         "Receive intelligent alerts for unusual spending, budget limits, bill reminders, and financial opportunities to help you make better money decisions.",
-      illustration: <NotificationIllustration color={colors.info[500]} />,
-      color: colors.info[500],
+      illustration: <NotificationIllustration color={colors.primary[500]} />,
+      color: colors.primary[500],
     },
     {
       title: "Ready to Begin?",

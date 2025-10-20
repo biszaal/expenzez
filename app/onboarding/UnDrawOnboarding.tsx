@@ -179,7 +179,7 @@ export default function UnDrawOnboarding() {
       description:
         "Receive intelligent alerts for unusual spending, budget limits, bill reminders, and financial opportunities to help you make better money decisions.",
       illustration: "https://undraw.co/api/illustrations/notifications",
-      color: colors.info[500],
+      color: colors.primary[500],
     },
     {
       title: "Ready to Begin?",

@@ -25,7 +25,7 @@ interface AIBriefCardProps {
 }
 
 export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
-  const { theme } = useTheme();
+  const { colors } = useTheme();
   const router = useRouter();
   const [brief, setBrief] = useState<DailyBrief | null>(null);
   const [loading, setLoading] = useState(true);
