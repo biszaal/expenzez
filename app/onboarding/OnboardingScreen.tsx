@@ -185,7 +185,7 @@ export default function OnboardingScreen() {
       description:
         "Receive intelligent alerts for unusual spending, budget limits, bill reminders, and financial opportunities to help you make better money decisions.",
       illustration: "notifications",
-      color: colors.info[500],
+      color: colors.primary[500],
     },
     {
       icon: "rocket-outline",

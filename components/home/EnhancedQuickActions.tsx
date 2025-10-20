@@ -22,7 +22,7 @@ const quickActions: QuickAction[] = [
     title: 'AI Insights',
     subtitle: 'Smart analysis',
     icon: 'sparkles',
-    colors: ['#8B5CF6', '#A855F7'],
+    colors: ['#8B5CF6', '#A855F7'] as const,
     route: '/ai-assistant',
   },
   {
@@ -30,7 +30,7 @@ const quickActions: QuickAction[] = [
     title: 'Add Entry',
     subtitle: 'Quick input',
     icon: 'add-circle',
-    colors: ['#3B82F6', '#2563EB'],
+    colors: ['#3B82F6', '#2563EB'] as const,
     route: '/add-transaction',
   },
   {
@@ -38,7 +38,7 @@ const quickActions: QuickAction[] = [
     title: 'Analytics',
     subtitle: 'Track spending',
     icon: 'analytics',
-    colors: ['#0EA5E9', '#0284C7'],
+    colors: ['#0EA5E9', '#0284C7'] as const,
     route: '/spending',
   },
   {
@@ -46,7 +46,7 @@ const quickActions: QuickAction[] = [
     title: 'Import CSV',
     subtitle: 'Upload data',
     icon: 'document-text',
-    colors: ['#F59E0B', '#D97706'],
+    colors: ['#F59E0B', '#D97706'] as const,
     route: '/import-csv',
   },
 ];

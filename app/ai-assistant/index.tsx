@@ -228,7 +228,7 @@ export default function AIAssistantScreen() {
 
   // Countdown timer for rate limiting
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isRateLimited && rateLimitCountdown > 0) {
       interval = setInterval(() => {
         setRateLimitCountdown((prev) => {

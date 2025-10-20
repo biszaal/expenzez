@@ -19,6 +19,15 @@ interface User {
   birthdate?: string;
   createdAt?: string | number | Date;
   sub?: string;
+  given_name?: string;
+  family_name?: string;
+  firstName?: string;
+  lastName?: string;
+  phone_number?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  occupation?: string;
+  company?: string;
 }
 
 interface RegisterInput {

@@ -372,8 +372,8 @@ export const aiService = {
           const serviceMatch = lowerMessage.match(/cancel\s+(.+)/);
           if (serviceMatch) {
             const serviceName = serviceMatch[1].replace(/\?/g, "").trim();
-            const guide =
-              SubscriptionOptimizer.generateCancellationGuide(serviceName);
+            // SubscriptionOptimizer removed - feature not implemented
+            const guide = { service: serviceName, averageTime: "5-10 minutes", steps: ["Visit service website", "Go to account settings", "Find subscription/billing section", "Cancel subscription"], warning: null };
             fallbackResponse = `📱 **How to Cancel ${guide.service}**\n\n`;
             fallbackResponse += `⏱️ Average time: ${guide.averageTime}\n\n`;
             fallbackResponse += guide.steps.join("\n");
@@ -392,8 +392,8 @@ export const aiService = {
           // User wants to keep all their subscriptions
           try {
             const bills = await BillsAPI.getBills();
-            const duplicates =
-              await SubscriptionOptimizer.analyzeBillsWithPreferences(bills);
+            // SubscriptionOptimizer removed - feature not implemented
+            const duplicates: any[] = [];
 
             if (duplicates.length > 0) {
               // Save preference for each duplicate category
@@ -401,11 +401,8 @@ export const aiService = {
                 const subscriptionNames = duplicate.subscriptions.map(
                   (s) => s.name
                 );
-                await SubscriptionOptimizer.saveUserPreference(
-                  duplicate.category,
-                  subscriptionNames,
-                  "keep_all"
-                );
+                // SubscriptionOptimizer removed - feature not implemented
+                console.log("Subscription preference saving not implemented");
               }
 
               fallbackResponse = `✅ Understood! I've noted that you want to keep all your subscriptions. I won't suggest canceling them again for the next 90 days.\n\n`;

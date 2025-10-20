@@ -371,13 +371,15 @@ export const enhancedSecurityAPI = {
 
       // Get device ID
       const deviceId = await deviceManager.getDeviceId();
-      
+
       // Check if PIN exists locally
       const hasLocalPin = await AsyncStorage.getItem("@expenzez_app_password");
       const needsSync = !hasLocalPin;
-      
+
       if (needsSync) {
-        console.log("🔐 [Enhanced Security] No local PIN - will sync if validation succeeds");
+        console.log(
+          "🔐 [Enhanced Security] No local PIN - will sync if validation succeeds"
+        );
       }
 
       // Call server to validate PIN across all devices
@@ -390,15 +392,17 @@ export const enhancedSecurityAPI = {
         console.log(
           "✅ [Enhanced Security] Cross-device PIN validation successful"
         );
-        
+
         // If this device doesn't have PIN locally, sync it now
         if (needsSync) {
           console.log("🔐 [Enhanced Security] Syncing PIN to local device...");
           await AsyncStorage.setItem("@expenzez_app_password", pin);
           await AsyncStorage.setItem("@expenzez_has_pin", "true");
-          console.log("✅ [Enhanced Security] PIN synced to local device successfully");
+          console.log(
+            "✅ [Enhanced Security] PIN synced to local device successfully"
+          );
         }
-        
+
         return { success: true };
       } else {
         console.log(
