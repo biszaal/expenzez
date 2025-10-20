@@ -249,7 +249,6 @@ export default function ForgotPasswordScreen() {
                       </Typography>
                       <TextField
                         placeholder="Enter your username"
-                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
                         value={username}
                         onChangeText={setUsername}
                         autoCapitalize="none"

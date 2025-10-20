@@ -189,7 +189,6 @@ export default function RegisterStep4({
             </Typography>
             <TextField
               placeholder="Enter your street address"
-              placeholderTextColor="rgba(255, 255, 255, 0.5)"
               value={values.address1}
               onChangeText={(v) => onChange("address1", v)}
               style={styles.input}
@@ -203,7 +202,6 @@ export default function RegisterStep4({
             </Typography>
             <TextField
               placeholder="Apartment, unit, etc. (optional)"
-              placeholderTextColor="rgba(255, 255, 255, 0.5)"
               value={values.address2}
               onChangeText={(v) => onChange("address2", v)}
               style={styles.input}
@@ -217,7 +215,6 @@ export default function RegisterStep4({
             </Typography>
             <TextField
               placeholder="Enter your city"
-              placeholderTextColor="rgba(255, 255, 255, 0.5)"
               value={values.city}
               onChangeText={(v) => onChange("city", v)}
               style={styles.input}
@@ -232,7 +229,6 @@ export default function RegisterStep4({
               </Typography>
               <TextField
                 placeholder="State"
-                placeholderTextColor="rgba(255, 255, 255, 0.5)"
                 value={values.state}
                 onChangeText={(v) => onChange("state", v)}
                 style={styles.input}
@@ -245,7 +241,6 @@ export default function RegisterStep4({
               </Typography>
               <TextField
                 placeholder="ZIP/Postal"
-                placeholderTextColor="rgba(255, 255, 255, 0.5)"
                 value={values.postcode}
                 onChangeText={(v) => onChange("postcode", v)}
                 style={styles.input}

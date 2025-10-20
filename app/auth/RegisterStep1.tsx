@@ -103,7 +103,6 @@ export default function RegisterStep1({
           </Typography>
           <TextField
             placeholder="Enter your first name"
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={values.givenName}
             onChangeText={(v) => onChange("givenName", v)}
             autoCapitalize="words"
@@ -117,7 +116,6 @@ export default function RegisterStep1({
           </Typography>
           <TextField
             placeholder="Enter your last name"
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={values.familyName}
             onChangeText={(v) => onChange("familyName", v)}
             autoCapitalize="words"
@@ -131,7 +129,6 @@ export default function RegisterStep1({
           </Typography>
           <TextField
             placeholder="Choose a unique username"
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={values.username}
             onChangeText={(v) => onChange("username", v)}
             autoCapitalize="none"

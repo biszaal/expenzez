@@ -125,7 +125,6 @@ export default function RegisterStep3({
           </Typography>
           <TextField
             placeholder="Enter your email address"
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={values.email}
             onChangeText={(v) => {
               onChange("email", v);
@@ -167,7 +166,6 @@ export default function RegisterStep3({
           </Typography>
           <TextField
             placeholder="Create a strong password"
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={values.password}
             onChangeText={(v) => {
               onChange("password", v);
@@ -188,7 +186,6 @@ export default function RegisterStep3({
           </Typography>
           <TextField
             placeholder="Re-enter your password"
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={values.confirmPassword}
             onChangeText={(v) => {
               onChange("confirmPassword", v);
