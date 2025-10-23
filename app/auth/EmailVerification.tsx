@@ -8,7 +8,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -445,11 +444,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "rgba(255, 255, 255, 0.3)",
-  },
-  appLogo: {
-    width: 110,
-    height: 110,
-    marginBottom: 12,
   },
   title: {
     fontSize: 28,
