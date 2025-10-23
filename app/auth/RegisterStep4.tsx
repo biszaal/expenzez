@@ -178,11 +178,6 @@ export default function RegisterStep4({
               placeholder="Enter your street address"
               value={values.address1}
               onChangeText={(v) => onChange("address1", v)}
-              style={[styles.input, {
-                backgroundColor: colors.background.primary,
-                borderColor: colors.border.light,
-                color: colors.text.primary
-              }]}
               placeholderTextColor={colors.text.tertiary}
             />
           </View>
@@ -196,11 +191,6 @@ export default function RegisterStep4({
               placeholder="Apartment, unit, etc. (optional)"
               value={values.address2}
               onChangeText={(v) => onChange("address2", v)}
-              style={[styles.input, {
-                backgroundColor: colors.background.primary,
-                borderColor: colors.border.light,
-                color: colors.text.primary
-              }]}
               placeholderTextColor={colors.text.tertiary}
             />
           </View>
@@ -214,11 +204,6 @@ export default function RegisterStep4({
               placeholder="Enter your city"
               value={values.city}
               onChangeText={(v) => onChange("city", v)}
-              style={[styles.input, {
-                backgroundColor: colors.background.primary,
-                borderColor: colors.border.light,
-                color: colors.text.primary
-              }]}
               placeholderTextColor={colors.text.tertiary}
             />
           </View>
@@ -233,11 +218,6 @@ export default function RegisterStep4({
                 placeholder="State"
                 value={values.state}
                 onChangeText={(v) => onChange("state", v)}
-                style={[styles.input, {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                  color: colors.text.primary
-                }]}
                 placeholderTextColor={colors.text.tertiary}
               />
             </View>
@@ -250,11 +230,6 @@ export default function RegisterStep4({
                 placeholder="ZIP/Postal"
                 value={values.postcode}
                 onChangeText={(v) => onChange("postcode", v)}
-                style={[styles.input, {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                  color: colors.text.primary
-                }]}
                 placeholderTextColor={colors.text.tertiary}
               />
             </View>
