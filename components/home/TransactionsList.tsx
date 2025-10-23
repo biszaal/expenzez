@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { APP_STRINGS } from '../../constants/strings';
-import { SHADOWS } from '../../constants/Colors';
 import { styles } from './TransactionsList.styles';
 
 interface Transaction {
@@ -35,7 +34,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
     <View style={styles.premiumTransactionsWrapper}>
       <LinearGradient
         colors={[colors.background.primary, colors.background.secondary]}
-        style={[styles.premiumTransactionsCard, SHADOWS.lg]}
+        style={styles.premiumTransactionsCard}
       >
         <View style={styles.premiumTransactionsHeader}>
           <View style={styles.premiumTransactionsHeaderLeft}>
