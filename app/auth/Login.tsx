@@ -262,11 +262,6 @@ export default function Login() {
                 onChangeText={setIdentifier}
                 autoCapitalize="none"
                 editable={!isLoading}
-                style={[styles.input, {
-                  backgroundColor: colors.background.secondary,
-                  borderColor: colors.border.light,
-                  color: colors.text.primary
-                }]}
                 placeholderTextColor={colors.text.tertiary}
               />
             </View>
@@ -283,11 +278,6 @@ export default function Login() {
                 secureTextEntry={true}
                 autoCapitalize="none"
                 editable={!isLoading}
-                style={[styles.input, {
-                  backgroundColor: colors.background.secondary,
-                  borderColor: colors.border.light,
-                  color: colors.text.primary
-                }]}
                 placeholderTextColor={colors.text.tertiary}
               />
             </View>
