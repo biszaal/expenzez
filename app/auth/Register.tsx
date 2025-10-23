@@ -1,4 +1,3 @@
-// Clean and Professional Register Screen with Glass Morphism Design
 import React, { useState, useRef, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -22,8 +21,6 @@ import RegisterStep5 from "./RegisterStep5";
 import { Typography } from "../../components/ui";
 import { useAlert } from "../../hooks/useAlert";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 
 const initialState = {
   username: "",
@@ -303,41 +300,47 @@ export default function Register() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <StatusBar barStyle={colors.isDark ? "light-content" : "dark-content"} />
 
-      {/* Gradient Background */}
-      <LinearGradient
-        colors={["#667eea", "#764ba2"]}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
+      {/* Header Section */}
+      <View style={[styles.header, { borderBottomColor: colors.border.light }]}>
+        <TouchableOpacity
+          onPress={() => router.replace("/auth/Login")}
+          style={styles.backButton}
+          accessibilityLabel="Back to Login"
+        >
+          <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
+        </TouchableOpacity>
 
-      <SafeAreaView style={styles.safeArea}>
-        {/* Header Section */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => router.replace("/auth/Login")}
-            style={styles.backButton}
-            accessibilityLabel="Back to Login"
-          >
-            <Ionicons name="chevron-back" size={24} color="white" />
-          </TouchableOpacity>
-
-          <View style={styles.headerContent}>
-            <Typography variant="h2" style={styles.welcomeTitle} align="center">
-              Create Account
-            </Typography>
-            <Typography
-              variant="body"
-              style={styles.welcomeSubtitle}
-              align="center"
-            >
-              Step {step} of 5
-            </Typography>
-          </View>
+        <View style={styles.headerContent}>
+          <Typography variant="h2" style={[styles.welcomeTitle, { color: colors.text.primary }]} align="center">
+            Create Account
+          </Typography>
         </View>
+
+        <View style={{ width: 24 }} />
+      </View>
+
+      {/* Progress Bar */}
+      <View style={[styles.progressContainer, { backgroundColor: colors.background.secondary }]}>
+        <View
+          style={[
+            styles.progressBar,
+            {
+              width: `${(step / 5) * 100}%`,
+              backgroundColor: colors.primary[500],
+            },
+          ]}
+        />
+      </View>
+
+      {/* Step Counter */}
+      <View style={styles.stepCounter}>
+        <Typography variant="body" style={[styles.stepText, { color: colors.text.secondary }]}>
+          Step {step} of 5
+        </Typography>
+      </View>
 
         <KeyboardAvoidingView
           style={styles.keyboardView}
@@ -404,32 +407,28 @@ export default function Register() {
                   />
                 )}
 
-                {/* Clean Login Link */}
-                <TouchableOpacity
-                  onPress={() => router.replace("/auth/Login")}
-                  style={styles.loginLink}
-                >
+                {/* Login Link */}
+                <View style={styles.loginLinkContainer}>
                   <Typography
                     variant="body"
-                    style={{ color: "white" }}
+                    style={[styles.loginLinkText, { color: colors.text.secondary }]}
                     align="center"
                   >
                     Already have an account?{" "}
+                  </Typography>
+                  <TouchableOpacity onPress={() => router.replace("/auth/Login")}>
                     <Typography
                       variant="body"
-                      style={{ color: "white", fontWeight: "700" }}
-                      weight="semibold"
+                      style={[styles.loginLinkBold, { color: colors.primary[500] }]}
                     >
                       Sign In
                     </Typography>
-                  </Typography>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </BlurView>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
   );
 }
 
@@ -437,49 +436,42 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  safeArea: {
-    flex: 1,
-  },
-
-  // Compact Header
   header: {
-    paddingHorizontal: layout.screenPadding,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
-    position: "relative",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
   },
   backButton: {
-    position: "absolute",
-    left: layout.screenPadding,
-    top: spacing.sm,
-    zIndex: 1,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.25)",
-    alignItems: "center",
-    justifyContent: "center",
+    padding: 8,
+    marginLeft: -8,
   },
   headerContent: {
+    flex: 1,
     alignItems: "center",
-    paddingTop: spacing.sm,
   },
   welcomeTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: spacing.xs,
-    color: "white",
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: 0.2,
   },
-  welcomeSubtitle: {
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 18,
-    color: "rgba(255, 255, 255, 0.8)",
+  progressContainer: {
+    height: 4,
+    width: "100%",
   },
-
-  // Content and keyboard handling
+  progressBar: {
+    height: "100%",
+    borderRadius: 2,
+  },
+  stepCounter: {
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  stepText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
   keyboardView: {
     flex: 1,
   },
@@ -488,51 +480,38 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: layout.screenPadding,
-    paddingVertical: spacing.sm,
-  },
-
-  // Glass Form Container
-  glassCard: {
-    borderRadius: 24,
-    overflow: "hidden",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
   },
   formContent: {
-    padding: spacing.lg,
+    paddingHorizontal: 0,
   },
-
-  // Error handling
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    backgroundColor: "rgba(239, 68, 68, 0.2)",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.4)",
-    marginBottom: spacing.lg,
   },
   errorText: {
-    marginLeft: spacing.sm,
+    marginLeft: 8,
     flex: 1,
     fontSize: 14,
     lineHeight: 18,
-    color: "white",
   },
-
-  // Login link
-  loginLink: {
-    alignSelf: "center",
-    marginTop: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingBottom: spacing.md,
+  loginLinkContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 24,
+    paddingVertical: 12,
+  },
+  loginLinkText: {
+    fontSize: 14,
+  },
+  loginLinkBold: {
+    fontSize: 14,
+    fontWeight: "700",
   },
 });
