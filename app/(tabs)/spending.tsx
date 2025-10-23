@@ -960,14 +960,14 @@ export default function SpendingPage() {
       Animated.parallel([
         Animated.timing(animatedProgress, {
           toValue: Math.min(monthlySpentPercentage / 100, 1), // Cap at 1 (100%) to prevent double rotation
-          duration: 1500,
-          easing: Easing.bezier(0.4, 0, 0.2, 1),
+          duration: 2000,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
         Animated.timing(animatedScale, {
           toValue: 1,
-          duration: 800,
-          easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
+          duration: 1200,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
       ]).start();

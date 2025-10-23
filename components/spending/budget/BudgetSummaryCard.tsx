@@ -158,8 +158,8 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
               {/* Drop Shadow filter for over-budget effect */}
               <Defs>
                 <Filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-                  <FeOffset in="SourceGraphic" dx="0" dy="4" result="offsetBlur" />
-                  <FeGaussianBlur in="offsetBlur" stdDeviation="6" />
+                  <FeOffset in="SourceGraphic" dx="0" dy="2" result="offsetBlur" />
+                  <FeGaussianBlur in="offsetBlur" stdDeviation="2.5" />
                   <FeMerge>
                     <FeMergeNode />
                     <FeMergeNode in="SourceGraphic" />
