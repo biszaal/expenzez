@@ -85,7 +85,7 @@ export const CompactSpendingSummary: React.FC<CompactSpendingSummaryProps> = ({
       <View
         style={[
           styles.container,
-          { backgroundColor: colors.background.primary },
+          { backgroundColor: colors.background.secondary },
         ]}
       >
         <View style={styles.header}>
@@ -102,7 +102,7 @@ export const CompactSpendingSummary: React.FC<CompactSpendingSummaryProps> = ({
 
   return (
     <View
-      style={[styles.container, { backgroundColor: colors.background.primary }]}
+      style={[styles.container, { backgroundColor: colors.background.secondary }]}
     >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
