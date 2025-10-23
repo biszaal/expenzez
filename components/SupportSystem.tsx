@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,17 +10,17 @@ import {
   Modal,
   ActivityIndicator,
   Linking,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../contexts/ThemeContext';
-import { spacing, borderRadius, typography } from '../constants/theme';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "../contexts/ThemeContext";
+import { spacing, borderRadius, typography } from "../constants/theme";
 
 interface FAQ {
   id: string;
   question: string;
   answer: string;
-  category: 'general' | 'transactions' | 'budgets' | 'technical';
+  category: "general" | "transactions" | "budgets" | "technical";
 }
 
 interface SupportOption {
@@ -37,82 +37,94 @@ interface SupportSystemProps {
   onClose: () => void;
 }
 
-export const SupportSystem: React.FC<SupportSystemProps> = ({ isVisible, onClose }) => {
+export const SupportSystem: React.FC<SupportSystemProps> = ({
+  isVisible,
+  onClose,
+}) => {
   const { colors } = useTheme();
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactFormData, setContactFormData] = useState({
-    subject: '',
-    message: '',
-    urgency: 'normal',
+    subject: "",
+    message: "",
+    urgency: "normal",
   });
   const [submitting, setSubmitting] = useState(false);
 
   const faqData: FAQ[] = [
     {
-      id: '1',
-      question: 'How do I add transactions?',
-      answer: 'You can manually add transactions by tapping the "+" button on the main screen. Fill in the amount, category, and description to track your expenses and income.',
-      category: 'transactions',
+      id: "1",
+      question: "How do I add transactions?",
+      answer:
+        'You can manually add transactions by tapping the "+" button on the main screen. Fill in the amount, category, and description to track your expenses and income.',
+      category: "transactions",
     },
     {
-      id: '2',
-      question: 'How do I categorize my transactions?',
-      answer: 'You can set categories when adding transactions manually. Tap any existing transaction to edit its category. This helps you better track your spending patterns.',
-      category: 'transactions',
+      id: "2",
+      question: "How do I categorize my transactions?",
+      answer:
+        "You can set categories when adding transactions manually. Tap any existing transaction to edit its category. This helps you better track your spending patterns.",
+      category: "transactions",
     },
     {
-      id: '3',
-      question: 'How do budget alerts work?',
-      answer: 'Budget alerts notify you when you reach 80% of your budget limit by default. You can customize alert thresholds in your budget settings.',
-      category: 'budgets',
+      id: "3",
+      question: "How do budget alerts work?",
+      answer:
+        "Budget alerts notify you when you reach 80% of your budget limit by default. You can customize alert thresholds in your budget settings.",
+      category: "budgets",
     },
     {
-      id: '4',
-      question: 'Is my financial data secure?',
-      answer: 'Yes, we use bank-level security including 256-bit encryption, secure API connections, and never store your banking credentials. All data is encrypted at rest.',
-      category: 'general',
+      id: "4",
+      question: "Is my financial data secure?",
+      answer:
+        "Yes, we use bank-level security including 256-bit encryption, secure API connections, and never store your banking credentials. All data is encrypted at rest.",
+      category: "general",
     },
     {
-      id: '5',
-      question: 'How do I set up budgets?',
-      answer: 'Go to the Budgets section and tap "Create Budget". Set your monthly limit and choose categories to track. You\'ll get notifications when approaching your limits.',
-      category: 'budgets',
+      id: "5",
+      question: "How do I set up budgets?",
+      answer:
+        "Go to the Budgets section and tap 'Create Budget'. Set your monthly limit and choose categories to track. You'll get notifications when approaching your limits.",
+      category: "budgets",
     },
     {
-      id: '6',
-      question: 'How do I export my data?',
-      answer: 'Go to the Account tab and tap "Export". You can export your transactions, budgets, and reports in CSV or PDF format.',
-      category: 'general',
+      id: "6",
+      question: "How do I export my data?",
+      answer:
+        'Go to the Account tab and tap "Export". You can export your transactions, budgets, and reports in CSV or PDF format.',
+      category: "general",
     },
     {
-      id: '7',
-      question: 'The app is crashing or running slowly',
-      answer: 'Try restarting the app first. If issues persist, check for app updates in your app store. Clear app cache if the problem continues.',
-      category: 'technical',
+      id: "7",
+      question: "The app is crashing or running slowly",
+      answer:
+        "Try restarting the app first. If issues persist, check for app updates in your app store. Clear app cache if the problem continues.",
+      category: "technical",
     },
     {
-      id: '8',
-      question: 'How do I delete my account?',
-      answer: 'To delete your account and all data, go to Settings > Account > Delete Account. This action cannot be undone.',
-      category: 'general',
+      id: "8",
+      question: "How do I delete my account?",
+      answer:
+        "To delete your account and all data, go to Settings > Account > Delete Account. This action cannot be undone.",
+      category: "general",
     },
   ];
 
   const categories = [
-    { id: 'all', name: 'All Questions', icon: 'help-circle' },
-    { id: 'general', name: 'General', icon: 'information-circle' },
-    { id: 'transactions', name: 'Transactions', icon: 'receipt' },
-    { id: 'budgets', name: 'Budgets', icon: 'pie-chart' },
-    { id: 'technical', name: 'Technical', icon: 'construct' },
+    { id: "all", name: "All Questions", icon: "help-circle" },
+    { id: "general", name: "General", icon: "information-circle" },
+    { id: "transactions", name: "Transactions", icon: "receipt" },
+    { id: "budgets", name: "Budgets", icon: "pie-chart" },
+    { id: "technical", name: "Technical", icon: "construct" },
   ];
 
-  const filteredFAQs = selectedCategory === 'all' 
-    ? faqData 
-    : faqData.filter(faq => faq.category === selectedCategory);
+  const filteredFAQs =
+    selectedCategory === "all"
+      ? faqData
+      : faqData.filter((faq) => faq.category === selectedCategory);
 
   const handleEmailSupport = async () => {
-    const subject = 'Expenzez Support Request';
+    const subject = "Expenzez Support Request";
     const body = `Hi Expenzez Support Team,
 
 I need help with:
@@ -127,37 +139,43 @@ Thank you!`;
 
     try {
       const emailUrl = `mailto:support@expenzez.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      
+
       const canOpen = await Linking.canOpenURL(emailUrl);
       if (canOpen) {
         await Linking.openURL(emailUrl);
       } else {
         Alert.alert(
-          'Email Support',
-          'Please contact us at support@expenzez.com',
+          "Email Support",
+          "Please contact us at support@expenzez.com",
           [
-            { text: 'Copy Email', onPress: () => {
-              // In a real app, you'd copy to clipboard here
-              Alert.alert('Email Copied', 'support@expenzez.com');
-            }},
-            { text: 'OK' }
+            {
+              text: "Copy Email",
+              onPress: () => {
+                // In a real app, you'd copy to clipboard here
+                Alert.alert("Email Copied", "support@expenzez.com");
+              },
+            },
+            { text: "OK" },
           ]
         );
       }
     } catch (error) {
-      Alert.alert('Error', 'Unable to open email app. Please contact support@expenzez.com directly.');
+      Alert.alert(
+        "Error",
+        "Unable to open email app. Please contact support@expenzez.com directly."
+      );
     }
   };
 
   const handlePhoneSupport = () => {
     Alert.alert(
-      'Phone Support',
-      'Our support team is available Monday-Friday, 9 AM - 5 PM GMT',
+      "Phone Support",
+      "Our support team is available Monday-Friday, 9 AM - 5 PM GMT",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Call Now',
-          onPress: () => Linking.openURL('tel:+441234567890'),
+          text: "Call Now",
+          onPress: () => Linking.openURL("tel:+441234567890"),
         },
       ]
     );
@@ -165,15 +183,18 @@ Thank you!`;
 
   const handleLiveChat = () => {
     Alert.alert(
-      'Live Chat',
-      'Live chat is available Monday-Friday, 9 AM - 5 PM GMT. Would you like to start a chat session?',
+      "Live Chat",
+      "Live chat is available Monday-Friday, 9 AM - 5 PM GMT. Would you like to start a chat session?",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Start Chat',
+          text: "Start Chat",
           onPress: () => {
             // In a real app, this would open a chat widget
-            Alert.alert('Live Chat', 'Live chat feature coming soon! Please use email support for now.');
+            Alert.alert(
+              "Live Chat",
+              "Live chat feature coming soon! Please use email support for now."
+            );
           },
         },
       ]
@@ -182,7 +203,7 @@ Thank you!`;
 
   const handleSubmitContactForm = async () => {
     if (!contactFormData.subject.trim() || !contactFormData.message.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
@@ -190,23 +211,30 @@ Thank you!`;
 
     try {
       // In a real app, this would submit to your support API
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate API call
 
       Alert.alert(
-        'Success',
-        'Your support request has been submitted. We\'ll get back to you within 24 hours.',
+        "Success",
+        "Your support request has been submitted. We'll get back to you within 24 hours.",
         [
           {
-            text: 'OK',
+            text: "OK",
             onPress: () => {
               setShowContactForm(false);
-              setContactFormData({ subject: '', message: '', urgency: 'normal' });
+              setContactFormData({
+                subject: "",
+                message: "",
+                urgency: "normal",
+              });
             },
           },
         ]
       );
     } catch (error) {
-      Alert.alert('Error', 'Failed to submit support request. Please try again.');
+      Alert.alert(
+        "Error",
+        "Failed to submit support request. Please try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -214,49 +242,60 @@ Thank you!`;
 
   const supportOptions: SupportOption[] = [
     {
-      id: 'email',
-      title: 'Email Support',
-      subtitle: 'Get help via email',
-      icon: 'mail',
+      id: "email",
+      title: "Email Support",
+      subtitle: "Get help via email",
+      icon: "mail",
       action: handleEmailSupport,
       color: colors.primary[500],
     },
     {
-      id: 'phone',
-      title: 'Phone Support',
-      subtitle: 'Call our support team',
-      icon: 'call',
+      id: "phone",
+      title: "Phone Support",
+      subtitle: "Call our support team",
+      icon: "call",
       action: handlePhoneSupport,
       color: colors.success[500],
     },
     {
-      id: 'chat',
-      title: 'Live Chat',
-      subtitle: 'Chat with our team',
-      icon: 'chatbubbles',
+      id: "chat",
+      title: "Live Chat",
+      subtitle: "Chat with our team",
+      icon: "chatbubbles",
       action: handleLiveChat,
       color: colors.accent[500],
     },
     {
-      id: 'contact',
-      title: 'Contact Form',
-      subtitle: 'Send us a message',
-      icon: 'document-text',
+      id: "contact",
+      title: "Contact Form",
+      subtitle: "Send us a message",
+      icon: "document-text",
       action: () => setShowContactForm(true),
       color: colors.warning[500],
     },
   ];
 
   return (
-    <Modal visible={isVisible} animationType="slide" presentationStyle="pageSheet">
-      <View style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+    <Modal
+      visible={isVisible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: colors.background.secondary },
+        ]}
+      >
         {/* Header */}
         <View style={styles.header}>
           <View>
             <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
               Support Center
             </Text>
-            <Text style={[styles.headerSubtitle, { color: colors.text.secondary }]}>
+            <Text
+              style={[styles.headerSubtitle, { color: colors.text.secondary }]}
+            >
               How can we help you today?
             </Text>
           </View>
@@ -275,16 +314,38 @@ Thank you!`;
               {supportOptions.map((option) => (
                 <TouchableOpacity
                   key={option.id}
-                  style={[styles.supportOptionCard, { backgroundColor: colors.background.primary }]}
+                  style={[
+                    styles.supportOptionCard,
+                    { backgroundColor: colors.background.primary },
+                  ]}
                   onPress={option.action}
                 >
-                  <View style={[styles.supportOptionIcon, { backgroundColor: `${option.color}20` }]}>
-                    <Ionicons name={option.icon as any} size={24} color={option.color} />
+                  <View
+                    style={[
+                      styles.supportOptionIcon,
+                      { backgroundColor: `${option.color}20` },
+                    ]}
+                  >
+                    <Ionicons
+                      name={option.icon as any}
+                      size={24}
+                      color={option.color}
+                    />
                   </View>
-                  <Text style={[styles.supportOptionTitle, { color: colors.text.primary }]}>
+                  <Text
+                    style={[
+                      styles.supportOptionTitle,
+                      { color: colors.text.primary },
+                    ]}
+                  >
                     {option.title}
                   </Text>
-                  <Text style={[styles.supportOptionSubtitle, { color: colors.text.secondary }]}>
+                  <Text
+                    style={[
+                      styles.supportOptionSubtitle,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
                     {option.subtitle}
                   </Text>
                 </TouchableOpacity>
@@ -299,7 +360,11 @@ Thank you!`;
             </Text>
 
             {/* Category Filter */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryFilter}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoryFilter}
+            >
               {categories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
@@ -307,9 +372,10 @@ Thank you!`;
                   style={[
                     styles.categoryButton,
                     {
-                      backgroundColor: selectedCategory === category.id 
-                        ? colors.primary[500] 
-                        : colors.background.primary,
+                      backgroundColor:
+                        selectedCategory === category.id
+                          ? colors.primary[500]
+                          : colors.background.primary,
                       borderColor: colors.border.light,
                     },
                   ]}
@@ -317,14 +383,23 @@ Thank you!`;
                   <Ionicons
                     name={category.icon as any}
                     size={16}
-                    color={selectedCategory === category.id ? '#fff' : colors.text.secondary}
+                    color={
+                      selectedCategory === category.id
+                        ? "#fff"
+                        : colors.text.secondary
+                    }
                     style={{ marginRight: 4 }}
                   />
-                  <Text style={{
-                    color: selectedCategory === category.id ? '#fff' : colors.text.primary,
-                    fontSize: 14,
-                    fontWeight: '500',
-                  }}>
+                  <Text
+                    style={{
+                      color:
+                        selectedCategory === category.id
+                          ? "#fff"
+                          : colors.text.primary,
+                      fontSize: 14,
+                      fontWeight: "500",
+                    }}
+                  >
                     {category.name}
                   </Text>
                 </TouchableOpacity>
@@ -346,46 +421,92 @@ Thank you!`;
             </Text>
             <View style={styles.quickLinks}>
               <TouchableOpacity
-                style={[styles.quickLinkItem, { backgroundColor: colors.background.primary }]}
-                onPress={() => Linking.openURL('https://expenzez.com/privacy')}
+                style={[
+                  styles.quickLinkItem,
+                  { backgroundColor: colors.background.primary },
+                ]}
+                onPress={() => Linking.openURL("https://expenzez.com/privacy")}
               >
-                <Ionicons name="shield-checkmark" size={20} color={colors.primary[500]} />
-                <Text style={[styles.quickLinkText, { color: colors.text.primary }]}>
+                <Ionicons
+                  name="shield-checkmark"
+                  size={20}
+                  color={colors.primary[500]}
+                />
+                <Text
+                  style={[styles.quickLinkText, { color: colors.text.primary }]}
+                >
                   Privacy Policy
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color={colors.text.tertiary} />
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.text.tertiary}
+                />
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.quickLinkItem, { backgroundColor: colors.background.primary }]}
-                onPress={() => Linking.openURL('https://expenzez.com/terms')}
+                style={[
+                  styles.quickLinkItem,
+                  { backgroundColor: colors.background.primary },
+                ]}
+                onPress={() => Linking.openURL("https://expenzez.com/terms")}
               >
-                <Ionicons name="document-text" size={20} color={colors.primary[500]} />
-                <Text style={[styles.quickLinkText, { color: colors.text.primary }]}>
+                <Ionicons
+                  name="document-text"
+                  size={20}
+                  color={colors.primary[500]}
+                />
+                <Text
+                  style={[styles.quickLinkText, { color: colors.text.primary }]}
+                >
                   Terms of Service
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color={colors.text.tertiary} />
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.text.tertiary}
+                />
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.quickLinkItem, { backgroundColor: colors.background.primary }]}
-                onPress={() => Linking.openURL('https://expenzez.com/status')}
+                style={[
+                  styles.quickLinkItem,
+                  { backgroundColor: colors.background.primary },
+                ]}
+                onPress={() => Linking.openURL("https://expenzez.com/status")}
               >
                 <Ionicons name="pulse" size={20} color={colors.success[500]} />
-                <Text style={[styles.quickLinkText, { color: colors.text.primary }]}>
+                <Text
+                  style={[styles.quickLinkText, { color: colors.text.primary }]}
+                >
                   Service Status
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color={colors.text.tertiary} />
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.text.tertiary}
+                />
               </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
 
         {/* Contact Form Modal */}
-        <Modal visible={showContactForm} animationType="slide" presentationStyle="pageSheet">
-          <View style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+        <Modal
+          visible={showContactForm}
+          animationType="slide"
+          presentationStyle="pageSheet"
+        >
+          <View
+            style={[
+              styles.container,
+              { backgroundColor: colors.background.secondary },
+            ]}
+          >
             <View style={styles.header}>
-              <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
+              <Text
+                style={[styles.headerTitle, { color: colors.text.primary }]}
+              >
                 Contact Support
               </Text>
               <TouchableOpacity onPress={() => setShowContactForm(false)}>
@@ -395,72 +516,102 @@ Thank you!`;
 
             <ScrollView style={styles.content}>
               <View style={styles.formSection}>
-                <Text style={[styles.formLabel, { color: colors.text.primary }]}>
+                <Text
+                  style={[styles.formLabel, { color: colors.text.primary }]}
+                >
                   Subject *
                 </Text>
                 <TextInput
-                  style={[styles.formInput, {
-                    backgroundColor: colors.background.primary,
-                    color: colors.text.primary,
-                    borderColor: colors.border.light,
-                  }]}
+                  style={[
+                    styles.formInput,
+                    {
+                      backgroundColor: colors.background.primary,
+                      color: colors.text.primary,
+                      borderColor: colors.border.light,
+                    },
+                  ]}
                   value={contactFormData.subject}
-                  onChangeText={(text) => setContactFormData(prev => ({ ...prev, subject: text }))}
+                  onChangeText={(text) =>
+                    setContactFormData((prev) => ({ ...prev, subject: text }))
+                  }
                   placeholder="Brief description of your issue"
-                  
                 />
 
-                <Text style={[styles.formLabel, { color: colors.text.primary }]}>
+                <Text
+                  style={[styles.formLabel, { color: colors.text.primary }]}
+                >
                   Priority
                 </Text>
                 <View style={styles.priorityButtons}>
-                  {['low', 'normal', 'high'].map((priority) => (
+                  {["low", "normal", "high"].map((priority) => (
                     <TouchableOpacity
                       key={priority}
-                      onPress={() => setContactFormData(prev => ({ ...prev, urgency: priority }))}
+                      onPress={() =>
+                        setContactFormData((prev) => ({
+                          ...prev,
+                          urgency: priority,
+                        }))
+                      }
                       style={[
                         styles.priorityButton,
                         {
-                          backgroundColor: contactFormData.urgency === priority 
-                            ? colors.primary[500] 
-                            : colors.background.primary,
+                          backgroundColor:
+                            contactFormData.urgency === priority
+                              ? colors.primary[500]
+                              : colors.background.primary,
                           borderColor: colors.border.light,
                         },
                       ]}
                     >
-                      <Text style={{
-                        color: contactFormData.urgency === priority ? '#fff' : colors.text.primary,
-                        fontWeight: '500',
-                      }}>
+                      <Text
+                        style={{
+                          color:
+                            contactFormData.urgency === priority
+                              ? "#fff"
+                              : colors.text.primary,
+                          fontWeight: "500",
+                        }}
+                      >
                         {priority.charAt(0).toUpperCase() + priority.slice(1)}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
 
-                <Text style={[styles.formLabel, { color: colors.text.primary }]}>
+                <Text
+                  style={[styles.formLabel, { color: colors.text.primary }]}
+                >
                   Message *
                 </Text>
                 <TextInput
-                  style={[styles.formTextArea, {
-                    backgroundColor: colors.background.primary,
-                    color: colors.text.primary,
-                    borderColor: colors.border.light,
-                  }]}
+                  style={[
+                    styles.formTextArea,
+                    {
+                      backgroundColor: colors.background.primary,
+                      color: colors.text.primary,
+                      borderColor: colors.border.light,
+                    },
+                  ]}
                   value={contactFormData.message}
-                  onChangeText={(text) => setContactFormData(prev => ({ ...prev, message: text }))}
+                  onChangeText={(text) =>
+                    setContactFormData((prev) => ({ ...prev, message: text }))
+                  }
                   placeholder="Please provide details about your issue..."
-                  
                   multiline
                   numberOfLines={6}
                   textAlignVertical="top"
                 />
 
                 <TouchableOpacity
-                  style={[styles.submitButton, {
-                    backgroundColor: submitting ? colors.gray[400] : colors.primary[500],
-                    opacity: submitting ? 0.7 : 1,
-                  }]}
+                  style={[
+                    styles.submitButton,
+                    {
+                      backgroundColor: submitting
+                        ? colors.gray[400]
+                        : colors.primary[500],
+                      opacity: submitting ? 0.7 : 1,
+                    },
+                  ]}
                   onPress={handleSubmitContactForm}
                   disabled={submitting}
                 >
@@ -483,7 +634,9 @@ const FAQItem: React.FC<{ faq: FAQ; colors: any }> = ({ faq, colors }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <View style={[styles.faqItem, { backgroundColor: colors.background.primary }]}>
+    <View
+      style={[styles.faqItem, { backgroundColor: colors.background.primary }]}
+    >
       <TouchableOpacity
         style={styles.faqHeader}
         onPress={() => setIsExpanded(!isExpanded)}
@@ -492,7 +645,7 @@ const FAQItem: React.FC<{ faq: FAQ; colors: any }> = ({ faq, colors }) => {
           {faq.question}
         </Text>
         <Ionicons
-          name={isExpanded ? 'chevron-up' : 'chevron-down'}
+          name={isExpanded ? "chevron-up" : "chevron-down"}
           size={20}
           color={colors.text.secondary}
         />
@@ -513,18 +666,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: "#E5E7EB",
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 4,
   },
   headerSubtitle: {
@@ -542,20 +695,20 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: spacing.md,
   },
   supportOptionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.md,
   },
   supportOptionCard: {
-    width: '47%',
+    width: "47%",
     padding: spacing.lg,
     borderRadius: borderRadius.lg,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -565,26 +718,26 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: spacing.sm,
   },
   supportOptionTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
-    textAlign: 'center',
+    textAlign: "center",
   },
   supportOptionSubtitle: {
     fontSize: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   categoryFilter: {
     marginBottom: spacing.lg,
   },
   categoryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
@@ -596,21 +749,21 @@ const styles = StyleSheet.create({
   },
   faqItem: {
     borderRadius: borderRadius.md,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
   faqHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: spacing.lg,
   },
   faqQuestion: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     flex: 1,
     paddingRight: spacing.sm,
   },
@@ -626,11 +779,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   quickLinkItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: spacing.lg,
     borderRadius: borderRadius.md,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -639,7 +792,7 @@ const styles = StyleSheet.create({
   quickLinkText: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     marginLeft: spacing.sm,
   },
   formSection: {
@@ -647,7 +800,7 @@ const styles = StyleSheet.create({
   },
   formLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: spacing.xs,
     marginTop: spacing.md,
   },
@@ -665,7 +818,7 @@ const styles = StyleSheet.create({
     minHeight: 120,
   },
   priorityButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
@@ -675,18 +828,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   submitButton: {
     paddingVertical: spacing.lg,
     borderRadius: borderRadius.md,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: spacing.xl,
   },
   submitButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });
 

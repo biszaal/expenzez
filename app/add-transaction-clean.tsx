@@ -17,10 +17,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../contexts/ThemeContext";
 import { transactionAPI } from "../services/api";
 import { useXP } from "../hooks/useXP";
+import { useAuth } from "./auth/AuthContext";
 import {
   expenseKeywords,
   incomeKeywords,
 } from "../services/autoDetectionKeywords";
+import { StreakService } from "../services/streakService";
 import { MilestoneService } from "../services/milestoneService";
 
 interface Category {
@@ -71,6 +73,7 @@ const incomeCategories: Category[] = [
 
 export default function AddTransaction() {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const { awardXP } = useXP();
   const [transactionType, setTransactionType] = useState<"expense" | "income">(
     "expense"
@@ -271,16 +274,16 @@ export default function AddTransaction() {
             // Award XP for adding expense
             await awardXP("add-expense");
 
-            // Track daily streak (if StreakService is available)
-            // try {
-            //   await StreakService.recordTransaction();
-            //   console.log("🔥 [AddTransaction] Daily streak recorded");
-            // } catch (streakError) {
-            //   console.error(
-            //     "[AddTransaction] Error recording streak:",
-            //     streakError
-            //   );
-            // }
+            // Track daily streak
+            try {
+              await StreakService.recordTransaction();
+              console.log("🔥 [AddTransaction] Daily streak recorded");
+            } catch (streakError) {
+              console.error(
+                "[AddTransaction] Error recording streak:",
+                streakError
+              );
+            }
           } else {
             // Award XP for adding income
             await awardXP("add-income");
@@ -305,7 +308,7 @@ export default function AddTransaction() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background.primary }]}
+      style={[styles.container, { backgroundColor: colors.background }]}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -318,13 +321,9 @@ export default function AddTransaction() {
               onPress={() => router.back()}
               style={styles.backButton}
             >
-              <Ionicons
-                name="arrow-back"
-                size={24}
-                color={colors.text.primary}
-              />
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>
               Add {transactionType === "expense" ? "Expense" : "Income"}
             </Text>
             <View style={styles.placeholder} />
@@ -339,8 +338,8 @@ export default function AddTransaction() {
                 {
                   backgroundColor:
                     transactionType === "expense"
-                      ? colors.primary.main
-                      : colors.background,
+                      ? colors.primary
+                      : colors.card,
                 },
               ]}
               onPress={() => {
@@ -353,9 +352,7 @@ export default function AddTransaction() {
                   styles.typeButtonText,
                   {
                     color:
-                      transactionType === "expense"
-                        ? "#FFFFFF"
-                        : colors.text.primary,
+                      transactionType === "expense" ? "#FFFFFF" : colors.text,
                   },
                 ]}
               >
@@ -368,9 +365,7 @@ export default function AddTransaction() {
                 transactionType === "income" && styles.typeButtonActive,
                 {
                   backgroundColor:
-                    transactionType === "income"
-                      ? colors.primary.main
-                      : colors.background,
+                    transactionType === "income" ? colors.primary : colors.card,
                 },
               ]}
               onPress={() => {
@@ -383,9 +378,7 @@ export default function AddTransaction() {
                   styles.typeButtonText,
                   {
                     color:
-                      transactionType === "income"
-                        ? "#FFFFFF"
-                        : colors.text.primary,
+                      transactionType === "income" ? "#FFFFFF" : colors.text,
                   },
                 ]}
               >
@@ -398,20 +391,18 @@ export default function AddTransaction() {
           <View style={styles.form}>
             {/* Name Field */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text.primary }]}>
-                Name
-              </Text>
+              <Text style={[styles.label, { color: colors.text }]}>Name</Text>
               <TextInput
                 style={[
                   styles.input,
                   {
-                    backgroundColor: colors.background.primary,
-                    color: colors.text.primary,
-                    borderColor: colors.border.light,
+                    backgroundColor: colors.card,
+                    color: colors.text,
+                    borderColor: colors.border,
                   },
                 ]}
                 placeholder="Enter transaction name"
-                placeholderTextColor={colors.text.secondary}
+                placeholderTextColor={colors.textSecondary}
                 value={name}
                 onChangeText={handleNameChange}
                 autoFocus
@@ -420,29 +411,22 @@ export default function AddTransaction() {
 
             {/* Amount Field */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text.primary }]}>
-                Amount
-              </Text>
+              <Text style={[styles.label, { color: colors.text }]}>Amount</Text>
               <View style={styles.amountContainer}>
-                <Text
-                  style={[
-                    styles.currencySymbol,
-                    { color: colors.text.primary },
-                  ]}
-                >
+                <Text style={[styles.currencySymbol, { color: colors.text }]}>
                   £
                 </Text>
                 <TextInput
                   style={[
                     styles.amountInput,
                     {
-                      backgroundColor: colors.background.primary,
-                      color: colors.text.primary,
-                      borderColor: colors.border.light,
+                      backgroundColor: colors.card,
+                      color: colors.text,
+                      borderColor: colors.border,
                     },
                   ]}
                   placeholder="0.00"
-                  placeholderTextColor={colors.text.secondary}
+                  placeholderTextColor={colors.textSecondary}
                   value={amount}
                   onChangeText={handleAmountChange}
                   keyboardType="numeric"
@@ -452,7 +436,7 @@ export default function AddTransaction() {
 
             {/* Category Selection */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text.primary }]}>
+              <Text style={[styles.label, { color: colors.text }]}>
                 Category
               </Text>
               <View style={styles.categoryGrid}>
@@ -465,11 +449,11 @@ export default function AddTransaction() {
                         backgroundColor:
                           selectedCategory.id === category.id
                             ? category.color
-                            : colors.background,
+                            : colors.card,
                         borderColor:
                           selectedCategory.id === category.id
                             ? category.color
-                            : colors.border.light,
+                            : colors.border,
                       },
                     ]}
                     onPress={() => setSelectedCategory(category)}
@@ -480,7 +464,7 @@ export default function AddTransaction() {
                       color={
                         selectedCategory.id === category.id
                           ? "#FFFFFF"
-                          : colors.text.primary
+                          : colors.text
                       }
                     />
                     <Text
@@ -490,7 +474,7 @@ export default function AddTransaction() {
                           color:
                             selectedCategory.id === category.id
                               ? "#FFFFFF"
-                              : colors.text.primary,
+                              : colors.text,
                         },
                       ]}
                     >
@@ -512,7 +496,7 @@ export default function AddTransaction() {
           <TouchableOpacity
             style={[
               styles.saveButton,
-              { backgroundColor: colors.primary.main },
+              { backgroundColor: colors.primary },
               loading && styles.saveButtonDisabled,
             ]}
             onPress={handleSaveTransaction}

@@ -181,6 +181,7 @@ export default function Register() {
           pathname: "/auth/EmailVerification",
           params: {
             email: submitValues.email,
+            username: submitValues.username, // Pass username for verification
             password: submitValues.password, // Pass password for auto-login after verification
           },
         });
@@ -328,7 +329,11 @@ export default function Register() {
             <Typography variant="h2" style={styles.welcomeTitle} align="center">
               Create Account
             </Typography>
-            <Typography variant="body" style={styles.welcomeSubtitle} align="center">
+            <Typography
+              variant="body"
+              style={styles.welcomeSubtitle}
+              align="center"
+            >
               Step {step} of 5
             </Typography>
           </View>
@@ -357,47 +362,47 @@ export default function Register() {
                   </View>
                 ) : null}
 
-                  {step === 1 && (
-                    <RegisterStep1
-                      values={values}
-                      onChange={handleChange}
-                      onNext={handleNext}
-                    />
-                  )}
-                  {step === 2 && (
-                    <RegisterStep2
-                      values={values}
-                      onChange={handleChange}
-                      onNext={handleNext}
-                      onBack={handleBack}
-                    />
-                  )}
-                  {step === 3 && (
-                    <RegisterStep3
-                      values={values}
-                      onChange={handleChange}
-                      onNext={handleNext}
-                      onBack={handleBack}
-                      passwordError={passwordError}
-                    />
-                  )}
-                  {step === 4 && (
-                    <RegisterStep4
-                      values={values}
-                      onChange={handleChange}
-                      onNext={handleNext}
-                      onBack={handleBack}
-                    />
-                  )}
-                  {step === 5 && (
-                    <RegisterStep5
-                      values={values}
-                      onChange={handleChange}
-                      onBack={handleBack}
-                      onSubmit={handleSubmit}
-                      isLoading={isLoading}
-                    />
-                  )}
+                {step === 1 && (
+                  <RegisterStep1
+                    values={values}
+                    onChange={handleChange}
+                    onNext={handleNext}
+                  />
+                )}
+                {step === 2 && (
+                  <RegisterStep2
+                    values={values}
+                    onChange={handleChange}
+                    onNext={handleNext}
+                    onBack={handleBack}
+                  />
+                )}
+                {step === 3 && (
+                  <RegisterStep3
+                    values={values}
+                    onChange={handleChange}
+                    onNext={handleNext}
+                    onBack={handleBack}
+                    passwordError={passwordError}
+                  />
+                )}
+                {step === 4 && (
+                  <RegisterStep4
+                    values={values}
+                    onChange={handleChange}
+                    onNext={handleNext}
+                    onBack={handleBack}
+                  />
+                )}
+                {step === 5 && (
+                  <RegisterStep5
+                    values={values}
+                    onChange={handleChange}
+                    onBack={handleBack}
+                    onSubmit={handleSubmit}
+                    isLoading={isLoading}
+                  />
+                )}
 
                 {/* Clean Login Link */}
                 <TouchableOpacity

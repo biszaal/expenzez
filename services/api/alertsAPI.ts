@@ -4,7 +4,7 @@
  * API methods for managing proactive alerts and preferences
  */
 
-import { api } from '../config/apiClient';
+import { api } from "../config/apiClient";
 
 export type AlertType =
   | "BUDGET_WARNING_80"
@@ -51,7 +51,7 @@ export interface AlertPreferences {
   enableSubscriptionAlerts: boolean;
   enableSpendingAnomalyAlerts: boolean;
   quietHoursStart: string; // "22:00"
-  quietHoursEnd: string;   // "08:00"
+  quietHoursEnd: string; // "08:00"
   maxAlertsPerDay: number;
   updatedAt: string;
 }
@@ -68,24 +68,34 @@ export const alertsAPI = {
    */
   async getPendingAlerts(): Promise<PendingAlertsResponse> {
     try {
-      console.log('📢 [AlertsAPI] Fetching pending alerts');
+      console.log("📢 [AlertsAPI] Fetching pending alerts");
 
-      const response = await api.get('/alerts/pending');
+      const response = await api.get("/alerts/pending");
 
-      console.log('✅ [AlertsAPI] Successfully fetched alerts:', {
+      console.log("✅ [AlertsAPI] Successfully fetched alerts:", {
         totalCount: response.data.totalCount,
-        unacknowledgedCount: response.data.unacknowledgedCount
+        unacknowledgedCount: response.data.unacknowledgedCount,
       });
 
       return response.data;
     } catch (error: any) {
-      console.error('❌ [AlertsAPI] Error fetching pending alerts:', error);
+      // Return empty state if no alerts exist (404 is expected)
+      if (error?.statusCode === 404 || error?.response?.status === 404) {
+        console.log("📢 [AlertsAPI] No pending alerts found (this is normal)");
+        return {
+          alerts: [],
+          totalCount: 0,
+          unacknowledgedCount: 0,
+        };
+      }
 
-      // Return empty state on error
+      console.error("❌ [AlertsAPI] Error fetching pending alerts:", error);
+
+      // Return empty state on other errors
       return {
         alerts: [],
         totalCount: 0,
-        unacknowledgedCount: 0
+        unacknowledgedCount: 0,
       };
     }
   },
@@ -99,11 +109,11 @@ export const alertsAPI = {
 
       const response = await api.post(`/alerts/${alertId}/acknowledge`);
 
-      console.log('✅ [AlertsAPI] Alert acknowledged successfully');
+      console.log("✅ [AlertsAPI] Alert acknowledged successfully");
 
       return response.data.alert;
     } catch (error: any) {
-      console.error('❌ [AlertsAPI] Error acknowledging alert:', error);
+      console.error("❌ [AlertsAPI] Error acknowledging alert:", error);
       throw error;
     }
   },
@@ -117,9 +127,9 @@ export const alertsAPI = {
 
       await api.post(`/alerts/${alertId}/dismiss`);
 
-      console.log('✅ [AlertsAPI] Alert dismissed successfully');
+      console.log("✅ [AlertsAPI] Alert dismissed successfully");
     } catch (error: any) {
-      console.error('❌ [AlertsAPI] Error dismissing alert:', error);
+      console.error("❌ [AlertsAPI] Error dismissing alert:", error);
       throw error;
     }
   },
@@ -129,27 +139,27 @@ export const alertsAPI = {
    */
   async getAlertPreferences(): Promise<AlertPreferences> {
     try {
-      console.log('📢 [AlertsAPI] Fetching alert preferences');
+      console.log("📢 [AlertsAPI] Fetching alert preferences");
 
-      const response = await api.get('/alerts/preferences');
+      const response = await api.get("/alerts/preferences");
 
-      console.log('✅ [AlertsAPI] Successfully fetched alert preferences');
+      console.log("✅ [AlertsAPI] Successfully fetched alert preferences");
 
       return response.data;
     } catch (error: any) {
-      console.error('❌ [AlertsAPI] Error fetching alert preferences:', error);
+      console.error("❌ [AlertsAPI] Error fetching alert preferences:", error);
 
       // Return default preferences on error
       return {
-        userId: '',
+        userId: "",
         enableBudgetAlerts: true,
         enableGoalAlerts: true,
         enableSubscriptionAlerts: true,
         enableSpendingAnomalyAlerts: true,
-        quietHoursStart: '22:00',
-        quietHoursEnd: '08:00',
+        quietHoursStart: "22:00",
+        quietHoursEnd: "08:00",
         maxAlertsPerDay: 5,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
     }
   },
@@ -157,17 +167,19 @@ export const alertsAPI = {
   /**
    * Update user's alert preferences
    */
-  async updateAlertPreferences(preferences: Partial<AlertPreferences>): Promise<AlertPreferences> {
+  async updateAlertPreferences(
+    preferences: Partial<AlertPreferences>
+  ): Promise<AlertPreferences> {
     try {
-      console.log('📢 [AlertsAPI] Updating alert preferences:', preferences);
+      console.log("📢 [AlertsAPI] Updating alert preferences:", preferences);
 
-      const response = await api.put('/alerts/preferences', preferences);
+      const response = await api.put("/alerts/preferences", preferences);
 
-      console.log('✅ [AlertsAPI] Alert preferences updated successfully');
+      console.log("✅ [AlertsAPI] Alert preferences updated successfully");
 
       return response.data;
     } catch (error: any) {
-      console.error('❌ [AlertsAPI] Error updating alert preferences:', error);
+      console.error("❌ [AlertsAPI] Error updating alert preferences:", error);
       throw error;
     }
   },
@@ -177,26 +189,26 @@ export const alertsAPI = {
    */
   getAlertIcon(type: AlertType): string {
     switch (type) {
-      case 'BUDGET_EXCEEDED':
-        return '🚨';
-      case 'BUDGET_WARNING_90':
-        return '⚠️';
-      case 'BUDGET_WARNING_80':
-        return '📊';
-      case 'GOAL_ACHIEVED':
-        return '🎉';
-      case 'GOAL_MILESTONE_75':
-      case 'GOAL_MILESTONE_50':
-      case 'GOAL_MILESTONE_25':
-        return '🎯';
-      case 'SUBSCRIPTION_RENEWAL':
-        return '💳';
-      case 'SPENDING_ANOMALY':
-        return '🔍';
-      case 'SAVINGS_OPPORTUNITY':
-        return '💰';
+      case "BUDGET_EXCEEDED":
+        return "🚨";
+      case "BUDGET_WARNING_90":
+        return "⚠️";
+      case "BUDGET_WARNING_80":
+        return "📊";
+      case "GOAL_ACHIEVED":
+        return "🎉";
+      case "GOAL_MILESTONE_75":
+      case "GOAL_MILESTONE_50":
+      case "GOAL_MILESTONE_25":
+        return "🎯";
+      case "SUBSCRIPTION_RENEWAL":
+        return "💳";
+      case "SPENDING_ANOMALY":
+        return "🔍";
+      case "SAVINGS_OPPORTUNITY":
+        return "💰";
       default:
-        return '📢';
+        return "📢";
     }
   },
 
@@ -205,16 +217,16 @@ export const alertsAPI = {
    */
   getAlertColor(priority: AlertPriority): string {
     switch (priority) {
-      case 'URGENT':
-        return '#EF4444'; // Red
-      case 'HIGH':
-        return '#F59E0B'; // Amber
-      case 'MEDIUM':
-        return '#3B82F6'; // Blue
-      case 'LOW':
-        return '#10B981'; // Green
+      case "URGENT":
+        return "#EF4444"; // Red
+      case "HIGH":
+        return "#F59E0B"; // Amber
+      case "MEDIUM":
+        return "#3B82F6"; // Blue
+      case "LOW":
+        return "#10B981"; // Green
       default:
-        return '#6B7280'; // Gray
+        return "#6B7280"; // Gray
     }
   },
 
@@ -223,16 +235,16 @@ export const alertsAPI = {
    */
   getAlertPriorityLabel(priority: AlertPriority): string {
     switch (priority) {
-      case 'URGENT':
-        return 'Urgent';
-      case 'HIGH':
-        return 'High Priority';
-      case 'MEDIUM':
-        return 'Medium Priority';
-      case 'LOW':
-        return 'Low Priority';
+      case "URGENT":
+        return "Urgent";
+      case "HIGH":
+        return "High Priority";
+      case "MEDIUM":
+        return "Medium Priority";
+      case "LOW":
+        return "Low Priority";
       default:
-        return 'Info';
+        return "Info";
     }
-  }
+  },
 };

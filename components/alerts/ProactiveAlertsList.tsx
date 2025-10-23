@@ -35,9 +35,10 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unacknowledgedCount, setUnacknowledgedCount] = useState(0);
+  const [isMinimized, setIsMinimized] = useState(false);
 
-  // Early return if theme is not available
-  if (!theme || !colors.colors) {
+  // Early return if colors is not available
+  if (!colors) {
     return null;
   }
 
@@ -83,18 +84,31 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
 
   if (loading) {
     return (
-      <View
-        style={[styles.container, { backgroundColor: colors.colors.background }]}
-      >
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {showHeader && (
           <View style={styles.header}>
-            <Text style={[styles.headerTitle, { color: colors.colors.text }]}>
-              📢 Proactive Alerts
-            </Text>
+            <View style={styles.headerLeft}>
+              <Text style={[styles.headerTitle, { color: colors.text }]}>
+                📢 Proactive Alerts
+              </Text>
+              <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+                Stay informed of important updates
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setIsMinimized(!isMinimized)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isMinimized ? "chevron-down" : "chevron-up"}
+                size={20}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
           </View>
         )}
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
     );
@@ -105,107 +119,117 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
 
   if (alerts.length === 0) {
     return (
-      <View
-        style={[styles.container, { backgroundColor: colors.colors.background }]}
-      >
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {showHeader && (
           <View style={styles.header}>
-            <Text style={[styles.headerTitle, { color: colors.colors.text }]}>
-              📢 Proactive Alerts
+            <View style={styles.headerLeft}>
+              <Text style={[styles.headerTitle, { color: colors.text }]}>
+                📢 Proactive Alerts
+              </Text>
+              <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+                Stay informed of important updates
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setIsMinimized(!isMinimized)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isMinimized ? "chevron-down" : "chevron-up"}
+                size={20}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+        {!isMinimized && (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>✅</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              All Caught Up!
+            </Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              No pending alerts. We'll notify you of important financial events.
             </Text>
           </View>
         )}
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>✅</Text>
-          <Text style={[styles.emptyTitle, { color: colors.colors.text }]}>
-            All Caught Up!
-          </Text>
-          <Text
-            style={[styles.emptyText, { color: colors.colors.textSecondary }]}
-          >
-            No pending alerts. We'll notify you of important financial events.
-          </Text>
-        </View>
       </View>
     );
   }
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: colors.colors.background }]}
-    >
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {showHeader && (
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.headerTitle, { color: colors.colors.text }]}>
-              📢 Proactive Alerts
-            </Text>
-            {unacknowledgedCount > 0 && (
-              <View
-                style={[
-                  styles.badge,
-                  { backgroundColor: colors.colors.primary },
-                ]}
-              >
-                <Text style={styles.badgeText}>{unacknowledgedCount}</Text>
-              </View>
-            )}
-          </View>
-          {hasMore && onViewAll && (
-            <TouchableOpacity onPress={onViewAll}>
-              <Text
-                style={[styles.viewAllText, { color: colors.colors.primary }]}
-              >
-                View All ({alerts.length})
+            <View style={styles.headerTitleContainer}>
+              <Text style={[styles.headerTitle, { color: colors.text }]}>
+                📢 Proactive Alerts
               </Text>
-            </TouchableOpacity>
-          )}
+              {unacknowledgedCount > 0 && (
+                <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.badgeText}>{unacknowledgedCount}</Text>
+                </View>
+              )}
+            </View>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              {alerts.length} alert{alerts.length !== 1 ? "s" : ""} • Stay informed
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => setIsMinimized(!isMinimized)}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={isMinimized ? "chevron-down" : "chevron-up"}
+              size={20}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
         </View>
       )}
 
-      <FlatList
-        data={displayAlerts}
-        keyExtractor={(item) => item.alertId}
-        renderItem={({ item }) => (
-          <ProactiveAlertCard
-            alert={item}
-            onDismiss={handleDismiss}
-            onAcknowledge={handleAcknowledge}
-          />
-        )}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.colors.primary}
-          />
-        }
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListFooterComponent={
-          hasMore ? (
-            <TouchableOpacity
-              style={[
-                styles.viewMoreButton,
-                { backgroundColor: colors.colors.card },
-              ]}
-              onPress={onViewAll}
-            >
-              <Text
-                style={[styles.viewMoreText, { color: colors.colors.primary }]}
+      {!isMinimized && (
+        <FlatList
+          data={displayAlerts}
+          keyExtractor={(item) => item.alertId}
+          renderItem={({ item }) => (
+            <ProactiveAlertCard
+              alert={item}
+              onDismiss={handleDismiss}
+              onAcknowledge={handleAcknowledge}
+            />
+          )}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primary}
+            />
+          }
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={false}
+          ListFooterComponent={
+            hasMore ? (
+              <TouchableOpacity
+                style={[styles.viewMoreButton, { backgroundColor: colors.card }]}
+                onPress={onViewAll}
               >
-                View {alerts.length - maxItems!} More Alert
-                {alerts.length - maxItems! !== 1 ? "s" : ""}
-              </Text>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.colors.primary}
-              />
-            </TouchableOpacity>
-          ) : null
-        }
-      />
+                <Text style={[styles.viewMoreText, { color: colors.primary }]}>
+                  View {alerts.length - maxItems!} More Alert
+                  {alerts.length - maxItems! !== 1 ? "s" : ""}
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.primary}
+                />
+              </TouchableOpacity>
+            ) : null
+          }
+        />
+      )}
     </View>
   );
 };
@@ -217,19 +241,28 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 8,
+    paddingBottom: 12,
   },
   headerLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  headerTitleContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    marginBottom: 4,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: "700",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    fontWeight: "400",
   },
   badge: {
     paddingHorizontal: 8,

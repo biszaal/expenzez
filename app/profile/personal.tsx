@@ -66,11 +66,33 @@ export default function PersonalInformationScreen() {
       setLoading(true);
       try {
         console.log("🔍 [Personal] Fetching profile data...");
-        const data = await getProfile();
+
+        // Clear cache and force refresh to bypass cache
+        try {
+          const { clearCachedData } = await import(
+            "../../services/config/apiCache"
+          );
+          await clearCachedData("user_profile");
+          console.log("🧹 [Personal] Cleared profile cache");
+        } catch (cacheError) {
+          console.warn("⚠️ [Personal] Could not clear cache:", cacheError);
+        }
+
+        const data = await getProfile({ forceRefresh: true });
         console.log(
           "📊 [Personal] Profile API response:",
           JSON.stringify(data, null, 2)
         );
+
+        // Debug: Check if data is null or empty
+        if (!data) {
+          console.warn("⚠️ [Personal] Profile data is null or undefined");
+        } else {
+          console.log(
+            "✅ [Personal] Profile data received:",
+            Object.keys(data)
+          );
+        }
 
         if (data) {
           // Map the API response to form fields
@@ -85,6 +107,8 @@ export default function PersonalInformationScreen() {
             country: data.country || "",
             dateOfBirth:
               data.dateOfBirth || data.date_of_birth || data.birthDate || "",
+            occupation: data.occupation || "",
+            company: data.company || "",
           };
 
           console.log(
@@ -107,6 +131,8 @@ export default function PersonalInformationScreen() {
                 city: "",
                 country: "",
                 dateOfBirth: "",
+                occupation: "",
+                company: "",
               }
             : {
                 firstName: "",
@@ -117,6 +143,8 @@ export default function PersonalInformationScreen() {
                 city: "",
                 country: "",
                 dateOfBirth: "",
+                occupation: "",
+                company: "",
               };
 
           console.log(
@@ -138,6 +166,8 @@ export default function PersonalInformationScreen() {
               city: "",
               country: "",
               dateOfBirth: "",
+              occupation: "",
+              company: "",
             }
           : {
               firstName: "",
@@ -148,6 +178,8 @@ export default function PersonalInformationScreen() {
               city: "",
               country: "",
               dateOfBirth: "",
+              occupation: "",
+              company: "",
             };
 
         console.log(
@@ -181,15 +213,38 @@ export default function PersonalInformationScreen() {
   // Handle save changes
   const handleSave = async () => {
     try {
+      // Basic validation
+      if (!formData.firstName.trim()) {
+        showError("First name is required");
+        return;
+      }
+      if (!formData.lastName.trim()) {
+        showError("Last name is required");
+        return;
+      }
+      if (!formData.email.trim()) {
+        showError("Email is required");
+        return;
+      }
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        showError("Please enter a valid email address");
+        return;
+      }
+
       console.log("💾 [PersonalInfo] Saving profile data:", formData);
 
       const updateData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        dateOfBirth: formData.dateOfBirth,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone?.trim() || "",
+        address: formData.address?.trim() || "",
+        dateOfBirth: formData.dateOfBirth?.trim() || "",
+        occupation: formData.occupation?.trim() || "",
+        company: formData.company?.trim() || "",
       };
 
       console.log("📤 [PersonalInfo] Sending update request:", updateData);

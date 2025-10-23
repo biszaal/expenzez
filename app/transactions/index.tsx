@@ -65,7 +65,53 @@ export default function TransactionsScreen() {
 
   // Edit modal state
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
+
+  // Spending summary modal state
+  const [summaryModalVisible, setSummaryModalVisible] = useState(false);
+
+  // Calculate spending summary
+  const getSpendingSummary = () => {
+    const totalSpending = transactions
+      .filter((t) => t.type === "debit")
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    const totalIncome = transactions
+      .filter((t) => t.type === "credit")
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const netFlow = totalIncome - totalSpending;
+
+    // Group by category
+    const categorySpending = transactions
+      .filter((t) => t.type === "debit")
+      .reduce(
+        (acc, t) => {
+          const category = t.category || "Uncategorized";
+          acc[category] = (acc[category] || 0) + Math.abs(t.amount);
+          return acc;
+        },
+        {} as Record<string, number>
+      );
+
+    const topCategories = Object.entries(categorySpending)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5);
+
+    return {
+      totalSpending,
+      totalIncome,
+      netFlow,
+      transactionCount: transactions.length,
+      topCategories,
+      avgTransaction:
+        transactions.length > 0
+          ? totalSpending /
+            transactions.filter((t) => t.type === "debit").length
+          : 0,
+    };
+  };
 
   const fetchTransactions = async (showRefresh = false) => {
     try {
@@ -531,7 +577,10 @@ export default function TransactionsScreen() {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.menuButton}>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => setSummaryModalVisible(true)}
+          >
             <Ionicons
               name="ellipsis-horizontal"
               size={24}
@@ -556,7 +605,6 @@ export default function TransactionsScreen() {
             <TextInput
               style={[styles.searchInput, { color: colors.text.primary }]}
               placeholder="Search"
-              
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -784,6 +832,208 @@ export default function TransactionsScreen() {
         onSave={handleSaveTransaction}
         onDelete={handleDeleteTransaction}
       />
+
+      {/* Spending Summary Modal */}
+      {summaryModalVisible && (
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.summaryModal,
+              { backgroundColor: colors.background.primary },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text.primary }]}>
+                📊 Spending Summary
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSummaryModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons
+                  name="close"
+                  size={24}
+                  color={colors.text.secondary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.summaryContent}>
+              {(() => {
+                const summary = getSpendingSummary();
+                return (
+                  <>
+                    {/* Key Metrics */}
+                    <View style={styles.summarySection}>
+                      <Text
+                        style={[
+                          styles.sectionTitle,
+                          { color: colors.text.primary },
+                        ]}
+                      >
+                        💰 Financial Overview
+                      </Text>
+                      <View style={styles.metricRow}>
+                        <Text
+                          style={[
+                            styles.metricLabel,
+                            { color: colors.text.secondary },
+                          ]}
+                        >
+                          Total Spending:
+                        </Text>
+                        <Text
+                          style={[
+                            styles.metricValue,
+                            { color: colors.text.primary },
+                          ]}
+                        >
+                          £{summary.totalSpending.toFixed(2)}
+                        </Text>
+                      </View>
+                      <View style={styles.metricRow}>
+                        <Text
+                          style={[
+                            styles.metricLabel,
+                            { color: colors.text.secondary },
+                          ]}
+                        >
+                          Total Income:
+                        </Text>
+                        <Text
+                          style={[
+                            styles.metricValue,
+                            { color: colors.text.primary },
+                          ]}
+                        >
+                          £{summary.totalIncome.toFixed(2)}
+                        </Text>
+                      </View>
+                      <View style={styles.metricRow}>
+                        <Text
+                          style={[
+                            styles.metricLabel,
+                            { color: colors.text.secondary },
+                          ]}
+                        >
+                          Net Flow:
+                        </Text>
+                        <Text
+                          style={[
+                            styles.metricValue,
+                            {
+                              color:
+                                summary.netFlow >= 0
+                                  ? colors.success[500]
+                                  : colors.error[500],
+                            },
+                          ]}
+                        >
+                          {summary.netFlow >= 0 ? "+" : ""}£
+                          {summary.netFlow.toFixed(2)}
+                        </Text>
+                      </View>
+                      <View style={styles.metricRow}>
+                        <Text
+                          style={[
+                            styles.metricLabel,
+                            { color: colors.text.secondary },
+                          ]}
+                        >
+                          Transactions:
+                        </Text>
+                        <Text
+                          style={[
+                            styles.metricValue,
+                            { color: colors.text.primary },
+                          ]}
+                        >
+                          {summary.transactionCount}
+                        </Text>
+                      </View>
+                      <View style={styles.metricRow}>
+                        <Text
+                          style={[
+                            styles.metricLabel,
+                            { color: colors.text.secondary },
+                          ]}
+                        >
+                          Avg Transaction:
+                        </Text>
+                        <Text
+                          style={[
+                            styles.metricValue,
+                            { color: colors.text.primary },
+                          ]}
+                        >
+                          £{summary.avgTransaction.toFixed(2)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Top Categories */}
+                    {summary.topCategories.length > 0 && (
+                      <View style={styles.summarySection}>
+                        <Text
+                          style={[
+                            styles.sectionTitle,
+                            { color: colors.text.primary },
+                          ]}
+                        >
+                          🏆 Top Spending Categories
+                        </Text>
+                        {summary.topCategories.map(
+                          ([category, amount], index) => (
+                            <View key={category} style={styles.categoryRow}>
+                              <View style={styles.categoryInfo}>
+                                <Text
+                                  style={[
+                                    styles.categoryName,
+                                    { color: colors.text.primary },
+                                  ]}
+                                >
+                                  {index + 1}. {category}
+                                </Text>
+                                <Text
+                                  style={[
+                                    styles.categoryAmount,
+                                    { color: colors.text.secondary },
+                                  ]}
+                                >
+                                  £{amount.toFixed(2)}
+                                </Text>
+                              </View>
+                              <View
+                                style={[
+                                  styles.categoryBar,
+                                  {
+                                    backgroundColor:
+                                      colors.background.secondary,
+                                  },
+                                ]}
+                              >
+                                <View
+                                  style={[
+                                    styles.categoryBarFill,
+                                    {
+                                      backgroundColor: colors.primary[500],
+                                      width: `${(amount / summary.totalSpending) * 100}%`,
+                                    },
+                                  ]}
+                                />
+                              </View>
+                            </View>
+                          )
+                        )}
+                      </View>
+                    )}
+                  </>
+                );
+              })()}
+            </ScrollView>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -1007,5 +1257,96 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     marginTop: spacing.md,
+  },
+
+  // Spending Summary Modal Styles
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  summaryModal: {
+    width: "90%",
+    maxHeight: "80%",
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  closeButton: {
+    padding: 4,
+  },
+  summaryContent: {
+    maxHeight: 400,
+  },
+  summarySection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 16,
+  },
+  metricRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 0, 0, 0.1)",
+  },
+  metricLabel: {
+    fontSize: 16,
+    flex: 1,
+  },
+  metricValue: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  categoryRow: {
+    marginBottom: 12,
+  },
+  categoryInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  categoryName: {
+    fontSize: 14,
+    fontWeight: "500",
+    flex: 1,
+  },
+  categoryAmount: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  categoryBar: {
+    height: 6,
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  categoryBarFill: {
+    height: "100%",
+    borderRadius: 3,
   },
 });

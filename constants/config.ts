@@ -2,14 +2,15 @@
  * App configuration - environment-specific settings
  */
 
-import Constants from 'expo-constants';
+import Constants from "expo-constants";
+import { CURRENT_API_CONFIG } from "../config/api";
 
 // Environment detection
 const isDevelopment = __DEV__;
 const isProduction = !__DEV__;
 
 // App scheme for deep linking
-const APP_SCHEME = Constants.expoConfig?.scheme || 'expenzez';
+const APP_SCHEME = Constants.expoConfig?.scheme || "expenzez";
 
 // Deep link URLs
 const DEEP_LINK_URLS = {
@@ -18,17 +19,11 @@ const DEEP_LINK_URLS = {
 
 // API Configuration - ALWAYS use current production AWS API Gateway
 const API_CONFIG = {
-  BASE_URL: 'https://jvgwbst4og.execute-api.eu-west-2.amazonaws.com', // Current production AWS API Gateway
+  BASE_URL: CURRENT_API_CONFIG.baseURL, // Current production AWS API Gateway (expenzez-backend-dev)
   TIMEOUT: 30000, // 30 seconds
 };
 
-export {
-  isDevelopment,
-  isProduction,
-  APP_SCHEME,
-  DEEP_LINK_URLS,
-  API_CONFIG,
-};
+export { isDevelopment, isProduction, APP_SCHEME, DEEP_LINK_URLS, API_CONFIG };
 
 export default {
   isDevelopment,

@@ -71,7 +71,7 @@ export default function AccountScreen() {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        const userId = user?.id || user?.email || user?.username;
+        const userId = user?.sub || user?.id || user?.email || user?.username;
         console.log("📥 [Account] Fetching profile data for user:", userId);
 
         // Clear AsyncStorage cache before fetching
@@ -353,7 +353,7 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView
-      key={user?.id || user?.email || user?.username || "default"}
+      key={user?.sub || user?.id || user?.email || user?.username || "default"}
       style={[
         styles.container,
         { backgroundColor: colors.background.secondary },

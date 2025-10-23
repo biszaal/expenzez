@@ -76,7 +76,6 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       const isExpoGo =
         !Constants.appOwnership || Constants.appOwnership === "expo";
 
-
       if (isExpoGo) {
         setIsLoading(false);
         setIsPro(false);
@@ -216,7 +215,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!Purchases) {
         return;
       }
-      
+
       const offerings = await Purchases.getOfferings();
       setOfferings(offerings);
     } catch (error) {

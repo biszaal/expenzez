@@ -1053,6 +1053,70 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         );
       }
 
+      // 🚨 CRITICAL: Clear ALL SecureStore data
+      try {
+        console.log("🔐 [AuthContext] Clearing SecureStore data...");
+        await Promise.all([
+          SecureStore.deleteItemAsync("accessToken", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("idToken", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("refreshToken", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("tokenExpiresAt", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("user", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("profile", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("biometric_enabled", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("pin_hash", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("security_settings", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("notification_token", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("banking_connections", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("chat_history", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("budget_data", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("spending_data", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("credit_score", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("financial_insights", {
+            keychainService: "expenzez-tokens",
+          }),
+          SecureStore.deleteItemAsync("app_preferences", {
+            keychainService: "expenzez-tokens",
+          }),
+        ]);
+        console.log("✅ [AuthContext] SecureStore data cleared successfully");
+      } catch (secureStoreError) {
+        console.error(
+          "❌ [AuthContext] Failed to clear SecureStore data:",
+          secureStoreError
+        );
+      }
+
       // 🚨 STRICT SECURITY: Clear ALL keys except absolute essentials
       try {
         const allKeys = await AsyncStorage.getAllKeys();

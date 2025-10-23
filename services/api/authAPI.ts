@@ -1,9 +1,12 @@
 import axios from "axios";
 import { api } from "../config/apiClient";
+import { CURRENT_API_CONFIG } from "../../config/api";
 
 export const authAPI = {
   // Check if username already exists using the existing checkUserStatus endpoint
-  checkUsernameExists: async (username: string): Promise<{ exists: boolean; error?: string }> => {
+  checkUsernameExists: async (
+    username: string
+  ): Promise<{ exists: boolean; error?: string }> => {
     try {
       // First try the main API Gateway
       const response = await api.post("/auth/check-user-status", { username });
@@ -20,89 +23,119 @@ export const authAPI = {
       if (!statusCode && !error.response) {
         console.log("Username check network error:", error.message);
         // For network errors, assume username is available but show warning
-        return { exists: false, error: "Network error. Username availability unknown." };
+        return {
+          exists: false,
+          error: "Network error. Username availability unknown.",
+        };
       }
 
       // If main API returns 404, try the fallback auth API Gateway
       if (statusCode === 404 || error.response?.status === 404) {
         try {
           const fallbackResponse = await axios.post(
-            "https://a95uq2n8k7.execute-api.eu-west-2.amazonaws.com/auth/check-user-status",
+            `${CURRENT_API_CONFIG.baseURL}/auth/check-user-status`,
             { username },
             {
               headers: {
-                'Content-Type': 'application/json'
-              }
+                "Content-Type": "application/json",
+              },
             }
           );
           // If we get a successful response, user exists
-          if (fallbackResponse.status === 200 && fallbackResponse.data.username) {
+          if (
+            fallbackResponse.status === 200 &&
+            fallbackResponse.data.username
+          ) {
             return { exists: true };
           }
           return { exists: false };
         } catch (fallbackError: any) {
           // Handle network errors in fallback
           if (!fallbackError.response) {
-            console.log("Username check fallback network error:", fallbackError.message);
+            console.log(
+              "Username check fallback network error:",
+              fallbackError.message
+            );
             // Both APIs are down - allow registration to proceed but warn user
-            return { exists: false, error: "Cannot verify username availability. Proceeding with registration." };
+            return {
+              exists: false,
+              error:
+                "Cannot verify username availability. Proceeding with registration.",
+            };
           }
 
           // Handle specific error status codes from the checkUserStatus Lambda
           if (fallbackError.response?.data?.error === "UserNotFoundException") {
             // User not found - username is available
             return { exists: false };
-          } else if (fallbackError.response?.status === 400 && fallbackError.response?.data?.message?.includes("username")) {
+          } else if (
+            fallbackError.response?.status === 400 &&
+            fallbackError.response?.data?.message?.includes("username")
+          ) {
             // Missing or invalid username parameter
             return { exists: false, error: "Invalid username format" };
           } else if (fallbackError.response?.status >= 500) {
             // Server error
             return { exists: false, error: "Server error. Please try again." };
           }
-          
+
           console.error("Username check fallback error:", fallbackError);
-          return { exists: false, error: "Unable to verify username availability" };
+          return {
+            exists: false,
+            error: "Unable to verify username availability",
+          };
         }
-      } else if (error.response?.data?.error === "UserNotFoundException" || error.details?.originalError?.includes("UserNotFoundException")) {
+      } else if (
+        error.response?.data?.error === "UserNotFoundException" ||
+        error.details?.originalError?.includes("UserNotFoundException")
+      ) {
         // User not found - username is available
         return { exists: false };
-      } else if ((statusCode === 400 || error.response?.status === 400) && (error.response?.data?.message?.includes("username") || error.message?.includes("username"))) {
+      } else if (
+        (statusCode === 400 || error.response?.status === 400) &&
+        (error.response?.data?.message?.includes("username") ||
+          error.message?.includes("username"))
+      ) {
         // Missing or invalid username parameter
         return { exists: false, error: "Invalid username format" };
-      } else if ((statusCode >= 500 || error.response?.status >= 500)) {
+      } else if (statusCode >= 500 || error.response?.status >= 500) {
         // Server error
         return { exists: false, error: "Server error. Please try again." };
       }
-      
+
       console.error("Username check error:", error);
       return { exists: false, error: "Unable to verify username availability" };
     }
   },
 
   // Check if email already exists - disabled due to AWS Cognito security measures
-  checkEmailExists: async (email: string): Promise<{ exists: boolean; error?: string }> => {
+  checkEmailExists: async (
+    email: string
+  ): Promise<{ exists: boolean; error?: string }> => {
     // AWS Cognito is configured to prevent email enumeration attacks by returning
     // the same error message for both existing and non-existing emails.
     // This is good security practice but prevents reliable client-side validation.
-    
+
     // The proper approach is to:
     // 1. Allow users to proceed through registration
     // 2. Handle email existence errors on the server side during registration
     // 3. Show appropriate error messages if registration fails due to existing email
-    
+
     // For now, we'll just validate email format and let server-side handle existence
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return { exists: false, error: "Invalid email format" };
     }
-    
+
     // Return as available - server will validate during registration
     return { exists: false };
   },
 
   // Check if phone number already exists - temporarily disabled
-  checkPhoneExists: async (phoneNumber: string): Promise<{ exists: boolean; error?: string }> => {
-    // For now, return unavailable until we implement proper phone validation  
+  checkPhoneExists: async (
+    phoneNumber: string
+  ): Promise<{ exists: boolean; error?: string }> => {
+    // For now, return unavailable until we implement proper phone validation
     return { exists: false, error: "Phone validation temporarily unavailable" };
   },
 
@@ -129,9 +162,15 @@ export const authAPI = {
   }) => {
     try {
       const response = await api.post("/auth/login", credentials);
-      console.log('🔍 [authAPI] Raw login response:', JSON.stringify(response.data, null, 2));
-      console.log('🔍 [authAPI] Response.data.user:', response.data.user);
-      console.log('🔍 [authAPI] Response.data.user?.username:', response.data.user?.username);
+      console.log(
+        "🔍 [authAPI] Raw login response:",
+        JSON.stringify(response.data, null, 2)
+      );
+      console.log("🔍 [authAPI] Response.data.user:", response.data.user);
+      console.log(
+        "🔍 [authAPI] Response.data.user?.username:",
+        response.data.user?.username
+      );
       return response.data;
     } catch (error: any) {
       console.error("❌ Login request failed:", {
@@ -147,8 +186,13 @@ export const authAPI = {
         console.log("🔍 403 Error details:", errorData);
 
         // If it's UserNotConfirmedException, provide helpful message
-        if (errorData?.error === 'UserNotConfirmedException' || errorData?.message?.includes('not verified')) {
-          const enhancedError = new Error('Email address not verified. Please check your email and verify your account.');
+        if (
+          errorData?.error === "UserNotConfirmedException" ||
+          errorData?.message?.includes("not verified")
+        ) {
+          const enhancedError = new Error(
+            "Email address not verified. Please check your email and verify your account."
+          );
           (enhancedError as any).response = error.response;
           (enhancedError as any).statusCode = 403;
           (enhancedError as any).isEmailNotVerified = true;
@@ -156,7 +200,10 @@ export const authAPI = {
         }
 
         // For any other 403 error, also check if it might be email verification related
-        const enhancedError = new Error(errorData?.message || 'Access denied. This may be due to email verification required.');
+        const enhancedError = new Error(
+          errorData?.message ||
+            "Access denied. This may be due to email verification required."
+        );
         (enhancedError as any).response = error.response;
         (enhancedError as any).statusCode = 403;
         (enhancedError as any).isEmailNotVerified = true; // Assume 403 is email verification
@@ -168,16 +215,16 @@ export const authAPI = {
         try {
           // Use dedicated auth API Gateway for login
           const authResponse = await axios.post(
-            "https://u5f7pmlt88.execute-api.eu-west-2.amazonaws.com/auth/login",
+            `${CURRENT_API_CONFIG.baseURL}/auth/login`,
             credentials,
             {
               headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json",
               },
               timeout: 15000, // 15 second timeout for login
             }
           );
-          console.log('🔍 [authAPI] Fallback login successful');
+          console.log("🔍 [authAPI] Fallback login successful");
           return authResponse.data;
         } catch (fallbackError: any) {
           console.error("Login fallback failed:", fallbackError);
@@ -205,11 +252,11 @@ export const authAPI = {
         try {
           // Use dedicated auth API Gateway for email confirmation
           const authResponse = await axios.post(
-            "https://u5f7pmlt88.execute-api.eu-west-2.amazonaws.com/auth/confirm-signup",
+            `${CURRENT_API_CONFIG.baseURL}/auth/confirm-signup`,
             data,
             {
               headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json",
               },
               timeout: 15000, // 15 second timeout for verification
             }
@@ -234,12 +281,12 @@ export const authAPI = {
     try {
       // Use the working Cognito endpoint first
       const authResponse = await axios.post(
-        "https://u5f7pmlt88.execute-api.eu-west-2.amazonaws.com/auth/forgot-password",
+        `${CURRENT_API_CONFIG.baseURL}/auth/forgot-password`,
         data,
         {
           headers: {
-            'Content-Type': 'application/json'
-          }
+            "Content-Type": "application/json",
+          },
         }
       );
       return authResponse.data;
@@ -259,11 +306,11 @@ export const authAPI = {
         try {
           // Use dedicated auth API Gateway for forgot username functionality
           const authResponse = await axios.post(
-            "https://u5f7pmlt88.execute-api.eu-west-2.amazonaws.com/auth/forgot-username",
+            `${CURRENT_API_CONFIG.baseURL}/auth/forgot-username`,
             data,
             {
               headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json",
               },
               timeout: 10000, // 10 second timeout
             }
@@ -278,10 +325,10 @@ export const authAPI = {
     }
   },
 
-  confirmForgotPassword: async (data: { 
-    username: string; 
-    confirmationCode: string; 
-    newPassword: string; 
+  confirmForgotPassword: async (data: {
+    username: string;
+    confirmationCode: string;
+    newPassword: string;
   }) => {
     try {
       const response = await api.post("/auth/confirm-forgot-password", data);
@@ -290,12 +337,12 @@ export const authAPI = {
       if (error.response?.status === 404) {
         // Use dedicated auth API Gateway for forgot password functionality
         const authResponse = await axios.post(
-          "https://u5f7pmlt88.execute-api.eu-west-2.amazonaws.com/auth/confirm-forgot-password",
+          `${CURRENT_API_CONFIG.baseURL}/auth/confirm-forgot-password`,
           data,
           {
             headers: {
-              'Content-Type': 'application/json'
-            }
+              "Content-Type": "application/json",
+            },
           }
         );
         return authResponse.data;
@@ -316,22 +363,31 @@ export const authAPI = {
       return response.data;
     } catch (error: any) {
       // If main API fails, try direct API Gateway endpoint
-      if (error.response?.status === 404 || error.response?.status === 403 || !error.response) {
-        console.log('🍎 [AuthAPI] Main API failed, trying direct Apple Login endpoint');
+      if (
+        error.response?.status === 404 ||
+        error.response?.status === 403 ||
+        !error.response
+      ) {
+        console.log(
+          "🍎 [AuthAPI] Main API failed, trying direct Apple Login endpoint"
+        );
         try {
           const directResponse = await axios.post(
-            "https://jvgwbst4og.execute-api.eu-west-2.amazonaws.com/auth/apple-login",
+            `${CURRENT_API_CONFIG.baseURL}/auth/apple-login`,
             credentials,
             {
               headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json",
               },
               timeout: 30000,
             }
           );
           return directResponse.data;
         } catch (fallbackError: any) {
-          console.error('🍎 [AuthAPI] Direct Apple Login also failed:', fallbackError);
+          console.error(
+            "🍎 [AuthAPI] Direct Apple Login also failed:",
+            fallbackError
+          );
           throw error; // Throw original error
         }
       }

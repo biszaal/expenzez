@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,14 +8,18 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/ThemeContext';
-import { insightsEngine, SpendingInsight, SpendingNudge } from '../../services/insightsEngine';
-import FinancialAdvisorDisclaimer from '../../components/FinancialAdvisorDisclaimer';
-import { spacing, borderRadius } from '../../constants/theme';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../contexts/ThemeContext";
+import {
+  insightsEngine,
+  SpendingInsight,
+  SpendingNudge,
+} from "../../services/insightsEngine";
+import FinancialAdvisorDisclaimer from "../../components/FinancialAdvisorDisclaimer";
+import { spacing, borderRadius } from "../../constants/theme";
 
 export default function InsightsScreen() {
   const { colors } = useTheme();
@@ -23,7 +27,7 @@ export default function InsightsScreen() {
   const [nudges, setNudges] = useState<SpendingNudge[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'insights' | 'nudges'>('insights');
+  const [activeTab, setActiveTab] = useState<"insights" | "nudges">("insights");
 
   useEffect(() => {
     loadData();
@@ -39,11 +43,11 @@ export default function InsightsScreen() {
         insightsEngine.generateDailyNudges(),
       ]);
 
-      setInsights(generatedInsights.filter(i => !i.isDismissed));
+      setInsights(generatedInsights.filter((i) => !i.isDismissed));
       setNudges(dailyNudges);
     } catch (error) {
-      console.error('Error loading insights:', error);
-      Alert.alert('Error', 'Failed to load insights');
+      console.error("Error loading insights:", error);
+      Alert.alert("Error", "Failed to load insights");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -55,13 +59,13 @@ export default function InsightsScreen() {
     await insightsEngine.markInsightAsRead(insight.id);
 
     // Handle action
-    if (insight.actionType === 'create_budget') {
-      router.push('/budgets/create');
-    } else if (insight.actionType === 'review_category') {
+    if (insight.actionType === "create_budget") {
+      router.push("/budgets/edit");
+    } else if (insight.actionType === "review_category") {
       router.push(`/insights/categories?category=${insight.category}`);
-    } else if (insight.actionType === 'view_details') {
+    } else if (insight.actionType === "view_details") {
       // Could navigate to expense details or analytics
-      router.push('/expenses');
+      router.push("/expenses");
     }
 
     // Refresh insights
@@ -70,13 +74,13 @@ export default function InsightsScreen() {
 
   const handleDismissInsight = async (insightId: string) => {
     Alert.alert(
-      'Dismiss Insight',
-      'Are you sure you want to dismiss this insight?',
+      "Dismiss Insight",
+      "Are you sure you want to dismiss this insight?",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Dismiss',
-          style: 'destructive',
+          text: "Dismiss",
+          style: "destructive",
           onPress: async () => {
             await insightsEngine.dismissInsight(insightId);
             loadData();
@@ -88,40 +92,57 @@ export default function InsightsScreen() {
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
-      case 'urgent': return { name: 'alert' as const, color: '#DC2626' };
-      case 'high': return { name: 'warning' as const, color: '#EF4444' };
-      case 'medium': return { name: 'information-circle' as const, color: '#F59E0B' };
-      case 'low': return { name: 'checkmark-circle' as const, color: '#10B981' };
-      default: return { name: 'information-circle' as const, color: '#10B981' };
+      case "urgent":
+        return { name: "alert" as const, color: "#DC2626" };
+      case "high":
+        return { name: "warning" as const, color: "#EF4444" };
+      case "medium":
+        return { name: "information-circle" as const, color: "#F59E0B" };
+      case "low":
+        return { name: "checkmark-circle" as const, color: "#10B981" };
+      default:
+        return { name: "information-circle" as const, color: "#10B981" };
     }
   };
 
-  const getNudgeIcon = (type: SpendingNudge['type']) => {
+  const getNudgeIcon = (type: SpendingNudge["type"]) => {
     switch (type) {
-      case 'daily_limit': return '💰';
-      case 'budget_warning': return '⚠️';
-      case 'weekly_summary': return '📊';
-      case 'saving_tip': return '💡';
-      case 'category_review': return '📝';
-      default: return '💡';
+      case "daily_limit":
+        return "💰";
+      case "budget_warning":
+        return "⚠️";
+      case "weekly_summary":
+        return "📊";
+      case "saving_tip":
+        return "💡";
+      case "category_review":
+        return "📝";
+      default:
+        return "💡";
     }
   };
 
-  const getNudgePriorityColor = (priority: SpendingNudge['priority']) => {
+  const getNudgePriorityColor = (priority: SpendingNudge["priority"]) => {
     switch (priority) {
-      case 'warning': return '#F59E0B';
-      case 'success': return '#10B981';
-      case 'info': return colors.primary[500];
-      default: return colors.primary[500];
+      case "warning":
+        return "#F59E0B";
+      case "success":
+        return "#10B981";
+      case "info":
+        return colors.primary[500];
+      default:
+        return colors.primary[500];
     }
   };
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
 
-    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 1) return "Just now";
     if (diffInHours < 24) return `${diffInHours}h ago`;
     const diffInDays = Math.floor(diffInHours / 24);
     return `${diffInDays}d ago`;
@@ -133,7 +154,10 @@ export default function InsightsScreen() {
     return (
       <View
         key={insight.id}
-        style={[styles.insightCard, { backgroundColor: colors.background.secondary }]}
+        style={[
+          styles.insightCard,
+          { backgroundColor: colors.background.secondary },
+        ]}
       >
         <View style={styles.insightHeader}>
           <View style={styles.insightTitleRow}>
@@ -155,29 +179,52 @@ export default function InsightsScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.insightDescription, { color: colors.text.secondary }]}>
+        <Text
+          style={[styles.insightDescription, { color: colors.text.secondary }]}
+        >
           {insight.description}
         </Text>
 
         {(insight.amount !== undefined || insight.percentage !== undefined) && (
           <View style={styles.insightMetrics}>
             {insight.amount !== undefined && (
-              <View style={[styles.metricBadge, { backgroundColor: colors.primary[100] }]}>
-                <Text style={[styles.metricText, { color: colors.primary[700] }]}>
+              <View
+                style={[
+                  styles.metricBadge,
+                  { backgroundColor: colors.primary[100] },
+                ]}
+              >
+                <Text
+                  style={[styles.metricText, { color: colors.primary[700] }]}
+                >
                   £{insight.amount.toFixed(0)}
                 </Text>
               </View>
             )}
             {insight.percentage !== undefined && (
-              <View style={[styles.metricBadge, { backgroundColor: colors.primary[100] }]}>
-                <Text style={[styles.metricText, { color: colors.primary[700] }]}>
+              <View
+                style={[
+                  styles.metricBadge,
+                  { backgroundColor: colors.primary[100] },
+                ]}
+              >
+                <Text
+                  style={[styles.metricText, { color: colors.primary[700] }]}
+                >
                   {insight.percentage.toFixed(0)}%
                 </Text>
               </View>
             )}
             {insight.category && (
-              <View style={[styles.metricBadge, { backgroundColor: colors.border.light }]}>
-                <Text style={[styles.metricText, { color: colors.text.secondary }]}>
+              <View
+                style={[
+                  styles.metricBadge,
+                  { backgroundColor: colors.border.light },
+                ]}
+              >
+                <Text
+                  style={[styles.metricText, { color: colors.text.secondary }]}
+                >
                   {insight.category}
                 </Text>
               </View>
@@ -193,11 +240,12 @@ export default function InsightsScreen() {
           {insight.actionText && (
             <TouchableOpacity
               onPress={() => handleInsightAction(insight)}
-              style={[styles.actionButton, { backgroundColor: colors.primary[500] }]}
+              style={[
+                styles.actionButton,
+                { backgroundColor: colors.primary[500] },
+              ]}
             >
-              <Text style={styles.actionButtonText}>
-                {insight.actionText}
-              </Text>
+              <Text style={styles.actionButtonText}>{insight.actionText}</Text>
               <Ionicons name="chevron-forward" size={14} color="#fff" />
             </TouchableOpacity>
           )}
@@ -209,7 +257,10 @@ export default function InsightsScreen() {
   const renderNudge = (nudge: SpendingNudge) => (
     <View
       key={nudge.id}
-      style={[styles.nudgeCard, { backgroundColor: colors.background.secondary }]}
+      style={[
+        styles.nudgeCard,
+        { backgroundColor: colors.background.secondary },
+      ]}
     >
       <View style={styles.nudgeHeader}>
         <Text style={styles.nudgeEmoji}>{getNudgeIcon(nudge.type)}</Text>
@@ -224,8 +275,18 @@ export default function InsightsScreen() {
           </Text>
           {nudge.category && (
             <View style={styles.nudgeCategory}>
-              <View style={[styles.categoryBadge, { backgroundColor: colors.border.light }]}>
-                <Text style={[styles.categoryBadgeText, { color: colors.text.secondary }]}>
+              <View
+                style={[
+                  styles.categoryBadge,
+                  { backgroundColor: colors.border.light },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.categoryBadgeText,
+                    { color: colors.text.secondary },
+                  ]}
+                >
                   {nudge.category}
                 </Text>
               </View>
@@ -238,7 +299,12 @@ export default function InsightsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <SafeAreaView
+        style={[
+          styles.container,
+          { backgroundColor: colors.background.primary },
+        ]}
+      >
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primary[500]} />
           <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
@@ -250,11 +316,17 @@ export default function InsightsScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={colors.primary[500]}
+            />
           </TouchableOpacity>
           <Text style={[styles.title, { color: colors.text.primary }]}>
             Insights & Tips
@@ -265,18 +337,23 @@ export default function InsightsScreen() {
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
-          onPress={() => setActiveTab('insights')}
+          onPress={() => setActiveTab("insights")}
           style={[
             styles.tab,
-            activeTab === 'insights' && { backgroundColor: colors.primary[100] },
+            activeTab === "insights" && {
+              backgroundColor: colors.primary[100],
+            },
           ]}
         >
           <Text
             style={[
               styles.tabText,
               {
-                color: activeTab === 'insights' ? colors.primary[700] : colors.text.secondary,
-                fontWeight: activeTab === 'insights' ? '600' : '400',
+                color:
+                  activeTab === "insights"
+                    ? colors.primary[700]
+                    : colors.text.secondary,
+                fontWeight: activeTab === "insights" ? "600" : "400",
               },
             ]}
           >
@@ -285,18 +362,21 @@ export default function InsightsScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => setActiveTab('nudges')}
+          onPress={() => setActiveTab("nudges")}
           style={[
             styles.tab,
-            activeTab === 'nudges' && { backgroundColor: colors.primary[100] },
+            activeTab === "nudges" && { backgroundColor: colors.primary[100] },
           ]}
         >
           <Text
             style={[
               styles.tabText,
               {
-                color: activeTab === 'nudges' ? colors.primary[700] : colors.text.secondary,
-                fontWeight: activeTab === 'nudges' ? '600' : '400',
+                color:
+                  activeTab === "nudges"
+                    ? colors.primary[700]
+                    : colors.text.secondary,
+                fontWeight: activeTab === "nudges" ? "600" : "400",
               },
             ]}
           >
@@ -321,16 +401,24 @@ export default function InsightsScreen() {
           showInline={true}
           style={{ marginBottom: spacing.md }}
         />
-        {activeTab === 'insights' ? (
+        {activeTab === "insights" ? (
           <>
             {insights.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyIcon}>🔍</Text>
-                <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
+                <Text
+                  style={[styles.emptyTitle, { color: colors.text.primary }]}
+                >
                   No Insights Yet
                 </Text>
-                <Text style={[styles.emptyDescription, { color: colors.text.secondary }]}>
-                  Add more expenses and create budgets to get personalized insights about your spending patterns.
+                <Text
+                  style={[
+                    styles.emptyDescription,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  Add more expenses and create budgets to get personalized
+                  insights about your spending patterns.
                 </Text>
               </View>
             ) : (
@@ -344,17 +432,23 @@ export default function InsightsScreen() {
             {nudges.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyIcon}>💭</Text>
-                <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
+                <Text
+                  style={[styles.emptyTitle, { color: colors.text.primary }]}
+                >
                   No Tips Today
                 </Text>
-                <Text style={[styles.emptyDescription, { color: colors.text.secondary }]}>
-                  Check back tomorrow for personalized spending tips and daily nudges.
+                <Text
+                  style={[
+                    styles.emptyDescription,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  Check back tomorrow for personalized spending tips and daily
+                  nudges.
                 </Text>
               </View>
             ) : (
-              <View style={styles.nudgesList}>
-                {nudges.map(renderNudge)}
-              </View>
+              <View style={styles.nudgesList}>{nudges.map(renderNudge)}</View>
             )}
           </>
         )}
@@ -366,25 +460,47 @@ export default function InsightsScreen() {
           </Text>
 
           <TouchableOpacity
-            onPress={() => router.push('/insights/trends')}
-            style={[styles.quickLinkButton, { backgroundColor: colors.background.secondary }]}
+            onPress={() => router.push("/insights/trends")}
+            style={[
+              styles.quickLinkButton,
+              { backgroundColor: colors.background.secondary },
+            ]}
           >
-            <Ionicons name="trending-up" size={20} color={colors.primary[500]} />
-            <Text style={[styles.quickLinkText, { color: colors.text.primary }]}>
+            <Ionicons
+              name="trending-up"
+              size={20}
+              color={colors.primary[500]}
+            />
+            <Text
+              style={[styles.quickLinkText, { color: colors.text.primary }]}
+            >
               Spending Trends
             </Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.text.secondary} />
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.text.secondary}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push('/insights/categories')}
-            style={[styles.quickLinkButton, { backgroundColor: colors.background.secondary }]}
+            onPress={() => router.push("/insights/categories")}
+            style={[
+              styles.quickLinkButton,
+              { backgroundColor: colors.background.secondary },
+            ]}
           >
             <Ionicons name="pie-chart" size={20} color={colors.primary[500]} />
-            <Text style={[styles.quickLinkText, { color: colors.text.primary }]}>
+            <Text
+              style={[styles.quickLinkText, { color: colors.text.primary }]}
+            >
               Category Analysis
             </Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.text.secondary} />
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.text.secondary}
+            />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -397,35 +513,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: spacing.md,
     paddingBottom: spacing.sm,
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
   },
   title: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   centerContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     marginTop: spacing.sm,
     fontSize: 14,
   },
   tabContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginHorizontal: spacing.md,
     marginBottom: spacing.md,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: "#F3F4F6",
     borderRadius: borderRadius.md,
     padding: 4,
   },
@@ -434,7 +550,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.sm,
-    alignItems: 'center',
+    alignItems: "center",
   },
   tabText: {
     fontSize: 14,
@@ -452,19 +568,19 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   insightHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   insightTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
     flex: 1,
   },
   insightTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     flex: 1,
   },
   dismissButton: {
@@ -475,8 +591,8 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   insightMetrics: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.xs,
   },
   metricBadge: {
@@ -486,29 +602,29 @@ const styles = StyleSheet.create({
   },
   metricText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   insightFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: spacing.xs,
   },
   timeStamp: {
     fontSize: 12,
   },
   actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
     gap: spacing.xs / 2,
   },
   actionButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   nudgesList: {
     gap: spacing.sm,
@@ -518,8 +634,8 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
   },
   nudgeHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: spacing.sm,
   },
   nudgeEmoji: {
@@ -532,11 +648,11 @@ const styles = StyleSheet.create({
   },
   nudgeMessage: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     lineHeight: 20,
   },
   nudgeCategory: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   categoryBadge: {
     paddingHorizontal: spacing.sm,
@@ -545,12 +661,12 @@ const styles = StyleSheet.create({
   },
   categoryBadgeText: {
     fontSize: 12,
-    textTransform: 'capitalize',
+    textTransform: "capitalize",
   },
   emptyState: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 60,
   },
   emptyIcon: {
@@ -559,12 +675,12 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: spacing.sm,
   },
   emptyDescription: {
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
     paddingHorizontal: spacing.lg,
   },
@@ -574,12 +690,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: spacing.sm,
   },
   quickLinkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: spacing.md,
     borderRadius: borderRadius.md,
     gap: spacing.sm,
@@ -587,6 +703,6 @@ const styles = StyleSheet.create({
   quickLinkText: {
     flex: 1,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });

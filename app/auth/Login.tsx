@@ -86,6 +86,7 @@ export default function Login() {
               username:
                 result.username ||
                 (!identifier.includes("@") ? identifier : ""),
+              password: password, // Pass password for auto-login after verification
               message: "Please verify your email to complete login.",
             },
           });
@@ -103,6 +104,7 @@ export default function Login() {
             params: {
               email: identifier.includes("@") ? identifier : "",
               username: !identifier.includes("@") ? identifier : "",
+              password: password, // Pass password for auto-login after verification
               message: "Please verify your email to complete login.",
             },
           });
@@ -123,6 +125,7 @@ export default function Login() {
           params: {
             email: identifier.includes("@") ? identifier : "",
             username: !identifier.includes("@") ? identifier : "",
+            password: password, // Pass password for auto-login after verification
             message: "Please verify your email to complete login.",
           },
         });
@@ -205,9 +208,7 @@ export default function Login() {
       if (error.code === "ERR_REQUEST_CANCELED") {
         return;
       }
-      showError(
-        error.message || "Apple Sign In failed. Please try again."
-      );
+      showError(error.message || "Apple Sign In failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -335,7 +336,11 @@ export default function Login() {
                   disabled={isLoading}
                   activeOpacity={0.9}
                 >
-                  <BlurView intensity={30} tint="light" style={styles.buttonBlur}>
+                  <BlurView
+                    intensity={30}
+                    tint="light"
+                    style={styles.buttonBlur}
+                  >
                     {isLoading ? (
                       <Typography variant="body" style={styles.buttonText}>
                         Signing in...
@@ -345,7 +350,11 @@ export default function Login() {
                         <Typography variant="body" style={styles.buttonText}>
                           Sign In
                         </Typography>
-                        <Ionicons name="arrow-forward" size={20} color="white" />
+                        <Ionicons
+                          name="arrow-forward"
+                          size={20}
+                          color="white"
+                        />
                       </>
                     )}
                   </BlurView>

@@ -1,5 +1,6 @@
 // Constants for the application
 import { Platform } from "react-native";
+import { CURRENT_API_CONFIG } from "../config/api";
 
 // Platform-specific values
 export const IS_IOS = Platform.OS === "ios";
@@ -15,7 +16,7 @@ export const APP_CONFIG = {
 
 // API configuration - now uses production API
 export const API_CONFIG = {
-  baseUrl: "https://g77tomv0vk.execute-api.eu-west-2.amazonaws.com",
+  baseUrl: CURRENT_API_CONFIG.baseURL,
   timeout: 30000,
   retryAttempts: 3,
 } as const;
@@ -115,8 +116,18 @@ export const TRANSACTION_CATEGORIES = {
     { id: "transport", name: "Transportation", icon: "car", color: "#4ECDC4" },
     { id: "shopping", name: "Shopping", icon: "bag", color: "#45B7D1" },
     { id: "bills", name: "Bills & Utilities", icon: "flash", color: "#96CEB4" },
-    { id: "entertainment", name: "Entertainment", icon: "game-controller", color: "#FECA57" },
-    { id: "health", name: "Health & Fitness", icon: "fitness", color: "#FF9FF3" },
+    {
+      id: "entertainment",
+      name: "Entertainment",
+      icon: "game-controller",
+      color: "#FECA57",
+    },
+    {
+      id: "health",
+      name: "Health & Fitness",
+      icon: "fitness",
+      color: "#FF9FF3",
+    },
     { id: "education", name: "Education", icon: "school", color: "#54A0FF" },
     { id: "travel", name: "Travel", icon: "airplane", color: "#5F27CD" },
     { id: "other", name: "Other", icon: "card", color: "#00D2D3" },
@@ -124,12 +135,22 @@ export const TRANSACTION_CATEGORIES = {
   income: [
     { id: "salary", name: "Salary", icon: "briefcase", color: "#2ED573" },
     { id: "freelance", name: "Freelance", icon: "laptop", color: "#3742FA" },
-    { id: "investment", name: "Investment", icon: "trending-up", color: "#FF6348" },
+    {
+      id: "investment",
+      name: "Investment",
+      icon: "trending-up",
+      color: "#FF6348",
+    },
     { id: "rental", name: "Rental Income", icon: "home", color: "#2F3542" },
     { id: "business", name: "Business", icon: "storefront", color: "#FF4757" },
     { id: "gift", name: "Gift/Bonus", icon: "gift", color: "#5352ED" },
     { id: "refund", name: "Refund", icon: "refresh", color: "#FF9F43" },
-    { id: "other_income", name: "Other Income", icon: "cash", color: "#10AC84" },
+    {
+      id: "other_income",
+      name: "Other Income",
+      icon: "cash",
+      color: "#10AC84",
+    },
   ],
 } as const;
 
@@ -186,11 +207,11 @@ export const QUICK_ACTIONS = [
 
 // Default budget categories
 export const DEFAULT_BUDGETS = {
-  "food": 300,
-  "transport": 150,
-  "shopping": 200,
-  "bills": 150,
-  "entertainment": 100,
-  "health": 100,
-  "other": 100,
+  food: 300,
+  transport: 150,
+  shopping: 200,
+  bills: 150,
+  entertainment: 100,
+  health: 100,
+  other: 100,
 } as const;
