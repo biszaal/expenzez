@@ -31,11 +31,16 @@ export const budgetSummaryCardStyles = StyleSheet.create({
   },
   budgetCard: {
     flex: 1,
-    padding: spacing.md,
-    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    borderRadius: 16,
     alignItems: 'center',
-    minHeight: 80,
+    minHeight: 100,
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   budgetCardPrimary: {
     // Will be set dynamically with theme colors
@@ -50,13 +55,13 @@ export const budgetSummaryCardStyles = StyleSheet.create({
     // Will be set dynamically with theme colors
   },
   budgetCardAmount: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   budgetCardLabel: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'center',
     fontWeight: '500',
   },
@@ -64,7 +69,8 @@ export const budgetSummaryCardStyles = StyleSheet.create({
   // Animated Donut Chart Styles
   donutChartContainer: {
     alignItems: 'center',
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
   },
   donutChart: {
     width: 280,
