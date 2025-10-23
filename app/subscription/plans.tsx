@@ -22,10 +22,10 @@ const PREMIUM_FEATURES = [
   { icon: "wallet-outline", label: "Unlimited budgets & goals", free: false },
   { icon: "analytics", label: "Advanced analytics & trends", free: false },
   { icon: "notifications", label: "Proactive alerts & daily briefs", free: false },
-  { icon: "document-outline", label: "Export reports (PDF/CSV)", free: false },
-  { icon: "link", label: "Open Banking integration", free: false },
-  { icon: "eye-off-outline", label: "Ad-free experience", free: false },
-  { icon: "headset", label: "Priority support", free: false },
+  { icon: "document-outline", label: "Export reports (CSV)", free: false },
+  { icon: "shield-checkmark-outline", label: "Advanced security features", free: false },
+  { icon: "flash", label: "Priority support", free: false },
+  { icon: "trending-up", label: "Custom spending insights", free: false },
 ];
 
 const FREE_FEATURES = [
