@@ -2,14 +2,11 @@ import { StyleSheet } from 'react-native';
 import { SPACING } from '../../constants/Colors';
 
 export const styles = StyleSheet.create({
-  premiumTransactionsWrapper: {
+  container: {
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.lg,
-  },
-  premiumTransactionsCard: {
     borderRadius: 16,
     padding: SPACING.lg,
-    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
