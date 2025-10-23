@@ -18,7 +18,7 @@ import { authAPI } from "../../services/api";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { showError, showSuccess } = useAlert();
 
   const [username, setUsername] = useState("");
@@ -134,7 +134,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
-      <StatusBar barStyle={colors.isDark ? "light-content" : "dark-content"} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : undefined}

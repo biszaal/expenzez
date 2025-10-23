@@ -44,7 +44,7 @@ const initialState = {
 export default function Register() {
   const router = useRouter();
   const { register } = useAuth();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [step, setStep] = useState(1);
   const [values, setValues] = useState(initialState);
   const [isLoading, setIsLoading] = useState(false);
@@ -300,7 +300,7 @@ export default function Register() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
-      <StatusBar barStyle={colors.isDark ? "light-content" : "dark-content"} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* Header Section */}
       <View style={[styles.header, { borderBottomColor: colors.border.light }]}>
