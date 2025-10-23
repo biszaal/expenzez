@@ -15,11 +15,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { Button, TextField, Typography } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
-import { spacing, borderRadius } from "../../constants/theme";
 import { authAPI } from "../../services/api";
 import { useAuth } from "./AuthContext";
-import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
+
+const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+};
 
 export default function EmailVerification() {
   const router = useRouter();
@@ -232,15 +237,7 @@ export default function EmailVerification() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* Gradient Background */}
-      <LinearGradient
-        colors={["#667eea", "#764ba2"]}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background.primary }]}>
         <KeyboardAvoidingView
           style={styles.keyboardView}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -257,27 +254,19 @@ export default function EmailVerification() {
                 style={styles.backButton}
                 onPress={() => router.back()}
               >
-                <BlurView
-                  intensity={30}
-                  tint="light"
-                  style={styles.backButtonBlur}
-                >
-                  <Ionicons name="chevron-back" size={24} color="white" />
-                </BlurView>
+                <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
               </TouchableOpacity>
 
               <View style={styles.headerContent}>
-                <View style={styles.logoContainer}>
-                  <View style={styles.logoCircle}>
-                    <Ionicons name="mail-outline" size={40} color="white" />
-                  </View>
+                <View style={[styles.logoContainer, { backgroundColor: colors.primary[500] + '15' }]}>
+                  <Ionicons name="mail-outline" size={40} color={colors.primary[500]} />
                 </View>
 
-                <Typography variant="h1" style={styles.title}>
+                <Typography variant="h1" style={[styles.title, { color: colors.text.primary }]}>
                   Verify Your Email
                 </Typography>
 
-                <Typography variant="body" style={styles.subtitle}>
+                <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
                   {params.email
                     ? "We've sent a 6-digit verification code to:"
                     : "Enter the 6-digit verification code sent to your email:"}
@@ -285,7 +274,7 @@ export default function EmailVerification() {
 
                 <Typography
                   variant="body"
-                  style={styles.email}
+                  style={[styles.email, { color: colors.primary[500] }]}
                   weight="semibold"
                 >
                   {params.email ||
@@ -297,12 +286,12 @@ export default function EmailVerification() {
               </View>
             </View>
 
-            {/* Glass Form Container */}
-            <BlurView intensity={40} tint="light" style={styles.glassCard}>
+            {/* Form Container */}
+            <View style={[styles.glassCard, { backgroundColor: colors.background.secondary }]}>
               <View style={styles.formContent}>
                 {/* Verification Code Input */}
                 <View style={styles.inputContainer}>
-                  <Typography variant="body" style={styles.inputLabel}>
+                  <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]}>
                     Verification Code
                   </Typography>
                   <TextField
@@ -314,20 +303,14 @@ export default function EmailVerification() {
                       )
                     }
                     keyboardType="numeric"
-                    style={styles.input}
-                    inputStyle={{
-                      color: "#1f2937",
-                      textAlign: "center",
-                      fontSize: 24,
-                      letterSpacing: 8,
-                      fontWeight: "600",
-                    }}
+                    style={[styles.input, { backgroundColor: colors.background.primary, borderColor: colors.border.light, color: colors.text.primary }]}
+                    placeholderTextColor={colors.text.tertiary}
                   />
                 </View>
 
                 {/* Verify Button */}
                 <TouchableOpacity
-                  style={styles.verifyButton}
+                  style={[styles.verifyButton, { backgroundColor: colors.primary[500] }]}
                   onPress={handleVerification}
                   disabled={isVerifying || verificationCode.length !== 6}
                   activeOpacity={0.9}
