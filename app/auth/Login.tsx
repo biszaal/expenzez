@@ -9,8 +9,6 @@ import {
   StyleSheet,
   StatusBar,
   ScrollView,
-  Dimensions,
-  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../auth/AuthContext";
@@ -24,10 +22,6 @@ import {
   useAppleSignIn,
 } from "../../components/auth/AppleSignInButton";
 import { RememberMeCheckbox } from "../../components/RememberMeCheckbox";
-import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
-
-const { width } = Dimensions.get("window");
 
 export default function Login() {
   const router = useRouter();
@@ -216,192 +210,164 @@ export default function Login() {
 
   if (isNavigating) {
     return (
-      <LinearGradient
-        colors={["#667eea", "#764ba2"]}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
         <View style={styles.successContainer}>
-          <View style={styles.successIconContainer}>
+          <View style={[styles.successIconContainer, { backgroundColor: colors.primary[500] }]}>
             <Ionicons name="shield-checkmark" size={60} color="white" />
           </View>
-          <Typography variant="h2" style={styles.successTitle}>
+          <Typography variant="h2" style={[styles.successTitle, { color: colors.text.primary }]}>
             Success!
           </Typography>
-          <Typography variant="body" style={styles.successSubtitle}>
+          <Typography variant="body" style={[styles.successSubtitle, { color: colors.text.secondary }]}>
             Loading your dashboard...
           </Typography>
         </View>
-      </LinearGradient>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-
-      {/* Gradient Background */}
-      <LinearGradient
-        colors={["#667eea", "#764ba2"]}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-
-      <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          style={styles.keyboardView}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <StatusBar barStyle={colors.isDark ? "light-content" : "dark-content"} />
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.logoContainer}>
-                <View style={styles.logoCircle}>
-                  <Ionicons name="wallet" size={40} color="white" />
-                </View>
-              </View>
-              <Typography variant="h1" style={styles.title}>
-                Welcome Back
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={[styles.logoContainer, { backgroundColor: colors.primary[500] + "15" }]}>
+              <Ionicons name="wallet" size={40} color={colors.primary[500]} />
+            </View>
+            <Typography variant="h1" style={[styles.title, { color: colors.text.primary }]}>
+              Welcome Back
+            </Typography>
+          </View>
+
+          {/* Form Content */}
+          <View style={styles.formContent}>
+            {/* Username Field */}
+            <View style={styles.inputContainer}>
+              <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]}>
+                Username or Email
               </Typography>
-              <Typography variant="body" style={styles.subtitle}>
-                Sign in to continue to Expenzez
-              </Typography>
+              <TextField
+                placeholder="Enter your username or email"
+                value={identifier}
+                onChangeText={setIdentifier}
+                autoCapitalize="none"
+                editable={!isLoading}
+                style={[styles.input, {
+                  backgroundColor: colors.background.secondary,
+                  borderColor: colors.border.light,
+                  color: colors.text.primary
+                }]}
+                placeholderTextColor={colors.text.tertiary}
+              />
             </View>
 
-            {/* Glass Form Container */}
-            <BlurView intensity={40} tint="light" style={styles.glassCard}>
-              <View style={styles.formContent}>
-                {/* Username Field */}
-                <View style={styles.inputContainer}>
-                  <Typography variant="body" style={styles.inputLabel}>
-                    Username or Email
-                  </Typography>
-                  <TextField
-                    placeholder="Enter your username or email"
-                    value={identifier}
-                    onChangeText={setIdentifier}
-                    autoCapitalize="none"
-                    editable={!isLoading}
-                    style={styles.input}
-                  />
-                </View>
+            {/* Password Field */}
+            <View style={styles.inputContainer}>
+              <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]}>
+                Password
+              </Typography>
+              <TextField
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={true}
+                autoCapitalize="none"
+                editable={!isLoading}
+                style={[styles.input, {
+                  backgroundColor: colors.background.secondary,
+                  borderColor: colors.border.light,
+                  color: colors.text.primary
+                }]}
+                placeholderTextColor={colors.text.tertiary}
+              />
+            </View>
 
-                {/* Password Field */}
-                <View style={styles.inputContainer}>
-                  <Typography variant="body" style={styles.inputLabel}>
-                    Password
-                  </Typography>
-                  <TextField
-                    placeholder="Enter your password"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={true}
-                    autoCapitalize="none"
-                    editable={!isLoading}
-                    style={styles.input}
-                  />
-                </View>
-
-                {/* Remember Me & Forgot Password Row */}
-                <View style={styles.optionsRow}>
-                  <View style={styles.rememberMeWrapper}>
-                    <RememberMeCheckbox
-                      value={rememberMe}
-                      onValueChange={setRememberMe}
-                      label="Remember me"
-                      lightText={true}
-                    />
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => router.push("/auth/ForgotPassword")}
-                    style={styles.forgotButton}
-                  >
-                    <Typography variant="body" style={styles.forgotText}>
-                      Forgot Password?
-                    </Typography>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Sign In Button */}
-                <TouchableOpacity
-                  style={styles.signInButton}
-                  onPress={handleLogin}
-                  disabled={isLoading}
-                  activeOpacity={0.9}
-                >
-                  <BlurView
-                    intensity={30}
-                    tint="light"
-                    style={styles.buttonBlur}
-                  >
-                    {isLoading ? (
-                      <Typography variant="body" style={styles.buttonText}>
-                        Signing in...
-                      </Typography>
-                    ) : (
-                      <>
-                        <Typography variant="body" style={styles.buttonText}>
-                          Sign In
-                        </Typography>
-                        <Ionicons
-                          name="arrow-forward"
-                          size={20}
-                          color="white"
-                        />
-                      </>
-                    )}
-                  </BlurView>
-                </TouchableOpacity>
-
-                {/* Divider */}
-                <View style={styles.dividerContainer}>
-                  <View style={styles.dividerLine} />
-                  <Typography variant="caption" style={styles.dividerText}>
-                    or
-                  </Typography>
-                  <View style={styles.dividerLine} />
-                </View>
-
-                {/* Apple Sign In */}
-                <AppleSignInButton
-                  onPress={handleAppleLogin}
-                  type="sign-in"
-                  disabled={isLoading}
+            {/* Remember Me & Forgot Password Row */}
+            <View style={styles.optionsRow}>
+              <View style={styles.rememberMeWrapper}>
+                <RememberMeCheckbox
+                  value={rememberMe}
+                  onValueChange={setRememberMe}
+                  label="Remember me"
+                  lightText={false}
                 />
-
-                {/* Register Link */}
-                <TouchableOpacity
-                  style={styles.registerLink}
-                  onPress={() => router.push("/auth/Register")}
-                >
-                  <Typography variant="body" style={styles.registerText}>
-                    New to Expenzez?{" "}
-                    <Typography variant="body" style={styles.registerTextBold}>
-                      Create Account
-                    </Typography>
-                  </Typography>
-                </TouchableOpacity>
               </View>
-            </BlurView>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
+              <TouchableOpacity
+                onPress={() => router.push("/auth/ForgotPassword")}
+              >
+                <Typography variant="body" style={[styles.forgotText, { color: colors.primary[500] }]}>
+                  Forgot Password?
+                </Typography>
+              </TouchableOpacity>
+            </View>
+
+            {/* Sign In Button */}
+            <TouchableOpacity
+              style={[styles.signInButton, { backgroundColor: colors.primary[500] }]}
+              onPress={handleLogin}
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              {isLoading ? (
+                <Typography variant="body" style={styles.buttonText}>
+                  Signing in...
+                </Typography>
+              ) : (
+                <>
+                  <Typography variant="body" style={styles.buttonText}>
+                    Sign In
+                  </Typography>
+                  <Ionicons name="arrow-forward" size={18} color="white" />
+                </>
+              )}
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={[styles.dividerLine, { backgroundColor: colors.border.light }]} />
+              <Typography variant="caption" style={[styles.dividerText, { color: colors.text.tertiary }]}>
+                or
+              </Typography>
+              <View style={[styles.dividerLine, { backgroundColor: colors.border.light }]} />
+            </View>
+
+            {/* Apple Sign In */}
+            <AppleSignInButton
+              onPress={handleAppleLogin}
+              type="sign-in"
+              disabled={isLoading}
+            />
+
+            {/* Register Link */}
+            <View style={styles.registerContainer}>
+              <Typography variant="body" style={[styles.registerText, { color: colors.text.secondary }]}>
+                New to Expenzez?{" "}
+              </Typography>
+              <TouchableOpacity onPress={() => router.push("/auth/Register")}>
+                <Typography variant="body" style={[styles.registerTextBold, { color: colors.primary[500] }]}>
+                  Create Account
+                </Typography>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  safeArea: {
     flex: 1,
   },
   keyboardView: {
@@ -413,169 +379,121 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
-    paddingHorizontal: 30,
+    paddingHorizontal: 20,
     paddingVertical: 20,
   },
   header: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 32,
   },
   logoContainer: {
-    marginBottom: 16,
-  },
-  logoCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    width: 60,
+    height: 60,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.3)",
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,
     fontWeight: "800",
-    color: "white",
-    marginBottom: 6,
+    marginBottom: 0,
     letterSpacing: -0.5,
   },
-  subtitle: {
-    fontSize: 15,
-    color: "rgba(255, 255, 255, 0.85)",
-  },
-  glassCard: {
-    borderRadius: 30,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.3,
-    shadowRadius: 30,
-    elevation: 10,
-  },
   formContent: {
-    padding: 24,
+    paddingHorizontal: 0,
   },
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   inputLabel: {
-    color: "white",
-    marginBottom: 6,
+    marginBottom: 8,
     fontSize: 14,
     fontWeight: "600",
   },
   input: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.25)",
-    borderRadius: 14,
-    paddingHorizontal: 16,
+    borderRadius: 10,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: "white",
     minHeight: 48,
   },
   optionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 4,
-    marginBottom: 20,
+    marginBottom: 24,
     gap: 12,
   },
   rememberMeWrapper: {
     flex: 1,
-    minWidth: 0,
-  },
-  forgotButton: {
-    flexShrink: 0,
   },
   forgotText: {
-    color: "white",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
   },
   signInButton: {
-    borderRadius: 25,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-    marginBottom: 16,
-  },
-  buttonBlur: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    gap: 10,
+    borderRadius: 10,
+    paddingVertical: 14,
+    marginBottom: 16,
+    gap: 8,
   },
   buttonText: {
     color: "white",
     fontSize: 16,
     fontWeight: "700",
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   dividerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 16,
+    marginVertical: 20,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
   },
   dividerText: {
-    color: "rgba(255, 255, 255, 0.7)",
     marginHorizontal: 12,
     fontSize: 13,
   },
-  registerLink: {
+  registerContainer: {
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 12,
-    paddingVertical: 8,
+    justifyContent: "center",
+    marginTop: 20,
   },
   registerText: {
-    color: "rgba(255, 255, 255, 0.8)",
-    fontSize: 15,
+    fontSize: 14,
   },
   registerTextBold: {
-    color: "white",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
   },
   successContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
   },
   successIconContainer: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
-    borderWidth: 3,
-    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   successTitle: {
-    color: "white",
     marginBottom: 10,
     fontSize: 32,
     fontWeight: "800",
   },
   successSubtitle: {
-    color: "rgba(255, 255, 255, 0.9)",
     fontSize: 16,
   },
 });
