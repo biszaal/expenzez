@@ -22,13 +22,11 @@ import {
   HomeHeader,
   BalanceCard,
   QuickActions,
-  MonthlyOverview,
   TransactionsList,
   UpcomingBillsCard,
   NotificationCard,
 } from "../../components/home";
 import { CompactSpendingSummary } from "../../components/home/CompactSpendingSummary";
-import { CompactBudgetStatus } from "../../components/home/CompactBudgetStatus";
 import { api } from "../../services/config/apiClient";
 import { TransactionService } from "../../services/transactionService";
 import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
@@ -741,19 +739,9 @@ export default function HomeScreen() {
           <UpcomingBillsCard />
         </View>
 
-        {/* Financial Overview Section */}
+        {/* Spending Overview Section */}
         <View style={styles.section}>
-          {/* Compact Financial Overview */}
           <CompactSpendingSummary onViewAll={() => router.push("/spending")} />
-          <CompactBudgetStatus onViewAll={() => router.push("/budgets")} />
-        </View>
-
-        {/* Spending Analysis Section */}
-        <View style={styles.section}>
-          <MonthlyOverview
-            thisMonthSpent={displaySpending}
-            userBudget={userBudget}
-          />
         </View>
 
         {/* Transactions Section */}
