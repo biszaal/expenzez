@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, Animated, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Svg, { Circle } from "react-native-svg";
+import Svg, { Circle, Defs, Filter, FeGaussianBlur, FeMerge, FeMergeNode } from "react-native-svg";
 import dayjs from "dayjs";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { budgetSummaryCardStyles } from "./BudgetSummaryCard.styles";
@@ -155,6 +155,17 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
         >
           <View style={styles.donutChart}>
             <Svg width={280} height={280} style={{ position: "absolute" }}>
+              {/* Glow filter for over-budget effect */}
+              <Defs>
+                <Filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <FeGaussianBlur stdDeviation="4" result="coloredBlur" />
+                  <FeMerge>
+                    <FeMergeNode in="coloredBlur" />
+                    <FeMergeNode in="SourceGraphic" />
+                  </FeMerge>
+                </Filter>
+              </Defs>
+
               {/* Background Ring */}
               <Circle
                 cx={140}
@@ -207,6 +218,8 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                       outputRange: [2 * Math.PI * 120, 0],
                     })}
                     transform={`rotate(-90 140 140)`}
+                    filter={monthlyOverBudget ? "url(#glow)" : "none"}
+                    opacity={monthlyOverBudget ? 0.9 : 1}
                   />
 
                   {/* Over-Budget Second Ring */}
