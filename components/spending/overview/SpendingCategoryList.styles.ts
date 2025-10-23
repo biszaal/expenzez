@@ -3,7 +3,7 @@ import { spacing, borderRadius } from "../../../constants/theme";
 
 export const spendingCategoryListStyles = StyleSheet.create({
   categoriesTabWrapper: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
   },
 

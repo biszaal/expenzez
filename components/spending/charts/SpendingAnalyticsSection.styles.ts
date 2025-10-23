@@ -3,16 +3,17 @@ import { spacing, borderRadius } from "../../../constants/theme";
 
 export const spendingAnalyticsSectionStyles = StyleSheet.create({
   premiumSpendingCardWrapper: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
   premiumSpendingCard: {
-    borderRadius: borderRadius["2xl"],
+    borderRadius: 16,
+    padding: spacing.lg,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 4,
     overflow: "hidden",
   },
   premiumSpendingHeader: {

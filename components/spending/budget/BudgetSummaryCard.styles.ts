@@ -3,17 +3,17 @@ import { spacing, borderRadius } from '../../../constants/theme';
 
 export const budgetSummaryCardStyles = StyleSheet.create({
   simpleBudgetContainer: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
   simpleBudgetCard: {
     padding: spacing.lg,
-    borderRadius: borderRadius['2xl'],
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 4,
   },
   simpleBudgetTitle: {
     fontSize: 22,
