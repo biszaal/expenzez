@@ -292,11 +292,6 @@ export default function RegisterStep5({
                     // Don't update parent form state here - only on submit with proper formatting
                   }}
                   keyboardType="phone-pad"
-                  style={[styles.phoneInput, {
-                    backgroundColor: colors.background.primary,
-                    borderColor: colors.border.light,
-                    color: colors.text.primary
-                  }]}
                   placeholderTextColor={colors.text.tertiary}
                   editable={true}
                   autoFocus={false}

@@ -192,11 +192,6 @@ export default function ResetPasswordScreen() {
                         value={confirmationCode}
                         onChangeText={setConfirmationCode}
                         keyboardType="number-pad"
-                        style={StyleSheet.flatten([styles.input, { 
-                          backgroundColor: colors.background.tertiary,
-                          borderColor: colors.border.medium,
-                          color: colors.text.primary
-                        }])}
                       />
                     </View>
 
@@ -209,11 +204,6 @@ export default function ResetPasswordScreen() {
                         value={newPassword}
                         onChangeText={setNewPassword}
                         secureTextEntry={true}
-                        style={StyleSheet.flatten([styles.input, { 
-                          backgroundColor: colors.background.tertiary,
-                          borderColor: colors.border.medium,
-                          color: colors.text.primary
-                        }])}
                       />
                     </View>
 
@@ -226,11 +216,6 @@ export default function ResetPasswordScreen() {
                         value={confirmPassword}
                         onChangeText={setConfirmPassword}
                         secureTextEntry={true}
-                        style={StyleSheet.flatten([styles.input, { 
-                          backgroundColor: colors.background.tertiary,
-                          borderColor: colors.border.medium,
-                          color: colors.text.primary
-                        }])}
                       />
                     </View>
 
