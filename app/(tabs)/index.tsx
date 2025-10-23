@@ -734,14 +734,16 @@ export default function HomeScreen() {
             message="Upgrade to Premium for unlimited budgets & advanced features"
             actionLabel="Upgrade"
           />
-
-          {/* Upcoming Bills - Action-oriented card */}
-          <UpcomingBillsCard />
         </View>
 
         {/* Spending Overview Section */}
         <View style={styles.section}>
           <CompactSpendingSummary onViewAll={() => router.push("/spending")} />
+        </View>
+
+        {/* Upcoming Bills Section */}
+        <View style={styles.section}>
+          <UpcomingBillsCard />
         </View>
 
         {/* Transactions Section */}
@@ -765,6 +767,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: {
-    marginBottom: SPACING.xl, // Add larger spacing between sections
+    marginBottom: SPACING.md, // Compact spacing between sections
   },
 });
