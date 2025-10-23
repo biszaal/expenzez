@@ -315,11 +315,7 @@ export default function EmailVerification() {
                   disabled={isVerifying || verificationCode.length !== 6}
                   activeOpacity={0.9}
                 >
-                  <BlurView
-                    intensity={30}
-                    tint="light"
-                    style={styles.buttonBlur}
-                  >
+                  <View style={styles.buttonBlur}>
                     {isVerifying ? (
                       <>
                         <ActivityIndicator size="small" color="white" />
@@ -339,12 +335,12 @@ export default function EmailVerification() {
                         />
                       </>
                     )}
-                  </BlurView>
+                  </View>
                 </TouchableOpacity>
 
                 {/* Resend Code */}
                 <View style={styles.resendContainer}>
-                  <Typography variant="body" style={styles.resendText}>
+                  <Typography variant="body" style={[styles.resendText, { color: colors.text.secondary }]}>
                     Didn't receive the code?
                   </Typography>
 
@@ -354,13 +350,13 @@ export default function EmailVerification() {
                     style={styles.resendButton}
                   >
                     {isResending ? (
-                      <ActivityIndicator size="small" color="white" />
+                      <ActivityIndicator size="small" color={colors.primary[500]} />
                     ) : (
                       <Typography
                         variant="body"
                         style={[
                           styles.resendButtonText,
-                          { opacity: resendTimer > 0 ? 0.5 : 1 },
+                          { color: colors.primary[500], opacity: resendTimer > 0 ? 0.5 : 1 },
                         ]}
                         weight="medium"
                       >
@@ -373,19 +369,19 @@ export default function EmailVerification() {
                 </View>
 
                 {/* Help Text */}
-                <View style={styles.helpContainer}>
+                <View style={[styles.helpContainer, { backgroundColor: colors.primary[500] + '10', borderColor: colors.primary[500] + '20' }]}>
                   <Ionicons
                     name="information-circle"
                     size={20}
-                    color="rgba(255, 255, 255, 0.8)"
+                    color={colors.primary[500]}
                   />
-                  <Typography variant="caption" style={styles.helpText}>
+                  <Typography variant="caption" style={[styles.helpText, { color: colors.text.secondary }]}>
                     Check your spam folder if you don't see the email. The code
                     expires in 24 hours.
                   </Typography>
                 </View>
               </View>
-            </BlurView>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -532,7 +528,6 @@ const styles = StyleSheet.create({
   },
   resendText: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.85)",
     marginBottom: 8,
   },
   resendButton: {
@@ -541,7 +536,6 @@ const styles = StyleSheet.create({
   },
   resendButtonText: {
     fontSize: 14,
-    color: "white",
     fontWeight: "600",
   },
   helpContainer: {
@@ -551,13 +545,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     gap: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   helpText: {
     flex: 1,
     fontSize: 12,
     lineHeight: 16,
-    color: "rgba(255, 255, 255, 0.85)",
   },
 });
