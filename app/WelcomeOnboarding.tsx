@@ -9,12 +9,11 @@ import {
   Dimensions,
   Animated,
   Platform,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "../contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -23,7 +22,7 @@ const CARD_HEIGHT = height * 0.7;
 
 export default function WelcomeOnboarding() {
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Single scroll animation value
@@ -32,38 +31,38 @@ export default function WelcomeOnboarding() {
   const onboardingData = [
     {
       id: "1",
-      title: "Welcome to\nExpenzez",
+      title: "Welcome to Expenzez",
       description:
         "Your intelligent financial companion for smarter money management",
       icon: "wallet-outline",
-      gradient: ["#667eea", "#764ba2"] as const,
-      accentColor: "#667eea",
+      illustration: require("../assets/images/onboarding/welcome.png"),
+      accentColor: colors.primary[500],
     },
     {
       id: "2",
-      title: "Smart\nAnalytics",
+      title: "Smart Analytics",
       description: "AI-powered insights to understand your spending patterns",
       icon: "analytics-outline",
-      gradient: ["#f093fb", "#f5576c"] as const,
-      accentColor: "#f5576c",
+      illustration: require("../assets/images/onboarding/analytics.png"),
+      accentColor: colors.success[500],
     },
     {
       id: "3",
-      title: "Bank-Level\nSecurity",
+      title: "Bank-Level Security",
       description:
         "Enterprise-grade encryption keeps your data safe and private",
       icon: "shield-checkmark-outline",
-      gradient: ["#4facfe", "#00f2fe"] as const,
-      accentColor: "#4facfe",
+      illustration: require("../assets/images/onboarding/security.png"),
+      accentColor: colors.warning[500],
     },
     {
       id: "4",
-      title: "Stay in\nControl",
+      title: "Stay in Control",
       description:
         "Real-time notifications and budget tracking at your fingertips",
       icon: "notifications-outline",
-      gradient: ["#43e97b", "#38f9d7"],
-      accentColor: "#43e97b",
+      illustration: require("../assets/images/onboarding/notifications.png"),
+      accentColor: colors.primary[500],
     },
   ];
 
@@ -125,16 +124,8 @@ export default function WelcomeOnboarding() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.primary[500] }]}>
       <StatusBar barStyle="light-content" />
-
-      {/* Background Gradient */}
-      <LinearGradient
-        colors={onboardingData[currentIndex].gradient}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
 
       <SafeAreaView style={styles.safeArea}>
         {/* Animated Scrollable Cards */}
@@ -180,27 +171,34 @@ export default function WelcomeOnboarding() {
                 style={[
                   styles.cardContainer,
                   {
-                    transform: [{ scale }, { translateY }],
                     opacity,
                   },
                 ]}
               >
-                {/* Glass Card */}
-                <BlurView intensity={40} tint="light" style={styles.glassCard}>
-                  {/* Icon Container */}
-                  <View style={styles.iconContainer}>
-                    <View
-                      style={[
-                        styles.iconCircle,
-                        { backgroundColor: item.accentColor + "20" },
-                      ]}
-                    >
-                      <Ionicons
-                        name={item.icon as any}
-                        size={80}
-                        color="white"
+                {/* Simple Card */}
+                <View style={styles.card}>
+                  {/* Illustration Container */}
+                  <View style={styles.illustrationContainer}>
+                    {item.illustration ? (
+                      <Image
+                        source={item.illustration}
+                        style={styles.illustration}
+                        resizeMode="contain"
                       />
-                    </View>
+                    ) : (
+                      <View
+                        style={[
+                          styles.iconCircle,
+                          { backgroundColor: item.accentColor + "15" },
+                        ]}
+                      >
+                        <Ionicons
+                          name={item.icon as any}
+                          size={80}
+                          color="white"
+                        />
+                      </View>
+                    )}
                   </View>
 
                   {/* Content */}
@@ -208,7 +206,7 @@ export default function WelcomeOnboarding() {
                     <Text style={styles.title}>{item.title}</Text>
                     <Text style={styles.description}>{item.description}</Text>
                   </View>
-                </BlurView>
+                </View>
               </Animated.View>
             );
           })}
@@ -270,16 +268,16 @@ export default function WelcomeOnboarding() {
                   styles.actionButtonFull,
               ]}
               onPress={handleNext}
-              activeOpacity={0.9}
+              activeOpacity={0.8}
             >
-              <BlurView intensity={30} tint="light" style={styles.buttonBlur}>
+              <View style={[styles.buttonContent, { backgroundColor: onboardingData[currentIndex].accentColor }]}>
                 <Text style={styles.buttonText}>
                   {currentIndex === onboardingData.length - 1
                     ? "Get Started"
                     : "Continue"}
                 </Text>
                 <Ionicons name="arrow-forward" size={20} color="white" />
-              </BlurView>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -291,7 +289,6 @@ export default function WelcomeOnboarding() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#667eea",
   },
   safeArea: {
     flex: 1,
@@ -316,25 +313,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 30,
   },
-  glassCard: {
+  card: {
     width: "100%",
     height: CARD_HEIGHT,
-    borderRadius: 30,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 20,
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.3,
-    shadowRadius: 30,
-    elevation: 10,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  iconContainer: {
+  illustrationContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 60,
+    paddingTop: 40,
+  },
+  illustration: {
+    width: 280,
+    height: 280,
   },
   iconCircle: {
     width: 160,
@@ -342,8 +337,6 @@ const styles = StyleSheet.create({
     borderRadius: 80,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 3,
-    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   contentContainer: {
     flex: 1,
@@ -353,16 +346,16 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   title: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: "800",
     color: "white",
     textAlign: "center",
-    marginBottom: 16,
-    lineHeight: 42,
+    marginBottom: 12,
+    lineHeight: 40,
     letterSpacing: -0.5,
   },
   description: {
-    fontSize: 16,
+    fontSize: 15,
     color: "rgba(255, 255, 255, 0.9)",
     textAlign: "center",
     lineHeight: 24,
@@ -387,29 +380,24 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    borderRadius: 25,
+    borderRadius: 14,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
   actionButtonFull: {
     flex: 0,
     alignSelf: "stretch",
   },
-  buttonBlur: {
+  buttonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 18,
+    paddingVertical: 16,
     paddingHorizontal: 32,
     gap: 10,
   },
   buttonText: {
     color: "white",
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "700",
     letterSpacing: 0.3,
   },
