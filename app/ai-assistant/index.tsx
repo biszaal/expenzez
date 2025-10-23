@@ -27,7 +27,6 @@ import {
 } from "../../services/subscriptionService";
 import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
 import { LimitReachedPrompt } from "../../components/premium/LimitReachedPrompt";
-import { FeatureShowcase } from "../../components/premium/FeatureShowcase";
 
 interface Message {
   role: "user" | "assistant";
@@ -647,12 +646,16 @@ export default function AIAssistantScreen() {
             {monthlyReport && (
               <View
                 style={{
-                  marginBottom: 20,
-                  padding: 16,
+                  marginHorizontal: spacing.lg,
+                  marginBottom: spacing.lg,
+                  padding: spacing.lg,
                   backgroundColor: colors.background.secondary,
-                  borderRadius: borderRadius.xl,
-                  borderWidth: 1,
-                  borderColor: colors.primary[500] + "20",
+                  borderRadius: 16,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 8,
+                  elevation: 4,
                 }}
               >
                 <TouchableOpacity
@@ -841,39 +844,13 @@ export default function AIAssistantScreen() {
               </View>
             )}
 
-            {/* Feature Showcase */}
-            {showInsights && messages.length <= 1 && (
-              <FeatureShowcase
-                title="Why Upgrade to Premium?"
-                features={[
-                  {
-                    icon: "chatbubble",
-                    label: "AI Chats Per Day",
-                    freeValue: "10",
-                    premiumValue: "50",
-                  },
-                  {
-                    icon: "time",
-                    label: "Monthly Chats",
-                    freeValue: "50",
-                    premiumValue: "2,500",
-                  },
-                  {
-                    icon: "star",
-                    label: "Faster Responses",
-                    freeValue: "Standard",
-                    premiumValue: "Priority",
-                  },
-                ]}
-              />
-            )}
 
             {/* Proactive Insights Section */}
             {showInsights && messages.length <= 1 && (
-              <View style={{ marginBottom: 20 }}>
+              <View style={{ marginHorizontal: spacing.lg, marginBottom: spacing.lg }}>
                 {/* Insights */}
                 {proactiveInsights.length > 0 && (
-                  <View style={{ marginBottom: 16 }}>
+                  <View style={{ marginBottom: spacing.lg }}>
                     <Text
                       style={{
                         fontSize: 16,
@@ -902,17 +879,17 @@ export default function AIAssistantScreen() {
                         <TouchableOpacity
                           key={insight.id}
                           style={{
-                            backgroundColor: colors.background.primary,
-                            borderRadius: borderRadius.lg,
-                            padding: 16,
-                            marginBottom: 12,
+                            backgroundColor: colors.background.secondary,
+                            borderRadius: 16,
+                            padding: spacing.lg,
+                            marginBottom: spacing.lg,
                             borderLeftWidth: 4,
                             borderLeftColor: typeColor,
                             shadowColor: "#000",
                             shadowOffset: { width: 0, height: 2 },
                             shadowOpacity: 0.1,
-                            shadowRadius: 3,
-                            elevation: 2,
+                            shadowRadius: 8,
+                            elevation: 4,
                           }}
                           onPress={() => {
                             if (
