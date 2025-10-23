@@ -403,7 +403,6 @@ export default function VerifyEmail() {
                         </Typography>
                       </Typography>
                     </TouchableOpacity>
-                  </View>
                 </View>
               </View>
 
