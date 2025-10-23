@@ -8,6 +8,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -258,9 +259,11 @@ export default function EmailVerification() {
               </TouchableOpacity>
 
               <View style={styles.headerContent}>
-                <View style={[styles.logoContainer, { backgroundColor: colors.primary[500] + '15' }]}>
-                  <Ionicons name="mail-outline" size={40} color={colors.primary[500]} />
-                </View>
+                <Image
+                source={require("../../assets/images/transparent-logo.png")}
+                style={styles.appLogo}
+                resizeMode="contain"
+              />
 
                 <Typography variant="h1" style={[styles.title, { color: colors.text.primary }]}>
                   Verify Your Email

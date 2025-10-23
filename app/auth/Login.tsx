@@ -9,6 +9,7 @@ import {
   StyleSheet,
   StatusBar,
   ScrollView,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../auth/AuthContext";
@@ -241,12 +242,11 @@ export default function Login() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <View style={[styles.logoContainer, { backgroundColor: colors.primary[500] + "15" }]}>
-              <Ionicons name="wallet" size={40} color={colors.primary[500]} />
-            </View>
-            <Typography variant="h1" style={[styles.title, { color: colors.text.primary }]}>
-              Welcome Back
-            </Typography>
+            <Image
+              source={require("../../assets/images/transparent-logo.png")}
+              style={styles.appLogo}
+              resizeMode="contain"
+            />
           </View>
 
           {/* Form Content */}
@@ -393,6 +393,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
+  },
+  appLogo: {
+    width: 80,
+    height: 80,
+    marginBottom: 24,
   },
   title: {
     fontSize: 28,
