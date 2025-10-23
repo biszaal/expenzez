@@ -124,8 +124,8 @@ export default function WelcomeOnboarding() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.primary[500] }]}>
-      <StatusBar barStyle="light-content" />
+    <View style={[styles.container, { backgroundColor: "#ffffff" }]}>
+      <StatusBar barStyle="dark-content" />
 
       <SafeAreaView style={styles.safeArea}>
         {/* Animated Scrollable Cards */}
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   skipText: {
-    color: "rgba(255, 255, 255, 0.8)",
+    color: "#6b7280",
     fontSize: 17,
     fontWeight: "600",
   },
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: CARD_HEIGHT,
     borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "#f9fafb",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "800",
-    color: "white",
+    color: "#1f2937",
     textAlign: "center",
     marginBottom: 12,
     lineHeight: 40,
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 15,
-    color: "rgba(255, 255, 255, 0.9)",
+    color: "#6b7280",
     textAlign: "center",
     lineHeight: 24,
     fontWeight: "400",
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   dot: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: "white",
+    backgroundColor: "#d1d5db",
   },
   actionButton: {
     flex: 1,
