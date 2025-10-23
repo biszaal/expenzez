@@ -3,17 +3,17 @@ import { spacing, borderRadius } from "../../../constants/theme";
 
 export const spendingItemCardStyles = StyleSheet.create({
   itemCardPressable: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   itemCard: {
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    padding: spacing.md,
+    borderRadius: 16,
+    borderWidth: 0,
+    padding: spacing.lg,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   itemCardHeader: {
     flexDirection: "row",

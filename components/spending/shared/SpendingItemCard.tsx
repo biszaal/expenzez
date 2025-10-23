@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { CategoryIcon } from "../utils/CategoryIcon";
@@ -76,13 +75,11 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
       accessibilityLabel={`View details for ${item.name}`}
       onPress={() => onItemPress?.(item)}
     >
-      <LinearGradient
-        colors={[colors.background.primary, colors.background.primary]}
+      <View
         style={[
           styles.itemCard,
-          { borderColor: colors.border.light },
+          { backgroundColor: colors.background.secondary },
           overBudget && {
-            borderColor: colors.error[400],
             backgroundColor: "#FEF2F2",
           },
         ]}
@@ -228,7 +225,7 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
             </View>
           </View>
         )}
-      </LinearGradient>
+      </View>
     </Pressable>
   );
 };
