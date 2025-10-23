@@ -75,7 +75,7 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
       <View
         style={[
           styles.simpleBudgetCard,
-          { backgroundColor: colors.background.primary },
+          { backgroundColor: colors.background.secondary },
         ]}
       >
         {/* Warning Alert Banner */}

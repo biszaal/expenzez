@@ -39,7 +39,7 @@ export const SpendingAnalyticsSection: React.FC<
       <View
         style={[
           styles.premiumSpendingCard,
-          { backgroundColor: colors.background.primary },
+          { backgroundColor: colors.background.secondary },
         ]}
       >
         {/* Improved Analytics Header */}
@@ -84,7 +84,7 @@ export const SpendingAnalyticsSection: React.FC<
                 <View
                   style={[
                     styles.enhancedChartContainer,
-                    { backgroundColor: colors.background.primary },
+                    { backgroundColor: colors.background.secondary },
                   ]}
                 >
                   {/* Modern Interactive Line Chart */}
@@ -363,7 +363,7 @@ export const SpendingAnalyticsSection: React.FC<
               <View
                 style={[
                   styles.premiumEmptyChart,
-                  { backgroundColor: colors.background.primary },
+                  { backgroundColor: colors.background.secondary },
                 ]}
               >
                 <View
