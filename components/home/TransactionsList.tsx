@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { APP_STRINGS } from '../../constants/strings';
 import { styles } from './TransactionsList.styles';
@@ -32,9 +31,8 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
 
   return (
     <View style={styles.premiumTransactionsWrapper}>
-      <LinearGradient
-        colors={[colors.background.primary, colors.background.secondary]}
-        style={styles.premiumTransactionsCard}
+      <View
+        style={[styles.premiumTransactionsCard, { backgroundColor: colors.background.secondary }]}
       >
         <View style={styles.premiumTransactionsHeader}>
           <View style={styles.premiumTransactionsHeaderLeft}>
@@ -118,7 +116,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
           <Text style={styles.premiumViewAllTransactionsText}>View All Transactions</Text>
           <Ionicons name="arrow-forward" size={16} color="white" />
         </TouchableOpacity>
-      </LinearGradient>
+      </View>
     </View>
   );
 };
