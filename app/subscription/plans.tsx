@@ -377,7 +377,7 @@ export default function SubscriptionPlansScreen() {
           </Text>
         </View>
 
-        {/* Pricing Plans */}
+        {/* Pricing Plans - Simplified Selector */}
         <View style={styles.pricingSection}>
           {/* Monthly Plan */}
           <TouchableOpacity
@@ -394,45 +394,16 @@ export default function SubscriptionPlansScreen() {
             ]}
             onPress={() => setSelectedPackage({ identifier: "monthly" } as any)}
           >
-            <View style={styles.planHeader}>
-              <Text style={[styles.planName, { color: colors.text.primary }]}>
-                Monthly Plan
+            <Text style={[styles.planName, { color: colors.text.primary }]}>
+              Monthly Plan
+            </Text>
+            <View style={styles.priceContainer}>
+              <Text style={[styles.price, { color: colors.text.primary }]}>
+                £4.99
               </Text>
-              <View style={styles.priceContainer}>
-                <Text style={[styles.price, { color: colors.text.primary }]}>
-                  £4.99
-                </Text>
-                <Text style={[styles.period, { color: colors.text.secondary }]}>
-                  /month
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.featuresContainer}>
-              {PREMIUM_FEATURES.map((feature, index) => (
-                <View key={index} style={styles.featureItem}>
-                  <View style={[styles.featureIcon, { backgroundColor: colors.primary[500] + "20" }]}>
-                    <Ionicons
-                      name={feature.icon}
-                      size={14}
-                      color={colors.primary[500]}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.featureText,
-                      { color: colors.text.secondary },
-                    ]}
-                  >
-                    {feature.label}
-                  </Text>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={16}
-                    color={colors.success[500]}
-                  />
-                </View>
-              ))}
+              <Text style={[styles.period, { color: colors.text.secondary }]}>
+                /month
+              </Text>
             </View>
           </TouchableOpacity>
 
@@ -460,60 +431,64 @@ export default function SubscriptionPlansScreen() {
               <Text style={styles.popularText}>Most Popular - Save 17%</Text>
             </View>
 
-            <View style={styles.planHeader}>
-              <Text style={[styles.planName, { color: colors.text.primary }]}>
-                Annual Plan
+            <Text style={[styles.planName, { color: colors.text.primary }]}>
+              Annual Plan
+            </Text>
+            <View style={styles.priceContainer}>
+              <Text style={[styles.price, { color: colors.text.primary }]}>
+                £49.99
               </Text>
-              <View style={styles.priceContainer}>
-                <Text style={[styles.price, { color: colors.text.primary }]}>
-                  £49.99
-                </Text>
-                <Text style={[styles.period, { color: colors.text.secondary }]}>
-                  /year
-                </Text>
-              </View>
-              <View style={styles.savingsContainer}>
-                <Text
-                  style={[
-                    styles.originalPrice,
-                    { color: colors.text.tertiary },
-                  ]}
-                >
-                  £59.88
-                </Text>
-                <Text style={[styles.savings, { color: colors.success[500] }]}>
-                  Save £9.89
-                </Text>
-              </View>
+              <Text style={[styles.period, { color: colors.text.secondary }]}>
+                /year
+              </Text>
             </View>
-
-            <View style={styles.featuresContainer}>
-              {PREMIUM_FEATURES.map((feature, index) => (
-                <View key={index} style={styles.featureItem}>
-                  <View style={[styles.featureIcon, { backgroundColor: colors.primary[500] + "20" }]}>
-                    <Ionicons
-                      name={feature.icon}
-                      size={14}
-                      color={colors.primary[500]}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.featureText,
-                      { color: colors.text.secondary },
-                    ]}
-                  >
-                    {feature.label}
-                  </Text>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={16}
-                    color={colors.success[500]}
-                  />
-                </View>
-              ))}
+            <View style={styles.savingsContainer}>
+              <Text
+                style={[
+                  styles.originalPrice,
+                  { color: colors.text.tertiary },
+                ]}
+              >
+                £59.88
+              </Text>
+              <Text style={[styles.savings, { color: colors.success[500] }]}>
+                Save £9.89
+              </Text>
             </View>
           </TouchableOpacity>
+        </View>
+
+        {/* Shared Features List */}
+        <View style={[styles.sharedFeaturesSection, { backgroundColor: colors.background.primary }]}>
+          <Text style={[styles.featuresSectionTitle, { color: colors.text.primary }]}>
+            All Premium Features Included
+          </Text>
+          <View style={styles.featuresContainer}>
+            {PREMIUM_FEATURES.map((feature, index) => (
+              <View key={index} style={styles.featureItem}>
+                <View style={[styles.featureIcon, { backgroundColor: colors.primary[500] + "20" }]}>
+                  <Ionicons
+                    name={feature.icon}
+                    size={14}
+                    color={colors.primary[500]}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.featureText,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  {feature.label}
+                </Text>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={colors.success[500]}
+                />
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* Purchase Button */}
@@ -799,11 +774,12 @@ const styles = StyleSheet.create({
   },
   pricingSection: {
     paddingHorizontal: 20,
-    gap: 16,
+    gap: 12,
+    marginBottom: 8,
   },
   planCard: {
-    borderRadius: 18,
-    padding: 24,
+    borderRadius: 16,
+    padding: 20,
     borderWidth: 2,
     position: "relative",
     opacity: 0.7,
@@ -837,18 +813,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   planHeader: {
-    marginBottom: 20,
+    marginBottom: 0,
   },
   planName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
-    marginBottom: 10,
+    marginBottom: 8,
     letterSpacing: 0.2,
   },
   priceContainer: {
     flexDirection: "row",
     alignItems: "baseline",
-    marginBottom: 12,
+    marginBottom: 0,
   },
   price: {
     fontSize: 36,
@@ -864,6 +840,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    marginTop: 8,
   },
   originalPrice: {
     fontSize: 14,
@@ -885,6 +862,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flex: 1,
     fontWeight: "500",
+  },
+  sharedFeaturesSection: {
+    marginHorizontal: 20,
+    marginVertical: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    borderRadius: 16,
+    gap: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   purchaseButton: {
     marginHorizontal: 20,
