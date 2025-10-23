@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { Button, TextField, Typography } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
-import { spacing, borderRadius } from "../../constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function RegisterStep3({
@@ -82,7 +81,7 @@ export default function RegisterStep3({
   const currentError = passwordError || localPasswordError;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background.secondary }]}>
       {/* Glass Progress Indicator */}
       <View style={styles.progressContainer}>
         <View style={styles.completedStep}>
@@ -298,14 +297,15 @@ export default function RegisterStep3({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: spacing.md,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   progressContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.xl,
-    paddingHorizontal: spacing.md,
+    marginBottom: 16,
+    paddingHorizontal: 16,
   },
   completedStep: {
     width: 28,
@@ -313,9 +313,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderWidth: 2,
-    borderColor: 'white',
+    backgroundColor: 'transparent',
+    borderWidth: 0,
   },
   activeStep: {
     width: 28,
@@ -323,14 +322,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderWidth: 2,
-    borderColor: 'white',
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
   },
   inactiveStep: {
     width: 28,
@@ -338,47 +331,44 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'transparent',
+    borderWidth: 0,
   },
   completedLine: {
     width: 24,
     height: 2,
     marginHorizontal: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: 'transparent',
   },
   progressLine: {
     width: 24,
     height: 2,
     marginHorizontal: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'transparent',
   },
   stepText: {
     fontSize: 12,
     fontWeight: '600',
-    color: 'white',
+    color: 'transparent',
   },
   activeStepText: {
     fontSize: 12,
     fontWeight: '600',
-    color: 'white',
+    color: 'transparent',
   },
   header: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: 20,
   },
   title: {
     fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: spacing.xs,
-    color: 'white',
+    fontWeight: '700',
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 14,
     textAlign: 'center',
-    lineHeight: 22,
-    color: 'rgba(255, 255, 255, 0.85)',
+    lineHeight: 20,
   },
   formFields: {
     flex: 1,
@@ -387,102 +377,80 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inputLabel: {
-    color: 'white',
     marginBottom: 6,
     fontSize: 14,
     fontWeight: '600',
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
-    borderRadius: 14,
-    paddingHorizontal: 16,
+    borderRadius: 10,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: 'white',
     minHeight: 48,
   },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.xs,
-    paddingHorizontal: spacing.sm,
+    marginTop: 8,
+    paddingHorizontal: 4,
+    gap: 6,
   },
   statusText: {
-    marginLeft: spacing.xs,
     fontSize: 12,
     lineHeight: 16,
-    color: 'white',
   },
   requirementsContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 14,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
   },
   requirementsTitle: {
     fontSize: 12,
-    marginBottom: spacing.sm,
-    color: 'rgba(255, 255, 255, 0.85)',
+    marginBottom: 8,
   },
   requirementItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
+    gap: 6,
   },
   requirementText: {
-    marginLeft: spacing.xs,
     fontSize: 12,
     lineHeight: 16,
-    color: 'rgba(255, 255, 255, 0.7)',
   },
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: 14,
+    padding: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-    marginBottom: spacing.lg,
+    marginBottom: 16,
+    gap: 8,
   },
   errorText: {
-    marginLeft: spacing.sm,
     flex: 1,
     fontSize: 14,
     lineHeight: 18,
-    color: 'white',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: spacing.lg,
-    gap: spacing.md,
+    marginTop: 16,
+    gap: 12,
   },
   backButton: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
-    borderRadius: 25,
-    paddingVertical: 16,
-    minHeight: 54,
+    borderRadius: 10,
+    paddingVertical: 14,
+    minHeight: 48,
   },
   continueButton: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.35)',
-    borderRadius: 25,
-    paddingVertical: 16,
-    minHeight: 54,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    borderRadius: 10,
+    paddingVertical: 14,
+    minHeight: 48,
   },
 });
