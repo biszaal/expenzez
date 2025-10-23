@@ -30,10 +30,9 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
   const router = useRouter();
 
   return (
-    <View style={styles.premiumTransactionsWrapper}>
-      <View
-        style={[styles.premiumTransactionsCard, { backgroundColor: colors.background.secondary }]}
-      >
+    <View
+      style={[styles.container, { backgroundColor: colors.background.secondary }]}
+    >
         <View style={styles.premiumTransactionsHeader}>
           <View style={styles.premiumTransactionsHeaderLeft}>
             <View style={[styles.premiumTransactionsIcon, { backgroundColor: colors.primary[500] }]}>
@@ -116,7 +115,6 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
           <Text style={styles.premiumViewAllTransactionsText}>View All Transactions</Text>
           <Ionicons name="arrow-forward" size={16} color="white" />
         </TouchableOpacity>
-      </View>
     </View>
   );
 };
