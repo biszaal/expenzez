@@ -446,6 +446,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "rgba(255, 255, 255, 0.3)",
   },
+  appLogo: {
+    width: 110,
+    height: 110,
+    marginBottom: 24,
+  },
   title: {
     fontSize: 28,
     fontWeight: "800",
