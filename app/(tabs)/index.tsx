@@ -29,12 +29,9 @@ import {
 } from "../../components/home";
 import { CompactSpendingSummary } from "../../components/home/CompactSpendingSummary";
 import { CompactBudgetStatus } from "../../components/home/CompactBudgetStatus";
-import { AIBriefCard } from "../../components/alerts/AIBriefCard";
-import { ProactiveAlertsList } from "../../components/alerts/ProactiveAlertsList";
 import { api } from "../../services/config/apiClient";
 import { TransactionService } from "../../services/transactionService";
 import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
-import { FeatureShowcase } from "../../components/premium/FeatureShowcase";
 
 interface Transaction {
   id: string;
@@ -728,61 +725,30 @@ export default function HomeScreen() {
           <QuickActions />
         </View>
 
-        {/* Contextual Cards Section */}
+        {/* Alerts & Action Items Section */}
         <View style={styles.section}>
           {/* Show notifications only if there are unread notifications */}
           {unreadCount > 0 && <NotificationCard />}
 
-          {/* Upgrade Banner - Persistent reminder to upgrade */}
+          {/* Upgrade Banner - Subtle reminder for premium features */}
           <UpgradeBanner
             variant="subtle"
             message="Upgrade to Premium for unlimited budgets & advanced features"
             actionLabel="Upgrade"
           />
 
-          {/* Feature Showcase - Highlights premium benefits */}
-          <FeatureShowcase
-            title="Premium Benefits"
-            features={[
-              {
-                icon: "wallet",
-                label: "Budgets",
-                freeValue: "5",
-                premiumValue: "Unlimited",
-              },
-              {
-                icon: "chatbubble",
-                label: "AI Chats/Day",
-                freeValue: "10",
-                premiumValue: "50",
-              },
-              {
-                icon: "analytics",
-                label: "Advanced Reports",
-                freeValue: "Basic",
-                premiumValue: "Full",
-              },
-            ]}
-          />
-
-          {/* Compact Financial Overview */}
-          <CompactSpendingSummary onViewAll={() => router.push("/spending")} />
-          <CompactBudgetStatus onViewAll={() => router.push("/budgets")} />
-
-          {/* Proactive Alerts - Phase 2B (show max 3 on home screen) */}
-          <ProactiveAlertsList
-            maxItems={3}
-            showHeader={true}
-            onViewAll={() => {
-              // TODO: Navigate to alerts screen
-              console.log("Navigate to all alerts");
-            }}
-          />
-
+          {/* Upcoming Bills - Action-oriented card */}
           <UpcomingBillsCard />
         </View>
 
         {/* Financial Overview Section */}
+        <View style={styles.section}>
+          {/* Compact Financial Overview */}
+          <CompactSpendingSummary onViewAll={() => router.push("/spending")} />
+          <CompactBudgetStatus onViewAll={() => router.push("/budgets")} />
+        </View>
+
+        {/* Spending Analysis Section */}
         <View style={styles.section}>
           <MonthlyOverview
             thisMonthSpent={displaySpending}
