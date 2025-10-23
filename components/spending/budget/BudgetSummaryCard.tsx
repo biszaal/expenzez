@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, Animated, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Svg, { Circle, Defs, Filter, FeGaussianBlur, FeOffset, FeMerge, FeMergeNode, FeFlood, FeComposite } from "react-native-svg";
+import Svg, { Circle } from "react-native-svg";
 import dayjs from "dayjs";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { budgetSummaryCardStyles } from "./BudgetSummaryCard.styles";
@@ -155,18 +155,6 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
         >
           <View style={styles.donutChart}>
             <Svg width={280} height={280} style={{ position: "absolute" }}>
-              {/* Drop Shadow filter for over-budget effect */}
-              <Defs>
-                <Filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-                  <FeOffset in="SourceGraphic" dx="0" dy="2" result="offsetBlur" />
-                  <FeGaussianBlur in="offsetBlur" stdDeviation="2.5" />
-                  <FeMerge>
-                    <FeMergeNode />
-                    <FeMergeNode in="SourceGraphic" />
-                  </FeMerge>
-                </Filter>
-              </Defs>
-
               {/* Background Ring */}
               <Circle
                 cx={140}
@@ -219,7 +207,6 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                       outputRange: [2 * Math.PI * 120, 0],
                     })}
                     transform={`rotate(-90 140 140)`}
-                    filter={monthlyOverBudget ? "url(#shadow)" : "none"}
                   />
 
                   {/* Over-Budget Second Ring */}
