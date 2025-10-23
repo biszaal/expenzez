@@ -160,9 +160,7 @@ export default function OnboardingScreen() {
       subtitle: "Your Personal Finance Assistant",
       description:
         "Take control of your finances with intelligent expense tracking, budgeting tools, and financial insights designed to help you achieve your money goals.",
-      // TODO: Uncomment once you download welcome.png from Undraw.co
-      // illustration: require("../../assets/images/onboarding/welcome.png"),
-      illustration: undefined,
+      illustration: require("../../assets/images/onboarding/welcome.png"),
       color: colors.primary[500],
     },
     {
@@ -171,9 +169,7 @@ export default function OnboardingScreen() {
       subtitle: "Understand Your Spending",
       description:
         "Get detailed insights into your spending patterns with AI-powered categorization, trend analysis, and personalized recommendations to optimize your finances.",
-      // TODO: Uncomment once you download analytics.png from Undraw.co
-      // illustration: require("../../assets/images/onboarding/analytics.png"),
-      illustration: undefined,
+      illustration: require("../../assets/images/onboarding/analytics.png"),
       color: colors.success[500],
     },
     {
@@ -182,9 +178,7 @@ export default function OnboardingScreen() {
       subtitle: "Your Data is Protected",
       description:
         "Rest assured with enterprise-grade security, end-to-end encryption, and biometric authentication. Your financial data is safe and private.",
-      // TODO: Uncomment once you download security.png from Undraw.co
-      // illustration: require("../../assets/images/onboarding/security.png"),
-      illustration: undefined,
+      illustration: require("../../assets/images/onboarding/security.png"),
       color: colors.warning[500],
     },
     {
@@ -193,9 +187,7 @@ export default function OnboardingScreen() {
       subtitle: "Stay on Track",
       description:
         "Receive intelligent alerts for unusual spending, budget limits, bill reminders, and financial opportunities to help you make better money decisions.",
-      // TODO: Uncomment once you download notifications.png from Undraw.co
-      // illustration: require("../../assets/images/onboarding/notifications.png"),
-      illustration: undefined,
+      illustration: require("../../assets/images/onboarding/notifications.png"),
       color: colors.primary[500],
     },
     {
@@ -204,9 +196,7 @@ export default function OnboardingScreen() {
       subtitle: "Start Your Financial Journey",
       description:
         "Join thousands of users who have transformed their financial lives with Expenzez. Let's build better money habits together.",
-      // TODO: Uncomment once you download journey.png from Undraw.co
-      // illustration: require("../../assets/images/onboarding/journey.png"),
-      illustration: undefined,
+      illustration: require("../../assets/images/onboarding/journey.png"),
       color: colors.primary[600],
     },
   ];
