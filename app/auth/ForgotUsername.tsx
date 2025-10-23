@@ -145,11 +145,6 @@ export default function ForgotUsernameScreen() {
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoCorrect={false}
-                      style={StyleSheet.flatten([styles.input, {
-                        backgroundColor: colors.background.primary,
-                        borderColor: colors.border.medium,
-                        color: colors.text.primary,
-                      }])}
                     />
                   </View>
 

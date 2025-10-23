@@ -262,11 +262,6 @@ export default function ForgotPasswordScreen() {
                     autoCapitalize="none"
                     autoCorrect={false}
                     editable={!isLoading}
-                    style={[styles.input, {
-                      backgroundColor: colors.background.primary,
-                      borderColor: colors.border.light,
-                      color: colors.text.primary
-                    }]}
                     placeholderTextColor={colors.text.tertiary}
                   />
                 </View>

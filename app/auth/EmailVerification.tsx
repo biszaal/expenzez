@@ -305,7 +305,6 @@ export default function EmailVerification() {
                       )
                     }
                     keyboardType="numeric"
-                    style={[styles.input, { backgroundColor: colors.background.primary, borderColor: colors.border.light, color: colors.text.primary }]}
                     placeholderTextColor={colors.text.tertiary}
                   />
                 </View>

@@ -82,11 +82,6 @@ export default function RegisterStep1({
             value={values.givenName}
             onChangeText={(v) => onChange("givenName", v)}
             autoCapitalize="words"
-            style={[styles.input, {
-              backgroundColor: colors.background.primary,
-              borderColor: colors.border.light,
-              color: colors.text.primary
-            }]}
             placeholderTextColor={colors.text.tertiary}
           />
         </View>
@@ -100,11 +95,6 @@ export default function RegisterStep1({
             value={values.familyName}
             onChangeText={(v) => onChange("familyName", v)}
             autoCapitalize="words"
-            style={[styles.input, {
-              backgroundColor: colors.background.primary,
-              borderColor: colors.border.light,
-              color: colors.text.primary
-            }]}
             placeholderTextColor={colors.text.tertiary}
           />
         </View>
@@ -119,11 +109,6 @@ export default function RegisterStep1({
             onChangeText={(v) => onChange("username", v)}
             autoCapitalize="none"
             autoCorrect={false}
-            style={[styles.input, {
-              backgroundColor: colors.background.primary,
-              borderColor: colors.border.light,
-              color: colors.text.primary
-            }]}
             placeholderTextColor={colors.text.tertiary}
           />
 
