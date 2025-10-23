@@ -567,12 +567,20 @@ export default function HomeScreen() {
           newTransaction
         );
 
-        // Add to local transactions list immediately
+        // Add to local transactions list immediately (avoid duplicates from API)
         setTransactions((prev) => {
           console.log(
             "💰 [Home] Adding transaction to list. Previous count:",
             prev.length
           );
+          // Check if transaction already exists to avoid duplicates
+          const transactionExists = prev.some((tx) => tx.id === newTransaction.id);
+          if (transactionExists) {
+            console.log(
+              "💰 [Home] Transaction already exists in list (from API), skipping duplicate"
+            );
+            return prev;
+          }
           const newList = [newTransaction, ...prev];
           console.log("💰 [Home] New list count:", newList.length);
           return newList;
