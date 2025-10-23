@@ -395,9 +395,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   appLogo: {
-    width: 80,
-    height: 80,
-    marginBottom: 24,
+    width: 110,
+    height: 110,
+    marginBottom: 32,
   },
   title: {
     fontSize: 28,
