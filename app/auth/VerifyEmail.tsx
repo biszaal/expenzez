@@ -26,7 +26,7 @@ const spacing = {
 };
 
 export default function VerifyEmail() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
   const { showError, showSuccess } = useAlert();
@@ -243,7 +243,7 @@ export default function VerifyEmail() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
-      <StatusBar barStyle={colors.isDark ? "light-content" : "dark-content"} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : undefined}

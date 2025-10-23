@@ -27,7 +27,7 @@ export default function Login() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { login, loginWithApple } = useAuth();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { showError, showSuccess } = useAlert();
   const { handleAppleSignIn } = useAppleSignIn();
 
@@ -228,7 +228,7 @@ export default function Login() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
-      <StatusBar barStyle={colors.isDark ? "light-content" : "dark-content"} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
