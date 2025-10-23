@@ -12,7 +12,6 @@ import {
 import { useRouter } from "expo-router";
 import { useAuth } from "./AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
-import { spacing, borderRadius, layout } from "../../constants/theme";
 import RegisterStep1 from "./RegisterStep1";
 import RegisterStep2 from "./RegisterStep2";
 import RegisterStep3 from "./RegisterStep3";
@@ -354,7 +353,7 @@ export default function Register() {
             showsVerticalScrollIndicator={false}
           >
             {/* Glass Form Container */}
-            <BlurView intensity={40} tint="light" style={styles.glassCard}>
+            <View style={[styles.glassCard, { backgroundColor: colors.background.secondary }]}>
               <View style={styles.formContent}>
                 {registrationError ? (
                   <View style={styles.errorContainer}>
@@ -426,6 +425,7 @@ export default function Register() {
                   </TouchableOpacity>
                 </View>
               </View>
+            </View>
             </ScrollView>
           </KeyboardAvoidingView>
         </SafeAreaView>
