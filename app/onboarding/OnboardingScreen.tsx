@@ -8,9 +8,9 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Typography } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -23,7 +23,7 @@ interface OnboardingStepProps {
   title: string;
   subtitle: string;
   description: string;
-  illustration: string;
+  illustration: any;
   color: string;
   isActive: boolean;
   onNext: () => void;
@@ -52,12 +52,12 @@ const OnboardingStep: React.FC<OnboardingStepProps> = ({
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
-          duration: 800,
+          duration: 600,
           useNativeDriver: true,
         }),
         Animated.timing(slideAnim, {
           toValue: 0,
-          duration: 800,
+          duration: 600,
           useNativeDriver: true,
         }),
       ]).start();
@@ -76,19 +76,15 @@ const OnboardingStep: React.FC<OnboardingStepProps> = ({
     >
       {/* Illustration */}
       <View style={styles.illustrationContainer}>
-        <View
-          style={[styles.illustrationBackground, { backgroundColor: color }]}
-        >
-          <Ionicons name={illustration as any} size={120} color="white" />
-        </View>
+        <Image
+          source={illustration as any}
+          style={styles.illustration}
+          resizeMode="contain"
+        />
       </View>
 
       {/* Content */}
       <View style={styles.contentContainer}>
-        <View style={styles.iconContainer}>
-          <Ionicons name={icon as any} size={32} color={color} />
-        </View>
-
         <Typography
           variant="h1"
           style={[styles.title, { color: colors.text.primary }]}
@@ -118,6 +114,7 @@ const OnboardingStep: React.FC<OnboardingStepProps> = ({
         <TouchableOpacity
           style={[styles.primaryButton, { backgroundColor: color }]}
           onPress={onNext}
+          activeOpacity={0.8}
         >
           <Typography
             variant="body"
@@ -157,7 +154,7 @@ export default function OnboardingScreen() {
       subtitle: "Your Personal Finance Assistant",
       description:
         "Take control of your finances with intelligent expense tracking, budgeting tools, and financial insights designed to help you achieve your money goals.",
-      illustration: "wallet",
+      illustration: require("../../assets/images/onboarding/welcome.png"),
       color: colors.primary[500],
     },
     {
@@ -166,7 +163,7 @@ export default function OnboardingScreen() {
       subtitle: "Understand Your Spending",
       description:
         "Get detailed insights into your spending patterns with AI-powered categorization, trend analysis, and personalized recommendations to optimize your finances.",
-      illustration: "trending-up",
+      illustration: require("../../assets/images/onboarding/analytics.png"),
       color: colors.success[500],
     },
     {
@@ -175,7 +172,7 @@ export default function OnboardingScreen() {
       subtitle: "Your Data is Protected",
       description:
         "Rest assured with enterprise-grade security, end-to-end encryption, and biometric authentication. Your financial data is safe and private.",
-      illustration: "shield-checkmark",
+      illustration: require("../../assets/images/onboarding/security.png"),
       color: colors.warning[500],
     },
     {
@@ -184,7 +181,7 @@ export default function OnboardingScreen() {
       subtitle: "Stay on Track",
       description:
         "Receive intelligent alerts for unusual spending, budget limits, bill reminders, and financial opportunities to help you make better money decisions.",
-      illustration: "notifications",
+      illustration: require("../../assets/images/onboarding/notifications.png"),
       color: colors.primary[500],
     },
     {
@@ -193,7 +190,7 @@ export default function OnboardingScreen() {
       subtitle: "Start Your Financial Journey",
       description:
         "Join thousands of users who have transformed their financial lives with Expenzez. Let's build better money habits together.",
-      illustration: "rocket",
+      illustration: require("../../assets/images/onboarding/journey.png"),
       color: colors.primary[600],
     },
   ];
@@ -228,18 +225,13 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <StatusBar
         barStyle="light-content"
         backgroundColor={colors.primary[500]}
       />
 
-      <LinearGradient
-        colors={[colors.primary[500], colors.primary[600], colors.primary[700]]}
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
+      <View style={[styles.background, { backgroundColor: colors.background.primary }]}>
         {/* Progress Indicator */}
         <View style={styles.progressContainer}>
           {steps.map((_, index) => (
@@ -249,7 +241,7 @@ export default function OnboardingScreen() {
                 styles.progressDot,
                 {
                   backgroundColor:
-                    index === currentStep ? "white" : "rgba(255,255,255,0.3)",
+                    index === currentStep ? colors.primary[500] : colors.border.light,
                   width: index === currentStep ? 24 : 8,
                 },
               ]}
@@ -283,7 +275,7 @@ export default function OnboardingScreen() {
             />
           ))}
         </ScrollView>
-      </LinearGradient>
+      </View>
     </SafeAreaView>
   );
 }
@@ -292,7 +284,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  gradient: {
+  background: {
     flex: 1,
   },
   progressContainer: {
@@ -317,35 +309,18 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   illustrationContainer: {
-    flex: 1,
+    flex: 1.2,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.md,
   },
-  illustrationBackground: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
+  illustration: {
+    width: 280,
+    height: 280,
   },
   contentContainer: {
     alignItems: "center",
     paddingVertical: spacing.lg,
-  },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
   },
   title: {
     fontSize: 28,
@@ -356,16 +331,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: "center",
     marginBottom: spacing.md,
-    opacity: 0.9,
   },
   description: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: "center",
     lineHeight: 24,
     maxWidth: "90%",
   },
   actionsContainer: {
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.lg,
     gap: spacing.md,
   },
   primaryButton: {
@@ -374,17 +348,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
-    borderRadius: borderRadius.xl,
+    borderRadius: 12,
     gap: spacing.sm,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   buttonText: {
     color: "white",
     fontSize: 16,
+    fontWeight: "600",
   },
   skipButton: {
     alignItems: "center",
@@ -392,6 +362,6 @@ const styles = StyleSheet.create({
   },
   skipText: {
     fontSize: 14,
-    opacity: 0.8,
+    fontWeight: "500",
   },
 });
