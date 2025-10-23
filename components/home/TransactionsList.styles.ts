@@ -3,13 +3,18 @@ import { SPACING } from '../../constants/Colors';
 
 export const styles = StyleSheet.create({
   premiumTransactionsWrapper: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.lg,
   },
   premiumTransactionsCard: {
     borderRadius: 16,
     padding: SPACING.lg,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   premiumTransactionsHeader: {
     flexDirection: 'row',
