@@ -28,54 +28,83 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
   };
 
   if (variant === "subtle") {
+    const primaryPurple = "#8B5CF6";
+    const lightPurple = isDark ? "#7C3AED" : "#F3E8FF";
+    const textPrimary = isDark ? "#F3E8FF" : "#4C1D95";
+    const textSecondary = isDark ? "#E9D5FF" : "#6B21A8";
+
     return (
       <View
         style={[
           {
-            backgroundColor: isDark ? "#1F2937" : "#F3F4F6",
-            borderBottomWidth: 1,
-            borderBottomColor: isDark ? "#374151" : "#E5E7EB",
+            backgroundColor: lightPurple,
             paddingHorizontal: 16,
-            paddingVertical: 12,
+            paddingVertical: 16,
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
+            gap: 12,
           },
         ]}
       >
-        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Ionicons
-            name="star"
-            size={16}
-            color={isDark ? "#FBBF24" : "#F59E0B"}
-          />
-          <Text
-            style={[
-              {
-                color: isDark ? "#E5E7EB" : "#374151",
-                fontSize: 13,
-                fontWeight: "500",
-                flex: 1,
-              },
-            ]}
+        <View style={{ flex: 1, flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+          {/* Icon with background */}
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              backgroundColor: primaryPurple,
+              justifyContent: "center",
+              alignItems: "center",
+              flexShrink: 0,
+              marginTop: 2,
+            }}
           >
-            {message}
-          </Text>
+            <Ionicons name="sparkles" size={20} color="#FFFFFF" />
+          </View>
+
+          {/* Text content */}
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                color: textPrimary,
+                fontSize: 14,
+                fontWeight: "700",
+                marginBottom: 4,
+              }}
+            >
+              Unlock Premium
+            </Text>
+            <Text
+              style={{
+                color: textSecondary,
+                fontSize: 12,
+                fontWeight: "500",
+                lineHeight: 18,
+              }}
+            >
+              {message}
+            </Text>
+          </View>
         </View>
+
+        {/* Action button */}
         <TouchableOpacity
           onPress={handleUpgradePress}
           style={{
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            backgroundColor: isDark ? "#3B82F6" : "#3B82F6",
-            borderRadius: 6,
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            backgroundColor: primaryPurple,
+            borderRadius: 8,
+            flexShrink: 0,
           }}
         >
           <Text
             style={{
               color: "#FFFFFF",
-              fontSize: 12,
-              fontWeight: "600",
+              fontSize: 13,
+              fontWeight: "700",
             }}
           >
             {actionLabel}
