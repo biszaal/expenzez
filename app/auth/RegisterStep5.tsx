@@ -8,8 +8,15 @@ import {
 } from "react-native";
 import { Button, TextField, Typography } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
-import { spacing, borderRadius } from "../../constants/theme";
 import { Ionicons } from "@expo/vector-icons";
+
+const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+};
 
 // Country code interface
 interface CountryCode {
@@ -228,38 +235,13 @@ export default function RegisterStep5({
   };
 
   return (
-    <View style={styles.container}>
-      {/* Glass Progress Indicator - All Complete */}
-      <View style={styles.progressContainer}>
-        <View style={styles.completedStep}>
-          <Ionicons name="checkmark" size={16} color="white" />
-        </View>
-        <View style={styles.completedLine} />
-        <View style={styles.completedStep}>
-          <Ionicons name="checkmark" size={16} color="white" />
-        </View>
-        <View style={styles.completedLine} />
-        <View style={styles.completedStep}>
-          <Ionicons name="checkmark" size={16} color="white" />
-        </View>
-        <View style={styles.completedLine} />
-        <View style={styles.completedStep}>
-          <Ionicons name="checkmark" size={16} color="white" />
-        </View>
-        <View style={styles.completedLine} />
-        <View style={styles.activeStep}>
-          <Typography variant="caption" style={styles.activeStepText}>
-            5
-          </Typography>
-        </View>
-      </View>
-
-      {/* Glass Header */}
+    <View style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+      {/* Header */}
       <View style={styles.header}>
-        <Typography variant="h2" style={styles.title}>
+        <Typography variant="h2" style={[styles.title, { color: colors.text.primary }]}>
           Phone Number
         </Typography>
-        <Typography variant="body" style={styles.subtitle}>
+        <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
           Add your phone number for account security
         </Typography>
       </View>
@@ -274,7 +256,7 @@ export default function RegisterStep5({
           <View style={styles.inputContainer}>
             <Typography
               variant="body"
-              style={styles.inputLabel}
+              style={[styles.inputLabel, { color: colors.text.primary }]}
               weight="medium"
             >
               Phone Number *
@@ -284,15 +266,18 @@ export default function RegisterStep5({
               {/* Country Code Picker */}
               <TouchableOpacity
                 onPress={() => setShowCountryPicker(!showCountryPicker)}
-                style={styles.countryCodeButton}
+                style={[styles.countryCodeButton, {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light
+                }]}
               >
-                <Typography variant="body" style={{ color: "white" }}>
+                <Typography variant="body" style={{ color: colors.text.primary }}>
                   {selectedCountryCode.flag} {selectedCountryCode.code}
                 </Typography>
                 <Ionicons
                   name="chevron-down"
                   size={16}
-                  color="rgba(255, 255, 255, 0.7)"
+                  color={colors.text.secondary}
                 />
               </TouchableOpacity>
 
@@ -307,7 +292,12 @@ export default function RegisterStep5({
                     // Don't update parent form state here - only on submit with proper formatting
                   }}
                   keyboardType="phone-pad"
-                  style={styles.phoneInput}
+                  style={[styles.phoneInput, {
+                    backgroundColor: colors.background.primary,
+                    borderColor: colors.border.light,
+                    color: colors.text.primary
+                  }]}
+                  placeholderTextColor={colors.text.tertiary}
                   editable={true}
                   autoFocus={false}
                 />
@@ -319,7 +309,7 @@ export default function RegisterStep5({
                     <Ionicons
                       name="close-circle"
                       size={20}
-                      color="rgba(255, 255, 255, 0.7)"
+                      color={colors.text.secondary}
                     />
                   </TouchableOpacity>
                 )}
@@ -328,9 +318,12 @@ export default function RegisterStep5({
 
             {/* Phone Error Display */}
             {phoneError && (
-              <View style={styles.errorContainer}>
-                <Ionicons name="warning" size={20} color="#ef4444" />
-                <Typography variant="body" style={styles.errorText}>
+              <View style={[styles.errorContainer, {
+                backgroundColor: colors.error[500] + '15',
+                borderColor: colors.error[500] + '30'
+              }]}>
+                <Ionicons name="warning" size={20} color={colors.error[500]} />
+                <Typography variant="body" style={[styles.errorText, { color: colors.text.primary }]}>
                   {phoneError}
                 </Typography>
               </View>
@@ -338,7 +331,10 @@ export default function RegisterStep5({
 
             {/* Country Code Options */}
             {showCountryPicker && (
-              <View style={styles.countryList}>
+              <View style={[styles.countryList, {
+                backgroundColor: colors.background.primary,
+                borderColor: colors.border.light
+              }]}>
                 <ScrollView
                   style={styles.countryScrollView}
                   nestedScrollEnabled={true}
@@ -346,13 +342,13 @@ export default function RegisterStep5({
                   {countryCodes.map((country, index) => (
                     <TouchableOpacity
                       key={index}
-                      style={styles.countryOption}
+                      style={[styles.countryOption, { borderBottomColor: colors.border.light }]}
                       onPress={() => {
                         setSelectedCountryCode(country);
                         setShowCountryPicker(false);
                       }}
                     >
-                      <Typography variant="body" style={{ color: "white" }}>
+                      <Typography variant="body" style={{ color: colors.text.primary }}>
                         {country.flag} {country.code} {country.label}
                       </Typography>
                     </TouchableOpacity>
@@ -363,47 +359,53 @@ export default function RegisterStep5({
           </View>
 
           {/* Privacy Note */}
-          <View style={styles.privacyNote}>
-            <Ionicons name="shield-checkmark-outline" size={20} color="white" />
-            <Typography variant="caption" style={styles.privacyText}>
+          <View style={[styles.privacyNote, {
+            backgroundColor: colors.primary[500] + '15',
+            borderColor: colors.primary[500] + '30'
+          }]}>
+            <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary[500]} />
+            <Typography variant="caption" style={[styles.privacyText, { color: colors.text.primary }]}>
               Your phone number will be used for account verification and
               security purposes only.
             </Typography>
           </View>
 
           {/* Review Summary */}
-          <View style={styles.summaryContainer}>
+          <View style={[styles.summaryContainer, {
+            backgroundColor: colors.background.primary,
+            borderColor: colors.border.light
+          }]}>
             <Typography
               variant="body"
-              style={styles.summaryTitle}
+              style={[styles.summaryTitle, { color: colors.text.primary }]}
               weight="semibold"
             >
               Account Summary
             </Typography>
 
             <View style={styles.summaryItem}>
-              <Typography variant="caption" style={styles.summaryLabel}>
+              <Typography variant="caption" style={[styles.summaryLabel, { color: colors.text.secondary }]}>
                 Name:
               </Typography>
-              <Typography variant="caption" style={styles.summaryValue}>
+              <Typography variant="caption" style={[styles.summaryValue, { color: colors.text.primary }]}>
                 {values.givenName} {values.familyName}
               </Typography>
             </View>
 
             <View style={styles.summaryItem}>
-              <Typography variant="caption" style={styles.summaryLabel}>
+              <Typography variant="caption" style={[styles.summaryLabel, { color: colors.text.secondary }]}>
                 Username:
               </Typography>
-              <Typography variant="caption" style={styles.summaryValue}>
+              <Typography variant="caption" style={[styles.summaryValue, { color: colors.text.primary }]}>
                 {values.username}
               </Typography>
             </View>
 
             <View style={styles.summaryItem}>
-              <Typography variant="caption" style={styles.summaryLabel}>
+              <Typography variant="caption" style={[styles.summaryLabel, { color: colors.text.secondary }]}>
                 Email:
               </Typography>
-              <Typography variant="caption" style={styles.summaryValue}>
+              <Typography variant="caption" style={[styles.summaryValue, { color: colors.text.primary }]}>
                 {values.email}
               </Typography>
             </View>
@@ -411,20 +413,20 @@ export default function RegisterStep5({
         </View>
       </ScrollView>
 
-      {/* Glass Navigation Buttons */}
+      {/* Navigation Buttons */}
       <View style={styles.buttonContainer}>
         <Button
           title="Back"
           onPress={onBack}
-          style={styles.backButton}
-          textStyle={{ color: "white" }}
+          style={[styles.backButton, { borderColor: colors.border.light }]}
+          textStyle={{ color: colors.text.primary }}
         />
         <Button
           title={isLoading ? "Creating Account..." : "Create Account"}
           onPress={handleSubmit}
           style={StyleSheet.flatten([
             styles.submitButton,
-            { opacity: isLoading ? 0.7 : 1 },
+            { backgroundColor: colors.primary[500], opacity: isLoading ? 0.7 : 1 },
           ])}
           disabled={isLoading || !phoneNumber.trim()}
         />
@@ -432,7 +434,7 @@ export default function RegisterStep5({
 
       {isLoading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#8B5CF6" />
+          <ActivityIndicator size="large" color={colors.primary[500]} />
         </View>
       )}
     </View>
@@ -442,85 +444,33 @@ export default function RegisterStep5({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: spacing.md,
-  },
-  progressContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: spacing.xl,
-    paddingHorizontal: spacing.md,
-  },
-  completedStep: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderWidth: 2,
-    borderColor: "white",
-  },
-  activeStep: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderWidth: 2,
-    borderColor: "white",
-    shadowColor: "#fff",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  completedLine: {
-    width: 24,
-    height: 2,
-    marginHorizontal: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
-  },
-  progressLine: {
-    width: 24,
-    height: 2,
-    marginHorizontal: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-  },
-  activeStepText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "white",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   header: {
     alignItems: "center",
-    marginBottom: spacing.xl,
+    marginBottom: 24,
   },
   title: {
     fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: spacing.xs,
-    color: "white",
+    fontWeight: "700",
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 14,
     textAlign: "center",
-    lineHeight: 22,
-    color: "rgba(255, 255, 255, 0.85)",
+    lineHeight: 20,
   },
   scrollView: {
     flex: 1,
   },
   formFields: {
-    paddingHorizontal: spacing.md,
     paddingBottom: spacing.lg,
   },
   inputContainer: {
     marginBottom: 16,
   },
   inputLabel: {
-    color: "white",
     marginBottom: 6,
     fontSize: 14,
     fontWeight: "600",
@@ -530,11 +480,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   countryCodeButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.25)",
-    borderRadius: 14,
-    paddingHorizontal: 16,
+    borderRadius: 10,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     flexDirection: "row",
     alignItems: "center",
@@ -549,14 +497,11 @@ const styles = StyleSheet.create({
   },
   phoneInput: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.25)",
-    borderRadius: 14,
-    paddingHorizontal: 16,
+    borderRadius: 10,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: "white",
     minHeight: 48,
   },
   clearButton: {
@@ -566,10 +511,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   countryList: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.25)",
-    borderRadius: 14,
+    borderRadius: 10,
     marginTop: spacing.xs,
     maxHeight: 200,
   },
@@ -580,16 +523,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
   privacyNote: {
     flexDirection: "row",
     alignItems: "center",
     padding: spacing.md,
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderColor: "rgba(255, 255, 255, 0.2)",
     marginBottom: spacing.lg,
     gap: spacing.sm,
   },
@@ -597,20 +537,16 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     lineHeight: 16,
-    color: "rgba(255, 255, 255, 0.85)",
   },
   summaryContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 14,
+    borderRadius: 10,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
   summaryTitle: {
     fontSize: 16,
     marginBottom: spacing.sm,
-    color: "white",
   },
   summaryItem: {
     flexDirection: "row",
@@ -619,41 +555,29 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 12,
-    color: "rgba(255, 255, 255, 0.7)",
   },
   summaryValue: {
     fontSize: 12,
     fontWeight: "500",
-    color: "white",
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: spacing.lg,
-    gap: spacing.md,
+    gap: 12,
   },
   backButton: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.25)",
-    borderRadius: 25,
-    paddingVertical: 16,
-    minHeight: 54,
+    borderRadius: 10,
+    paddingVertical: 14,
+    minHeight: 48,
   },
   submitButton: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.35)",
-    borderRadius: 25,
-    paddingVertical: 16,
-    minHeight: 54,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    borderRadius: 10,
+    paddingVertical: 14,
+    minHeight: 48,
   },
   loadingOverlay: {
     position: "absolute",
@@ -669,10 +593,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: spacing.md,
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: 1,
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    borderColor: "rgba(239, 68, 68, 0.3)",
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },
@@ -681,6 +603,5 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     lineHeight: 18,
-    color: "white",
   },
 });
