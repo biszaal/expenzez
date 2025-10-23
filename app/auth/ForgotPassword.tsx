@@ -48,24 +48,25 @@ export default function ForgotPasswordScreen() {
 
     setIsLoading(true);
     try {
-      const response = await authAPI.forgotPassword({ username: username.trim() });
-      
+      const response = await authAPI.forgotPassword({
+        username: username.trim(),
+      });
+
       // Extract email from response if available
       const email = response?.email || "your registered email";
       setUserEmail(email);
-      
+
       setEmailSent(true);
       setResendCooldown(60); // 60 second cooldown for resend
       showSuccess(`Password reset code sent to ${email}!`);
-      
+
       // Auto-navigate after showing success message
       setTimeout(() => {
         router.push({
           pathname: "/auth/ResetPassword",
-          params: { username: username.trim(), email: email }
+          params: { username: username.trim(), email: email },
         });
       }, 3000); // Reduced to 3 seconds for better UX
-      
     } catch (error: any) {
       console.error("Forgot password error:", error);
 
@@ -79,10 +80,18 @@ export default function ForgotPasswordScreen() {
       }
 
       // Handle specific scenarios
-      if (errorMessage.toLowerCase().includes("user not found") || errorMessage.toLowerCase().includes("username")) {
-        errorMessage = "Username not found. Please check your username and try again.";
-      } else if (errorMessage.toLowerCase().includes("limit") || errorMessage.toLowerCase().includes("many")) {
-        errorMessage = "Too many password reset requests. Please wait before trying again.";
+      if (
+        errorMessage.toLowerCase().includes("user not found") ||
+        errorMessage.toLowerCase().includes("username")
+      ) {
+        errorMessage =
+          "Username not found. Please check your username and try again.";
+      } else if (
+        errorMessage.toLowerCase().includes("limit") ||
+        errorMessage.toLowerCase().includes("many")
+      ) {
+        errorMessage =
+          "Too many password reset requests. Please wait before trying again.";
       }
 
       showError(errorMessage);
@@ -93,7 +102,7 @@ export default function ForgotPasswordScreen() {
 
   const handleResend = async () => {
     if (resendCooldown > 0) return;
-    
+
     setIsLoading(true);
     try {
       await authAPI.forgotPassword({ username: username.trim() });
@@ -112,8 +121,12 @@ export default function ForgotPasswordScreen() {
       }
 
       // Handle specific scenarios for resend
-      if (errorMessage.toLowerCase().includes("limit") || errorMessage.toLowerCase().includes("many")) {
-        errorMessage = "Too many requests. Please wait before requesting another code.";
+      if (
+        errorMessage.toLowerCase().includes("limit") ||
+        errorMessage.toLowerCase().includes("many")
+      ) {
+        errorMessage =
+          "Too many requests. Please wait before requesting another code.";
       }
 
       showError(errorMessage);
@@ -151,7 +164,11 @@ export default function ForgotPasswordScreen() {
                 style={styles.backButton}
                 onPress={() => router.back()}
               >
-                <BlurView intensity={30} tint="light" style={styles.backButtonBlur}>
+                <BlurView
+                  intensity={30}
+                  tint="light"
+                  style={styles.backButtonBlur}
+                >
                   <Ionicons name="chevron-back" size={24} color="white" />
                 </BlurView>
               </TouchableOpacity>
@@ -159,7 +176,11 @@ export default function ForgotPasswordScreen() {
               <View style={styles.headerContent}>
                 <View style={styles.logoContainer}>
                   <View style={styles.logoCircle}>
-                    <Ionicons name="lock-closed-outline" size={40} color="white" />
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={40}
+                      color="white"
+                    />
                   </View>
                 </View>
 
@@ -191,9 +212,17 @@ export default function ForgotPasswordScreen() {
                     </Typography>
 
                     <View style={styles.instructionBox}>
-                      <Ionicons name="information-circle" size={20} color="rgba(255, 255, 255, 0.8)" />
-                      <Typography variant="caption" style={styles.instructionText}>
-                        Check your email for the 6-digit code, then create your new password.
+                      <Ionicons
+                        name="information-circle"
+                        size={20}
+                        color="rgba(255, 255, 255, 0.8)"
+                      />
+                      <Typography
+                        variant="caption"
+                        style={styles.instructionText}
+                      >
+                        Check your email for the 6-digit code, then create your
+                        new password.
                       </Typography>
                     </View>
 
@@ -201,20 +230,23 @@ export default function ForgotPasswordScreen() {
                     <TouchableOpacity
                       style={[
                         styles.resendCodeButton,
-                        { opacity: resendCooldown > 0 || isLoading ? 0.6 : 1 }
+                        { opacity: resendCooldown > 0 || isLoading ? 0.6 : 1 },
                       ]}
                       onPress={handleResend}
                       disabled={resendCooldown > 0 || isLoading}
                       activeOpacity={0.9}
                     >
-                      <BlurView intensity={30} tint="light" style={styles.buttonBlur}>
+                      <BlurView
+                        intensity={30}
+                        tint="light"
+                        style={styles.buttonBlur}
+                      >
                         <Typography variant="body" style={styles.buttonText}>
                           {resendCooldown > 0
                             ? `Resend in ${resendCooldown}s`
                             : isLoading
-                            ? "Sending..."
-                            : "Resend Code"
-                          }
+                              ? "Sending..."
+                              : "Resend Code"}
                         </Typography>
                       </BlurView>
                     </TouchableOpacity>
@@ -224,16 +256,31 @@ export default function ForgotPasswordScreen() {
                       onPress={() => {
                         router.push({
                           pathname: "/auth/ResetPassword",
-                          params: { username: username.trim(), email: userEmail }
+                          params: {
+                            username: username.trim(),
+                            email: userEmail,
+                          },
                         });
                       }}
                       activeOpacity={0.9}
                     >
-                      <BlurView intensity={30} tint="light" style={styles.buttonBlur}>
-                        <Typography variant="body" style={styles.buttonText} weight="semibold">
+                      <BlurView
+                        intensity={30}
+                        tint="light"
+                        style={styles.buttonBlur}
+                      >
+                        <Typography
+                          variant="body"
+                          style={styles.buttonText}
+                          weight="semibold"
+                        >
                           Continue
                         </Typography>
-                        <Ionicons name="arrow-forward" size={20} color="white" />
+                        <Ionicons
+                          name="arrow-forward"
+                          size={20}
+                          color="white"
+                        />
                       </BlurView>
                     </TouchableOpacity>
                   </View>
@@ -244,7 +291,11 @@ export default function ForgotPasswordScreen() {
                   <>
                     {/* Username Input */}
                     <View style={styles.inputContainer}>
-                      <Typography variant="body" style={styles.inputLabel} weight="medium">
+                      <Typography
+                        variant="body"
+                        style={styles.inputLabel}
+                        weight="medium"
+                      >
                         Username
                       </Typography>
                       <TextField
@@ -259,14 +310,25 @@ export default function ForgotPasswordScreen() {
 
                     {/* Submit Button */}
                     <TouchableOpacity
-                      style={[styles.submitButton, { opacity: isLoading ? 0.7 : 1 }]}
+                      style={[
+                        styles.submitButton,
+                        { opacity: isLoading ? 0.7 : 1 },
+                      ]}
                       onPress={handleSubmit}
                       disabled={isLoading}
                       activeOpacity={0.9}
                     >
-                      <BlurView intensity={30} tint="light" style={styles.buttonBlur}>
-                        <Typography variant="body" weight="semibold" style={styles.buttonText}>
-                          {isLoading ? 'Sending...' : 'Send Reset Code'}
+                      <BlurView
+                        intensity={30}
+                        tint="light"
+                        style={styles.buttonBlur}
+                      >
+                        <Typography
+                          variant="body"
+                          weight="semibold"
+                          style={styles.buttonText}
+                        >
+                          {isLoading ? "Sending..." : "Send Reset Code"}
                         </Typography>
                         <Ionicons name="mail" size={20} color="white" />
                       </BlurView>
@@ -287,9 +349,16 @@ export default function ForgotPasswordScreen() {
                         style={styles.linkButton}
                         onPress={() => router.push("/auth/Login")}
                       >
-                        <Typography variant="body" style={styles.linkTextSecondary}>
+                        <Typography
+                          variant="body"
+                          style={styles.linkTextSecondary}
+                        >
                           Back to{" "}
-                          <Typography variant="body" style={styles.linkText} weight="semibold">
+                          <Typography
+                            variant="body"
+                            style={styles.linkText}
+                            weight="semibold"
+                          >
                             Sign In
                           </Typography>
                         </Typography>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,20 +8,25 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/ThemeContext';
-import { budgetService, BudgetProgress } from '../../services/budgetService';
-import { EXPENSE_CATEGORIES } from '../../services/expenseStorage';
-import { spacing, borderRadius, typography } from '../../constants/theme';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../contexts/ThemeContext";
+import { budgetService, BudgetProgress } from "../../services/budgetService";
+import { EXPENSE_CATEGORIES } from "../../services/expenseStorage";
+import { spacing, borderRadius, typography } from "../../constants/theme";
+import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
+import { LimitReachedPrompt } from "../../components/premium/LimitReachedPrompt";
+import { FeatureShowcase } from "../../components/premium/FeatureShowcase";
 
 export default function BudgetsScreen() {
   const { colors } = useTheme();
   const [budgetProgress, setBudgetProgress] = useState<BudgetProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showLimitPrompt, setShowLimitPrompt] = useState(false);
+  const [budgetLimit, setBudgetLimit] = useState(5); // Default to free tier
 
   useEffect(() => {
     loadBudgets();
@@ -35,8 +40,8 @@ export default function BudgetsScreen() {
       const progress = await budgetService.getAllBudgetProgress();
       setBudgetProgress(progress);
     } catch (error) {
-      console.error('Error loading budgets:', error);
-      Alert.alert('Error', 'Failed to load budgets');
+      console.error("Error loading budgets:", error);
+      Alert.alert("Error", "Failed to load budgets");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -45,20 +50,20 @@ export default function BudgetsScreen() {
 
   const handleDeleteBudget = (budgetId: string, budgetName: string) => {
     Alert.alert(
-      'Delete Budget',
+      "Delete Budget",
       `Are you sure you want to delete the "${budgetName}" budget?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: async () => {
             const success = await budgetService.deleteBudget(budgetId);
             if (success) {
-              Alert.alert('Success', 'Budget deleted successfully');
+              Alert.alert("Success", "Budget deleted successfully");
               loadBudgets();
             } else {
-              Alert.alert('Error', 'Failed to delete budget');
+              Alert.alert("Error", "Failed to delete budget");
             }
           },
         },
@@ -66,11 +71,11 @@ export default function BudgetsScreen() {
     );
   };
 
-  const getBudgetStatusColor = (status: BudgetProgress['status']) => {
+  const getBudgetStatusColor = (status: BudgetProgress["status"]) => {
     return budgetService.getBudgetStatusColor(status);
   };
 
-  const getBudgetStatusIcon = (status: BudgetProgress['status']) => {
+  const getBudgetStatusIcon = (status: BudgetProgress["status"]) => {
     return budgetService.getBudgetStatusIcon(status);
   };
 
@@ -78,44 +83,77 @@ export default function BudgetsScreen() {
     return `£${amount.toFixed(2)}`;
   };
 
+  const getCategoryIcon = (categoryName: string) => {
+    const categoryMap: { [key: string]: string } = {
+      "Monthly Budget": "💰",
+      General: "💰",
+      Shopping: "🛍️",
+      Utilities: "💡",
+      Entertainment: "🎬",
+      "Food & Dining": "🍔",
+      Transportation: "🚗",
+      "Health & Fitness": "💊",
+      Travel: "✈️",
+      "Bills & Utilities": "💡",
+      "Banking & Finance": "🏦",
+      Other: "📦",
+    };
+
+    return categoryMap[categoryName] || "📊";
+  };
+
   const renderBudgetCard = (progress: BudgetProgress) => {
-    const categoryInfo = EXPENSE_CATEGORIES.find(cat => cat.id === progress.budget.category);
+    const categoryInfo = EXPENSE_CATEGORIES.find(
+      (cat) => cat.id === progress.budget.category
+    );
     const statusColor = getBudgetStatusColor(progress.status);
     const statusIcon = getBudgetStatusIcon(progress.status);
+    const categoryIcon = getCategoryIcon(progress.budget.name);
 
     return (
       <View
         key={progress.budget.id}
-        style={[styles.budgetCard, { backgroundColor: colors.background.secondary }]}
+        style={[
+          styles.budgetCard,
+          { backgroundColor: colors.background.secondary },
+        ]}
       >
         <View style={styles.budgetHeader}>
           <View style={styles.budgetTitle}>
-            <Text style={styles.budgetEmoji}>
-              {categoryInfo?.emoji || '📊'}
-            </Text>
+            <Text style={styles.budgetEmoji}>{categoryIcon}</Text>
             <View style={styles.budgetTitleText}>
               <Text style={[styles.budgetName, { color: colors.text.primary }]}>
                 {progress.budget.name}
               </Text>
-              <Text style={[styles.budgetPeriod, { color: colors.text.secondary }]}>
+              <Text
+                style={[styles.budgetPeriod, { color: colors.text.secondary }]}
+              >
                 {progress.budget.period} • {progress.daysLeft} days left
               </Text>
             </View>
           </View>
 
           <View style={styles.budgetActions}>
-            <Text style={[styles.statusIcon, { color: statusColor }]}>
-              {statusIcon}
-            </Text>
+            <Ionicons name={statusIcon as any} size={20} color={statusColor} />
             <TouchableOpacity
-              onPress={() => router.push(`/budgets/edit?id=${progress.budget.id}`)}
-              style={[styles.actionButton, { backgroundColor: colors.background.primary }]}
+              onPress={() =>
+                router.push(`/budgets/edit?id=${progress.budget.id}`)
+              }
+              style={[
+                styles.actionButton,
+                { backgroundColor: colors.background.primary },
+              ]}
             >
               <Ionicons name="pencil" size={16} color={colors.text.secondary} />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => handleDeleteBudget(progress.budget.id, progress.budget.name)}
-              style={[styles.actionButton, { backgroundColor: colors.background.primary }]}
+              onPress={() =>
+                handleDeleteBudget(progress.budget.id, progress.budget.name)
+              }
+              style={[
+                styles.actionButton,
+                { backgroundColor: colors.background.primary },
+              ]}
             >
               <Ionicons name="trash" size={16} color="#EF4444" />
             </TouchableOpacity>
@@ -135,16 +173,25 @@ export default function BudgetsScreen() {
             style={[
               styles.remaining,
               {
-                color: progress.remaining >= 0 ? colors.text.secondary : '#EF4444'
+                color:
+                  progress.remaining >= 0 ? colors.text.secondary : "#EF4444",
               },
             ]}
           >
-            {progress.remaining >= 0 ? formatCurrency(progress.remaining) : formatCurrency(Math.abs(progress.remaining))} {progress.remaining >= 0 ? 'remaining' : 'over budget'}
+            {progress.remaining >= 0
+              ? formatCurrency(progress.remaining)
+              : formatCurrency(Math.abs(progress.remaining))}{" "}
+            {progress.remaining >= 0 ? "remaining" : "over budget"}
           </Text>
         </View>
 
         <View style={styles.progressContainer}>
-          <View style={[styles.progressBar, { backgroundColor: colors.border.light }]}>
+          <View
+            style={[
+              styles.progressBar,
+              { backgroundColor: colors.border.light },
+            ]}
+          >
             <View
               style={[
                 styles.progressFill,
@@ -159,7 +206,7 @@ export default function BudgetsScreen() {
                 style={[
                   styles.progressOverflow,
                   {
-                    backgroundColor: '#EF4444',
+                    backgroundColor: "#EF4444",
                     width: `${Math.min(progress.percentage - 100, 50)}%`,
                   },
                 ]}
@@ -173,7 +220,9 @@ export default function BudgetsScreen() {
 
         <View style={styles.budgetInsights}>
           <View style={styles.insightItem}>
-            <Text style={[styles.insightLabel, { color: colors.text.secondary }]}>
+            <Text
+              style={[styles.insightLabel, { color: colors.text.secondary }]}
+            >
               Daily Budget
             </Text>
             <Text style={[styles.insightValue, { color: colors.text.primary }]}>
@@ -181,16 +230,19 @@ export default function BudgetsScreen() {
             </Text>
           </View>
           <View style={styles.insightItem}>
-            <Text style={[styles.insightLabel, { color: colors.text.secondary }]}>
+            <Text
+              style={[styles.insightLabel, { color: colors.text.secondary }]}
+            >
               Projected
             </Text>
             <Text
               style={[
                 styles.insightValue,
                 {
-                  color: progress.projectedSpend > progress.budget.amount
-                    ? '#EF4444'
-                    : colors.text.primary
+                  color:
+                    progress.projectedSpend > progress.budget.amount
+                      ? "#EF4444"
+                      : colors.text.primary,
                 },
               ]}
             >
@@ -204,7 +256,12 @@ export default function BudgetsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <SafeAreaView
+        style={[
+          styles.container,
+          { backgroundColor: colors.background.primary },
+        ]}
+      >
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primary[500]} />
           <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
@@ -215,25 +272,119 @@ export default function BudgetsScreen() {
     );
   }
 
+  const { onTrack, atRisk, exceeded } = (() => {
+    const onTrack = budgetProgress.filter(
+      (b) => b.status === "on_track"
+    ).length;
+    const atRisk = budgetProgress.filter((b) => b.status === "warning").length;
+    const exceeded = budgetProgress.filter((b) => b.status === "danger").length;
+    return { onTrack, atRisk, exceeded };
+  })();
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color={colors.primary[500]}
+            />
           </TouchableOpacity>
-          <Text style={[styles.title, { color: colors.text.primary }]}>
-            Budgets
-          </Text>
+          <View>
+            <Text style={[styles.title, { color: colors.text.primary }]}>
+              💰 Budgets
+            </Text>
+            <Text
+              style={[styles.subtitle, { color: colors.text.secondary }]}
+            >
+              Track your spending limits
+            </Text>
+          </View>
         </View>
 
         <TouchableOpacity
-          onPress={() => router.push('/budgets/create')}
+          onPress={() => router.push("/budgets/edit")}
           style={[styles.addButton, { backgroundColor: colors.primary[500] }]}
         >
           <Ionicons name="add" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
+
+      {/* Upgrade Banner */}
+      <UpgradeBanner
+        variant="subtle"
+        message={`${budgetProgress.length}/${budgetLimit} budgets created`}
+        actionLabel="Upgrade"
+      />
+
+      {budgetProgress.length > 0 && (
+        <View
+          style={[
+            styles.summarySection,
+            { backgroundColor: colors.background.secondary },
+          ]}
+        >
+          <View style={styles.summaryItem}>
+            <View
+              style={[styles.summaryIcon, { backgroundColor: "#10B98120" }]}
+            >
+              <Ionicons
+                name="checkmark-circle"
+                size={20}
+                color="#10B981"
+              />
+            </View>
+            <Text style={[styles.summaryValue, { color: "#10B981" }]}>
+              {onTrack}
+            </Text>
+            <Text
+              style={[styles.summaryLabel, { color: colors.text.secondary }]}
+            >
+              On Track
+            </Text>
+          </View>
+
+          <View style={styles.summaryItem}>
+            <View
+              style={[styles.summaryIcon, { backgroundColor: "#F59E0B20" }]}
+            >
+              <Ionicons name="warning" size={20} color="#F59E0B" />
+            </View>
+            <Text style={[styles.summaryValue, { color: "#F59E0B" }]}>
+              {atRisk}
+            </Text>
+            <Text
+              style={[styles.summaryLabel, { color: colors.text.secondary }]}
+            >
+              At Risk
+            </Text>
+          </View>
+
+          <View style={styles.summaryItem}>
+            <View
+              style={[styles.summaryIcon, { backgroundColor: "#EF444420" }]}
+            >
+              <Ionicons
+                name="alert-circle"
+                size={20}
+                color="#EF4444"
+              />
+            </View>
+            <Text style={[styles.summaryValue, { color: "#EF4444" }]}>
+              {exceeded}
+            </Text>
+            <Text
+              style={[styles.summaryLabel, { color: colors.text.secondary }]}
+            >
+              Exceeded
+            </Text>
+          </View>
+        </View>
+      )}
 
       <ScrollView
         style={styles.content}
@@ -248,16 +399,50 @@ export default function BudgetsScreen() {
       >
         {budgetProgress.length === 0 ? (
           <View style={styles.emptyState}>
+            {/* Feature Showcase for Empty State */}
+            <FeatureShowcase
+              title="Unlock Budget Power with Premium"
+              features={[
+                {
+                  icon: "wallet",
+                  label: "Budgets",
+                  freeValue: "5",
+                  premiumValue: "Unlimited",
+                },
+                {
+                  icon: "alert-circle",
+                  label: "Spending Alerts",
+                  freeValue: "Basic",
+                  premiumValue: "Advanced",
+                },
+                {
+                  icon: "analytics",
+                  label: "Budget Analytics",
+                  freeValue: "Limited",
+                  premiumValue: "Full",
+                },
+              ]}
+            />
+
             <Text style={styles.emptyIcon}>💰</Text>
             <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
               No Budgets Yet
             </Text>
-            <Text style={[styles.emptyDescription, { color: colors.text.secondary }]}>
-              Create your first budget to start tracking your spending and reach your financial goals.
+            <Text
+              style={[
+                styles.emptyDescription,
+                { color: colors.text.secondary },
+              ]}
+            >
+              Create your first budget to start tracking your spending and reach
+              your financial goals.
             </Text>
             <TouchableOpacity
-              onPress={() => router.push('/budgets/create')}
-              style={[styles.emptyButton, { backgroundColor: colors.primary[500] }]}
+              onPress={() => router.push("/budgets/edit")}
+              style={[
+                styles.emptyButton,
+                { backgroundColor: colors.primary[500] },
+              ]}
             >
               <Text style={styles.emptyButtonText}>Create Budget</Text>
             </TouchableOpacity>
@@ -271,18 +456,37 @@ export default function BudgetsScreen() {
         {budgetProgress.length > 0 && (
           <View style={styles.suggestionsSection}>
             <TouchableOpacity
-              onPress={() => router.push('/insights')}
-              style={[styles.suggestionButton, { backgroundColor: colors.background.secondary }]}
+              onPress={() => router.push("/insights")}
+              style={[
+                styles.suggestionButton,
+                { backgroundColor: colors.background.secondary },
+              ]}
             >
               <Ionicons name="bulb" size={20} color={colors.primary[500]} />
-              <Text style={[styles.suggestionText, { color: colors.text.primary }]}>
+              <Text
+                style={[styles.suggestionText, { color: colors.text.primary }]}
+              >
                 Get Budget Suggestions
               </Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.text.secondary} />
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.text.secondary}
+              />
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
+
+      {/* Limit Reached Modal */}
+      <LimitReachedPrompt
+        visible={showLimitPrompt}
+        limitType="budgets"
+        currentUsage={budgetProgress.length}
+        limit={budgetLimit}
+        message={`You've reached the budget limit on your Free plan (${budgetLimit} budgets). Upgrade to Premium for unlimited budgets.`}
+        onDismiss={() => setShowLimitPrompt(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -292,27 +496,63 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: spacing.md,
     paddingBottom: spacing.sm,
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
+    flex: 1,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  subtitle: {
+    fontSize: 12,
+    fontWeight: "400",
+    marginTop: 2,
+  },
+  summarySection: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    marginHorizontal: spacing.md,
+    marginVertical: spacing.sm,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+  },
+  summaryItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  summaryIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  summaryValue: {
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  summaryLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
   },
   addButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   content: {
     flex: 1,
@@ -320,8 +560,8 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     marginTop: spacing.sm,
@@ -333,120 +573,130 @@ const styles = StyleSheet.create({
   budgetCard: {
     padding: spacing.md,
     borderRadius: borderRadius.lg,
-    gap: spacing.sm,
+    gap: spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   budgetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   budgetTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
     flex: 1,
   },
   budgetEmoji: {
-    fontSize: 24,
+    fontSize: 28,
   },
   budgetTitleText: {
     flex: 1,
   },
   budgetName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 4,
   },
   budgetPeriod: {
-    fontSize: 12,
-    textTransform: 'capitalize',
+    fontSize: 13,
+    textTransform: "capitalize",
+    fontWeight: "500",
   },
   budgetActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   statusIcon: {
     fontSize: 18,
     marginRight: spacing.xs,
   },
   actionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
   },
   budgetAmount: {
-    gap: 4,
+    gap: 6,
+    paddingBottom: spacing.xs,
   },
   amountRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    flexDirection: "row",
+    alignItems: "baseline",
     gap: spacing.xs,
   },
   spent: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: "800",
   },
   total: {
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: "400",
   },
   remaining: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "600",
   },
   progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
   },
   progressBar: {
     flex: 1,
     height: 8,
     borderRadius: 4,
-    overflow: 'hidden',
-    position: 'relative',
+    overflow: "hidden",
+    position: "relative",
   },
   progressFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: 4,
   },
   progressOverflow: {
-    position: 'absolute',
-    height: '100%',
+    position: "absolute",
+    height: "100%",
     right: 0,
     top: 0,
     borderRadius: 4,
   },
   progressText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     minWidth: 35,
-    textAlign: 'right',
+    textAlign: "right",
   },
   budgetInsights: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: spacing.xs,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: "#E5E7EB",
   },
   insightItem: {
-    alignItems: 'center',
+    alignItems: "center",
+    flex: 1,
   },
   insightLabel: {
     fontSize: 12,
-    marginBottom: 2,
+    fontWeight: "500",
+    marginBottom: 4,
   },
   insightValue: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: "700",
   },
   emptyState: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 60,
   },
   emptyIcon: {
@@ -455,12 +705,12 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: spacing.sm,
   },
   emptyDescription: {
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
     marginBottom: spacing.lg,
     paddingHorizontal: spacing.lg,
@@ -471,17 +721,17 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
   },
   emptyButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   suggestionsSection: {
     marginTop: spacing.lg,
     paddingTop: spacing.md,
   },
   suggestionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: spacing.md,
     borderRadius: borderRadius.md,
     gap: spacing.sm,
@@ -489,7 +739,6 @@ const styles = StyleSheet.create({
   suggestionText: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
-
 });

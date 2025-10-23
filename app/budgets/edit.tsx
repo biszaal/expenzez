@@ -3,14 +3,13 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
+  TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Dimensions,
-  Animated,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -18,9 +17,7 @@ import { budgetAPI } from "../../services/api";
 import { transactionAPI } from "../../services/api/transactionAPI";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
-import dayjs from "dayjs";
-
-const { width } = Dimensions.get("window");
+import { spacing, borderRadius } from "../../constants/theme";
 
 export default function EditBudgetPage() {
   const router = useRouter();
@@ -30,28 +27,10 @@ export default function EditBudgetPage() {
   const [mainBudget, setMainBudget] = useState<string>("2000");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(50));
 
   // Load user's saved budget on component mount
   useEffect(() => {
     loadUserBudget();
-  }, []);
-
-  // Animation on mount
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
   }, []);
 
   // Load user's saved budget from database
@@ -120,7 +99,7 @@ export default function EditBudgetPage() {
     } else {
       // Smart distribution based on typical spending patterns
       const smartWeights = getSmartWeights();
-      const categoryWeights: Array<{ id: string; weight: number }> = [];
+      const categoryWeights: { id: string; weight: number }[] = [];
       let totalWeight = 0;
 
       // Assign weights to each category
@@ -323,8 +302,8 @@ export default function EditBudgetPage() {
       // Save main budget and category budgets to DynamoDB
       await saveBudgetToDatabase(budgetAmount, categoryBudgetsByName);
 
-      Alert.alert("Success", "Budgets saved successfully to DynamoDB!", [
-        { text: "OK", onPress: () => router.back() },
+      Alert.alert("Success", "Budgets saved successfully!", [
+        { text: "OK", onPress: () => router.replace("/budgets") },
       ]);
     } catch (error) {
       console.error("Error saving budget:", error);
@@ -349,7 +328,64 @@ export default function EditBudgetPage() {
         // Generate categories from transactions
         const generatedCategories =
           generateCategoriesFromTransactions(transactions);
-        setCategories(generatedCategories);
+
+        // If no categories from transactions, show default categories for new users
+        if (generatedCategories.length === 0) {
+          const defaultCategories = [
+            {
+              id: "food_dining",
+              name: "Food & Dining",
+              icon: "restaurant",
+              totalSpent: 0,
+              count: 0,
+            },
+            {
+              id: "transportation",
+              name: "Transportation",
+              icon: "car",
+              totalSpent: 0,
+              count: 0,
+            },
+            {
+              id: "shopping",
+              name: "Shopping",
+              icon: "bag",
+              totalSpent: 0,
+              count: 0,
+            },
+            {
+              id: "entertainment",
+              name: "Entertainment",
+              icon: "game-controller",
+              totalSpent: 0,
+              count: 0,
+            },
+            {
+              id: "utilities",
+              name: "Utilities",
+              icon: "flash",
+              totalSpent: 0,
+              count: 0,
+            },
+            {
+              id: "healthcare",
+              name: "Healthcare",
+              icon: "medical",
+              totalSpent: 0,
+              count: 0,
+            },
+            {
+              id: "other",
+              name: "Other",
+              icon: "ellipsis-horizontal",
+              totalSpent: 0,
+              count: 0,
+            },
+          ];
+          setCategories(defaultCategories);
+        } else {
+          setCategories(generatedCategories);
+        }
 
         // Load existing category budgets
         try {
@@ -375,17 +411,13 @@ export default function EditBudgetPage() {
   if (loading) {
     return (
       <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: colors.background.secondary,
-        }}
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: colors.background.primary },
+        ]}
       >
         <ActivityIndicator size="large" color={colors.primary[500]} />
-        <Text
-          style={{ color: colors.text.primary, marginTop: 16, fontSize: 16 }}
-        >
+        <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
           Loading budget data...
         </Text>
       </View>
@@ -394,375 +426,409 @@ export default function EditBudgetPage() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background.secondary }}
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {/* Header */}
-      <Animated.View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingTop: 48,
-          paddingHorizontal: 20,
-          marginBottom: 8,
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-        }}
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.background.primary,
+            borderBottomColor: colors.border.light,
+          },
+        ]}
       >
-        <Pressable
-          onPress={() => router.back()}
-          style={{ marginRight: 12, padding: 4 }}
+        <TouchableOpacity
+          onPress={() => router.replace("/budgets")}
+          style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel="Go back to budgets"
         >
-          <Ionicons name="arrow-back" size={28} color={colors.text.primary} />
-        </Pressable>
-        <Text
-          style={{
-            fontSize: 28,
-            fontWeight: "bold",
-            color: colors.text.primary,
-          }}
-        >
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
           Edit Budgets
         </Text>
-      </Animated.View>
+        <View style={styles.headerSpacer} />
+      </View>
 
-      <Animated.ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 20, paddingBottom: 140 }}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {/* Main Budget Card */}
-        <Animated.View
-          style={{
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          }}
+        <View
+          style={[
+            styles.mainCard,
+            { backgroundColor: colors.background.secondary },
+          ]}
         >
-          <View
-            style={{
-              backgroundColor: colors.background.primary,
-              borderRadius: 20,
-              padding: 24,
-              marginBottom: 24,
-              shadowColor: colors.primary[500],
-              shadowOpacity: 0.1,
-              shadowRadius: 16,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 8,
-            }}
-          >
+          <View style={styles.cardHeader}>
             <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 20,
-              }}
+              style={[
+                styles.iconContainer,
+                { backgroundColor: colors.primary[100] },
+              ]}
             >
-              <View
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: colors.primary[100],
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 16,
-                }}
-              >
-                <Ionicons name="wallet" size={24} color={colors.primary[600]} />
-              </View>
-              <View>
-                <Text
-                  style={{
-                    color: colors.text.primary,
-                    fontWeight: "700",
-                    fontSize: 20,
-                    marginBottom: 4,
-                  }}
-                >
-                  Monthly Budget
-                </Text>
-                <Text
-                  style={{
-                    color: colors.text.secondary,
-                    fontSize: 14,
-                  }}
-                >
-                  Set your monthly spending limit
-                </Text>
-              </View>
+              <Ionicons name="wallet" size={24} color={colors.primary[600]} />
             </View>
-
-            <View
-              style={{
-                backgroundColor: colors.background.secondary,
-                borderRadius: 16,
-                padding: 16,
-                marginBottom: 16,
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.text.secondary,
-                  fontSize: 16,
-                  marginBottom: 8,
-                  fontWeight: "600",
-                }}
-              >
-                Budget Amount (£)
+            <View style={styles.headerText}>
+              <Text style={[styles.cardTitle, { color: colors.text.primary }]}>
+                Monthly Budget
               </Text>
-              <TextInput
-                style={{
-                  backgroundColor: colors.background.primary,
-                  borderRadius: 12,
-                  padding: 16,
-                  fontSize: 24,
-                  color: colors.text.primary,
-                  fontWeight: "bold",
-                  borderWidth: 2,
-                  borderColor: colors.primary[200],
-                }}
-                keyboardType="numeric"
-                value={mainBudget}
-                onChangeText={handleMainBudgetChange}
-                placeholder="2000"
-                accessibilityLabel="Set main budget"
-              />
-            </View>
-
-            <View
-              style={{
-                backgroundColor: overBudget
-                  ? colors.error[50]
-                  : colors.success[50],
-                borderRadius: 12,
-                padding: 16,
-                borderWidth: 1,
-                borderColor: overBudget
-                  ? colors.error[200]
-                  : colors.success[200],
-              }}
-            >
               <Text
-                style={{
-                  color: overBudget ? colors.error[700] : colors.success[700],
-                  fontWeight: "600",
-                  fontSize: 16,
-                  textAlign: "center",
-                }}
+                style={[styles.cardSubtitle, { color: colors.text.secondary }]}
               >
-                {overBudget ? (
-                  <>
-                    ⚠️ Over budget by £
-                    {(totalAssigned - mainBudgetNum).toFixed(2)}
-                  </>
-                ) : (
-                  <>
-                    Assigned: £{totalAssigned.toFixed(2)} / £
-                    {mainBudgetNum.toFixed(2)}
-                    {remaining > 0 && (
-                      <Text style={{ color: colors.text.secondary }}>
-                        {" "}
-                        (£{remaining.toFixed(2)} remaining)
-                      </Text>
-                    )}
-                  </>
-                )}
+                Set your monthly spending limit
               </Text>
             </View>
           </View>
-        </Animated.View>
+
+          <View
+            style={[
+              styles.inputSection,
+              { backgroundColor: colors.background.primary },
+            ]}
+          >
+            <Text style={[styles.inputLabel, { color: colors.text.secondary }]}>
+              Budget Amount (£)
+            </Text>
+            <TextInput
+              style={[
+                styles.mainInput,
+                {
+                  backgroundColor: colors.background.secondary,
+                  color: colors.text.primary,
+                  borderColor: colors.border.light,
+                },
+              ]}
+              keyboardType="numeric"
+              value={mainBudget}
+              onChangeText={handleMainBudgetChange}
+              placeholder="2000"
+              accessibilityLabel="Set main budget"
+            />
+          </View>
+
+          <View
+            style={[
+              styles.statusContainer,
+              {
+                backgroundColor: overBudget
+                  ? colors.error[50]
+                  : colors.success[50],
+                borderColor: overBudget
+                  ? colors.error[200]
+                  : colors.success[200],
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.statusText,
+                { color: overBudget ? colors.error[700] : colors.success[700] },
+              ]}
+            >
+              {overBudget
+                ? `⚠️ Over budget by £${(totalAssigned - mainBudgetNum).toFixed(2)}`
+                : `Assigned: £${totalAssigned.toFixed(2)} / £${mainBudgetNum.toFixed(2)}` +
+                  (remaining > 0
+                    ? ` (£${remaining.toFixed(2)} remaining)`
+                    : "")}
+            </Text>
+          </View>
+        </View>
 
         {/* Category Budgets */}
         {categories.length > 0 && (
-          <Animated.View
-            style={{
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            }}
+          <View
+            style={[
+              styles.categoryCard,
+              { backgroundColor: colors.background.secondary },
+            ]}
           >
-            <View
-              style={{
-                backgroundColor: colors.background.primary,
-                borderRadius: 20,
-                padding: 24,
-                marginBottom: 24,
-                shadowColor: colors.primary[500],
-                shadowOpacity: 0.1,
-                shadowRadius: 16,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 8,
-              }}
-            >
+            <View style={styles.cardHeader}>
               <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 20,
-                }}
+                style={[
+                  styles.iconContainer,
+                  { backgroundColor: colors.primary[100] },
+                ]}
               >
-                <View
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
-                    backgroundColor: colors.primary[100],
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: 16,
-                  }}
-                >
-                  <Ionicons name="list" size={24} color={colors.primary[600]} />
-                </View>
-                <View>
-                  <Text
-                    style={{
-                      color: colors.text.primary,
-                      fontWeight: "700",
-                      fontSize: 20,
-                      marginBottom: 4,
-                    }}
-                  >
-                    Category Budgets
-                  </Text>
-                  <Text
-                    style={{
-                      color: colors.text.secondary,
-                      fontSize: 14,
-                    }}
-                  >
-                    Auto-filled based on your spending
-                  </Text>
-                </View>
+                <Ionicons name="list" size={24} color={colors.primary[600]} />
               </View>
-
-              {categories.map((category, index) => (
-                <Animated.View
-                  key={category.id}
-                  style={{
-                    backgroundColor: colors.background.secondary,
-                    borderRadius: 16,
-                    padding: 16,
-                    marginBottom: 12,
-                    borderWidth: 1,
-                    borderColor: colors.border.light,
-                  }}
+              <View style={styles.headerText}>
+                <Text
+                  style={[styles.cardTitle, { color: colors.text.primary }]}
                 >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 12,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 16,
-                        backgroundColor: category.color + "20",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: 12,
-                      }}
-                    >
-                      <Ionicons
-                        name={category.icon as any}
-                        size={16}
-                        color={category.color}
-                      />
-                    </View>
-                    <Text
-                      style={{
-                        color: colors.text.primary,
-                        fontWeight: "600",
-                        fontSize: 16,
-                        flex: 1,
-                      }}
-                    >
-                      {category.name}
-                    </Text>
-                  </View>
-
-                  <TextInput
-                    style={{
-                      backgroundColor: colors.background.primary,
-                      borderRadius: 12,
-                      padding: 12,
-                      fontSize: 18,
-                      color: colors.text.primary,
-                      fontWeight: "600",
-                      borderWidth: 1,
-                      borderColor: colors.border.light,
-                    }}
-                    keyboardType="numeric"
-                    value={budgets[category.id] || ""}
-                    onChangeText={(value) =>
-                      handleCategoryBudgetChange(category.id, value)
-                    }
-                    placeholder="0"
-                  />
-                </Animated.View>
-              ))}
+                  Category Budgets
+                </Text>
+                <Text
+                  style={[
+                    styles.cardSubtitle,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  Auto-filled based on your spending
+                </Text>
+              </View>
             </View>
-          </Animated.View>
+
+            {categories.map((category) => (
+              <View
+                key={category.id}
+                style={[
+                  styles.categoryItem,
+                  {
+                    backgroundColor: colors.background.primary,
+                    borderColor: colors.border.light,
+                  },
+                ]}
+              >
+                <View style={styles.categoryHeader}>
+                  <View
+                    style={[
+                      styles.categoryIcon,
+                      { backgroundColor: category.color + "20" },
+                    ]}
+                  >
+                    <Ionicons
+                      name={category.icon as any}
+                      size={16}
+                      color={category.color}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.categoryName,
+                      { color: colors.text.primary },
+                    ]}
+                  >
+                    {category.name}
+                  </Text>
+                </View>
+
+                <TextInput
+                  style={[
+                    styles.categoryInput,
+                    {
+                      backgroundColor: colors.background.secondary,
+                      color: colors.text.primary,
+                      borderColor: colors.border.light,
+                    },
+                  ]}
+                  keyboardType="numeric"
+                  value={budgets[category.id] || ""}
+                  onChangeText={(value) =>
+                    handleCategoryBudgetChange(category.id, value)
+                  }
+                  placeholder="0"
+                />
+              </View>
+            ))}
+          </View>
         )}
 
         {/* Save Button */}
-        <Animated.View
-          style={{
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          }}
-        >
-          <Pressable
-            onPress={handleSave}
-            disabled={saving}
-            style={{
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={saving}
+          style={[
+            styles.saveButton,
+            {
               backgroundColor: saving
                 ? colors.primary[300]
                 : colors.primary[500],
-              borderRadius: 16,
-              padding: 18,
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "center",
-              shadowColor: colors.primary[500],
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 6,
-            }}
-          >
-            {saving ? (
-              <ActivityIndicator
-                size="small"
-                color="white"
-                style={{ marginRight: 8 }}
-              />
-            ) : (
-              <Ionicons
-                name="checkmark-circle"
-                size={20}
-                color="white"
-                style={{ marginRight: 8 }}
-              />
-            )}
-            <Text
-              style={{
-                color: "white",
-                fontWeight: "700",
-                fontSize: 18,
-              }}
-            >
-              {saving ? "Saving..." : "Save Budget"}
-            </Text>
-          </Pressable>
-        </Animated.View>
-      </Animated.ScrollView>
+            },
+          ]}
+        >
+          {saving ? (
+            <ActivityIndicator
+              size="small"
+              color="white"
+              style={styles.buttonIcon}
+            />
+          ) : (
+            <Ionicons
+              name="checkmark-circle"
+              size={20}
+              color="white"
+              style={styles.buttonIcon}
+            />
+          )}
+          <Text style={styles.saveButtonText}>
+            {saving ? "Saving..." : "Save Budget"}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingTop: 60,
+    paddingHorizontal: spacing.sm,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: 1,
+  },
+  backButton: {
+    padding: spacing.sm,
+    marginRight: spacing.sm,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    flex: 1,
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: spacing.sm,
+    paddingBottom: 100,
+  },
+  mainCard: {
+    borderRadius: borderRadius.xl,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  categoryCard: {
+    borderRadius: borderRadius.xl,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+  },
+  headerText: {
+    flex: 1,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: spacing.xs,
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  inputSection: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: spacing.sm,
+  },
+  mainInput: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    fontSize: 24,
+    fontWeight: "700",
+    borderWidth: 2,
+  },
+  statusContainer: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.sm,
+    borderWidth: 1,
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  categoryItem: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.sm,
+    marginBottom: spacing.xs,
+    borderWidth: 1,
+  },
+  categoryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  categoryIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.sm,
+  },
+  categoryName: {
+    fontSize: 16,
+    fontWeight: "600",
+    flex: 1,
+  },
+  categoryInput: {
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+    fontSize: 16,
+    fontWeight: "600",
+    borderWidth: 1,
+  },
+  saveButton: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    shadowColor: "#3B82F6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonIcon: {
+    marginRight: spacing.sm,
+  },
+  saveButtonText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+});

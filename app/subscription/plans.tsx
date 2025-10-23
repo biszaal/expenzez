@@ -18,14 +18,42 @@ import { useSubscription } from "../../hooks/useSubscription";
 import { PurchasesPackage } from "react-native-purchases";
 
 const PREMIUM_FEATURES = [
-  "Unlimited AI queries & insights",
-  "Unlimited budgets & goals",
-  "Advanced analytics & trends",
-  "Proactive alerts & daily briefs",
-  "Export reports (PDF/CSV)",
-  "Open Banking integration",
-  "Ad-free experience",
-  "Priority support",
+  { icon: "sparkles", label: "Unlimited AI queries & insights", free: false },
+  { icon: "wallet-outline", label: "Unlimited budgets & goals", free: false },
+  { icon: "analytics", label: "Advanced analytics & trends", free: false },
+  { icon: "notifications", label: "Proactive alerts & daily briefs", free: false },
+  { icon: "document-outline", label: "Export reports (PDF/CSV)", free: false },
+  { icon: "link", label: "Open Banking integration", free: false },
+  { icon: "eye-off-outline", label: "Ad-free experience", free: false },
+  { icon: "headset", label: "Priority support", free: false },
+];
+
+const FREE_FEATURES = [
+  { icon: "chatbubble-outline", label: "10 AI chats per day", free: true },
+  { icon: "wallet-outline", label: "5 budgets maximum", free: true },
+  { icon: "analytics", label: "Basic analytics", free: true },
+  { icon: "notifications", label: "Standard notifications", free: true },
+];
+
+const TESTIMONIALS = [
+  {
+    name: "Sarah M.",
+    role: "Small Business Owner",
+    text: "Premium helped me track expenses like never before. The unlimited budgets alone are worth it!",
+    rating: 5,
+  },
+  {
+    name: "James T.",
+    role: "Freelancer",
+    text: "The AI insights are incredible. It's like having a personal finance advisor in my pocket.",
+    rating: 5,
+  },
+  {
+    name: "Emma L.",
+    role: "Student",
+    text: "Best investment ever. The advanced analytics helped me save £500 last month!",
+    rating: 5,
+  },
 ];
 
 export default function SubscriptionPlansScreen() {
@@ -323,28 +351,30 @@ export default function SubscriptionPlansScreen() {
             <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-            Choose Your Plan
+            Upgrade to Premium
           </Text>
           <View style={styles.placeholder} />
         </View>
 
-        {/* Hero Section */}
+        {/* Hero Section - Simplified */}
         <View style={styles.heroSection}>
-          <Text style={[styles.heroTitle, { color: colors.text.primary }]}>
-            Unlock Premium Features
-          </Text>
-          <Text style={[styles.heroSubtitle, { color: colors.text.secondary }]}>
-            Get the most out of your financial tracking with our premium
-            features
-          </Text>
           <View
             style={[
               styles.trialBadge,
-              { backgroundColor: colors.success[500] },
+              { backgroundColor: colors.success[500] + "20" },
             ]}
           >
-            <Text style={styles.trialBadgeText}>14-Day Free Trial</Text>
+            <Ionicons name="star" size={16} color={colors.success[500]} />
+            <Text style={[styles.trialBadgeText, { color: colors.success[500] }]}>
+              Start Your 14-Day Free Trial Now
+            </Text>
           </View>
+          <Text style={[styles.heroTitle, { color: colors.text.primary }]}>
+            Unlock Unlimited Potential
+          </Text>
+          <Text style={[styles.heroSubtitle, { color: colors.text.secondary }]}>
+            Unlimited budgets · 50+ AI chats daily · Advanced analytics · No limits
+          </Text>
         </View>
 
         {/* Pricing Plans */}
@@ -379,21 +409,28 @@ export default function SubscriptionPlansScreen() {
             </View>
 
             <View style={styles.featuresContainer}>
-              {PREMIUM_FEATURES.slice(0, 4).map((feature, index) => (
+              {PREMIUM_FEATURES.map((feature, index) => (
                 <View key={index} style={styles.featureItem}>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={16}
-                    color={colors.success[500]}
-                  />
+                  <View style={[styles.featureIcon, { backgroundColor: colors.primary[500] + "20" }]}>
+                    <Ionicons
+                      name={feature.icon}
+                      size={14}
+                      color={colors.primary[500]}
+                    />
+                  </View>
                   <Text
                     style={[
                       styles.featureText,
                       { color: colors.text.secondary },
                     ]}
                   >
-                    {feature}
+                    {feature.label}
                   </Text>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color={colors.success[500]}
+                  />
                 </View>
               ))}
             </View>
@@ -453,19 +490,26 @@ export default function SubscriptionPlansScreen() {
             <View style={styles.featuresContainer}>
               {PREMIUM_FEATURES.map((feature, index) => (
                 <View key={index} style={styles.featureItem}>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={16}
-                    color={colors.success[500]}
-                  />
+                  <View style={[styles.featureIcon, { backgroundColor: colors.primary[500] + "20" }]}>
+                    <Ionicons
+                      name={feature.icon}
+                      size={14}
+                      color={colors.primary[500]}
+                    />
+                  </View>
                   <Text
                     style={[
                       styles.featureText,
                       { color: colors.text.secondary },
                     ]}
                   >
-                    {feature}
+                    {feature.label}
                   </Text>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color={colors.success[500]}
+                  />
                 </View>
               ))}
             </View>
@@ -484,9 +528,14 @@ export default function SubscriptionPlansScreen() {
           activeOpacity={0.8}
         >
           <Text style={styles.purchaseButtonText}>
-            {purchasing ? "Processing..." : "Start Premium"}
+            {purchasing ? "Processing..." : "Start 14-Day Free Trial"}
           </Text>
         </TouchableOpacity>
+
+        {/* Trial Note */}
+        <Text style={[styles.trialNote, { color: colors.text.tertiary }]}>
+          Your payment method will be charged £4.99/month after trial ends. Cancel anytime from App Store settings.
+        </Text>
 
         {/* Restore Purchases */}
         <TouchableOpacity
@@ -501,6 +550,93 @@ export default function SubscriptionPlansScreen() {
             Restore Purchases
           </Text>
         </TouchableOpacity>
+
+        {/* Key Benefits - Compact */}
+        <View style={[styles.keyBenefitsSection, { backgroundColor: colors.background.primary + "80" }]}>
+          <View style={styles.benefitRow}>
+            <Ionicons name="sparkles" size={20} color={colors.primary[500]} />
+            <Text style={[styles.benefitRowText, { color: colors.text.secondary }]}>
+              50+ AI chats every single day
+            </Text>
+          </View>
+          <View style={styles.benefitRow}>
+            <Ionicons name="wallet-outline" size={20} color={colors.primary[500]} />
+            <Text style={[styles.benefitRowText, { color: colors.text.secondary }]}>
+              Unlimited budgets & goals
+            </Text>
+          </View>
+          <View style={styles.benefitRow}>
+            <Ionicons name="analytics" size={20} color={colors.primary[500]} />
+            <Text style={[styles.benefitRowText, { color: colors.text.secondary }]}>
+              Advanced analytics & reports
+            </Text>
+          </View>
+          <View style={styles.benefitRow}>
+            <Ionicons name="shield-outline" size={20} color={colors.primary[500]} />
+            <Text style={[styles.benefitRowText, { color: colors.text.secondary }]}>
+              Secure & private always
+            </Text>
+          </View>
+        </View>
+
+        {/* Money Back Guarantee - Early */}
+        <View
+          style={[
+            styles.guaranteeCard,
+            { borderColor: colors.success[500], backgroundColor: colors.success[500] + "10" },
+          ]}
+        >
+          <View style={styles.guaranteeContent}>
+            <Ionicons
+              name="checkmark-circle"
+              size={28}
+              color={colors.success[500]}
+            />
+            <View style={styles.guaranteeText}>
+              <Text style={[styles.guaranteeTitle, { color: colors.text.primary }]}>
+                30-Day Money Back
+              </Text>
+              <Text style={[styles.guaranteeDescription, { color: colors.text.secondary }]}>
+                Not satisfied? Get a full refund, no questions asked.
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Testimonials Section */}
+        <View style={styles.testimonialsSection}>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+            💬 Users Love Premium
+          </Text>
+          {TESTIMONIALS.map((testimonial, index) => (
+            <View
+              key={index}
+              style={[
+                styles.testimonialCard,
+                { backgroundColor: colors.background.primary },
+              ]}
+            >
+              <View style={styles.testimonialHeader}>
+                <View>
+                  <Text style={[styles.testimonialName, { color: colors.text.primary }]}>
+                    {testimonial.name}
+                  </Text>
+                  <Text style={[styles.testimonialRole, { color: colors.text.tertiary }]}>
+                    {testimonial.role}
+                  </Text>
+                </View>
+                <View style={styles.stars}>
+                  {Array.from({ length: testimonial.rating }).map((_, i) => (
+                    <Ionicons key={i} name="star" size={12} color="#FCD34D" />
+                  ))}
+                </View>
+              </View>
+              <Text style={[styles.testimonialText, { color: colors.text.secondary }]}>
+                "{testimonial.text}"
+              </Text>
+            </View>
+          ))}
+        </View>
 
         {/* Required Legal Links */}
         <View style={styles.legalSection}>
@@ -590,10 +726,12 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    marginLeft: -8,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
+    letterSpacing: 0.2,
   },
   placeholder: {
     width: 40,
@@ -627,78 +765,100 @@ const styles = StyleSheet.create({
   },
   heroSection: {
     paddingHorizontal: 20,
-    paddingVertical: 24,
+    paddingVertical: 28,
     alignItems: "center",
   },
   heroTitle: {
-    fontSize: 28,
-    fontWeight: "700",
+    fontSize: 32,
+    fontWeight: "800",
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 12,
+    letterSpacing: -0.5,
   },
   heroSubtitle: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: "center",
     lineHeight: 24,
-    marginBottom: 16,
+    marginBottom: 20,
+    fontWeight: "500",
   },
   trialBadge: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 12,
+    paddingVertical: 10,
+    borderRadius: 25,
+    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    alignSelf: "center",
   },
   trialBadgeText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
   pricingSection: {
     paddingHorizontal: 20,
     gap: 16,
   },
   planCard: {
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 18,
+    padding: 24,
     borderWidth: 2,
     position: "relative",
+    opacity: 0.7,
   },
   selectedPlan: {
-    borderColor: "#3B82F6",
+    borderColor: "#8B5CF6",
+    opacity: 1,
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
   },
   popularBadge: {
     position: "absolute",
-    top: -8,
-    right: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    top: -12,
+    right: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   popularText: {
     color: "white",
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
   planHeader: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   planName: {
     fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 8,
+    fontWeight: "700",
+    marginBottom: 10,
+    letterSpacing: 0.2,
   },
   priceContainer: {
     flexDirection: "row",
     alignItems: "baseline",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   price: {
-    fontSize: 32,
-    fontWeight: "700",
+    fontSize: 36,
+    fontWeight: "800",
+    letterSpacing: -0.5,
   },
   period: {
-    fontSize: 16,
-    marginLeft: 4,
+    fontSize: 15,
+    marginLeft: 6,
+    fontWeight: "500",
   },
   savingsContainer: {
     flexDirection: "row",
@@ -714,31 +874,46 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   featuresContainer: {
-    gap: 12,
+    gap: 14,
   },
   featureItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 14,
   },
   featureText: {
     fontSize: 14,
     flex: 1,
+    fontWeight: "500",
   },
   purchaseButton: {
     marginHorizontal: 20,
-    marginVertical: 16,
-    paddingVertical: 16,
-    borderRadius: 12,
+    marginVertical: 20,
+    paddingVertical: 18,
+    borderRadius: 14,
     alignItems: "center",
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   purchaseButtonDisabled: {
     opacity: 0.6,
   },
   purchaseButtonText: {
     color: "white",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  trialNote: {
+    fontSize: 11,
+    textAlign: "center",
+    marginHorizontal: 20,
+    marginBottom: 12,
+    lineHeight: 16,
+    fontWeight: "400",
   },
   restoreButton: {
     flexDirection: "row",
@@ -754,12 +929,13 @@ const styles = StyleSheet.create({
   },
   legalSection: {
     marginHorizontal: 20,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   legalTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
+    fontWeight: "700",
+    marginBottom: 14,
+    letterSpacing: 0.1,
   },
   legalLinks: {
     gap: 12,
@@ -768,20 +944,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   legalLinkText: {
     fontSize: 14,
     flex: 1,
+    fontWeight: "500",
   },
   termsSection: {
     marginHorizontal: 20,
-    marginBottom: 32,
+    marginBottom: 40,
   },
   termsText: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 11,
+    lineHeight: 17,
     textAlign: "center",
+    fontWeight: "400",
   },
   setupCard: {
     borderRadius: 16,
@@ -812,5 +990,176 @@ const styles = StyleSheet.create({
   setupFooter: {
     fontSize: 12,
     marginTop: 8,
+  },
+  statsSection: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    marginHorizontal: 20,
+    marginVertical: 16,
+    borderRadius: 16,
+    backgroundColor: "rgba(59, 130, 246, 0.05)",
+  },
+  statItem: {
+    alignItems: "center",
+    gap: 8,
+  },
+  statNumber: {
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  featureIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  divider: {
+    height: 1,
+    marginVertical: 12,
+  },
+  upgradeHint: {
+    fontSize: 12,
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 4,
+  },
+  keyBenefitsSection: {
+    marginHorizontal: 20,
+    marginVertical: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 20,
+    borderRadius: 16,
+    gap: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  benefitRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  benefitRowText: {
+    fontSize: 15,
+    fontWeight: "600",
+    flex: 1,
+  },
+  testimonialsSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    marginBottom: 12,
+    letterSpacing: 0.2,
+  },
+  testimonialCard: {
+    borderRadius: 14,
+    padding: 16,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: "transparent",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  testimonialHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  testimonialName: {
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: 0.1,
+  },
+  stars: {
+    flexDirection: "row",
+    gap: 3,
+  },
+  testimonialRole: {
+    fontSize: 12,
+    fontWeight: "400",
+    marginTop: 2,
+  },
+  testimonialText: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontStyle: "italic",
+  },
+  whyPremiumSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    gap: 16,
+  },
+  benefitsGrid: {
+    gap: 16,
+  },
+  benefitItem: {
+    alignItems: "center",
+    gap: 12,
+  },
+  benefitIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  benefitTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  benefitText: {
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  guaranteeCard: {
+    marginHorizontal: 20,
+    marginVertical: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  guaranteeContent: {
+    flexDirection: "row",
+    gap: 14,
+    alignItems: "center",
+  },
+  guaranteeText: {
+    flex: 1,
+    gap: 6,
+  },
+  guaranteeTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+  },
+  guaranteeDescription: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "400",
   },
 });

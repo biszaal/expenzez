@@ -652,6 +652,14 @@ class ErrorHandlerService {
       "/auth/confirm-signup"
     );
     const isLoginEndpoint = context?.endpoint?.includes("/auth/login");
+
+    // Check for optional AI endpoints that use fallback patterns
+    const isOptionalAIEndpoint =
+      context?.endpoint?.includes("/ai/insight") ||
+      context?.endpoint?.includes("/ai/monthly-report/latest") ||
+      context?.endpoint?.includes("/briefs/daily") ||
+      context?.endpoint?.includes("/alerts/pending");
+
     const isDevelopmentEndpoint =
       isSecurityEndpoint ||
       isNotificationEndpoint ||
@@ -665,6 +673,11 @@ class ErrorHandlerService {
       (error.statusCode === 404 || error.code === "REQUEST_TIMEOUT")
     ) {
       return; // Completely silent for expected development errors
+    }
+
+    // Skip logging optional AI endpoint 404s (they have fallback mechanisms)
+    if (isOptionalAIEndpoint && error.statusCode === 404) {
+      return; // Completely silent for optional endpoints with fallbacks
     }
 
     const logLevel = isExpectedBehavior ? "INFO" : "ERROR";

@@ -1,4 +1,4 @@
-import Constants from 'expo-constants';
+import Constants from "expo-constants";
 
 export interface EnvironmentConfig {
   isProduction: boolean;
@@ -6,7 +6,7 @@ export interface EnvironmentConfig {
   isDevelopment: boolean;
   apiBaseURL: string;
   websiteURL: string;
-  environment: 'development' | 'testflight' | 'production';
+  environment: "development" | "testflight" | "production";
 }
 
 /**
@@ -16,38 +16,39 @@ export interface EnvironmentConfig {
 const detectTestFlight = (): boolean => {
   // Check if we're on iOS and in release channel but not App Store
   const isIOS = Constants.platform?.ios;
-  const releaseChannel = (Constants.expoConfig as any)?.releaseChannel || 'default';
+  const releaseChannel =
+    (Constants.expoConfig as any)?.releaseChannel || "default";
   const appOwnership = Constants.appOwnership;
-  
+
   // TestFlight apps typically have:
   // - appOwnership: 'expo' or 'standalone'
   // - No release channel or 'default'
   // - iOS platform
-  
+
   if (isIOS) {
     // If we have a bundle ID but no release channel, likely TestFlight
     const bundleId = Constants.expoConfig?.ios?.bundleIdentifier;
-    if (bundleId && (!releaseChannel || releaseChannel === 'default')) {
+    if (bundleId && (!releaseChannel || releaseChannel === "default")) {
       return true;
     }
   }
-  
+
   return false;
 };
 
 /**
  * Detect current environment
  */
-const detectEnvironment = (): 'development' | 'testflight' | 'production' => {
+const detectEnvironment = (): "development" | "testflight" | "production" => {
   if (__DEV__) {
-    return 'development';
+    return "development";
   }
-  
+
   if (detectTestFlight()) {
-    return 'testflight';
+    return "testflight";
   }
-  
-  return 'production';
+
+  return "production";
 };
 
 const environment = detectEnvironment();
@@ -56,20 +57,20 @@ const environment = detectEnvironment();
  * Environment-specific configuration
  */
 export const ENV_CONFIG: EnvironmentConfig = {
-  isProduction: environment === 'production',
-  isTestFlight: environment === 'testflight',
-  isDevelopment: environment === 'development',
+  isProduction: environment === "production",
+  isTestFlight: environment === "testflight",
+  isDevelopment: environment === "development",
   environment,
-  
+
   // API Configuration - ALWAYS use production AWS API Gateway
-  apiBaseURL: 'https://jvgwbst4og.execute-api.eu-west-2.amazonaws.com', // Production AWS API Gateway
+  apiBaseURL: "https://zwin017u7e.execute-api.eu-west-2.amazonaws.com", // Production AWS API Gateway (expenzez-backend-prod)
 
   // Website URLs
-  websiteURL: environment === 'development'
-    ? 'http://localhost:3000'
-    : 'https://expenzez.com'
+  websiteURL:
+    environment === "development"
+      ? "http://localhost:3000"
+      : "https://expenzez.com",
 };
-
 
 /**
  * Check if current environment is TestFlight
@@ -90,14 +91,14 @@ export const isProduction = (): boolean => {
  */
 export const getEnvironmentName = (): string => {
   switch (ENV_CONFIG.environment) {
-    case 'development':
-      return 'Development';
-    case 'testflight':
-      return 'TestFlight';
-    case 'production':
-      return 'Production';
+    case "development":
+      return "Development";
+    case "testflight":
+      return "TestFlight";
+    case "production":
+      return "Production";
     default:
-      return 'Unknown';
+      return "Unknown";
   }
 };
 
@@ -106,12 +107,13 @@ export const getEnvironmentName = (): string => {
  */
 export const logEnvironmentInfo = (): void => {
   if (__DEV__) {
-    console.log('🏗️ Environment Configuration:', {
+    console.log("🏗️ Environment Configuration:", {
       environment: ENV_CONFIG.environment,
       isTestFlight: ENV_CONFIG.isTestFlight,
       isProduction: ENV_CONFIG.isProduction,
       apiBaseURL: ENV_CONFIG.apiBaseURL,
-      releaseChannel: (Constants.expoConfig as any)?.releaseChannel || 'default',
+      releaseChannel:
+        (Constants.expoConfig as any)?.releaseChannel || "default",
       appOwnership: Constants.appOwnership,
       bundleId: Constants.expoConfig?.ios?.bundleIdentifier,
     });
@@ -119,6 +121,6 @@ export const logEnvironmentInfo = (): void => {
 };
 
 // Force log environment on every import for debugging API connection issues
-console.log('🔧 [DEBUG] Current API Base URL:', ENV_CONFIG.apiBaseURL);
-console.log('🔧 [DEBUG] Environment detected as:', ENV_CONFIG.environment);
-console.log('🔧 [DEBUG] __DEV__ flag:', __DEV__);
+console.log("🔧 [DEBUG] Current API Base URL:", ENV_CONFIG.apiBaseURL);
+console.log("🔧 [DEBUG] Environment detected as:", ENV_CONFIG.environment);
+console.log("🔧 [DEBUG] __DEV__ flag:", __DEV__);

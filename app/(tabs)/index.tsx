@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ScrollView, RefreshControl, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import dayjs from "dayjs";
@@ -26,8 +27,14 @@ import {
   UpcomingBillsCard,
   NotificationCard,
 } from "../../components/home";
+import { CompactSpendingSummary } from "../../components/home/CompactSpendingSummary";
+import { CompactBudgetStatus } from "../../components/home/CompactBudgetStatus";
 import { AIBriefCard } from "../../components/alerts/AIBriefCard";
 import { ProactiveAlertsList } from "../../components/alerts/ProactiveAlertsList";
+import { api } from "../../services/config/apiClient";
+import { TransactionService } from "../../services/transactionService";
+import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
+import { FeatureShowcase } from "../../components/premium/FeatureShowcase";
 
 interface Transaction {
   id: string;
@@ -57,6 +64,7 @@ interface Account {
 export default function HomeScreen() {
   const { colors } = useTheme();
   const { isLocked } = useSecurity();
+  const router = useRouter();
   // Subscription features removed - all users have free access
   const { unreadCount } = useNotifications();
   const { isLoggedIn, user } = useAuth();
@@ -104,37 +112,24 @@ export default function HomeScreen() {
   // Load manual balance from database
   const loadManualBalance = async () => {
     try {
-      const token = await SecureStore.getItemAsync("accessToken", {
-        keychainService: "expenzez-tokens",
-      });
-      if (!token) {
-        console.error("No access token found for manual balance");
-        return;
-      }
+      const response = await api.get("/profile");
+      const profile = response.data?.profile ?? response.data;
 
-      const response = await fetch(
-        "https://jvgwbst4og.execute-api.eu-west-2.amazonaws.com/profile",
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+      if (profile) {
+        // Use cachedBalance as the primary balance source
+        if (profile.cachedBalance !== undefined) {
+          setTotalBalance(profile.cachedBalance);
         }
-      );
 
-      if (response.ok) {
-        const data = await response.json();
         if (
-          data.profile &&
-          data.profile.manualBalance !== null &&
-          data.profile.manualBalance !== undefined
+          profile.manualBalance !== null &&
+          profile.manualBalance !== undefined
         ) {
-          setManualBalance(data.profile.manualBalance);
-          setIsManualBalance(data.profile.isManualBalance || false);
+          setManualBalance(profile.manualBalance);
         }
-      } else {
-        console.error("💰 [Home] Failed to load profile:", response.status);
+        if (profile.isManualBalance !== undefined) {
+          setIsManualBalance(Boolean(profile.isManualBalance));
+        }
       }
     } catch (error) {
       console.error("Error loading manual balance:", error);
@@ -144,52 +139,17 @@ export default function HomeScreen() {
   // Save manual balance to database
   const saveManualBalance = async (balance: number) => {
     try {
-      const token = await SecureStore.getItemAsync("accessToken", {
-        keychainService: "expenzez-tokens",
+      const response = await api.put("/profile", {
+        manualBalance: balance,
+        isManualBalance: true,
       });
-      if (!token) {
-        console.error("No access token found");
-        return false;
-      }
 
-      const response = await fetch(
-        "https://jvgwbst4og.execute-api.eu-west-2.amazonaws.com/profile",
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            manualBalance: balance,
-            isManualBalance: true,
-          }),
-        }
-      );
+      const profile = response.data?.profile ?? response.data;
+      setManualBalance(profile?.manualBalance ?? balance);
+      setIsManualBalance(profile?.isManualBalance ?? true);
 
-      if (response.ok) {
-        try {
-          const data = await response.json();
-          setManualBalance(balance);
-          setIsManualBalance(true);
-          return true;
-        } catch (parseError) {
-          console.error("💰 [Home] JSON parse error:", parseError);
-          return false;
-        }
-      } else {
-        try {
-          const errorData = await response.json();
-          console.error("💰 [Home] Manual balance save failed:", errorData);
-          return false;
-        } catch (parseError) {
-          console.error(
-            "💰 [Home] Error response JSON parse error:",
-            parseError
-          );
-          return false;
-        }
-      }
+      await balanceAPI.invalidateCache().catch(() => {});
+      return true;
     } catch (error) {
       console.error("Error saving manual balance:", error);
       return false;
@@ -199,72 +159,16 @@ export default function HomeScreen() {
   // Clear manual balance (use calculated balance)
   const clearManualBalance = async () => {
     try {
-      const token = await SecureStore.getItemAsync("accessToken", {
-        keychainService: "expenzez-tokens",
+      const response = await api.put("/profile", {
+        isManualBalance: false,
       });
-      if (!token) {
-        console.error("No access token found for clearing manual balance");
-        return false;
-      }
 
-      const response = await fetch(
-        "https://jvgwbst4og.execute-api.eu-west-2.amazonaws.com/profile",
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            isManualBalance: false,
-          }),
-        }
-      );
+      const profile = response.data?.profile ?? response.data;
+      setManualBalance(profile?.manualBalance ?? null);
+      setIsManualBalance(Boolean(profile?.isManualBalance));
 
-      console.log(
-        "💰 [Home] Clear manual balance API response:",
-        response.status
-      );
-
-      if (response.ok) {
-        try {
-          const data = await response.json();
-          console.log("💰 [Home] Manual balance cleared successfully:");
-          setManualBalance(null);
-          setIsManualBalance(false);
-          return true;
-        } catch (parseError) {
-          console.error(
-            "💰 [Home] Clear balance JSON parse error:",
-            parseError
-          );
-          console.log(
-            "💰 [Home] Clear balance response text:",
-            await response.text()
-          );
-          // Still clear the local state even if JSON parsing fails
-          setManualBalance(null);
-          setIsManualBalance(false);
-          return true;
-        }
-      } else {
-        try {
-          const errorData = await response.json();
-          console.error("💰 [Home] Clear manual balance failed:", errorData);
-          return false;
-        } catch (parseError) {
-          console.error(
-            "💰 [Home] Clear balance error response JSON parse error:",
-            parseError
-          );
-          const errorText = await response.text();
-          console.error(
-            "💰 [Home] Clear balance error response text:",
-            errorText
-          );
-          return false;
-        }
-      }
+      await balanceAPI.invalidateCache().catch(() => {});
+      return true;
     } catch (error) {
       console.error("Error clearing manual balance:", error);
       return false;
@@ -293,15 +197,25 @@ export default function HomeScreen() {
       // Save the updated manual balance to database
       saveManualBalance(newManualBalance);
     } else {
-      // Update calculated balance
-      const newBalance = totalBalance + transaction.amount;
-      setTotalBalance(newBalance);
-      console.log("💰 [Home] Calculated balance updated:", {
-        oldBalance: totalBalance,
-        newBalance: newBalance,
-        transactionAmount: transaction.amount,
+      // Update calculated balance using all transactions
+      setTransactions((prevTransactions) => {
+        const allTransactions = [transaction, ...prevTransactions];
+        const newBalance = TransactionService.calculateBalance(allTransactions);
+        setTotalBalance(newBalance);
+
+        console.log("💰 [Home] Calculated balance updated:", {
+          oldBalance: totalBalance,
+          newBalance: newBalance,
+          transactionAmount: transaction.amount,
+          totalTransactions: allTransactions.length,
+        });
+
+        return allTransactions;
       });
     }
+
+    // Note: The backend automatically updates cachedBalance when creating transactions
+    // so the next time the profile is loaded, it will have the correct balance
   };
 
   // Get current display balance (manual or calculated)
@@ -385,7 +299,7 @@ export default function HomeScreen() {
             .startOf("month")
             .format("YYYY-MM-DD"),
           endDate: dayjs().endOf("month").format("YYYY-MM-DD"),
-          limit: 1000 // Load more for fallback balance calculation
+          limit: 1000, // Load more for fallback balance calculation
         })
         .catch((error) => {
           console.error("❌ Error loading transactions:", error);
@@ -417,13 +331,18 @@ export default function HomeScreen() {
         transactionResponse.transactions.length > 0
       ) {
         // Fallback: Calculate balance client-side from all loaded transactions
-        finalBalance = (transactionResponse.transactions as any[]).reduce(
-          (sum: number, tx: any): number => {
-            const amount = parseFloat(tx.amount) || 0;
-            return sum + amount;
-          },
-          0
+        const transactions = transactionResponse.transactions.map(
+          (tx: any) => ({
+            id: tx.id || `tx_${Date.now()}`,
+            amount: parseFloat(tx.amount) || 0,
+            type: tx.type || (tx.amount < 0 ? "debit" : "credit"),
+            category: tx.category || "General",
+            description: tx.description || "Transaction",
+            date: tx.date || new Date().toISOString(),
+          })
         );
+
+        finalBalance = TransactionService.calculateBalance(transactions);
         console.log(
           `✅ Balance calculated client-side (fallback): ${finalBalance} from ${transactionResponse.transactions.length} transactions`
         );
@@ -806,10 +725,41 @@ export default function HomeScreen() {
           {/* Show notifications only if there are unread notifications */}
           {unreadCount > 0 && <NotificationCard />}
 
-          {/* Premium features removed - all users have free access */}
+          {/* Upgrade Banner - Persistent reminder to upgrade */}
+          <UpgradeBanner
+            variant="subtle"
+            message="Upgrade to Premium for unlimited budgets & advanced features"
+            actionLabel="Upgrade"
+          />
 
-          {/* AI Daily Brief - Phase 2B */}
-          <AIBriefCard onRefresh={forceRefresh} />
+          {/* Feature Showcase - Highlights premium benefits */}
+          <FeatureShowcase
+            title="Premium Benefits"
+            features={[
+              {
+                icon: "wallet",
+                label: "Budgets",
+                freeValue: "5",
+                premiumValue: "Unlimited",
+              },
+              {
+                icon: "chatbubble",
+                label: "AI Chats/Day",
+                freeValue: "10",
+                premiumValue: "50",
+              },
+              {
+                icon: "analytics",
+                label: "Advanced Reports",
+                freeValue: "Basic",
+                premiumValue: "Full",
+              },
+            ]}
+          />
+
+          {/* Compact Financial Overview */}
+          <CompactSpendingSummary onViewAll={() => router.push("/spending")} />
+          <CompactBudgetStatus onViewAll={() => router.push("/budgets")} />
 
           {/* Proactive Alerts - Phase 2B (show max 3 on home screen) */}
           <ProactiveAlertsList

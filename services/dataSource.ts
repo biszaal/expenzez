@@ -370,23 +370,68 @@ export const getProfile = async (
       return await cachedApiCall(
         "user_profile",
         async () => {
-          const response = await profileAPI.getProfile();
-          if (!response || !response.profile) {
-            console.warn("⚠️ Profile API returned null or empty response");
-            return null;
+          try {
+            const response = await profileAPI.getProfile();
+            console.log(
+              "📊 [DataSource] Profile API response:",
+              JSON.stringify(response, null, 2)
+            );
+
+            if (!response) {
+              console.warn("⚠️ Profile API returned null response");
+              return null;
+            }
+
+            if (!response.profile) {
+              console.warn(
+                "⚠️ Profile API response missing 'profile' property"
+              );
+              console.log(
+                "📊 [DataSource] Available properties:",
+                Object.keys(response)
+              );
+              return null;
+            }
+
+            return response.profile;
+          } catch (error) {
+            console.error("❌ [DataSource] Error in profile API call:", error);
+            throw error;
           }
-          return response.profile;
         },
         CACHE_TTL.VERY_LONG, // 24 hours - profile changes infrequently
         options.forceRefresh
       );
     } else {
-      const response = await profileAPI.getProfile();
-      if (!response || !response.profile) {
-        console.warn("⚠️ Profile API returned null or empty response");
-        return null;
+      try {
+        const response = await profileAPI.getProfile();
+        console.log(
+          "📊 [DataSource] Profile API response (no cache):",
+          JSON.stringify(response, null, 2)
+        );
+
+        if (!response) {
+          console.warn("⚠️ Profile API returned null response");
+          return null;
+        }
+
+        if (!response.profile) {
+          console.warn("⚠️ Profile API response missing 'profile' property");
+          console.log(
+            "📊 [DataSource] Available properties:",
+            Object.keys(response)
+          );
+          return null;
+        }
+
+        return response.profile;
+      } catch (error) {
+        console.error(
+          "❌ [DataSource] Error in profile API call (no cache):",
+          error
+        );
+        throw error;
       }
-      return response.profile;
     }
   } catch (error) {
     console.error("Error loading profile:", error);

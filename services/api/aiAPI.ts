@@ -10,9 +10,18 @@ import {
 } from "./savingsInsightsAPI";
 import { BillsAPI } from "./billsAPI";
 
+// Rate limiting helper
+const rateLimitDelay = async (retryCount: number) => {
+  const delay = Math.min(1000 * Math.pow(2, retryCount), 10000); // Exponential backoff, max 10s
+  console.log(
+    `[AI] Rate limit hit, waiting ${delay}ms before retry ${retryCount + 1}`
+  );
+  await new Promise((resolve) => setTimeout(resolve, delay));
+};
+
 export const aiService = {
   // AI Assistant functionality
-  getAIInsight: async (message: string) => {
+  getAIInsight: async (message: string, retryCount = 0) => {
     try {
       const token = await SecureStore.getItemAsync("accessToken", {
         keychainService: "expenzez-tokens",
@@ -148,10 +157,44 @@ export const aiService = {
         // Continue without context - AI will use general responses
       }
 
-      const response = await aiAPI.post("/ai/insight", {
-        message,
-        financialContext,
-      });
+      let response;
+      try {
+        response = await aiAPI.post("/ai/insight", {
+          message,
+          financialContext,
+        });
+      } catch (error: any) {
+        // Handle rate limiting (429) with retry logic
+        if (error.response?.status === 429 && retryCount < 3) {
+          console.log(
+            `[AI] Rate limit hit (429), retrying... (attempt ${retryCount + 1}/3)`
+          );
+          await rateLimitDelay(retryCount);
+          return aiService.getAIInsight(message, retryCount + 1);
+        }
+
+        // Handle other errors or max retries reached
+        if (error.response?.status === 429) {
+          console.log("[AI] Rate limit exceeded, using fallback response");
+
+          // Calculate next reset time (midnight UTC)
+          const now = new Date();
+          const tomorrow = new Date(now);
+          tomorrow.setUTCHours(24, 0, 0, 0); // Next midnight UTC
+          const hours = Math.floor((tomorrow.getTime() - now.getTime()) / (1000 * 60 * 60));
+          const minutes = Math.floor(((tomorrow.getTime() - now.getTime()) % (1000 * 60 * 60)) / (1000 * 60));
+          const resetTime = tomorrow.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+          return {
+            answer:
+              `You've reached your daily AI chat limit (10 per day). Your limit will reset tomorrow at ${resetTime}.\n\nTip: You can still ask me simpler questions about your spending using the fallback responses, or explore other features of the app!`,
+            confidence: 0.5,
+            source: "rate_limit_fallback",
+          };
+        }
+
+        throw error;
+      }
 
       console.log("📥 [AI] Backend response:", JSON.stringify(response.data));
 
@@ -373,7 +416,17 @@ export const aiService = {
           if (serviceMatch) {
             const serviceName = serviceMatch[1].replace(/\?/g, "").trim();
             // SubscriptionOptimizer removed - feature not implemented
-            const guide = { service: serviceName, averageTime: "5-10 minutes", steps: ["Visit service website", "Go to account settings", "Find subscription/billing section", "Cancel subscription"], warning: null };
+            const guide = {
+              service: serviceName,
+              averageTime: "5-10 minutes",
+              steps: [
+                "Visit service website",
+                "Go to account settings",
+                "Find subscription/billing section",
+                "Cancel subscription",
+              ],
+              warning: null,
+            };
             fallbackResponse = `📱 **How to Cancel ${guide.service}**\n\n`;
             fallbackResponse += `⏱️ Average time: ${guide.averageTime}\n\n`;
             fallbackResponse += guide.steps.join("\n");
@@ -450,14 +503,30 @@ export const aiService = {
   },
 
   // Save AI chat message
-  saveAIChatMessage: async (role: string, content: string) => {
+  saveAIChatMessage: async (role: string, content: string, retryCount = 0) => {
     try {
       const response = await aiAPI.post("/ai/chat-message", { role, content });
       return response.data;
     } catch (error: any) {
+      // Handle rate limiting (429) with retry logic
+      if (error.response?.status === 429 && retryCount < 2) {
+        console.log(
+          `[AI Chat] Rate limit hit (429), retrying... (attempt ${retryCount + 1}/2)`
+        );
+        await rateLimitDelay(retryCount);
+        return aiService.saveAIChatMessage(role, content, retryCount + 1);
+      }
+
       if (error.response?.status === 404 || error.response?.status === 401) {
         return { success: true };
       }
+
+      // For rate limit after max retries, just return success
+      if (error.response?.status === 429) {
+        console.log("[AI Chat] Rate limit exceeded, skipping save");
+        return { success: true };
+      }
+
       throw error;
     }
   },

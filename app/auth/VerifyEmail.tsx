@@ -71,7 +71,7 @@ export default function VerifyEmail() {
 
   const logoRotationInterpolate = logoRotation.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+    outputRange: ["0deg", "360deg"],
   });
 
   const handleConfirm = async () => {
@@ -93,17 +93,21 @@ export default function VerifyEmail() {
 
     setIsLoading(true);
     try {
-      console.log("Attempting verification with:", { username, email, code: "***" });
-      
-      // Send only username and code as expected by the API
-      const response = await authAPI.confirmSignUp({ 
-        username: username || email,
-        code: code.trim()
+      console.log("Attempting verification with:", {
+        username,
+        email,
+        code: "***",
       });
-      
+
+      // Send only username and code as expected by the API
+      const response = await authAPI.confirmSignUp({
+        username: username || email,
+        code: code.trim(),
+      });
+
       console.log("Verification response:", response);
       showSuccess("Email verified successfully! You can now log in.");
-      
+
       // Navigate to login after successful verification
       setTimeout(() => {
         router.replace("/auth/Login");
@@ -115,9 +119,9 @@ export default function VerifyEmail() {
         status: err.response?.status,
         message: err.message,
       });
-      
+
       let errorMessage = "Verification failed. Please try again.";
-      
+
       // Parse error response
       if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
@@ -126,17 +130,25 @@ export default function VerifyEmail() {
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       // Handle specific error cases
-      if (errorMessage.toLowerCase().includes("expired") || 
-          errorMessage.toLowerCase().includes("expir")) {
+      if (
+        errorMessage.toLowerCase().includes("expired") ||
+        errorMessage.toLowerCase().includes("expir")
+      ) {
         showError("Verification code has expired. Please request a new one.");
-      } else if (errorMessage.toLowerCase().includes("invalid") || 
-                 errorMessage.toLowerCase().includes("incorrect") ||
-                 errorMessage.toLowerCase().includes("mismatch")) {
-        showError("Invalid verification code. Please check the code and try again.");
-      } else if (errorMessage.toLowerCase().includes("confirmed") ||
-                 errorMessage.toLowerCase().includes("already verified")) {
+      } else if (
+        errorMessage.toLowerCase().includes("invalid") ||
+        errorMessage.toLowerCase().includes("incorrect") ||
+        errorMessage.toLowerCase().includes("mismatch")
+      ) {
+        showError(
+          "Invalid verification code. Please check the code and try again."
+        );
+      } else if (
+        errorMessage.toLowerCase().includes("confirmed") ||
+        errorMessage.toLowerCase().includes("already verified")
+      ) {
         showError("Your account is already verified. You can log in now.");
         // Auto-redirect to login if already confirmed
         setTimeout(() => {
@@ -144,9 +156,13 @@ export default function VerifyEmail() {
         }, 2000);
       } else if (errorMessage.toLowerCase().includes("not found")) {
         showError("User not found. Please check your email address.");
-      } else if (errorMessage.toLowerCase().includes("limit") ||
-                 errorMessage.toLowerCase().includes("too many")) {
-        showError("Too many verification attempts. Please wait a few minutes and try again.");
+      } else if (
+        errorMessage.toLowerCase().includes("limit") ||
+        errorMessage.toLowerCase().includes("too many")
+      ) {
+        showError(
+          "Too many verification attempts. Please wait a few minutes and try again."
+        );
       } else {
         showError(errorMessage);
       }
@@ -165,14 +181,15 @@ export default function VerifyEmail() {
     setIsResending(true);
     try {
       console.log("Resending verification with data:", { email, username });
-      
-      const response = await authAPI.resendVerification({ 
-        email: email || username,
-        username: username || email 
+
+      const response = await authAPI.resendVerification({
+        username: username || email, // Backend expects 'username' field specifically
       });
-      
+
       console.log("Resend response:", response);
-      showSuccess("Verification email sent! Please check your inbox and spam folder.");
+      showSuccess(
+        "Verification email sent! Please check your inbox and spam folder."
+      );
     } catch (err: any) {
       console.error("Resend verification error:", {
         error: err,
@@ -180,9 +197,9 @@ export default function VerifyEmail() {
         status: err.response?.status,
         message: err.message,
       });
-      
+
       let errorMessage = "Failed to resend verification email";
-      
+
       // Parse error response
       if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
@@ -191,19 +208,25 @@ export default function VerifyEmail() {
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       // Handle specific error cases
-      if (errorMessage.toLowerCase().includes("confirmed") ||
-          errorMessage.toLowerCase().includes("already verified")) {
+      if (
+        errorMessage.toLowerCase().includes("confirmed") ||
+        errorMessage.toLowerCase().includes("already verified")
+      ) {
         showError("Your account is already verified. You can log in now.");
         setTimeout(() => {
           router.replace("/auth/Login");
         }, 2000);
       } else if (errorMessage.toLowerCase().includes("not found")) {
         showError("User not found. Please check your email address.");
-      } else if (errorMessage.toLowerCase().includes("limit") ||
-                 errorMessage.toLowerCase().includes("too many")) {
-        showError("Too many requests. Please wait 15 minutes before requesting another code.");
+      } else if (
+        errorMessage.toLowerCase().includes("limit") ||
+        errorMessage.toLowerCase().includes("too many")
+      ) {
+        showError(
+          "Too many requests. Please wait 15 minutes before requesting another code."
+        );
       } else {
         showError(errorMessage);
       }
@@ -214,9 +237,13 @@ export default function VerifyEmail() {
 
   return (
     <>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
       <LinearGradient
-        colors={['#667eea', '#764ba2', '#f093fb']}
+        colors={["#667eea", "#764ba2", "#f093fb"]}
         style={styles.container}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -272,7 +299,7 @@ export default function VerifyEmail() {
                   accessibilityLabel="Go back"
                 >
                   <LinearGradient
-                    colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.1)']}
+                    colors={["rgba(255,255,255,0.2)", "rgba(255,255,255,0.1)"]}
                     style={styles.backButtonGradient}
                   >
                     <Ionicons name="chevron-back" size={24} color="white" />
@@ -293,7 +320,7 @@ export default function VerifyEmail() {
                     ]}
                   >
                     <LinearGradient
-                      colors={['#4facfe', '#00f2fe']}
+                      colors={["#4facfe", "#00f2fe"]}
                       style={styles.iconGradient}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
@@ -301,17 +328,23 @@ export default function VerifyEmail() {
                       <Ionicons name="mail-open" size={32} color="white" />
                     </LinearGradient>
                   </Animated.View>
-                  
+
                   <Typography
                     variant="h1"
-                    style={StyleSheet.flatten([styles.title, { color: 'white' }])}
+                    style={StyleSheet.flatten([
+                      styles.title,
+                      { color: "white" },
+                    ])}
                     align="center"
                   >
                     Verify Your Email
                   </Typography>
                   <Typography
                     variant="body"
-                    style={StyleSheet.flatten([styles.subtitle, { color: 'rgba(255,255,255,0.8)' }])}
+                    style={StyleSheet.flatten([
+                      styles.subtitle,
+                      { color: "rgba(255,255,255,0.8)" },
+                    ])}
                     align="center"
                   >
                     We&apos;ve sent a 6-digit code to {email}
@@ -329,11 +362,18 @@ export default function VerifyEmail() {
                   },
                 ]}
               >
-                <BlurView intensity={20} tint="light" style={styles.formContainer}>
+                <BlurView
+                  intensity={20}
+                  tint="light"
+                  style={styles.formContainer}
+                >
                   <View style={styles.formContent}>
                     <Typography
                       variant="h2"
-                      style={StyleSheet.flatten([styles.formTitle, { color: colors.text.primary }])}
+                      style={StyleSheet.flatten([
+                        styles.formTitle,
+                        { color: colors.text.primary },
+                      ])}
                       align="center"
                     >
                       Enter Verification Code
@@ -341,11 +381,25 @@ export default function VerifyEmail() {
 
                     {/* User Info Display */}
                     {username && (
-                      <BlurView intensity={10} tint="light" style={styles.userInfoDisplay}>
+                      <BlurView
+                        intensity={10}
+                        tint="light"
+                        style={styles.userInfoDisplay}
+                      >
                         <View style={styles.userInfoContent}>
-                          <Ionicons name="person" size={16} color={colors.primary[500]} />
-                          <Typography variant="caption" style={styles.userInfoText}>
-                            Verifying account for: <Typography variant="caption" weight="bold">{username}</Typography>
+                          <Ionicons
+                            name="person"
+                            size={16}
+                            color={colors.primary[500]}
+                          />
+                          <Typography
+                            variant="caption"
+                            style={styles.userInfoText}
+                          >
+                            Verifying account for:{" "}
+                            <Typography variant="caption" weight="bold">
+                              {username}
+                            </Typography>
                           </Typography>
                         </View>
                       </BlurView>
@@ -372,12 +426,15 @@ export default function VerifyEmail() {
 
                     {/* Enhanced Verify Button */}
                     <TouchableOpacity
-                      style={StyleSheet.flatten([styles.verifyButton, { opacity: isLoading ? 0.7 : 1 }])}
+                      style={StyleSheet.flatten([
+                        styles.verifyButton,
+                        { opacity: isLoading ? 0.7 : 1 },
+                      ])}
                       onPress={handleConfirm}
                       disabled={isLoading}
                     >
                       <LinearGradient
-                        colors={['#4facfe', '#00f2fe']}
+                        colors={["#4facfe", "#00f2fe"]}
                         style={styles.verifyGradient}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
@@ -387,7 +444,9 @@ export default function VerifyEmail() {
                             style={[
                               styles.loadingContainer,
                               {
-                                transform: [{ rotate: logoRotationInterpolate }],
+                                transform: [
+                                  { rotate: logoRotationInterpolate },
+                                ],
                               },
                             ]}
                           >
@@ -397,7 +456,7 @@ export default function VerifyEmail() {
                           <Typography
                             variant="body"
                             weight="bold"
-                            style={{ color: 'white' }}
+                            style={{ color: "white" }}
                           >
                             Verify Email
                           </Typography>
@@ -407,7 +466,11 @@ export default function VerifyEmail() {
 
                     {/* Resend Section */}
                     <View style={styles.resendSection}>
-                      <Typography variant="caption" color="secondary" align="center">
+                      <Typography
+                        variant="caption"
+                        color="secondary"
+                        align="center"
+                      >
                         Didn&apos;t receive the code?
                       </Typography>
                       <TouchableOpacity
@@ -415,7 +478,11 @@ export default function VerifyEmail() {
                         onPress={handleResend}
                         disabled={isResending}
                       >
-                        <Typography variant="caption" color="primary" weight="semibold">
+                        <Typography
+                          variant="caption"
+                          color="primary"
+                          weight="semibold"
+                        >
                           {isResending ? "Sending..." : "Resend Code"}
                         </Typography>
                       </TouchableOpacity>
@@ -426,9 +493,17 @@ export default function VerifyEmail() {
                       style={styles.backToLoginLink}
                       onPress={() => router.replace("/auth/Login")}
                     >
-                      <Typography variant="body" color="secondary" align="center">
+                      <Typography
+                        variant="body"
+                        color="secondary"
+                        align="center"
+                      >
                         Back to{" "}
-                        <Typography variant="body" color="primary" weight="bold">
+                        <Typography
+                          variant="body"
+                          color="primary"
+                          weight="bold"
+                        >
                           Sign In
                         </Typography>
                       </Typography>
@@ -446,11 +521,20 @@ export default function VerifyEmail() {
                   },
                 ]}
               >
-                <BlurView intensity={10} tint="light" style={styles.helpContainer}>
+                <BlurView
+                  intensity={10}
+                  tint="light"
+                  style={styles.helpContainer}
+                >
                   <View style={styles.helpContent}>
-                    <Ionicons name="information-circle-outline" size={16} color="rgba(255,255,255,0.8)" />
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={16}
+                      color="rgba(255,255,255,0.8)"
+                    />
                     <Typography variant="caption" style={styles.helpText}>
-                      Please check your email inbox and spam folder for the verification code
+                      Please check your email inbox and spam folder for the
+                      verification code
                     </Typography>
                   </View>
                 </BlurView>
@@ -473,30 +557,30 @@ const styles = StyleSheet.create({
 
   // Background animations
   backgroundElements: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
   },
   floatingElement: {
-    position: 'absolute',
+    position: "absolute",
     borderRadius: 100,
     opacity: 0.1,
   },
   element1: {
     width: 100,
     height: 100,
-    backgroundColor: 'white',
-    top: '20%',
-    right: '15%',
+    backgroundColor: "white",
+    top: "20%",
+    right: "15%",
   },
   element2: {
     width: 60,
     height: 60,
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    bottom: '25%',
-    left: '10%',
+    backgroundColor: "rgba(255,255,255,0.5)",
+    bottom: "25%",
+    left: "10%",
   },
 
   // Layout
@@ -505,17 +589,17 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: spacing.lg,
   },
 
   // Header
   header: {
     marginBottom: spacing.xl,
-    position: 'relative',
+    position: "relative",
   },
   backButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     zIndex: 1,
@@ -524,12 +608,12 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     ...shadows.md,
   },
   headerContent: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: spacing.lg,
   },
   iconContainer: {
@@ -539,23 +623,23 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     ...shadows.xl,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: spacing.md,
-    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowColor: "rgba(0,0,0,0.3)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
   subtitle: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 24,
-    maxWidth: '90%',
+    maxWidth: "90%",
   },
 
   // Form
@@ -564,16 +648,16 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     borderRadius: 24,
-    overflow: 'hidden',
+    overflow: "hidden",
     ...shadows.xl,
   },
   formContent: {
     padding: spacing.xl,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: "rgba(255,255,255,0.95)",
   },
   formTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: spacing.lg,
   },
 
@@ -581,17 +665,17 @@ const styles = StyleSheet.create({
   userInfoDisplay: {
     borderRadius: 12,
     marginBottom: spacing.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   userInfoContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: spacing.md,
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
     gap: spacing.sm,
   },
   userInfoText: {
-    color: '#6b7280',
+    color: "#6b7280",
     flex: 1,
   },
 
@@ -600,14 +684,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(248,250,252,0.8)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(248,250,252,0.8)",
     borderRadius: 16,
     paddingHorizontal: spacing.md,
     minHeight: 56,
     borderWidth: 1,
-    borderColor: 'rgba(226,232,240,0.5)',
+    borderColor: "rgba(226,232,240,0.5)",
   },
   inputIcon: {
     marginRight: spacing.sm,
@@ -615,11 +699,11 @@ const styles = StyleSheet.create({
   enhancedInput: {
     flex: 1,
     fontSize: 18,
-    fontWeight: '600',
-    backgroundColor: 'transparent',
+    fontWeight: "600",
+    backgroundColor: "transparent",
     borderWidth: 0,
     paddingVertical: 0,
-    textAlign: 'center',
+    textAlign: "center",
     letterSpacing: 4,
   },
 
@@ -627,23 +711,23 @@ const styles = StyleSheet.create({
   verifyButton: {
     borderRadius: 16,
     marginBottom: spacing.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
     ...shadows.md,
   },
   verifyGradient: {
     paddingVertical: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: 56,
   },
   loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Resend section
   resendSection: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: spacing.lg,
     gap: spacing.sm,
   },
@@ -654,7 +738,7 @@ const styles = StyleSheet.create({
 
   // Links
   backToLoginLink: {
-    alignSelf: 'center',
+    alignSelf: "center",
     paddingVertical: spacing.sm,
   },
 
@@ -664,19 +748,19 @@ const styles = StyleSheet.create({
   },
   helpContainer: {
     borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
   helpContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: spacing.md,
     gap: spacing.sm,
   },
   helpText: {
-    color: 'rgba(255,255,255,0.8)',
+    color: "rgba(255,255,255,0.8)",
     fontSize: 12,
     lineHeight: 18,
     flex: 1,
   },
-}); 
+});

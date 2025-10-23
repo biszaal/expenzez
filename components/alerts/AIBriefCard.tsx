@@ -32,6 +32,13 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
   const [expanded, setExpanded] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
 
+  const formattedGeneratedAt = brief?.generatedAt
+    ? new Date(brief.generatedAt).toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "Unavailable";
+
   // Early return if theme is not available
   if (!colors) {
     return null;
@@ -56,6 +63,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
       setLoading(true);
       const data = await briefsAPI.getDailyBrief();
       setBrief(data);
+      setExpanded(false);
 
       // Mark as viewed after a short delay
       if (data?.briefId) {
@@ -102,16 +110,11 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
             No Brief Available Yet
           </Text>
-          <Text
-            style={[styles.emptyText, { color: colors.textSecondary }]}
-          >
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             Your daily financial brief will be generated at 6:00 AM
           </Text>
           <TouchableOpacity
-            style={[
-              styles.refreshButton,
-              { backgroundColor: colors.primary },
-            ]}
+            style={[styles.refreshButton, { backgroundColor: colors.primary }]}
             onPress={handleRefresh}
           >
             <Ionicons name="refresh" size={16} color="#FFFFFF" />
@@ -123,16 +126,16 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
   }
 
   const spendingChange = briefsAPI.formatSpendingChange(
-    brief.spendingSummary.comparisonToLastWeek
+    brief.spendingSummary?.comparisonToLastWeek || 0
   );
-  const budgetEmoji = briefsAPI.getBudgetStatusEmoji(brief.budgetStatus);
+  const monthlyChange = briefsAPI.formatSpendingChange(
+    brief.spendingSummary?.comparisonToLastMonth || 0
+  );
+  const budgetEmoji = briefsAPI.getBudgetStatusEmoji(brief.budgetStatus || {});
 
   return (
     <Animated.View
-      style={[
-        styles.card,
-        { backgroundColor: colors.card, opacity: fadeAnim },
-      ]}
+      style={[styles.card, { backgroundColor: colors.card, opacity: fadeAnim }]}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -143,10 +146,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
               Daily Financial Brief
             </Text>
             <Text
-              style={[
-                styles.headerSubtitle,
-                { color: colors.textSecondary },
-              ]}
+              style={[styles.headerSubtitle, { color: colors.textSecondary }]}
             >
               {brief.greeting}
             </Text>
@@ -169,28 +169,22 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
         <View style={styles.spendingGrid}>
           <View style={styles.spendingItem}>
             <Text
-              style={[
-                styles.spendingLabel,
-                { color: colors.textSecondary },
-              ]}
+              style={[styles.spendingLabel, { color: colors.textSecondary }]}
             >
               Today
             </Text>
             <Text style={[styles.spendingAmount, { color: colors.text }]}>
-              {briefsAPI.formatCurrency(brief.spendingSummary.todaySpent)}
+              {briefsAPI.formatCurrency(brief.spendingSummary?.todaySpent || 0)}
             </Text>
           </View>
           <View style={styles.spendingItem}>
             <Text
-              style={[
-                styles.spendingLabel,
-                { color: colors.textSecondary },
-              ]}
+              style={[styles.spendingLabel, { color: colors.textSecondary }]}
             >
               This Week
             </Text>
             <Text style={[styles.spendingAmount, { color: colors.text }]}>
-              {briefsAPI.formatCurrency(brief.spendingSummary.weekSpent)}
+              {briefsAPI.formatCurrency(brief.spendingSummary?.weekSpent || 0)}
             </Text>
             <Text
               style={[styles.spendingChange, { color: spendingChange.color }]}
@@ -200,31 +194,17 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
           </View>
           <View style={styles.spendingItem}>
             <Text
-              style={[
-                styles.spendingLabel,
-                { color: colors.textSecondary },
-              ]}
+              style={[styles.spendingLabel, { color: colors.textSecondary }]}
             >
               This Month
             </Text>
             <Text style={[styles.spendingAmount, { color: colors.text }]}>
-              {briefsAPI.formatCurrency(brief.spendingSummary.monthSpent)}
+              {briefsAPI.formatCurrency(brief.spendingSummary?.monthSpent || 0)}
             </Text>
             <Text
-              style={[
-                styles.spendingChange,
-                {
-                  color: briefsAPI.formatSpendingChange(
-                    brief.spendingSummary.comparisonToLastMonth
-                  ).color,
-                },
-              ]}
+              style={[styles.spendingChange, { color: monthlyChange.color }]}
             >
-              {
-                briefsAPI.formatSpendingChange(
-                  brief.spendingSummary.comparisonToLastMonth
-                ).text
-              }
+              {monthlyChange.text}
             </Text>
           </View>
         </View>
@@ -238,60 +218,42 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
         <View style={styles.budgetRow}>
           <View style={styles.budgetItem}>
             <Text style={[styles.budgetValue, { color: "#10B981" }]}>
-              {brief.budgetStatus.budgetsOnTrack}
+              {brief.budgetStatus?.budgetsOnTrack || 0}
             </Text>
-            <Text
-              style={[
-                styles.budgetLabel,
-                { color: colors.textSecondary },
-              ]}
-            >
+            <Text style={[styles.budgetLabel, { color: colors.textSecondary }]}>
               On Track
             </Text>
           </View>
           <View style={styles.budgetItem}>
             <Text style={[styles.budgetValue, { color: "#F59E0B" }]}>
-              {brief.budgetStatus.budgetsAtRisk}
+              {brief.budgetStatus?.budgetsAtRisk || 0}
             </Text>
-            <Text
-              style={[
-                styles.budgetLabel,
-                { color: colors.textSecondary },
-              ]}
-            >
+            <Text style={[styles.budgetLabel, { color: colors.textSecondary }]}>
               At Risk
             </Text>
           </View>
           <View style={styles.budgetItem}>
             <Text style={[styles.budgetValue, { color: "#EF4444" }]}>
-              {brief.budgetStatus.budgetsExceeded}
+              {brief.budgetStatus?.budgetsExceeded || 0}
             </Text>
-            <Text
-              style={[
-                styles.budgetLabel,
-                { color: colors.textSecondary },
-              ]}
-            >
+            <Text style={[styles.budgetLabel, { color: colors.textSecondary }]}>
               Exceeded
             </Text>
           </View>
         </View>
 
-        {brief.budgetStatus.topConcern && (
+        {brief.budgetStatus?.topConcern && (
           <View
-            style={[
-              styles.concernBox,
-              { backgroundColor: colors.background },
-            ]}
+            style={[styles.concernBox, { backgroundColor: colors.background }]}
           >
             <Text style={[styles.concernText, { color: colors.text }]}>
               ⚠️{" "}
               <Text style={{ fontWeight: "600" }}>
-                {brief.budgetStatus.topConcern.category}
+                {brief.budgetStatus?.topConcern?.category}
               </Text>{" "}
-              at {brief.budgetStatus.topConcern.percentage}% (
+              at {brief.budgetStatus?.topConcern?.percentage || 0}% (
               {briefsAPI.formatCurrency(
-                brief.budgetStatus.topConcern.remaining
+                brief.budgetStatus?.topConcern?.remaining || 0
               )}{" "}
               remaining)
             </Text>
@@ -300,12 +262,12 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
       </View>
 
       {/* Insights */}
-      {expanded && brief.insights.length > 0 && (
+      {expanded && brief.insights && brief.insights.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             💡 Today's Insights
           </Text>
-          {brief.insights.map((insight, index) => (
+          {brief.insights?.map((insight, index) => (
             <View
               key={index}
               style={[
@@ -317,17 +279,12 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
                 <Text style={styles.insightIcon}>
                   {briefsAPI.getInsightIcon(insight.type)}
                 </Text>
-                <Text
-                  style={[styles.insightTitle, { color: colors.text }]}
-                >
+                <Text style={[styles.insightTitle, { color: colors.text }]}>
                   {insight.title}
                 </Text>
               </View>
               <Text
-                style={[
-                  styles.insightMessage,
-                  { color: colors.textSecondary },
-                ]}
+                style={[styles.insightMessage, { color: colors.textSecondary }]}
               >
                 {insight.message}
               </Text>
@@ -361,21 +318,11 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text
-          style={[styles.footerText, { color: colors.textSecondary }]}
-        >
-          Generated{" "}
-          {new Date(brief.generatedAt).toLocaleTimeString("en-GB", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+        <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+          Generated {formattedGeneratedAt}
         </Text>
         <TouchableOpacity onPress={handleRefresh}>
-          <Ionicons
-            name="refresh"
-            size={18}
-            color={colors.textSecondary}
-          />
+          <Ionicons name="refresh" size={18} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
     </Animated.View>

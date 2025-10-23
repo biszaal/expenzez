@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
 import { Button, TextField, Typography } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
 import { spacing, borderRadius } from "../../constants/theme";
@@ -18,10 +24,10 @@ interface CountryCode {
 
 // Common country codes for phone numbers with validation patterns
 const countryCodes: CountryCode[] = [
-  { 
-    label: "United Kingdom", 
-    code: "+44", 
-    flag: "🇬🇧", 
+  {
+    label: "United Kingdom",
+    code: "+44",
+    flag: "🇬🇧",
     value: "GB",
     expectedLength: 10, // After removing leading 0, UK mobile: 7xxxxxxxxx (10 digits)
     example: "07912 345678 → 7912345678",
@@ -31,85 +37,85 @@ const countryCodes: CountryCode[] = [
       // 2. Without leading 0: 7xxxxxxxxx (10 digits)
       // Valid mobile prefixes: 071, 072, 073, 074, 075, 076, 077, 078, 079
       // But we'll be more flexible for user experience
-      
+
       // Remove leading 0 if present
-      const cleanNumber = number.replace(/^0+/, '');
-      
+      const cleanNumber = number.replace(/^0+/, "");
+
       // Check if it's a valid UK mobile format: 7 followed by 9 digits (total 10 digits)
       return /^7\d{9}$/.test(cleanNumber);
-    }
+    },
   },
-  { 
-    label: "United States", 
-    code: "+1", 
-    flag: "🇺🇸", 
+  {
+    label: "United States",
+    code: "+1",
+    flag: "🇺🇸",
     value: "US",
     expectedLength: 10, // US: (555) 123-4567 → 5551234567 (10 digits)
-    example: "(555) 123-4567 → 5551234567"
+    example: "(555) 123-4567 → 5551234567",
   },
-  { 
-    label: "Canada", 
-    code: "+1", 
-    flag: "🇨🇦", 
+  {
+    label: "Canada",
+    code: "+1",
+    flag: "🇨🇦",
     value: "CA",
     expectedLength: 10,
-    example: "(555) 123-4567 → 5551234567"
+    example: "(555) 123-4567 → 5551234567",
   },
-  { 
-    label: "Australia", 
-    code: "+61", 
-    flag: "🇦🇺", 
+  {
+    label: "Australia",
+    code: "+61",
+    flag: "🇦🇺",
     value: "AU",
     expectedLength: 9, // AU mobile: 04xx xxx xxx → 4xxxxxxxx (9 digits)
-    example: "0412 345 678 → 412345678"
+    example: "0412 345 678 → 412345678",
   },
-  { 
-    label: "Germany", 
-    code: "+49", 
-    flag: "🇩🇪", 
+  {
+    label: "Germany",
+    code: "+49",
+    flag: "🇩🇪",
     value: "DE",
     expectedLength: [10, 11], // Variable length
-    example: "0171 1234567 → 1711234567"
+    example: "0171 1234567 → 1711234567",
   },
-  { 
-    label: "France", 
-    code: "+33", 
-    flag: "🇫🇷", 
+  {
+    label: "France",
+    code: "+33",
+    flag: "🇫🇷",
     value: "FR",
     expectedLength: 9, // FR: 06 12 34 56 78 → 612345678 (9 digits)
-    example: "06 12 34 56 78 → 612345678"
+    example: "06 12 34 56 78 → 612345678",
   },
-  { 
-    label: "Spain", 
-    code: "+34", 
-    flag: "🇪🇸", 
+  {
+    label: "Spain",
+    code: "+34",
+    flag: "🇪🇸",
     value: "ES",
     expectedLength: 9,
-    example: "612 34 56 78 → 612345678"
+    example: "612 34 56 78 → 612345678",
   },
-  { 
-    label: "Italy", 
-    code: "+39", 
-    flag: "🇮🇹", 
+  {
+    label: "Italy",
+    code: "+39",
+    flag: "🇮🇹",
     value: "IT",
     expectedLength: [9, 10], // Variable length
-    example: "342 123 4567 → 3421234567"
+    example: "342 123 4567 → 3421234567",
   },
-  { 
-    label: "Netherlands", 
-    code: "+31", 
-    flag: "🇳🇱", 
+  {
+    label: "Netherlands",
+    code: "+31",
+    flag: "🇳🇱",
     value: "NL",
     expectedLength: 9, // NL: 06 12345678 → 612345678 (9 digits)
-    example: "06 12345678 → 612345678"
+    example: "06 12345678 → 612345678",
   },
-  { 
-    label: "India", 
-    code: "+91", 
-    flag: "🇮🇳", 
+  {
+    label: "India",
+    code: "+91",
+    flag: "🇮🇳",
     value: "IN",
     expectedLength: 10, // IN: 98765 43210 → 9876543210 (10 digits)
-    example: "98765 43210 → 9876543210"
+    example: "98765 43210 → 9876543210",
   },
 ];
 
@@ -121,30 +127,37 @@ export default function RegisterStep5({
   isLoading,
 }: any) {
   const { colors } = useTheme();
-  const [selectedCountryCode, setSelectedCountryCode] = useState(countryCodes[0]);
+  const [selectedCountryCode, setSelectedCountryCode] = useState(
+    countryCodes[0]
+  );
   const [phoneNumber, setPhoneNumber] = useState(values.phone_number || "");
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [phoneError, setPhoneError] = useState("");
 
-  // Sync phone number with parent form state
+  // Sync phone number with parent form state (only on initial load)
   useEffect(() => {
-    if (values.phone_number && values.phone_number !== phoneNumber) {
+    if (values.phone_number && !phoneNumber) {
       setPhoneNumber(values.phone_number);
     }
-  }, [values.phone_number, phoneNumber]);
+  }, [values.phone_number]);
 
   // Set name field on component mount
   useEffect(() => {
     const fullName = `${values.givenName} ${values.familyName}`.trim();
     if (fullName && !values.name) {
-      onChange('name', fullName);
+      onChange("name", fullName);
     }
   }, []);
+
+  const clearPhoneNumber = () => {
+    setPhoneNumber("");
+    setPhoneError("");
+  };
 
   const handleSubmit = () => {
     // Clear previous errors
     setPhoneError("");
-    
+
     // Basic phone number validation
     if (!phoneNumber.trim()) {
       setPhoneError("Phone number is required");
@@ -152,56 +165,62 @@ export default function RegisterStep5({
     }
 
     // Clean the phone number - remove any non-digit characters
-    let cleanedNumber = phoneNumber.replace(/[^\d]/g, '');
-    
+    let cleanedNumber = phoneNumber.replace(/[^\d]/g, "");
+
     // Remove leading zeros (common in many countries)
-    cleanedNumber = cleanedNumber.replace(/^0+/, '');
-    
+    cleanedNumber = cleanedNumber.replace(/^0+/, "");
+
     // Check with custom validation function if available
     if (selectedCountryCode.validateNumber) {
       if (!selectedCountryCode.validateNumber(cleanedNumber)) {
-        setPhoneError(`Invalid phone number format for ${selectedCountryCode.label}. Example: ${selectedCountryCode.example}`);
+        setPhoneError(
+          `Invalid phone number format for ${selectedCountryCode.label}. Example: ${selectedCountryCode.example}`
+        );
         return;
       }
     } else {
       // Check length based on country (fallback)
       const expectedLength = selectedCountryCode.expectedLength;
-      const isValidLength = Array.isArray(expectedLength) 
+      const isValidLength = Array.isArray(expectedLength)
         ? expectedLength.includes(cleanedNumber.length)
         : cleanedNumber.length === expectedLength;
-      
+
       if (!isValidLength) {
-        const lengthText = Array.isArray(expectedLength) 
-          ? expectedLength.join(' or ') 
+        const lengthText = Array.isArray(expectedLength)
+          ? expectedLength.join(" or ")
           : expectedLength.toString();
-        setPhoneError(`Invalid phone number length. Expected ${lengthText} digits for ${selectedCountryCode.label}. Example: ${selectedCountryCode.example}`);
+        setPhoneError(
+          `Invalid phone number length. Expected ${lengthText} digits for ${selectedCountryCode.label}. Example: ${selectedCountryCode.example}`
+        );
         return;
       }
     }
-    
+
     // Create formatted phone number in E.164 format
     const formattedPhone = `${selectedCountryCode.code}${cleanedNumber}`;
-    
+
     console.log("Phone formatting debug:", {
       original: phoneNumber,
       cleaned: cleanedNumber,
       countryCode: selectedCountryCode.code,
-      formatted: formattedPhone
+      formatted: formattedPhone,
     });
-    
+
     // Validate E.164 format (+ followed by 1-15 digits)
     const e164Regex = /^\+[1-9]\d{1,14}$/;
     if (!e164Regex.test(formattedPhone)) {
-      setPhoneError(`Invalid phone number format. Must be in E.164 format (e.g., ${selectedCountryCode.code}1234567890)`);
+      setPhoneError(
+        `Invalid phone number format. Must be in E.164 format (e.g., ${selectedCountryCode.code}1234567890)`
+      );
       return;
     }
-    
+
     // Set phone number in E.164 format (backend expects 'phone_number' with underscore)
-    onChange('phone_number', formattedPhone);
+    onChange("phone_number", formattedPhone);
 
     // Also set the name field as concatenated first and last name for compatibility
     const fullName = `${values.givenName} ${values.familyName}`.trim();
-    onChange('name', fullName);
+    onChange("name", fullName);
 
     // Pass the values directly to onSubmit to avoid React state timing issues
     // This ensures the formatted phone_number and name are used immediately
@@ -229,7 +248,9 @@ export default function RegisterStep5({
         </View>
         <View style={styles.completedLine} />
         <View style={styles.activeStep}>
-          <Typography variant="caption" style={styles.activeStepText}>5</Typography>
+          <Typography variant="caption" style={styles.activeStepText}>
+            5
+          </Typography>
         </View>
       </View>
 
@@ -244,11 +265,18 @@ export default function RegisterStep5({
       </View>
 
       {/* Glass Form Fields */}
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.formFields}>
           {/* Phone Number Input */}
           <View style={styles.inputContainer}>
-            <Typography variant="body" style={styles.inputLabel} weight="medium">
+            <Typography
+              variant="body"
+              style={styles.inputLabel}
+              weight="medium"
+            >
               Phone Number *
             </Typography>
 
@@ -261,21 +289,41 @@ export default function RegisterStep5({
                 <Typography variant="body" style={{ color: "white" }}>
                   {selectedCountryCode.flag} {selectedCountryCode.code}
                 </Typography>
-                <Ionicons name="chevron-down" size={16} color="rgba(255, 255, 255, 0.7)" />
+                <Ionicons
+                  name="chevron-down"
+                  size={16}
+                  color="rgba(255, 255, 255, 0.7)"
+                />
               </TouchableOpacity>
 
               {/* Phone Number Field */}
-              <TextField
-                placeholder="Enter phone number"
-                value={phoneNumber}
-                onChangeText={(text) => {
-                  setPhoneNumber(text);
-                  setPhoneError(""); // Clear error when user types
-                  // Don't update parent form state here - only on submit with proper formatting
-                }}
-                keyboardType="phone-pad"
-                style={styles.phoneInput}
-              />
+              <View style={styles.phoneInputWrapper}>
+                <TextField
+                  placeholder="Enter phone number"
+                  value={phoneNumber}
+                  onChangeText={(text) => {
+                    setPhoneNumber(text);
+                    setPhoneError(""); // Clear error when user types
+                    // Don't update parent form state here - only on submit with proper formatting
+                  }}
+                  keyboardType="phone-pad"
+                  style={styles.phoneInput}
+                  editable={true}
+                  autoFocus={false}
+                />
+                {phoneNumber.length > 0 && (
+                  <TouchableOpacity
+                    onPress={clearPhoneNumber}
+                    style={styles.clearButton}
+                  >
+                    <Ionicons
+                      name="close-circle"
+                      size={20}
+                      color="rgba(255, 255, 255, 0.7)"
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
 
             {/* Phone Error Display */}
@@ -291,7 +339,10 @@ export default function RegisterStep5({
             {/* Country Code Options */}
             {showCountryPicker && (
               <View style={styles.countryList}>
-                <ScrollView style={styles.countryScrollView} nestedScrollEnabled={true}>
+                <ScrollView
+                  style={styles.countryScrollView}
+                  nestedScrollEnabled={true}
+                >
                   {countryCodes.map((country, index) => (
                     <TouchableOpacity
                       key={index}
@@ -315,13 +366,18 @@ export default function RegisterStep5({
           <View style={styles.privacyNote}>
             <Ionicons name="shield-checkmark-outline" size={20} color="white" />
             <Typography variant="caption" style={styles.privacyText}>
-              Your phone number will be used for account verification and security purposes only.
+              Your phone number will be used for account verification and
+              security purposes only.
             </Typography>
           </View>
 
           {/* Review Summary */}
           <View style={styles.summaryContainer}>
-            <Typography variant="body" style={styles.summaryTitle} weight="semibold">
+            <Typography
+              variant="body"
+              style={styles.summaryTitle}
+              weight="semibold"
+            >
               Account Summary
             </Typography>
 
@@ -366,11 +422,14 @@ export default function RegisterStep5({
         <Button
           title={isLoading ? "Creating Account..." : "Create Account"}
           onPress={handleSubmit}
-          style={StyleSheet.flatten([styles.submitButton, { opacity: isLoading ? 0.7 : 1 }])}
+          style={StyleSheet.flatten([
+            styles.submitButton,
+            { opacity: isLoading ? 0.7 : 1 },
+          ])}
           disabled={isLoading || !phoneNumber.trim()}
         />
       </View>
-      
+
       {isLoading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#8B5CF6" />
@@ -386,9 +445,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   progressContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: spacing.xl,
     paddingHorizontal: spacing.md,
   },
@@ -396,22 +455,22 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     borderWidth: 2,
-    borderColor: 'white',
+    borderColor: "white",
   },
   activeStep: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     borderWidth: 2,
-    borderColor: 'white',
-    shadowColor: '#fff',
+    borderColor: "white",
+    shadowColor: "#fff",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -421,34 +480,34 @@ const styles = StyleSheet.create({
     width: 24,
     height: 2,
     marginHorizontal: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
   },
   progressLine: {
     width: 24,
     height: 2,
     marginHorizontal: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
   },
   activeStepText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: 'white',
+    fontWeight: "600",
+    color: "white",
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: spacing.xl,
   },
   title: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: spacing.xs,
-    color: 'white',
+    color: "white",
   },
   subtitle: {
     fontSize: 15,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: "rgba(255, 255, 255, 0.85)",
   },
   scrollView: {
     flex: 1,
@@ -461,43 +520,55 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inputLabel: {
-    color: 'white',
+    color: "white",
     marginBottom: 6,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   phoneInputContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.sm,
   },
   countryCodeButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderColor: "rgba(255, 255, 255, 0.25)",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.xs,
     minHeight: 48,
   },
+  phoneInputWrapper: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    position: "relative",
+  },
   phoneInput: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderColor: "rgba(255, 255, 255, 0.25)",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 15,
-    color: 'white',
+    color: "white",
     minHeight: 48,
   },
+  clearButton: {
+    position: "absolute",
+    right: 12,
+    padding: 4,
+    zIndex: 1,
+  },
   countryList: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderColor: "rgba(255, 255, 255, 0.25)",
     borderRadius: 14,
     marginTop: spacing.xs,
     maxHeight: 200,
@@ -509,16 +580,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
   privacyNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: spacing.md,
     borderRadius: 14,
     borderWidth: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(255, 255, 255, 0.2)",
     marginBottom: spacing.lg,
     gap: spacing.sm,
   },
@@ -526,12 +597,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     lineHeight: 16,
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: "rgba(255, 255, 255, 0.85)",
   },
   summaryContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 14,
     padding: spacing.md,
     marginBottom: spacing.lg,
@@ -539,69 +610,69 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 16,
     marginBottom: spacing.sm,
-    color: 'white',
+    color: "white",
   },
   summaryItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: spacing.xs,
   },
   summaryLabel: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: "rgba(255, 255, 255, 0.7)",
   },
   summaryValue: {
     fontSize: 12,
-    fontWeight: '500',
-    color: 'white',
+    fontWeight: "500",
+    color: "white",
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: spacing.lg,
     gap: spacing.md,
   },
   backButton: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderColor: "rgba(255, 255, 255, 0.25)",
     borderRadius: 25,
     paddingVertical: 16,
     minHeight: 54,
   },
   submitButton: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.35)',
+    borderColor: "rgba(255, 255, 255, 0.35)",
     borderRadius: 25,
     paddingVertical: 16,
     minHeight: 54,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
   },
   loadingOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: spacing.md,
     borderRadius: 14,
     borderWidth: 1,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderColor: "rgba(239, 68, 68, 0.3)",
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },
@@ -610,6 +681,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     lineHeight: 18,
-    color: 'white',
+    color: "white",
   },
 });

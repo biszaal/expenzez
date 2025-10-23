@@ -32,16 +32,16 @@ export default function EmailVerification() {
   const [isResending, setIsResending] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const { autoLoginAfterVerification } = useAuth();
 
   useEffect(() => {
     if (params.email) {
       setEmail(params.email as string);
-    } else if (params.username) {
-      // If we have username but no email, we'll use the username for verification
-      // AWS Cognito allows using username in confirmation
-      setEmail(params.username as string);
+    }
+    if (params.username) {
+      setUsername(params.username as string);
     }
     if (params.password) {
       setPassword(params.password as string);
@@ -83,7 +83,7 @@ export default function EmailVerification() {
     setIsVerifying(true);
     try {
       const result = await authAPI.confirmSignUp({
-        username: email,
+        username: username || email, // Use username if available, fallback to email
         code: verificationCode,
       });
 
@@ -93,7 +93,7 @@ export default function EmailVerification() {
         showSuccess("Email verified! Logging you in...");
         try {
           const autoLoginResult = await autoLoginAfterVerification(
-            email,
+            username || email, // Use username if available, fallback to email
             password
           );
           if (autoLoginResult.success) {
@@ -198,6 +198,7 @@ export default function EmailVerification() {
 
     console.log("📧 [EmailVerification] Starting resend process", {
       email,
+      username,
       password,
       params,
       resendTimer,
@@ -205,21 +206,10 @@ export default function EmailVerification() {
 
     setIsResending(true);
     try {
-      // Send both email and username to backend, let it decide which to use
-      const requestData: { email?: string; username?: string } = {};
-
-      if (params.email) {
-        requestData.email = params.email as string;
-      } else if (params.username) {
-        requestData.username = params.username as string;
-      } else {
-        // Fallback to the email state (which might contain username)
-        if (email && email.includes("@")) {
-          requestData.email = email;
-        } else {
-          requestData.username = email;
-        }
-      }
+      // Backend expects 'username' field specifically
+      const requestData = {
+        username: username || email, // Use username if available, fallback to email
+      };
 
       console.log(
         "📧 [EmailVerification] Resending verification with data:",
@@ -267,7 +257,11 @@ export default function EmailVerification() {
                 style={styles.backButton}
                 onPress={() => router.back()}
               >
-                <BlurView intensity={30} tint="light" style={styles.backButtonBlur}>
+                <BlurView
+                  intensity={30}
+                  tint="light"
+                  style={styles.backButtonBlur}
+                >
                   <Ionicons name="chevron-back" size={24} color="white" />
                 </BlurView>
               </TouchableOpacity>
@@ -289,8 +283,16 @@ export default function EmailVerification() {
                     : "Enter the 6-digit verification code sent to your email:"}
                 </Typography>
 
-                <Typography variant="body" style={styles.email} weight="semibold">
-                  {params.email || email || (params.username ? `${params.username}@example.com` : "your registered email")}
+                <Typography
+                  variant="body"
+                  style={styles.email}
+                  weight="semibold"
+                >
+                  {params.email ||
+                    email ||
+                    (params.username
+                      ? `${params.username}@example.com`
+                      : "your registered email")}
                 </Typography>
               </View>
             </View>
@@ -307,15 +309,18 @@ export default function EmailVerification() {
                     placeholder="000000"
                     value={verificationCode}
                     onChangeText={(text) =>
-                      setVerificationCode(text.replace(/[^0-9]/g, "").slice(0, 6))
+                      setVerificationCode(
+                        text.replace(/[^0-9]/g, "").slice(0, 6)
+                      )
                     }
                     keyboardType="numeric"
                     style={styles.input}
                     inputStyle={{
-                      color: "white",
+                      color: "#1f2937",
                       textAlign: "center",
                       fontSize: 24,
                       letterSpacing: 8,
+                      fontWeight: "600",
                     }}
                   />
                 </View>
@@ -327,7 +332,11 @@ export default function EmailVerification() {
                   disabled={isVerifying || verificationCode.length !== 6}
                   activeOpacity={0.9}
                 >
-                  <BlurView intensity={30} tint="light" style={styles.buttonBlur}>
+                  <BlurView
+                    intensity={30}
+                    tint="light"
+                    style={styles.buttonBlur}
+                  >
                     {isVerifying ? (
                       <>
                         <ActivityIndicator size="small" color="white" />
@@ -340,7 +349,11 @@ export default function EmailVerification() {
                         <Typography variant="body" style={styles.buttonText}>
                           Verify Email
                         </Typography>
-                        <Ionicons name="checkmark-circle" size={20} color="white" />
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={20}
+                          color="white"
+                        />
                       </>
                     )}
                   </BlurView>
@@ -368,7 +381,9 @@ export default function EmailVerification() {
                         ]}
                         weight="medium"
                       >
-                        {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend Code"}
+                        {resendTimer > 0
+                          ? `Resend in ${resendTimer}s`
+                          : "Resend Code"}
                       </Typography>
                     )}
                   </TouchableOpacity>
@@ -376,9 +391,14 @@ export default function EmailVerification() {
 
                 {/* Help Text */}
                 <View style={styles.helpContainer}>
-                  <Ionicons name="information-circle" size={20} color="rgba(255, 255, 255, 0.8)" />
+                  <Ionicons
+                    name="information-circle"
+                    size={20}
+                    color="rgba(255, 255, 255, 0.8)"
+                  />
                   <Typography variant="caption" style={styles.helpText}>
-                    Check your spam folder if you don't see the email. The code expires in 24 hours.
+                    Check your spam folder if you don't see the email. The code
+                    expires in 24 hours.
                   </Typography>
                 </View>
               </View>
@@ -489,14 +509,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   input: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.25)",
+    borderColor: "rgba(255, 255, 255, 0.3)",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 24,
-    color: "white",
+    color: "#1f2937",
     minHeight: 48,
   },
   verifyButton: {

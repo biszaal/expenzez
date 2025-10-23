@@ -1,14 +1,21 @@
 import { api } from "../config/apiClient";
-import { getCachedData, setCachedData, clearCachedData } from "../config/apiCache";
+import {
+  getCachedData,
+  setCachedData,
+  clearCachedData,
+} from "../config/apiCache";
 
 export const profileAPI = {
   // Get user profile with caching
   getProfile: async () => {
     // 🚨 CRITICAL: Get user ID from AsyncStorage to create user-specific cache key
-    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-    const userStr = await AsyncStorage.getItem('user');
+    const AsyncStorage = (
+      await import("@react-native-async-storage/async-storage")
+    ).default;
+    const userStr = await AsyncStorage.getItem("user");
     const user = userStr ? JSON.parse(userStr) : null;
-    const userId = user?.id || user?.email || user?.username || 'default';
+    const userId =
+      user?.sub || user?.id || user?.email || user?.username || "default";
 
     const cacheKey = `user_profile_${userId}`;
     const cached = getCachedData(cacheKey);
@@ -18,11 +25,21 @@ export const profileAPI = {
     }
 
     console.log(`📥 [ProfileAPI] Fetching fresh profile for user: ${userId}`);
-    const response = await api.get("/profile");
+    try {
+      const response = await api.get("/profile");
+      console.log(`📥 [ProfileAPI] API response status: ${response.status}`);
+      console.log(
+        `📥 [ProfileAPI] API response data:`,
+        JSON.stringify(response.data, null, 2)
+      );
 
-    // Cache for 5 minutes since profile data changes infrequently
-    setCachedData(cacheKey, response.data, 5 * 60 * 1000);
-    return response.data;
+      // Cache for 5 minutes since profile data changes infrequently
+      setCachedData(cacheKey, response.data, 5 * 60 * 1000);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ [ProfileAPI] Error fetching profile:`, error);
+      throw error;
+    }
   },
 
   // Update user profile
@@ -33,6 +50,8 @@ export const profileAPI = {
     phone?: string;
     address?: string;
     dateOfBirth?: string;
+    occupation?: string;
+    company?: string;
   }) => {
     const response = await api.put("/profile", profileData);
     return response.data;
@@ -41,10 +60,13 @@ export const profileAPI = {
   // Get credit score with caching
   getCreditScore: async () => {
     // 🚨 CRITICAL: User-specific cache key
-    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-    const userStr = await AsyncStorage.getItem('user');
+    const AsyncStorage = (
+      await import("@react-native-async-storage/async-storage")
+    ).default;
+    const userStr = await AsyncStorage.getItem("user");
     const user = userStr ? JSON.parse(userStr) : null;
-    const userId = user?.id || user?.email || user?.username || 'default';
+    const userId =
+      user?.sub || user?.id || user?.email || user?.username || "default";
 
     const cacheKey = `user_credit_score_${userId}`;
     const cached = getCachedData(cacheKey);
@@ -62,10 +84,13 @@ export const profileAPI = {
   // Get goals with caching
   getGoals: async () => {
     // 🚨 CRITICAL: User-specific cache key
-    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-    const userStr = await AsyncStorage.getItem('user');
+    const AsyncStorage = (
+      await import("@react-native-async-storage/async-storage")
+    ).default;
+    const userStr = await AsyncStorage.getItem("user");
     const user = userStr ? JSON.parse(userStr) : null;
-    const userId = user?.id || user?.email || user?.username || 'default';
+    const userId =
+      user?.sub || user?.id || user?.email || user?.username || "default";
 
     const cacheKey = `user_goals_${userId}`;
     const cached = getCachedData(cacheKey);
@@ -92,10 +117,13 @@ export const profileAPI = {
     const response = await api.post("/goals", goalData);
 
     // Clear cache after creating (clear for current user)
-    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-    const userStr = await AsyncStorage.getItem('user');
+    const AsyncStorage = (
+      await import("@react-native-async-storage/async-storage")
+    ).default;
+    const userStr = await AsyncStorage.getItem("user");
     const user = userStr ? JSON.parse(userStr) : null;
-    const userId = user?.id || user?.email || user?.username || 'default';
+    const userId =
+      user?.sub || user?.id || user?.email || user?.username || "default";
     clearCachedData(`user_goals_${userId}`);
     return response.data;
   },
@@ -105,10 +133,13 @@ export const profileAPI = {
     const response = await api.put(`/goals/${goalId}`, updates);
 
     // Clear cache after updating (clear for current user)
-    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-    const userStr = await AsyncStorage.getItem('user');
+    const AsyncStorage = (
+      await import("@react-native-async-storage/async-storage")
+    ).default;
+    const userStr = await AsyncStorage.getItem("user");
     const user = userStr ? JSON.parse(userStr) : null;
-    const userId = user?.id || user?.email || user?.username || 'default';
+    const userId =
+      user?.sub || user?.id || user?.email || user?.username || "default";
     clearCachedData(`user_goals_${userId}`);
     return response.data;
   },
@@ -118,10 +149,13 @@ export const profileAPI = {
     const response = await api.delete(`/goals/${goalId}`);
 
     // Clear cache after deleting (clear for current user)
-    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-    const userStr = await AsyncStorage.getItem('user');
+    const AsyncStorage = (
+      await import("@react-native-async-storage/async-storage")
+    ).default;
+    const userStr = await AsyncStorage.getItem("user");
     const user = userStr ? JSON.parse(userStr) : null;
-    const userId = user?.id || user?.email || user?.username || 'default';
+    const userId =
+      user?.sub || user?.id || user?.email || user?.username || "default";
     clearCachedData(`user_goals_${userId}`);
     return response.data;
   },

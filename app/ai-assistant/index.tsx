@@ -21,7 +21,13 @@ import { useRouter } from "expo-router";
 import MarkdownRenderer from "../../components/ui/MarkdownRenderer";
 import type { ProactiveInsight } from "../../services/api/aiAPI";
 import { useSubscription } from "../../hooks/useSubscription";
-import { PremiumFeature, FREE_TIER_LIMITS } from "../../services/subscriptionService";
+import {
+  PremiumFeature,
+  FREE_TIER_LIMITS,
+} from "../../services/subscriptionService";
+import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
+import { LimitReachedPrompt } from "../../components/premium/LimitReachedPrompt";
+import { FeatureShowcase } from "../../components/premium/FeatureShowcase";
 
 interface Message {
   role: "user" | "assistant";
@@ -79,6 +85,19 @@ export default function AIAssistantScreen() {
   const [rateLimitType, setRateLimitType] = useState<
     "hourly" | "daily" | "monthly" | null
   >(null);
+
+  // Limit reached prompt state
+  const [showLimitPrompt, setShowLimitPrompt] = useState(false);
+  const [limitPromptConfig, setLimitPromptConfig] = useState<{
+    limitType: "ai" | "budgets";
+    currentUsage: number;
+    limit: number;
+    resetTime?: string;
+  }>({
+    limitType: "ai",
+    currentUsage: 0,
+    limit: 10,
+  });
 
   // Fetch chat history on mount
   useEffect(() => {
@@ -254,22 +273,21 @@ export default function AIAssistantScreen() {
     const access = hasFeatureAccess(PremiumFeature.AI_CHAT, { aiQueriesToday });
 
     if (!access.hasAccess) {
-      // Show upgrade prompt
-      Alert.alert(
-        "Daily AI Limit Reached",
-        `You've used all ${FREE_TIER_LIMITS.MAX_AI_QUERIES_PER_DAY} free AI queries today. Upgrade to Premium for unlimited AI conversations!`,
-        [
-          {
-            text: "Maybe Later",
-            style: "cancel",
-          },
-          {
-            text: "Upgrade to Premium",
-            style: "default",
-            onPress: () => router.push("/subscription/plans"),
-          },
-        ]
-      );
+      // Show upgrade prompt via limit reached modal
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const resetTime = tomorrow.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      setLimitPromptConfig({
+        limitType: "ai",
+        currentUsage: aiQueriesToday,
+        limit: FREE_TIER_LIMITS.MAX_AI_QUERIES_PER_DAY,
+        resetTime,
+      });
+      setShowLimitPrompt(true);
       return;
     }
 
@@ -597,6 +615,13 @@ export default function AIAssistantScreen() {
         </View>
       </View>
 
+      {/* Upgrade Banner */}
+      <UpgradeBanner
+        variant="subtle"
+        message="Upgrade to Premium for 50 daily AI chats"
+        actionLabel="Go Premium"
+      />
+
       {/* All users have free access to AI assistant */}
 
       <KeyboardAvoidingView
@@ -814,6 +839,33 @@ export default function AIAssistantScreen() {
                   </View>
                 )}
               </View>
+            )}
+
+            {/* Feature Showcase */}
+            {showInsights && messages.length <= 1 && (
+              <FeatureShowcase
+                title="Why Upgrade to Premium?"
+                features={[
+                  {
+                    icon: "chatbubble",
+                    label: "AI Chats Per Day",
+                    freeValue: "10",
+                    premiumValue: "50",
+                  },
+                  {
+                    icon: "time",
+                    label: "Monthly Chats",
+                    freeValue: "50",
+                    premiumValue: "2,500",
+                  },
+                  {
+                    icon: "star",
+                    label: "Faster Responses",
+                    freeValue: "Standard",
+                    premiumValue: "Priority",
+                  },
+                ]}
+              />
             )}
 
             {/* Proactive Insights Section */}
@@ -1235,7 +1287,6 @@ export default function AIAssistantScreen() {
                   paddingVertical: 4,
                 }}
                 placeholder="Ask me about your spending, budgets, or goals..."
-                
                 value={input}
                 onChangeText={setInput}
                 editable={!loading && !isRateLimited}
@@ -1283,6 +1334,16 @@ export default function AIAssistantScreen() {
       </KeyboardAvoidingView>
 
       {/* All users have free access to AI assistant */}
+
+      {/* Limit Reached Modal */}
+      <LimitReachedPrompt
+        visible={showLimitPrompt}
+        limitType={limitPromptConfig.limitType}
+        currentUsage={limitPromptConfig.currentUsage}
+        limit={limitPromptConfig.limit}
+        resetTime={limitPromptConfig.resetTime}
+        onDismiss={() => setShowLimitPrompt(false)}
+      />
     </SafeAreaView>
   );
 }
