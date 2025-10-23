@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
   appLogo: {
     width: 110,
     height: 110,
-    marginBottom: 24,
+    marginBottom: 12,
   },
   title: {
     fontSize: 28,
