@@ -1,5 +1,6 @@
 import { api } from "../config/apiClient";
 import { deviceManager } from "../deviceManager";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export interface UserSecurityPreferences {
   appLockEnabled: boolean;
@@ -158,10 +159,26 @@ export const enhancedSecurityAPI = {
 
       if (!prefUpdateSuccess) {
         console.log(
-          "🔐 [Enhanced Security] ⚠️ Server update failed, using offline mode"
+          "🔐 [Enhanced Security] ⚠️ Server update failed, will retry..."
         );
-        return { success: true, needsPinSetup: false }; // PIN already created locally
+        return { success: false, needsPinSetup: false }; // Return failure so retry logic in create-pin.tsx kicks in
       }
+
+      // VERIFICATION: Confirm preferences were actually saved on server
+      console.log(
+        "🔐 [Enhanced Security] Verifying preferences were saved on server..."
+      );
+      const verifyPrefs = await enhancedSecurityAPI.getSecurityPreferences();
+      if (!verifyPrefs || !verifyPrefs.appLockEnabled) {
+        console.error(
+          "🔐 [Enhanced Security] ❌ Verification failed: preferences not saved on server!"
+        );
+        return { success: false, needsPinSetup: false };
+      }
+      console.log(
+        "🔐 [Enhanced Security] ✅ Verification successful: appLockEnabled =",
+        verifyPrefs.appLockEnabled
+      );
 
       // Check if current device needs PIN setup
       const status = await enhancedSecurityAPI.getSecurityStatus();
@@ -233,9 +250,9 @@ export const enhancedSecurityAPI = {
         return true;
       } else {
         console.log(
-          "🔐 [Enhanced Security] ⚠️ Server disable failed, but using local offline mode"
+          "🔐 [Enhanced Security] ⚠️ Server disable failed, but local preference saved as fallback"
         );
-        return true;
+        return false; // Return failure to indicate server update didn't succeed
       }
     } catch (error: any) {
       console.error(

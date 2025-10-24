@@ -186,12 +186,26 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       } else if (nextAppState === "active") {
         console.log(
-          "🔐 [SecurityContext] App became active, canceling any pending lock"
+          "🔐 [SecurityContext] App became active - checking for remote security changes..."
         );
-        // App became active again, don't lock
+        // App became active again, cancel any pending lock
         if (backgroundTimeout) {
           clearTimeout(backgroundTimeout);
           backgroundTimeout = null;
+        }
+
+        // CROSS-DEVICE SYNC: Check if security settings changed while app was backgrounded
+        // This detects if app lock was enabled/disabled on another device
+        if (isLoggedIn) {
+          console.log(
+            "🔐 [SecurityContext] Re-checking security status for cross-device changes..."
+          );
+          checkSecurityStatus().catch((error) => {
+            console.error(
+              "🔐 [SecurityContext] Error checking security status on foreground:",
+              error
+            );
+          });
         }
       }
     };
@@ -372,21 +386,33 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
           setNeedsPinSetup(securityStatus.needsPinSetup);
           setHasServerPin(userHasPinOnServer);
 
-          // Determine lock state
+          // Determine lock state - CROSS-DEVICE AWARE
           if (securityStatus.preferences.appLockEnabled) {
             if (securityStatus.hasDevicePIN) {
               // Check if we have a valid session
               const hasValidSession = await nativeSecurityAPI.hasValidSession();
-              setIsLocked(!hasValidSession);
+
+              // If security was just enabled while we had an old session, force re-lock
+              const wasSecurityEnabledTime = securityStatus.preferences.lastUpdated;
+              const lastUnlockTime = await AsyncStorage.getItem("@expenzez_last_unlock");
+              const lastUnlockNumber = lastUnlockTime ? parseInt(lastUnlockTime, 10) : 0;
+
+              // If lock was enabled after last unlock, force lock (cross-device change detected)
+              const shouldForceLock = hasValidSession && (wasSecurityEnabledTime > lastUnlockNumber);
+
+              setIsLocked(!hasValidSession || shouldForceLock);
               console.log(
                 "🔐 [SecurityContext] App lock enabled with PIN, locked:",
-                !hasValidSession
+                !hasValidSession || shouldForceLock,
+                { hasValidSession, shouldForceLock, wasSecurityEnabledTime, lastUnlockNumber }
               );
             } else {
-              // App lock enabled but no PIN on this device - don't lock yet, show PIN setup
+              // App lock enabled but no PIN on this device
+              // User enabled lock on another device, now needs to set PIN on this device
+              // Don't lock yet, show PIN setup modal instead
               setIsLocked(false);
               console.log(
-                "🔐 [SecurityContext] App lock enabled but no device PIN - PIN setup needed"
+                "🔐 [SecurityContext] App lock enabled on another device but no PIN here - showing PIN sync/setup"
               );
             }
           } else {
