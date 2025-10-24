@@ -29,6 +29,7 @@ interface RevenueCatContextType {
   purchasePackage: (pkg: any) => Promise<{ success: boolean; error?: string }>;
   restorePurchases: () => Promise<{ success: boolean; error?: string }>;
   getOfferings: () => Promise<void>;
+  refreshCustomerInfo: () => Promise<void>;
   hasActiveSubscription: boolean;
   isInTrialPeriod: boolean;
   subscriptionExpiryDate: Date | null;
@@ -43,6 +44,7 @@ const RevenueCatContext = createContext<RevenueCatContextType>({
   purchasePackage: async () => ({ success: false }),
   restorePurchases: async () => ({ success: false }),
   getOfferings: async () => {},
+  refreshCustomerInfo: async () => {},
   hasActiveSubscription: false,
   isInTrialPeriod: false,
   subscriptionExpiryDate: null,
@@ -304,6 +306,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     purchasePackage,
     restorePurchases,
     getOfferings,
+    refreshCustomerInfo: updateCustomerInfo,
     hasActiveSubscription,
     isInTrialPeriod,
     subscriptionExpiryDate,
