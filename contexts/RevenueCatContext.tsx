@@ -66,6 +66,11 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     string | null
   >(null);
 
+  // Log isPro changes for debugging
+  useEffect(() => {
+    console.log("[RevenueCat] isPro changed to:", isPro);
+  }, [isPro]);
+
   // Initialize RevenueCat SDK
   useEffect(() => {
     initializeRevenueCat();
