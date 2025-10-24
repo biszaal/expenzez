@@ -16,6 +16,7 @@ import { insightsEngine, MonthlySpendingTrend } from '../../services/insightsEng
 import { spacing, borderRadius } from '../../constants/theme';
 import { useSubscription, PremiumFeature } from '../../services/subscriptionService';
 import PremiumPaywall from '../../components/PremiumPaywall';
+import { AnalyticsSummary } from '../../components/analytics/AnalyticsSummary';
 
 const { width } = Dimensions.get('window');
 
@@ -25,6 +26,7 @@ export default function TrendsAnalysisScreen() {
   const [trends, setTrends] = useState<MonthlySpendingTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<3 | 6 | 12>(6);
+  const [activeTab, setActiveTab] = useState<'trends' | 'analytics'>('trends');
 
   // Check if user has access to advanced analytics
   const analyticsAccess = hasFeatureAccess(PremiumFeature.ADVANCED_ANALYTICS);
@@ -208,126 +210,179 @@ export default function TrendsAnalysisScreen() {
         ))}
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {trends.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📈</Text>
-            <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
-              No Trend Data
-            </Text>
-            <Text style={[styles.emptyDescription, { color: colors.text.secondary }]}>
-              Add expenses over multiple months to see spending trends and patterns.
-            </Text>
-          </View>
-        ) : (
-          <>
-            {/* Chart */}
-            <View style={[styles.chartCard, { backgroundColor: colors.background.secondary }]}>
-              {renderSimpleChart()}
-            </View>
+      {/* Tab Selector */}
+      <View style={styles.tabSelector}>
+        <TouchableOpacity
+          onPress={() => setActiveTab('trends')}
+          style={[
+            styles.tabButton,
+            {
+              backgroundColor: activeTab === 'trends' ? colors.primary[100] : colors.background.secondary,
+              borderBottomColor: activeTab === 'trends' ? colors.primary[500] : colors.border.light,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.tabButtonText,
+              {
+                color: activeTab === 'trends' ? colors.primary[700] : colors.text.secondary,
+                fontWeight: activeTab === 'trends' ? '600' : '400',
+              },
+            ]}
+          >
+            Trends
+          </Text>
+        </TouchableOpacity>
 
-            {/* Monthly Details */}
-            <View style={styles.monthlyDetails}>
-              <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-                Monthly Breakdown
+        <TouchableOpacity
+          onPress={() => setActiveTab('analytics')}
+          style={[
+            styles.tabButton,
+            {
+              backgroundColor: activeTab === 'analytics' ? colors.primary[100] : colors.background.secondary,
+              borderBottomColor: activeTab === 'analytics' ? colors.primary[500] : colors.border.light,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.tabButtonText,
+              {
+                color: activeTab === 'analytics' ? colors.primary[700] : colors.text.secondary,
+                fontWeight: activeTab === 'analytics' ? '600' : '400',
+              },
+            ]}
+          >
+            Advanced Analytics
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {activeTab === 'trends' ? (
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {trends.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>📈</Text>
+              <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
+                No Trend Data
               </Text>
-
-              {trends.map((trend, index) => {
-                const changeIndicator = getChangeIndicator(trend.comparedToPrevious);
-                const topCategory = Object.entries(trend.categoryBreakdown)
-                  .sort(([, a], [, b]) => b - a)[0];
-
-                return (
-                  <View
-                    key={trend.month}
-                    style={[styles.monthCard, { backgroundColor: colors.background.secondary }]}
-                  >
-                    <View style={styles.monthHeader}>
-                      <Text style={[styles.monthTitle, { color: colors.text.primary }]}>
-                        {formatMonth(trend.month)}
-                      </Text>
-                      {index > 0 && (
-                        <View style={styles.monthChange}>
-                          <Ionicons
-                            name={changeIndicator.icon as any}
-                            size={16}
-                            color={changeIndicator.color}
-                          />
-                          <Text style={[styles.monthChangeText, { color: changeIndicator.color }]}>
-                            {changeIndicator.text}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-
-                    <View style={styles.monthStats}>
-                      <View style={styles.statRow}>
-                        <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
-                          Total Spent
-                        </Text>
-                        <Text style={[styles.statValue, { color: colors.text.primary }]}>
-                          £{trend.totalSpent.toFixed(2)}
-                        </Text>
-                      </View>
-
-                      <View style={styles.statRow}>
-                        <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
-                          Weekly Average
-                        </Text>
-                        <Text style={[styles.statValue, { color: colors.text.primary }]}>
-                          £{trend.weeklyAverage.toFixed(2)}
-                        </Text>
-                      </View>
-
-                      {topCategory && (
-                        <View style={styles.statRow}>
-                          <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
-                            Top Category
-                          </Text>
-                          <Text style={[styles.statValue, { color: colors.text.primary }]}>
-                            {topCategory[0]} (£{topCategory[1].toFixed(2)})
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                );
-              })}
+              <Text style={[styles.emptyDescription, { color: colors.text.secondary }]}>
+                Add expenses over multiple months to see spending trends and patterns.
+              </Text>
             </View>
+          ) : (
+            <>
+              {/* Chart */}
+              <View style={[styles.chartCard, { backgroundColor: colors.background.secondary }]}>
+                {renderSimpleChart()}
+              </View>
 
-            {/* Summary Insights */}
-            {trends.length > 1 && (
-              <View style={styles.summarySection}>
+              {/* Monthly Details */}
+              <View style={styles.monthlyDetails}>
                 <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-                  Key Insights
+                  Monthly Breakdown
                 </Text>
 
-                <View style={[styles.summaryCard, { backgroundColor: colors.background.secondary }]}>
-                  <View style={styles.insightRow}>
-                    <Text style={[styles.insightText, { color: colors.text.secondary }]}>
-                      Highest spending month: {formatMonth(trends.reduce((max, t) => t.totalSpent > max.totalSpent ? t : max).month)}
-                    </Text>
-                  </View>
+                {trends.map((trend, index) => {
+                  const changeIndicator = getChangeIndicator(trend.comparedToPrevious);
+                  const topCategory = Object.entries(trend.categoryBreakdown)
+                    .sort(([, a], [, b]) => b - a)[0];
 
-                  <View style={styles.insightRow}>
-                    <Text style={[styles.insightText, { color: colors.text.secondary }]}>
-                      Average monthly spending: £{(trends.reduce((sum, t) => sum + t.totalSpent, 0) / trends.length).toFixed(2)}
-                    </Text>
-                  </View>
+                  return (
+                    <View
+                      key={trend.month}
+                      style={[styles.monthCard, { backgroundColor: colors.background.secondary }]}
+                    >
+                      <View style={styles.monthHeader}>
+                        <Text style={[styles.monthTitle, { color: colors.text.primary }]}>
+                          {formatMonth(trend.month)}
+                        </Text>
+                        {index > 0 && (
+                          <View style={styles.monthChange}>
+                            <Ionicons
+                              name={changeIndicator.icon as any}
+                              size={16}
+                              color={changeIndicator.color}
+                            />
+                            <Text style={[styles.monthChangeText, { color: changeIndicator.color }]}>
+                              {changeIndicator.text}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
 
-                  {trends.length >= 3 && (
+                      <View style={styles.monthStats}>
+                        <View style={styles.statRow}>
+                          <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
+                            Total Spent
+                          </Text>
+                          <Text style={[styles.statValue, { color: colors.text.primary }]}>
+                            £{trend.totalSpent.toFixed(2)}
+                          </Text>
+                        </View>
+
+                        <View style={styles.statRow}>
+                          <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
+                            Weekly Average
+                          </Text>
+                          <Text style={[styles.statValue, { color: colors.text.primary }]}>
+                            £{trend.weeklyAverage.toFixed(2)}
+                          </Text>
+                        </View>
+
+                        {topCategory && (
+                          <View style={styles.statRow}>
+                            <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
+                              Top Category
+                            </Text>
+                            <Text style={[styles.statValue, { color: colors.text.primary }]}>
+                              {topCategory[0]} (£{topCategory[1].toFixed(2)})
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+
+              {/* Summary Insights */}
+              {trends.length > 1 && (
+                <View style={styles.summarySection}>
+                  <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+                    Key Insights
+                  </Text>
+
+                  <View style={[styles.summaryCard, { backgroundColor: colors.background.secondary }]}>
                     <View style={styles.insightRow}>
                       <Text style={[styles.insightText, { color: colors.text.secondary }]}>
-                        Recent trend: {trends[trends.length - 1].comparedToPrevious > 5 ? 'Increasing' : trends[trends.length - 1].comparedToPrevious < -5 ? 'Decreasing' : 'Stable'} spending
+                        Highest spending month: {formatMonth(trends.reduce((max, t) => t.totalSpent > max.totalSpent ? t : max).month)}
                       </Text>
                     </View>
-                  )}
+
+                    <View style={styles.insightRow}>
+                      <Text style={[styles.insightText, { color: colors.text.secondary }]}>
+                        Average monthly spending: £{(trends.reduce((sum, t) => sum + t.totalSpent, 0) / trends.length).toFixed(2)}
+                      </Text>
+                    </View>
+
+                    {trends.length >= 3 && (
+                      <View style={styles.insightRow}>
+                        <Text style={[styles.insightText, { color: colors.text.secondary }]}>
+                          Recent trend: {trends[trends.length - 1].comparedToPrevious > 5 ? 'Increasing' : trends[trends.length - 1].comparedToPrevious < -5 ? 'Decreasing' : 'Stable'} spending
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
-              </View>
-            )}
-          </>
-        )}
-      </ScrollView>
+              )}
+            </>
+          )}
+        </ScrollView>
+      ) : (
+        <AnalyticsSummary />
+      )}
     </SafeAreaView>
   );
 }
@@ -531,6 +586,23 @@ const styles = StyleSheet.create({
   insightText: {
     fontSize: 14,
     lineHeight: 20,
+  },
+  tabSelector: {
+    flexDirection: 'row',
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    borderBottomWidth: 3,
+  },
+  tabButtonText: {
+    fontSize: 14,
   },
 
 });
