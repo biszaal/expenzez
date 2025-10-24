@@ -237,16 +237,17 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
   onBillLongPress,
 }) => {
   const { colors } = useTheme();
+  const [paidBills, setPaidBills] = React.useState<Set<string>>(new Set());
 
   // Handle marking bill as paid
   const handleMarkAsPaid = (bill: DetectedBill) => {
-    // For now, we'll just show an alert. In a real app, this would:
-    // 1. Update the bill status in the database
-    // 2. Remove the bill from the current list
-    // 3. Possibly add it to a "Paid Bills" section
-    alert(
-      `Marked "${bill.name}" as paid! This would remove it from the list in a real implementation.`
-    );
+    const newPaidBills = new Set(paidBills);
+    if (newPaidBills.has(bill.id)) {
+      newPaidBills.delete(bill.id);
+    } else {
+      newPaidBills.add(bill.id);
+    }
+    setPaidBills(newPaidBills);
   };
 
   const getBillUrgency = (dueDate: string) => {
@@ -304,6 +305,23 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
       const today = dayjs();
       return dueDate.isAfter(today) || dueDate.isSame(today, "day");
     })
+    // Deduplicate bills with same merchant and similar amounts (within 5%)
+    .reduce((uniqueBills, currentBill) => {
+      const isDuplicate = uniqueBills.some((bill) => {
+        const sameMerchant =
+          bill.merchant.toLowerCase() === currentBill.merchant.toLowerCase();
+        const similarAmount =
+          Math.abs(bill.amount - currentBill.amount) /
+            Math.min(bill.amount, currentBill.amount) <
+          0.05; // Within 5%
+        return sameMerchant && similarAmount;
+      });
+
+      if (!isDuplicate) {
+        uniqueBills.push(currentBill);
+      }
+      return uniqueBills;
+    }, [] as DetectedBill[])
     .sort((a, b) => {
       // Sort by next due date (ascending - earliest first)
       const dateA = dayjs(a.nextDueDate);
@@ -482,32 +500,43 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
                           </Text>
                         </View>
 
-                        {/* Paid Button */}
+                        {/* Mark Paid Button */}
                         <TouchableOpacity
                           style={[
                             styles.paidButton,
-                            {
-                              backgroundColor: colors.success[100],
-                              borderColor: colors.success[300],
-                            },
+                            paidBills.has(bill.id)
+                              ? {
+                                  backgroundColor: colors.success[500],
+                                  borderColor: colors.success[500],
+                                }
+                              : {
+                                  backgroundColor: "transparent",
+                                  borderColor: colors.text.tertiary,
+                                },
                           ]}
                           onPress={(e) => {
                             e.stopPropagation();
                             handleMarkAsPaid(bill);
                           }}
                         >
-                          <Ionicons
-                            name="checkmark"
-                            size={14}
-                            color={colors.success[600]}
-                          />
+                          {paidBills.has(bill.id) && (
+                            <Ionicons
+                              name="checkmark"
+                              size={14}
+                              color="white"
+                            />
+                          )}
                           <Text
                             style={[
                               styles.paidButtonText,
-                              { color: colors.success[600] },
+                              {
+                                color: paidBills.has(bill.id)
+                                  ? "white"
+                                  : colors.text.tertiary,
+                              },
                             ]}
                           >
-                            Paid
+                            {paidBills.has(bill.id) ? "Paid" : "Mark Paid"}
                           </Text>
                         </TouchableOpacity>
 
