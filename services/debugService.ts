@@ -15,7 +15,7 @@ export class DebugService {
   /**
    * Check if we're in a development environment
    */
-  static isDevEnvironment(): boolean {
+  isDevEnvironment(): boolean {
     // Only available in Expo Go or development builds
     const isExpoGo = !Constants.appOwnership || Constants.appOwnership === 'expo';
     const isDev = process.env.NODE_ENV === 'development';
@@ -26,7 +26,7 @@ export class DebugService {
    * Toggle premium status for testing
    * Returns true if premium is now enabled, false if disabled
    */
-  static async toggleDebugPremium(): Promise<boolean> {
+  async toggleDebugPremium(): Promise<boolean> {
     if (!this.isDevEnvironment()) {
       console.warn('Debug features are only available in development builds');
       return false;
@@ -42,7 +42,7 @@ export class DebugService {
   /**
    * Check if debug premium is currently enabled
    */
-  static async isDebugPremiumEnabled(): Promise<boolean> {
+  async isDebugPremiumEnabled(): Promise<boolean> {
     if (!this.isDevEnvironment()) {
       return false;
     }
@@ -59,7 +59,7 @@ export class DebugService {
   /**
    * Reset debug settings
    */
-  static async resetDebugSettings(): Promise<void> {
+  async resetDebugSettings(): Promise<void> {
     try {
       await AsyncStorage.removeItem(DEBUG_PREMIUM_KEY);
       console.log('[Debug] Settings reset');
@@ -71,7 +71,7 @@ export class DebugService {
   /**
    * Get debug info
    */
-  static getDebugInfo(): {
+  getDebugInfo(): {
     isDev: boolean;
     environment: string;
     appOwnership: string | null;
