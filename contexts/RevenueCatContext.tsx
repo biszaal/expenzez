@@ -165,12 +165,32 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateCustomerInfo = async () => {
     try {
       if (!Purchases) {
+        // Check debug flag even when Purchases SDK isn't available (e.g., in Expo Go)
+        if (debugService.isDevEnvironment()) {
+          const debugPremiumEnabled = await debugService.isDebugPremiumEnabled();
+          if (debugPremiumEnabled) {
+            setIsPro(true);
+            setHasActiveSubscription(true);
+            console.log("[RevenueCat] Debug premium override enabled (no SDK)");
+            return;
+          }
+        }
         setIsPro(false);
         return;
       }
       const info = await Purchases.getCustomerInfo();
       await processCustomerInfo(info);
     } catch (error) {
+      // Still check debug flag on error
+      if (debugService.isDevEnvironment()) {
+        const debugPremiumEnabled = await debugService.isDebugPremiumEnabled();
+        if (debugPremiumEnabled) {
+          setIsPro(true);
+          setHasActiveSubscription(true);
+          console.log("[RevenueCat] Debug premium override enabled (error fallback)");
+          return;
+        }
+      }
       setIsPro(false);
     }
   };
