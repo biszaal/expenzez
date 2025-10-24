@@ -18,14 +18,38 @@ export default function CreatePinScreen() {
       await AsyncStorage.setItem('@expenzez_app_locked', 'false');
       console.log('🔐 [CreatePin] Set unlock session after PIN creation');
 
-      // CRITICAL FIX: Enable app lock preference when PIN is created
+      // CRITICAL FIX: Enable app lock preference when PIN is created with RETRY
       console.log('🔐 [CreatePin] Enabling app lock preference after PIN creation');
-      const enableResult = await enhancedSecurityAPI.enableAppLock();
 
-      if (enableResult.success) {
-        console.log('🔐 [CreatePin] ✅ App lock preference enabled successfully');
-      } else {
-        console.log('🔐 [CreatePin] ⚠️ Failed to enable app lock preference, but continuing');
+      let enableResult;
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      while (retryCount < maxRetries) {
+        try {
+          enableResult = await enhancedSecurityAPI.enableAppLock();
+
+          if (enableResult.success) {
+            console.log('🔐 [CreatePin] ✅ App lock preference enabled successfully');
+            break;
+          } else {
+            console.log(`🔐 [CreatePin] ⚠️ Enable app lock returned success=false, retrying (${retryCount + 1}/${maxRetries})`);
+            retryCount++;
+            if (retryCount < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms before retry
+            }
+          }
+        } catch (enableError) {
+          console.error(`🔐 [CreatePin] Enable app lock failed (${retryCount + 1}/${maxRetries}):`, enableError);
+          retryCount++;
+          if (retryCount < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms before retry
+          }
+        }
+      }
+
+      if (retryCount >= maxRetries) {
+        console.error('🔐 [CreatePin] ❌ Failed to enable app lock after 3 retries');
       }
 
       // Notify the enhanced security API that PIN setup is complete
