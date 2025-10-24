@@ -385,7 +385,8 @@ export class AutomaticBillDetectionService {
       this.clearCache();
 
       // Clear database cache
-      await BillsAPI.clearBillsCache();
+      // NOTE: Backend endpoint /bills/detected/cache doesn't exist yet, so skip for now
+      // await BillsAPI.clearBillsCache();
 
       // Force fresh detection with new algorithm
       return await this.triggerBillDetection(true);
