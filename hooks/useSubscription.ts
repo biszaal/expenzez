@@ -76,6 +76,8 @@ export const useSubscription = (): UseSubscriptionReturn => {
     activeProductIdentifier,
   } = useRevenueCat();
 
+  console.log("[useSubscription] isPro:", isPro);
+
   // Get subscription status
   const subscriptionStatus = useMemo(
     () => subscriptionService.getSubscriptionStatus(customerInfo),

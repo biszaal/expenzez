@@ -15,6 +15,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { insightsEngine, MonthlySpendingTrend } from '../../services/insightsEngine';
 import { spacing, borderRadius } from '../../constants/theme';
 import { PremiumFeature } from '../../services/subscriptionService';
+import { useSubscription } from '../../hooks/useSubscription';
 import { PremiumGate } from '../../components/PremiumGate';
 import { AnalyticsSummary } from '../../components/analytics/AnalyticsSummary';
 
@@ -22,10 +23,13 @@ const { width } = Dimensions.get('window');
 
 export default function TrendsAnalysisScreen() {
   const { colors } = useTheme();
+  const { isPremium } = useSubscription();
   const [trends, setTrends] = useState<MonthlySpendingTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<3 | 6 | 12>(6);
   const [activeTab, setActiveTab] = useState<'trends' | 'analytics'>('trends');
+
+  console.log("[TrendsAnalysisScreen] isPremium:", isPremium);
 
   useEffect(() => {
     loadTrends();
