@@ -914,10 +914,10 @@ export default function CSVImportScreen() {
           ]}
         >
           <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-            Import Bank Statement
+            Smart CSV Import
           </Text>
           <Text style={[styles.instructions, { color: colors.text.secondary }]}>
-            Upload a CSV file from your bank, credit card, or payment app. The app intelligently detects the format, automatically categorizes transactions, and lets you review everything before importing.
+            Upload a CSV file from your bank, credit card, or payment app. Our smart import engine automatically detects the format, intelligently categorizes each transaction, identifies recurring bills, and learns from your spending patterns.
           </Text>
 
           <View style={styles.formatInfo}>
