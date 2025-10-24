@@ -8,7 +8,7 @@
  * - Comparison metrics
  */
 
-import apiClient from '../config/apiClient';
+import { api } from '../config/apiClient';
 
 export interface AnalyticsMetrics {
   forecast: ForecastResult[];
@@ -55,7 +55,7 @@ class AnalyticsAPI {
    */
   async getAdvancedAnalytics(): Promise<AnalyticsMetrics> {
     try {
-      const response = await apiClient.get<{ success: boolean; data: AnalyticsMetrics }>(
+      const response = await api.get<{ success: boolean; data: AnalyticsMetrics }>(
         '/analytics/advanced'
       );
 
