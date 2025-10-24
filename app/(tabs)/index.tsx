@@ -27,6 +27,7 @@ import {
   NotificationCard,
 } from "../../components/home";
 import { CompactSpendingSummary } from "../../components/home/CompactSpendingSummary";
+import { CompactBudgetStatus } from "../../components/home/CompactBudgetStatus";
 import { api } from "../../services/config/apiClient";
 import { TransactionService } from "../../services/transactionService";
 import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
@@ -739,6 +740,11 @@ export default function HomeScreen() {
         {/* Spending Overview Section */}
         <View style={styles.section}>
           <CompactSpendingSummary onViewAll={() => router.push("/spending")} />
+        </View>
+
+        {/* Budget Status Section */}
+        <View style={styles.section}>
+          <CompactBudgetStatus onViewAll={() => router.push("/budgets")} />
         </View>
 
         {/* Upcoming Bills Section */}

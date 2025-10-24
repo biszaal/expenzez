@@ -1320,21 +1320,54 @@ export default function SpendingPage() {
 
         {/* Budget Summary Card */}
         {selectedTab === "summary" && (
-          <BudgetSummaryCard
-            selectedMonth={selectedMonth}
-            monthlyTotalSpent={monthlyData?.monthlyTotalSpent || 0}
-            totalBudget={totalBudget}
-            averageSpendPerDay={averageSpendPerDay}
-            predictedMonthlySpend={predictedMonthlySpend}
-            displayLeftToSpend={displayLeftToSpend}
-            monthlySpentPercentage={monthlySpentPercentage}
-            monthlyOverBudget={monthlyOverBudget}
-            currentMonth={currentMonth}
-            formatAmount={formatAmount}
-            currency="GBP"
-            animatedScale={animatedScale}
-            animatedProgress={animatedProgress}
-          />
+          <>
+            <BudgetSummaryCard
+              selectedMonth={selectedMonth}
+              monthlyTotalSpent={monthlyData?.monthlyTotalSpent || 0}
+              totalBudget={totalBudget}
+              averageSpendPerDay={averageSpendPerDay}
+              predictedMonthlySpend={predictedMonthlySpend}
+              displayLeftToSpend={displayLeftToSpend}
+              monthlySpentPercentage={monthlySpentPercentage}
+              monthlyOverBudget={monthlyOverBudget}
+              currentMonth={currentMonth}
+              formatAmount={formatAmount}
+              currency="GBP"
+              animatedScale={animatedScale}
+              animatedProgress={animatedProgress}
+            />
+
+            {/* View All Budgets Button */}
+            <TouchableOpacity
+              style={[
+                styles.viewAllBudgetsButton,
+                { backgroundColor: colors.background.secondary },
+              ]}
+              onPress={() => router.push("/budgets")}
+              activeOpacity={0.8}
+            >
+              <View style={styles.viewAllBudgetsContent}>
+                <Ionicons
+                  name="wallet"
+                  size={20}
+                  color={colors.primary[500]}
+                />
+                <Text
+                  style={[
+                    styles.viewAllBudgetsText,
+                    { color: colors.text.primary },
+                  ]}
+                >
+                  View All Budgets
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.text.secondary}
+              />
+            </TouchableOpacity>
+          </>
         )}
 
         {/* Analytics Section */}
@@ -1546,6 +1579,33 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  // View All Budgets Button Styles
+  viewAllBudgetsButton: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    marginTop: spacing.md,
+    padding: spacing.lg,
+    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  viewAllBudgetsContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    flex: 1,
+  },
+  viewAllBudgetsText: {
     fontSize: 16,
     fontWeight: "600",
   },
