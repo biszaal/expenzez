@@ -1337,18 +1337,18 @@ export default function SpendingPage() {
               animatedProgress={animatedProgress}
             />
 
-            {/* View All Budgets Button */}
+            {/* Advanced Analytics Button */}
             <TouchableOpacity
               style={[
                 styles.viewAllBudgetsButton,
                 { backgroundColor: colors.background.secondary },
               ]}
-              onPress={() => router.push("/budgets")}
+              onPress={() => router.push("/insights/trends")}
               activeOpacity={0.8}
             >
               <View style={styles.viewAllBudgetsContent}>
                 <Ionicons
-                  name="wallet"
+                  name="stats-chart"
                   size={20}
                   color={colors.primary[500]}
                 />
@@ -1358,7 +1358,7 @@ export default function SpendingPage() {
                     { color: colors.text.primary },
                   ]}
                 >
-                  View All Budgets
+                  Advanced Analytics
                 </Text>
               </View>
               <Ionicons

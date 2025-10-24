@@ -55,17 +55,49 @@ class AnalyticsAPI {
    */
   async getAdvancedAnalytics(): Promise<AnalyticsMetrics> {
     try {
-      const response = await api.get<{ success: boolean; data: AnalyticsMetrics }>(
+      const response = await api.get<{ success: boolean; data?: AnalyticsMetrics; message?: string; details?: string }>(
         '/analytics/advanced'
       );
 
+      console.log('📊 Analytics API Response:', {
+        status: response.status,
+        success: response.data.success,
+        message: response.data.message,
+        details: response.data.details,
+        hasData: !!response.data.data,
+      });
+
+      // Handle both success and error responses with proper data format
       if (!response.data.success) {
-        throw new Error('Failed to fetch analytics');
+        const errorMsg = response.data.message || response.data.details || 'Failed to fetch analytics';
+        console.error('❌ Analytics API Error:', errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      // Return empty analytics if no data but success (insufficient data scenario)
+      if (!response.data.data) {
+        console.warn('⚠️ No analytics data returned, using fallback empty analytics');
+        return {
+          forecast: [],
+          anomalies: [],
+          categoryTrends: [],
+          savingsOpportunity: 0,
+          spendingVelocity: 0,
+          comparisonMetrics: {
+            monthOverMonth: 0,
+            yearOverYear: 0,
+          },
+        };
       }
 
       return response.data.data;
-    } catch (error) {
-      console.error('Error fetching advanced analytics:', error);
+    } catch (error: any) {
+      console.error('❌ Error fetching advanced analytics:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       throw error;
     }
   }
