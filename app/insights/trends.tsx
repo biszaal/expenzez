@@ -81,8 +81,8 @@ export default function TrendsAnalysisScreen() {
 
     const maxAmount = getMaxAmount();
     const chartWidth = width - (spacing.md * 4);
-    const gap = 8;
-    const barWidth = Math.floor((chartWidth - 45 - (trends.length - 1) * gap) / trends.length);
+    const gap = 6;
+    const barWidth = Math.floor((chartWidth - 50 - (trends.length - 1) * gap) / trends.length);
 
     return (
       <View style={styles.chartContainer}>
@@ -93,7 +93,7 @@ export default function TrendsAnalysisScreen() {
         <View style={styles.chart}>
           <View style={styles.yAxis}>
             <Text style={[styles.axisLabel, { color: colors.text.secondary }]}>
-              £{maxAmount.toFixed(0)}
+              £{(maxAmount).toFixed(0)}
             </Text>
             <Text style={[styles.axisLabel, { color: colors.text.secondary }]}>
               £{(maxAmount * 0.5).toFixed(0)}
@@ -105,8 +105,9 @@ export default function TrendsAnalysisScreen() {
 
           <View style={styles.barsContainer}>
             {trends.map((trend, index) => {
-              const height = Math.max(4, (trend.totalSpent / maxAmount) * 150);
+              const height = Math.max(8, (trend.totalSpent / maxAmount) * 140);
               const changeIndicator = getChangeIndicator(trend.comparedToPrevious);
+              const monthParts = formatMonth(trend.month).split(' ');
 
               return (
                 <View
@@ -133,21 +134,26 @@ export default function TrendsAnalysisScreen() {
                   </View>
 
                   <View style={styles.barLabel}>
-                    <Text style={[styles.monthLabel, { color: colors.text.secondary }]}>
-                      {formatMonth(trend.month)}
+                    <Text style={[styles.monthLabelText, { color: colors.text.primary }]}>
+                      {monthParts[0]}
                     </Text>
-                    {index > 0 && (
-                      <View style={styles.changeIndicator}>
-                        <Ionicons
-                          name={changeIndicator.icon as any}
-                          size={10}
-                          color={changeIndicator.color}
-                        />
-                        <Text style={[styles.changeText, { color: changeIndicator.color }]}>
-                          {changeIndicator.text}
-                        </Text>
-                      </View>
-                    )}
+                    <Text style={[styles.monthLabelYear, { color: colors.text.secondary }]}>
+                      {monthParts[1]}
+                    </Text>
+                    <View style={styles.changeIndicator}>
+                      {index > 0 && (
+                        <>
+                          <Ionicons
+                            name={changeIndicator.icon as any}
+                            size={9}
+                            color={changeIndicator.color}
+                          />
+                          <Text style={[styles.changeText, { color: changeIndicator.color }]}>
+                            {changeIndicator.text}
+                          </Text>
+                        </>
+                      )}
+                    </View>
                   </View>
                 </View>
               );
@@ -467,27 +473,29 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   chartContainer: {
-    gap: spacing.md,
+    gap: spacing.lg,
   },
   chartTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    textAlign: 'center',
+    textAlign: 'left',
+    paddingHorizontal: spacing.md,
   },
   chart: {
     flexDirection: 'row',
-    height: 180,
+    height: 200,
     alignItems: 'flex-end',
+    paddingBottom: spacing.md,
   },
   yAxis: {
-    width: 45,
-    height: 150,
+    width: 50,
+    height: 140,
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    paddingRight: spacing.sm,
+    paddingRight: spacing.md,
   },
   axisLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
   },
   barsContainer: {
@@ -495,14 +503,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'flex-start',
-    height: 150,
+    height: 140,
   },
   barColumn: {
     alignItems: 'center',
     gap: spacing.xs,
   },
   barWrapper: {
-    height: 150,
+    height: 140,
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
@@ -512,11 +520,17 @@ const styles = StyleSheet.create({
   },
   barLabel: {
     alignItems: 'center',
-    gap: 4,
-    paddingTop: spacing.xs,
+    gap: 3,
+    paddingTop: spacing.sm,
+    minWidth: 40,
   },
-  monthLabel: {
-    fontSize: 12,
+  monthLabelText: {
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  monthLabelYear: {
+    fontSize: 9,
     fontWeight: '500',
     textAlign: 'center',
   },
@@ -526,7 +540,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   changeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
   },
   monthlyDetails: {
