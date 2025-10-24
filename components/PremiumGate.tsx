@@ -80,6 +80,8 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
   const router = useRouter();
   const featureAccess = useFeatureAccess(feature, currentUsage);
 
+  console.log("[PremiumGate]", feature, "hasAccess:", featureAccess.hasAccess);
+
   // If user has access, render children
   if (featureAccess.hasAccess) {
     return <>{children}</>;
