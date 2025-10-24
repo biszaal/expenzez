@@ -3,12 +3,13 @@
  * Controls access to premium features with upgrade prompts
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { useFeatureAccess } from '../hooks/useSubscription';
+import { debugService } from '../services/debugService';
 import { PremiumFeature } from '../services/subscriptionService';
 
 interface PremiumGateProps {
@@ -79,8 +80,25 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
   const { colors } = useTheme();
   const router = useRouter();
   const featureAccess = useFeatureAccess(feature, currentUsage);
+  const [debugPremiumEnabled, setDebugPremiumEnabled] = useState(false);
 
-  console.log("[PremiumGate]", feature, "hasAccess:", featureAccess.hasAccess);
+  // Check debug premium status on mount
+  useEffect(() => {
+    const checkDebugPremium = async () => {
+      if (debugService.isDevEnvironment()) {
+        const enabled = await debugService.isDebugPremiumEnabled();
+        setDebugPremiumEnabled(enabled);
+      }
+    };
+    checkDebugPremium();
+  }, []);
+
+  console.log("[PremiumGate]", feature, "hasAccess:", featureAccess.hasAccess, "debugPremium:", debugPremiumEnabled);
+
+  // If debug premium is enabled, always grant access for testing
+  if (debugPremiumEnabled) {
+    return <>{children}</>;
+  }
 
   // If user has access, render children
   if (featureAccess.hasAccess) {
