@@ -12,11 +12,11 @@ export interface Transaction {
 export interface TransactionCreateData {
   amount: number;
   category: string;
-  description: string;
+  merchant: string; // Mandatory
+  description?: string; // Optional
   date: string;
   type?: "debit" | "credit";
   tags?: string[];
-  merchant?: string;
   accountId?: string;
   bankName?: string;
   accountType?: string;

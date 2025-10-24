@@ -30,6 +30,9 @@ export enum PremiumFeature {
   OPEN_BANKING = 'open_banking',
   BANK_SYNC = 'bank_sync',
 
+  // Data Management
+  CSV_IMPORT = 'csv_import',
+
   // Other
   AD_FREE = 'ad_free',
   PRIORITY_SUPPORT = 'priority_support',
@@ -124,6 +127,7 @@ class SubscriptionService {
       case PremiumFeature.EXPORT_REPORTS:
       case PremiumFeature.OPEN_BANKING:
       case PremiumFeature.BANK_SYNC:
+      case PremiumFeature.CSV_IMPORT:
       case PremiumFeature.PRIORITY_SUPPORT:
       case PremiumFeature.CUSTOM_CATEGORIES:
       case PremiumFeature.AD_FREE:

@@ -13,6 +13,9 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { useTheme } from "../contexts/ThemeContext";
+import { useSubscription } from "../hooks/useSubscription";
+import { PremiumFeature } from "../services/subscriptionService";
+import { CSVImportPaywall } from "../components/paywalls/CSVImportPaywall";
 import { transactionAPI } from "../services/api";
 import { autoBillDetection } from "../services/automaticBillDetection";
 import { ExpenseCategory, ImportPreview } from "../types/expense";
@@ -54,6 +57,16 @@ const CSV_EXPENSE_CATEGORIES: ExpenseCategory[] = [
 
 export default function CSVImportScreen() {
   const { colors } = useTheme();
+  const { isPremium, hasFeatureAccess } = useSubscription();
+
+  // Check if user has access to CSV import feature
+  const featureAccess = hasFeatureAccess(PremiumFeature.CSV_IMPORT);
+
+  // Show paywall if user doesn't have access
+  if (!isPremium || !featureAccess.hasAccess) {
+    return <CSVImportPaywall />;
+  }
+
   const [loading, setLoading] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(
     null
