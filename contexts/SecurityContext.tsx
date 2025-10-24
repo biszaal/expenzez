@@ -138,9 +138,14 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
       // This prevents race condition where hasValidSession still finds old session
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Step 4: Always check security status (this should work even if initialization failed)
+      // Step 4: CRITICAL - Check security status from server BEFORE marking as initialized
+      // This is essential for cross-device lock detection on first app open
+      // On Device B (new device), we need to fetch from server to know if app lock is enabled
+      console.log("🔐 [SecurityContext] Fetching security status from server BEFORE marking initialized...");
       await checkSecurityStatus();
+      console.log("🔐 [SecurityContext] ✅ Security status fetched from server");
 
+      // Only NOW mark as initialized, after we know the true security state from server
       setIsInitialized(true);
       console.log("🔐 [SecurityContext] ✅ Security system initialized");
     } catch (error) {
