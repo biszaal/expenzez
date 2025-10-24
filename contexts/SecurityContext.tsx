@@ -134,7 +134,11 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
         // Don't fail the entire system if initialization has issues
       }
 
-      // Step 3: Always check security status (this should work even if initialization failed)
+      // Step 3: Add small delay to ensure session is fully cleared before checking status
+      // This prevents race condition where hasValidSession still finds old session
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Step 4: Always check security status (this should work even if initialization failed)
       await checkSecurityStatus();
 
       setIsInitialized(true);
