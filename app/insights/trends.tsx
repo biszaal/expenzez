@@ -81,7 +81,8 @@ export default function TrendsAnalysisScreen() {
 
     const maxAmount = getMaxAmount();
     const chartWidth = width - (spacing.md * 4);
-    const barWidth = Math.max(20, (chartWidth - (trends.length - 1) * 8) / trends.length);
+    const gap = 8;
+    const barWidth = Math.floor((chartWidth - 45 - (trends.length - 1) * gap) / trends.length);
 
     return (
       <View style={styles.chartContainer}>
@@ -104,11 +105,20 @@ export default function TrendsAnalysisScreen() {
 
           <View style={styles.barsContainer}>
             {trends.map((trend, index) => {
-              const height = Math.max(4, (trend.totalSpent / maxAmount) * 120);
+              const height = Math.max(4, (trend.totalSpent / maxAmount) * 150);
               const changeIndicator = getChangeIndicator(trend.comparedToPrevious);
 
               return (
-                <View key={trend.month} style={[styles.barColumn, { width: barWidth }]}>
+                <View
+                  key={trend.month}
+                  style={[
+                    styles.barColumn,
+                    {
+                      width: barWidth,
+                      marginRight: index < trends.length - 1 ? gap : 0,
+                    }
+                  ]}
+                >
                   <View style={styles.barWrapper}>
                     <View
                       style={[
@@ -116,7 +126,7 @@ export default function TrendsAnalysisScreen() {
                         {
                           height,
                           backgroundColor: colors.primary[500],
-                          width: barWidth - 4,
+                          width: barWidth,
                         },
                       ]}
                     />
@@ -484,9 +494,8 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-end',
-    justifyContent: 'space-around',
+    justifyContent: 'flex-start',
     height: 150,
-    gap: 6,
   },
   barColumn: {
     alignItems: 'center',
