@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
 import React, { useState } from "react";
+import { debugService } from "../../services/debugService";
 import {
   StyleSheet,
   Text,
@@ -819,7 +820,6 @@ export default function SettingsPage() {
 
             React.useEffect(() => {
               const loadDebugState = async () => {
-                const { debugService } = await import("../../services/debugService");
                 const enabled = await debugService.isDebugPremiumEnabled();
                 setDebugPremiumEnabled(enabled);
               };
@@ -856,7 +856,6 @@ export default function SettingsPage() {
                   <Switch
                     value={debugPremiumEnabled}
                     onValueChange={async () => {
-                      const { debugService } = await import("../../services/debugService");
                       const newValue = await debugService.toggleDebugPremium();
                       setDebugPremiumEnabled(newValue);
                       Alert.alert(
