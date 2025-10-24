@@ -12,13 +12,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system/legacy";
-import * as Sharing from "expo-sharing";
 import { useTheme } from "../contexts/ThemeContext";
 import { transactionAPI } from "../services/api";
 import { autoBillDetection } from "../services/automaticBillDetection";
 import { ExpenseCategory, ImportPreview } from "../types/expense";
 import type { CSVTransaction } from "../services/api/transactionAPI";
+import { CSVDetector, ParsedCSVRow } from "../services/csvDetector";
+import { CategorizeTransaction } from "../services/categorizeTransaction";
 
 interface CSVTransactionPreview {
   id: string;
@@ -721,69 +721,51 @@ export default function CSVImportScreen() {
       const response = await fetch(file.uri);
       const csvText = await response.text();
 
-      // Validate CSV format first
-      const validation = validateCSVFormat(csvText);
-      if (!validation.isValid) {
-        Alert.alert(
-          "Invalid CSV File",
-          validation.error || "The selected file is not a valid CSV format."
-        );
-        setLoading(false);
-        return;
-      }
+      // Use new smart CSV detector
+      const parseResult = CSVDetector.parseCSV(csvText);
 
-      // Parse CSV
-      const parseResult = parseCSV(csvText);
-
-      if (parseResult.transactions.length === 0) {
+      if (parseResult.rows.length === 0) {
         Alert.alert(
           "No Data",
-          "No valid transactions found in the CSV file. Please check the format."
+          parseResult.errors[0] || "No valid transactions found in the CSV file. Please check the format."
         );
         setLoading(false);
         return;
       }
 
-      // Show errors if any, but don't block import
+      // Auto-categorize transactions (ignore CSV categories, always use smart detection)
+      const categorizedTransactions = parseResult.rows.map((row) => ({
+        id: `csv_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        date: row.date,
+        description: row.description,
+        amount: row.amount,
+        originalAmount: row.amount,
+        category: CategorizeTransaction.categorize(row.description, row.merchant),
+        type: row.type,
+        merchant: row.merchant,
+        tags: ["csv-import"],
+      }));
+
+      // Show warnings if there were parsing errors
       if (parseResult.errors.length > 0) {
-        const errorSummary = parseResult.errors.slice(0, 3).join("\n");
+        const errorSummary = parseResult.errors.slice(0, 2).join("\n");
         const moreErrors =
-          parseResult.errors.length > 3
-            ? `\n... and ${parseResult.errors.length - 3} more errors`
+          parseResult.errors.length > 2
+            ? `\n... and ${parseResult.errors.length - 2} more`
             : "";
         Alert.alert(
-          "Some rows have issues",
-          `${parseResult.errors.length} rows were skipped due to format issues:\n\n${errorSummary}${moreErrors}\n\nContinuing with ${parseResult.transactions.length} valid transactions.`
+          "Info",
+          `${parseResult.errors.length} rows were skipped.\n\n${errorSummary}${moreErrors}\n\nImporting ${parseResult.rows.length} valid transactions.`
         );
       }
 
-      // Store all transactions for later import
-      setAllTransactions(parseResult.transactions);
-      setPreviewTransactions(parseResult.preview);
-
-      // Create preview
-      const sortedPreview = parseResult.preview.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-
-      const totalAmount = parseResult.preview.reduce(
-        (sum, t) => sum + t.amount,
-        0
-      );
-      const dates = parseResult.preview.map((t) => new Date(t.date));
-      const startDate = new Date(Math.min(...dates.map((d) => d.getTime())));
-      const endDate = new Date(Math.max(...dates.map((d) => d.getTime())));
-
-      setImportPreview({
-        file: selectedFile || "Unknown file",
-        totalTransactions: parseResult.transactions.length,
-        successfulImports: 0, // Will be updated after import
-        errors: parseResult.errors,
-        transactions: sortedPreview.slice(0, 10), // Show first 10 for preview
-        totalAmount,
-        dateRange: {
-          start: startDate.toLocaleDateString(),
-          end: endDate.toLocaleDateString(),
+      // Navigate to preview screen with transactions
+      router.push({
+        pathname: "/csv-import-preview",
+        params: {
+          transactions: JSON.stringify(categorizedTransactions),
+          fileName: file.name,
+          formatDetected: parseResult.formatDetected,
         },
       });
     } catch (error) {
@@ -791,48 +773,6 @@ export default function CSVImportScreen() {
       Alert.alert("Error", "Failed to read the CSV file. Please try again.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDownloadTemplate = async () => {
-    try {
-      // Create CSV template data (headers only)
-      const templateData = [
-        ["Date", "Description", "Amount", "Category", "Type"],
-      ];
-
-      // Convert to CSV string
-      const csvContent = templateData.map((row) => row.join(",")).join("\n");
-
-      // Create temporary file using legacy API
-      const fileName = "expenzez-template.csv";
-      const fileUri = FileSystem.documentDirectory + fileName;
-
-      // Write content to file using the legacy writeAsStringAsync
-      await FileSystem.writeAsStringAsync(fileUri, csvContent);
-
-      // Check if sharing is available
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: "text/csv",
-          dialogTitle: "Save CSV Template",
-          UTI: "public.comma-separated-values-text",
-        });
-      } else {
-        // Fallback for devices without sharing - show template content
-        Alert.alert(
-          "CSV Template",
-          'Required format (5 columns):\n\nDate,Description,Amount,Category,Type\n2024-01-15,Tesco Grocery,45.67,groceries,debit\n2024-01-15,Salary Payment,2500.00,income,credit\n\n• Amount: Always use positive values\n• Type: "debit" for expenses, "credit" for income\n• Category: groceries, food, transport, bills, etc.',
-          [{ text: "OK" }]
-        );
-      }
-    } catch (error) {
-      console.error("Error creating template:", error);
-      Alert.alert(
-        "Template Format",
-        "CSV should have these 5 columns:\n\nDate,Description,Amount,Category,Type\n\nExample:\n2024-01-15,Coffee Shop,-4.50,food,debit\n2024-01-15,Salary,2500.00,income,credit\n\nAmount: negative for expenses, positive for income",
-        [{ text: "OK" }]
-      );
     }
   };
 
@@ -977,27 +917,24 @@ export default function CSVImportScreen() {
             Import Bank Statement
           </Text>
           <Text style={[styles.instructions, { color: colors.text.secondary }]}>
-            Upload a CSV file from your bank statement to automatically import
-            both expenses and income transactions. Invalid categories will be
-            automatically categorized using AI-powered keyword matching.
+            Upload a CSV file from your bank, credit card, or payment app. The app intelligently detects the format, automatically categorizes transactions, and lets you review everything before importing.
           </Text>
 
           <View style={styles.formatInfo}>
             <Text style={[styles.formatTitle, { color: colors.text.primary }]}>
-              Required CSV format:
+              Supported formats:
             </Text>
             <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Date, Description, Amount, Category, Type
+              • Minimum: Date, Amount, Description
             </Text>
             <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Amount: Always use positive values (e.g., 45.67)
+              • Full: Date, Description, Amount, Category, Type, Merchant
             </Text>
             <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Type: &quot;credit&quot; for income, &quot;debit&quot; for
-              expenses
+              • Works with most banks and payment apps
             </Text>
             <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Category: Any text - invalid ones get auto-categorized
+              • Amounts: Positive or negative values supported
             </Text>
 
             <Text
@@ -1021,28 +958,6 @@ export default function CSVImportScreen() {
               • Amounts under £50,000
             </Text>
           </View>
-
-          {/* Template Download Button */}
-          <TouchableOpacity
-            style={[
-              styles.templateButton,
-              {
-                backgroundColor: colors.success[100],
-                borderColor: colors.success[300],
-              },
-            ]}
-            onPress={handleDownloadTemplate}
-          >
-            <Ionicons name="download" size={20} color={colors.success[600]} />
-            <Text
-              style={[
-                styles.templateButtonText,
-                { color: colors.success[600] },
-              ]}
-            >
-              Download CSV Template
-            </Text>
-          </TouchableOpacity>
         </View>
 
         {/* File Selection */}
@@ -1377,19 +1292,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
-  },
-  templateButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginTop: 16,
-    gap: 8,
-  },
-  templateButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
   },
 });
