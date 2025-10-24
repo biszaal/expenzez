@@ -14,42 +14,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { insightsEngine, MonthlySpendingTrend } from '../../services/insightsEngine';
 import { spacing, borderRadius } from '../../constants/theme';
-import { useSubscription, PremiumFeature } from '../../services/subscriptionService';
-import PremiumPaywall from '../../components/PremiumPaywall';
+import { PremiumFeature } from '../../services/subscriptionService';
+import { PremiumGate } from '../../components/PremiumGate';
 import { AnalyticsSummary } from '../../components/analytics/AnalyticsSummary';
 
 const { width } = Dimensions.get('window');
 
 export default function TrendsAnalysisScreen() {
   const { colors } = useTheme();
-  const { hasFeatureAccess } = useSubscription();
   const [trends, setTrends] = useState<MonthlySpendingTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<3 | 6 | 12>(6);
   const [activeTab, setActiveTab] = useState<'trends' | 'analytics'>('trends');
-
-  // Check if user has access to advanced analytics
-  const analyticsAccess = hasFeatureAccess(PremiumFeature.ADVANCED_ANALYTICS);
-  if (!analyticsAccess.hasAccess) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
-            </TouchableOpacity>
-            <Text style={[styles.title, { color: colors.text.primary }]}>
-              Spending Trends
-            </Text>
-          </View>
-        </View>
-        <PremiumPaywall
-          feature="Advanced Analytics"
-          description="Get detailed spending trends, monthly breakdowns, and key insights to understand your financial patterns better."
-        />
-      </SafeAreaView>
-    );
-  }
 
   useEffect(() => {
     loadTrends();
@@ -169,7 +145,8 @@ export default function TrendsAnalysisScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+    <PremiumGate feature={PremiumFeature.ADVANCED_ANALYTICS}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()}>
@@ -384,6 +361,7 @@ export default function TrendsAnalysisScreen() {
         <AnalyticsSummary />
       )}
     </SafeAreaView>
+    </PremiumGate>
   );
 }
 
