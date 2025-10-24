@@ -135,9 +135,17 @@ export default function SecurityScreen() {
           console.warn("Failed to extend unlock session:", error);
         }
 
-        // Only check security status with a delay if needed
+        // CRITICAL: Check security status from server to get latest preferences
+        console.log("🔐 [SecuritySettings] Checking security status on focus...");
+        try {
+          await checkSecurityStatus();
+        } catch (error) {
+          console.error("🔐 [SecuritySettings] Error checking security status:", error);
+        }
+
+        // Also sync local state for fallback
         setTimeout(async () => {
-          // Force component re-render by checking local state without triggering API calls
+          // Force component re-render by checking local state as fallback
           const securityEnabled = await AsyncStorage.getItem(
             "@expenzez_security_enabled"
           );
@@ -145,19 +153,19 @@ export default function SecurityScreen() {
           // Only sync local state if there's a clear mismatch
           if (securityEnabled === "true" && !isSecurityEnabled) {
             console.log(
-              "🔐 [SecuritySettings] Syncing enabled state from storage"
+              "🔐 [SecuritySettings] Syncing enabled state from storage (fallback)"
             );
             setLocalSecurityEnabled(true);
           } else if (securityEnabled === "false" && isSecurityEnabled) {
             console.log(
-              "🔐 [SecuritySettings] Syncing disabled state from storage"
+              "🔐 [SecuritySettings] Syncing disabled state from storage (fallback)"
             );
             setLocalSecurityEnabled(false);
           }
         }, 100); // Reduced delay to make UI more responsive
       };
       refreshWithDelay();
-    }, [isSecurityEnabled, extendSession]) // Include extendSession dependency
+    }, [isSecurityEnabled, extendSession, checkSecurityStatus]) // Include checkSecurityStatus dependency
   );
 
   // React to direct security state changes (without excessive API calls)
