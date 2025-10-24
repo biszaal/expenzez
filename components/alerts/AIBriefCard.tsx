@@ -19,6 +19,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import { briefsAPI, DailyBrief } from "../../services/api/briefsAPI";
 import { useRouter } from "expo-router";
+import { useSubscription, PremiumFeature } from "../../services/subscriptionService";
+import PremiumPaywall from "../PremiumPaywall";
 
 interface AIBriefCardProps {
   onRefresh?: () => void;
@@ -27,6 +29,7 @@ interface AIBriefCardProps {
 export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
   const { colors } = useTheme();
   const router = useRouter();
+  const { hasFeatureAccess } = useSubscription();
   const [brief, setBrief] = useState<DailyBrief | null>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -42,6 +45,19 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
   // Early return if theme is not available
   if (!colors) {
     return null;
+  }
+
+  // Check if user has access to daily briefs
+  const briefsAccess = hasFeatureAccess(PremiumFeature.DAILY_BRIEFS);
+  if (!briefsAccess.hasAccess) {
+    return (
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <PremiumPaywall
+          feature="Daily Financial Briefs"
+          description="Get personalized daily summaries of your spending, budget status, and smart insights delivered every morning."
+        />
+      </View>
+    );
   }
 
   useEffect(() => {
