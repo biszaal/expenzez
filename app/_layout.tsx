@@ -499,9 +499,18 @@ function RootLayoutNav() {
   let userType;
 
   if (shouldTreatAsLoggedIn) {
-    // 🟢 LOGGED IN USER
-    userType = "LOGGED_IN";
-    initialRoute = "(tabs)"; // Go directly to main app
+    // CRITICAL: Check if this device needs PIN setup (cross-device app lock detection)
+    // This happens when user enables app lock on Device A, then opens app on Device B
+    if (isSecurityEnabled && needsPinSetup && !isLocked) {
+      // 🔵 NEEDS PIN SETUP - Device has app lock enabled but no PIN set on this device yet
+      userType = "NEEDS_PIN_SETUP";
+      initialRoute = "security/create-pin"; // Go to PIN setup before allowing app access
+      console.log("🔐 [Layout] User logged in but needs PIN setup on this device (cross-device lock detected)");
+    } else {
+      // 🟢 LOGGED IN USER
+      userType = "LOGGED_IN";
+      initialRoute = "(tabs)"; // Go directly to main app
+    }
   } else if (onboardingStatusChecked) {
     if (hasCompletedOnboarding) {
       // 🟡 RETURNING USER (not logged in, but has seen onboarding)
@@ -531,11 +540,13 @@ function RootLayoutNav() {
       Reason:
         userType === "LOGGED_IN"
           ? "User is logged in"
-          : userType === "RETURNING_USER"
-            ? "User has completed onboarding before"
-            : userType === "NEW_USER"
-              ? "User has never seen onboarding"
-              : "Still loading user status",
+          : userType === "NEEDS_PIN_SETUP"
+            ? "Cross-device lock detected - needs PIN setup"
+            : userType === "RETURNING_USER"
+              ? "User has completed onboarding before"
+              : userType === "NEW_USER"
+                ? "User has never seen onboarding"
+                : "Still loading user status",
     },
   });
 
