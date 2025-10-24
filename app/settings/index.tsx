@@ -819,8 +819,8 @@ export default function SettingsPage() {
 
             React.useEffect(() => {
               const loadDebugState = async () => {
-                const { debugService } = await import("../../services/debugService");
-                const enabled = await debugService.isDebugPremiumEnabled();
+                const debugService = await import("../../services/debugService");
+                const enabled = await debugService.default.isDebugPremiumEnabled();
                 setDebugPremiumEnabled(enabled);
               };
               loadDebugState();
@@ -856,8 +856,8 @@ export default function SettingsPage() {
                   <Switch
                     value={debugPremiumEnabled}
                     onValueChange={async () => {
-                      const { debugService } = await import("../../services/debugService");
-                      const newValue = await debugService.toggleDebugPremium();
+                      const debugServiceModule = await import("../../services/debugService");
+                      const newValue = await debugServiceModule.default.toggleDebugPremium();
                       setDebugPremiumEnabled(newValue);
                       Alert.alert(
                         "Debug Premium",

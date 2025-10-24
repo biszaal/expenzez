@@ -7,7 +7,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
-import { debugService } from "../services/debugService";
+import debugService from "../services/debugService";
 
 // RevenueCat module variables - will be set during initialization
 let Purchases: any = null;

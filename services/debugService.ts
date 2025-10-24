@@ -84,4 +84,6 @@ export class DebugService {
   }
 }
 
-export const debugService = new DebugService();
+const debugService = new DebugService();
+
+export default debugService;
