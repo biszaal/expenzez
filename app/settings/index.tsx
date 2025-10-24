@@ -19,6 +19,7 @@ import { useTheme, ColorScheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../auth/AuthContext";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 import { useSubscription } from "../../hooks/useSubscription";
+import { useRevenueCat } from "../../contexts/RevenueCatContext";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export default function SettingsPage() {
     restorePurchases,
     trialMessage,
   } = useSubscription();
+  const { refreshCustomerInfo } = useRevenueCat();
 
   // Local state for settings
   const [currency, setCurrency] = useState("GBP");
@@ -858,9 +860,11 @@ export default function SettingsPage() {
                     onValueChange={async () => {
                       const newValue = await debugService.toggleDebugPremium();
                       setDebugPremiumEnabled(newValue);
+                      // Refresh customer info immediately to reflect the change
+                      await refreshCustomerInfo();
                       Alert.alert(
                         "Debug Premium",
-                        `Premium override is now ${newValue ? "enabled" : "disabled"}.\n\nPlease restart the app for changes to take effect.`
+                        `Premium override is now ${newValue ? "enabled" : "disabled"}.`
                       );
                     }}
                     trackColor={{ false: "#767577", true: colors.primary[500] }}
