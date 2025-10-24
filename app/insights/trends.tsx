@@ -175,82 +175,85 @@ export default function TrendsAnalysisScreen() {
         </View>
       </View>
 
-      {/* Period Selector */}
-      <View style={styles.periodSelector}>
-        {[3, 6, 12].map((period) => (
+      {/* Unified Controls */}
+      <View style={styles.controlsContainer}>
+        {/* Period Selector */}
+        <View style={styles.periodSelector}>
+          {[3, 6, 12].map((period) => (
+            <TouchableOpacity
+              key={period}
+              onPress={() => setSelectedPeriod(period as 3 | 6 | 12)}
+              style={[
+                styles.periodButton,
+                {
+                  backgroundColor: selectedPeriod === period ? colors.primary[500] : 'transparent',
+                  borderColor: selectedPeriod === period ? colors.primary[500] : colors.border.light,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.periodButtonText,
+                  {
+                    color: selectedPeriod === period ? '#fff' : colors.text.secondary,
+                    fontWeight: selectedPeriod === period ? '600' : '500',
+                  },
+                ]}
+              >
+                {period}m
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Tab Selector */}
+        <View style={styles.tabSelector}>
           <TouchableOpacity
-            key={period}
-            onPress={() => setSelectedPeriod(period as 3 | 6 | 12)}
+            onPress={() => setActiveTab('trends')}
             style={[
-              styles.periodButton,
+              styles.tabButton,
               {
-                backgroundColor: selectedPeriod === period ? colors.primary[100] : colors.background.secondary,
-                borderColor: selectedPeriod === period ? colors.primary[500] : colors.border.light,
+                borderBottomColor: activeTab === 'trends' ? colors.primary[500] : 'transparent',
+                borderBottomWidth: activeTab === 'trends' ? 2 : 0,
               },
             ]}
           >
             <Text
               style={[
-                styles.periodButtonText,
+                styles.tabButtonText,
                 {
-                  color: selectedPeriod === period ? colors.primary[700] : colors.text.secondary,
-                  fontWeight: selectedPeriod === period ? '600' : '400',
+                  color: activeTab === 'trends' ? colors.primary[500] : colors.text.secondary,
+                  fontWeight: activeTab === 'trends' ? '600' : '500',
                 },
               ]}
             >
-              {period} months
+              Trends
             </Text>
           </TouchableOpacity>
-        ))}
-      </View>
 
-      {/* Tab Selector */}
-      <View style={styles.tabSelector}>
-        <TouchableOpacity
-          onPress={() => setActiveTab('trends')}
-          style={[
-            styles.tabButton,
-            {
-              backgroundColor: activeTab === 'trends' ? colors.primary[100] : colors.background.secondary,
-              borderBottomColor: activeTab === 'trends' ? colors.primary[500] : colors.border.light,
-            },
-          ]}
-        >
-          <Text
+          <TouchableOpacity
+            onPress={() => setActiveTab('analytics')}
             style={[
-              styles.tabButtonText,
+              styles.tabButton,
               {
-                color: activeTab === 'trends' ? colors.primary[700] : colors.text.secondary,
-                fontWeight: activeTab === 'trends' ? '600' : '400',
+                borderBottomColor: activeTab === 'analytics' ? colors.primary[500] : 'transparent',
+                borderBottomWidth: activeTab === 'analytics' ? 2 : 0,
               },
             ]}
           >
-            Trends
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setActiveTab('analytics')}
-          style={[
-            styles.tabButton,
-            {
-              backgroundColor: activeTab === 'analytics' ? colors.primary[100] : colors.background.secondary,
-              borderBottomColor: activeTab === 'analytics' ? colors.primary[500] : colors.border.light,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.tabButtonText,
-              {
-                color: activeTab === 'analytics' ? colors.primary[700] : colors.text.secondary,
-                fontWeight: activeTab === 'analytics' ? '600' : '400',
-              },
-            ]}
-          >
-            Advanced Analytics
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.tabButtonText,
+                {
+                  color: activeTab === 'analytics' ? colors.primary[500] : colors.text.secondary,
+                  fontWeight: activeTab === 'analytics' ? '600' : '500',
+                },
+              ]}
+            >
+              Analytics
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {activeTab === 'trends' ? (
@@ -286,17 +289,17 @@ export default function TrendsAnalysisScreen() {
                   return (
                     <View
                       key={trend.month}
-                      style={[styles.monthCard, { backgroundColor: colors.background.secondary }]}
+                      style={[styles.monthItem, { borderBottomColor: colors.border.light }]}
                     >
-                      <View style={styles.monthHeader}>
-                        <Text style={[styles.monthTitle, { color: colors.text.primary }]}>
+                      <View style={styles.monthItemHeader}>
+                        <Text style={[styles.monthItemTitle, { color: colors.text.primary }]}>
                           {formatMonth(trend.month)}
                         </Text>
                         {index > 0 && (
                           <View style={styles.monthChange}>
                             <Ionicons
                               name={changeIndicator.icon as any}
-                              size={16}
+                              size={14}
                               color={changeIndicator.color}
                             />
                             <Text style={[styles.monthChangeText, { color: changeIndicator.color }]}>
@@ -306,8 +309,8 @@ export default function TrendsAnalysisScreen() {
                         )}
                       </View>
 
-                      <View style={styles.monthStats}>
-                        <View style={styles.statRow}>
+                      <View style={styles.monthItemContent}>
+                        <View style={styles.statItem}>
                           <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
                             Total Spent
                           </Text>
@@ -316,7 +319,7 @@ export default function TrendsAnalysisScreen() {
                           </Text>
                         </View>
 
-                        <View style={styles.statRow}>
+                        <View style={styles.statItem}>
                           <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
                             Weekly Average
                           </Text>
@@ -326,7 +329,7 @@ export default function TrendsAnalysisScreen() {
                         </View>
 
                         {topCategory && (
-                          <View style={styles.statRow}>
+                          <View style={styles.statItem}>
                             <Text style={[styles.statLabel, { color: colors.text.secondary }]}>
                               Top Category
                             </Text>
@@ -348,23 +351,32 @@ export default function TrendsAnalysisScreen() {
                     Key Insights
                   </Text>
 
-                  <View style={[styles.summaryCard, { backgroundColor: colors.background.secondary }]}>
-                    <View style={styles.insightRow}>
+                  <View style={styles.insightsList}>
+                    <View style={[styles.insightItem, { borderBottomColor: colors.border.light }]}>
                       <Text style={[styles.insightText, { color: colors.text.secondary }]}>
-                        Highest spending month: {formatMonth(trends.reduce((max, t) => t.totalSpent > max.totalSpent ? t : max).month)}
+                        Highest spending month
+                      </Text>
+                      <Text style={[styles.insightValue, { color: colors.text.primary }]}>
+                        {formatMonth(trends.reduce((max, t) => t.totalSpent > max.totalSpent ? t : max).month)}
                       </Text>
                     </View>
 
-                    <View style={styles.insightRow}>
+                    <View style={[styles.insightItem, { borderBottomColor: colors.border.light }]}>
                       <Text style={[styles.insightText, { color: colors.text.secondary }]}>
-                        Average monthly spending: £{(trends.reduce((sum, t) => sum + t.totalSpent, 0) / trends.length).toFixed(2)}
+                        Average monthly
+                      </Text>
+                      <Text style={[styles.insightValue, { color: colors.text.primary }]}>
+                        £{(trends.reduce((sum, t) => sum + t.totalSpent, 0) / trends.length).toFixed(2)}
                       </Text>
                     </View>
 
                     {trends.length >= 3 && (
-                      <View style={styles.insightRow}>
+                      <View style={styles.insightItem}>
                         <Text style={[styles.insightText, { color: colors.text.secondary }]}>
-                          Recent trend: {trends[trends.length - 1].comparedToPrevious > 5 ? 'Increasing' : trends[trends.length - 1].comparedToPrevious < -5 ? 'Decreasing' : 'Stable'} spending
+                          Recent trend
+                        </Text>
+                        <Text style={[styles.insightValue, { color: colors.text.primary }]}>
+                          {trends[trends.length - 1].comparedToPrevious > 5 ? 'Increasing' : trends[trends.length - 1].comparedToPrevious < -5 ? 'Decreasing' : 'Stable'}
                         </Text>
                       </View>
                     )}
@@ -399,25 +411,31 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  controlsContainer: {
+    flexDirection: 'row',
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.lg,
+    gap: spacing.md,
+    alignItems: 'center',
   },
   periodSelector: {
     flexDirection: 'row',
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    gap: spacing.sm,
+    gap: spacing.xs,
+    backgroundColor: 'transparent',
   },
   periodButton: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: borderRadius.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     alignItems: 'center',
   },
   periodButtonText: {
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: '600',
   },
   centerContainer: {
     flex: 1,
@@ -431,11 +449,12 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing.md,
+    paddingBottom: spacing.lg,
   },
   chartCard: {
-    padding: spacing.md,
+    padding: spacing.lg,
     borderRadius: borderRadius.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.xl,
   },
   chartContainer: {
     gap: spacing.md,
@@ -447,47 +466,49 @@ const styles = StyleSheet.create({
   },
   chart: {
     flexDirection: 'row',
-    height: 140,
+    height: 180,
     alignItems: 'flex-end',
   },
   yAxis: {
-    width: 40,
-    height: 120,
+    width: 45,
+    height: 150,
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     paddingRight: spacing.sm,
   },
   axisLabel: {
-    fontSize: 10,
+    fontSize: 11,
+    fontWeight: '500',
   },
   barsContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-around',
-    height: 120,
-    gap: 8,
+    height: 150,
+    gap: 6,
   },
   barColumn: {
     alignItems: 'center',
     gap: spacing.xs,
   },
   barWrapper: {
-    height: 120,
+    height: 150,
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
   bar: {
-    borderTopLeftRadius: 2,
-    borderTopRightRadius: 2,
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
   },
   barLabel: {
     alignItems: 'center',
-    gap: 2,
+    gap: 4,
     paddingTop: spacing.xs,
   },
   monthLabel: {
-    fontSize: 10,
+    fontSize: 12,
+    fontWeight: '500',
     textAlign: 'center',
   },
   changeIndicator: {
@@ -496,29 +517,30 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   changeText: {
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '600',
   },
   monthlyDetails: {
     gap: spacing.md,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
-  monthCard: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    gap: spacing.sm,
+  monthItem: {
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
   },
-  monthHeader: {
+  monthItemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: spacing.md,
   },
-  monthTitle: {
-    fontSize: 16,
+  monthItemTitle: {
+    fontSize: 15,
     fontWeight: '600',
   },
   monthChange: {
@@ -527,22 +549,23 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   monthChangeText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
-  monthStats: {
-    gap: spacing.xs,
+  monthItemContent: {
+    gap: spacing.sm,
   },
-  statRow: {
+  statItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '500',
   },
   statValue: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   emptyState: {
@@ -567,37 +590,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   summarySection: {
-    marginTop: spacing.md,
-    gap: spacing.sm,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
-  summaryCard: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    gap: spacing.sm,
+  insightsList: {
+    gap: 0,
   },
-  insightRow: {
-    paddingVertical: spacing.xs,
+  insightItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
   },
   insightText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  insightValue: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   tabSelector: {
     flexDirection: 'row',
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    gap: spacing.sm,
+    flex: 1,
+    gap: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   tabButton: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
+    paddingVertical: 8,
+    paddingHorizontal: 0,
     alignItems: 'center',
-    borderBottomWidth: 3,
   },
   tabButtonText: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '500',
   },
 
 });
