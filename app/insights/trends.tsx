@@ -81,7 +81,7 @@ export default function TrendsAnalysisScreen() {
 
     const maxAmount = getMaxAmount();
     const chartWidth = width - (spacing.md * 4);
-    const gap = 6;
+    const gap = 12;
     const barWidth = Math.floor((chartWidth - 50 - (trends.length - 1) * gap) / trends.length);
 
     return (
@@ -522,7 +522,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
     paddingTop: spacing.sm,
-    minWidth: 40,
+    paddingHorizontal: 4,
+    minWidth: 48,
   },
   monthLabelText: {
     fontSize: 11,
