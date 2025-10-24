@@ -50,7 +50,7 @@ export const CSVImportPaywall: React.FC = () => {
   ];
 
   const handleUpgrade = async () => {
-    router.push("/(tabs)/settings/subscription");
+    router.push("/subscription/plans");
   };
 
   const handleBack = () => {
