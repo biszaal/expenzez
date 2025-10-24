@@ -858,14 +858,22 @@ export default function SettingsPage() {
                   <Switch
                     value={debugPremiumEnabled}
                     onValueChange={async () => {
-                      const newValue = await debugService.toggleDebugPremium();
-                      setDebugPremiumEnabled(newValue);
-                      // Refresh customer info immediately to reflect the change
-                      await refreshCustomerInfo();
-                      Alert.alert(
-                        "Debug Premium",
-                        `Premium override is now ${newValue ? "enabled" : "disabled"}.`
-                      );
+                      try {
+                        console.log("[Settings] Toggle pressed");
+                        const newValue = await debugService.toggleDebugPremium();
+                        console.log("[Settings] Debug premium toggled to:", newValue);
+                        setDebugPremiumEnabled(newValue);
+                        // Refresh customer info immediately to reflect the change
+                        console.log("[Settings] Calling refreshCustomerInfo...");
+                        await refreshCustomerInfo();
+                        console.log("[Settings] refreshCustomerInfo completed");
+                        Alert.alert(
+                          "Debug Premium",
+                          `Premium override is now ${newValue ? "enabled" : "disabled"}.`
+                        );
+                      } catch (error) {
+                        console.error("[Settings] Error toggling debug premium:", error);
+                      }
                     }}
                     trackColor={{ false: "#767577", true: colors.primary[500] }}
                     thumbColor="#f4f3f4"
