@@ -321,71 +321,6 @@ export default function BudgetsScreen() {
         actionLabel="Upgrade"
       />
 
-      {budgetProgress.length > 0 && (
-        <View
-          style={[
-            styles.summarySection,
-            { backgroundColor: colors.background.secondary },
-          ]}
-        >
-          <View style={styles.summaryItem}>
-            <View
-              style={[styles.summaryIcon, { backgroundColor: "#10B98120" }]}
-            >
-              <Ionicons
-                name="checkmark-circle"
-                size={20}
-                color="#10B981"
-              />
-            </View>
-            <Text style={[styles.summaryValue, { color: "#10B981" }]}>
-              {onTrack}
-            </Text>
-            <Text
-              style={[styles.summaryLabel, { color: colors.text.secondary }]}
-            >
-              On Track
-            </Text>
-          </View>
-
-          <View style={styles.summaryItem}>
-            <View
-              style={[styles.summaryIcon, { backgroundColor: "#F59E0B20" }]}
-            >
-              <Ionicons name="warning" size={20} color="#F59E0B" />
-            </View>
-            <Text style={[styles.summaryValue, { color: "#F59E0B" }]}>
-              {atRisk}
-            </Text>
-            <Text
-              style={[styles.summaryLabel, { color: colors.text.secondary }]}
-            >
-              At Risk
-            </Text>
-          </View>
-
-          <View style={styles.summaryItem}>
-            <View
-              style={[styles.summaryIcon, { backgroundColor: "#EF444420" }]}
-            >
-              <Ionicons
-                name="alert-circle"
-                size={20}
-                color="#EF4444"
-              />
-            </View>
-            <Text style={[styles.summaryValue, { color: "#EF4444" }]}>
-              {exceeded}
-            </Text>
-            <Text
-              style={[styles.summaryLabel, { color: colors.text.secondary }]}
-            >
-              Exceeded
-            </Text>
-          </View>
-        </View>
-      )}
-
       <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
@@ -397,6 +332,71 @@ export default function BudgetsScreen() {
           />
         }
       >
+        {budgetProgress.length > 0 && (
+          <View
+            style={[
+              styles.summarySection,
+              { backgroundColor: colors.background.secondary },
+            ]}
+          >
+            <View style={styles.summaryItem}>
+              <View
+                style={[styles.summaryIcon, { backgroundColor: "#10B98120" }]}
+              >
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color="#10B981"
+                />
+              </View>
+              <Text style={[styles.summaryValue, { color: "#10B981" }]}>
+                {onTrack}
+              </Text>
+              <Text
+                style={[styles.summaryLabel, { color: colors.text.secondary }]}
+              >
+                On Track
+              </Text>
+            </View>
+
+            <View style={styles.summaryItem}>
+              <View
+                style={[styles.summaryIcon, { backgroundColor: "#F59E0B20" }]}
+              >
+                <Ionicons name="warning" size={20} color="#F59E0B" />
+              </View>
+              <Text style={[styles.summaryValue, { color: "#F59E0B" }]}>
+                {atRisk}
+              </Text>
+              <Text
+                style={[styles.summaryLabel, { color: colors.text.secondary }]}
+              >
+                At Risk
+              </Text>
+            </View>
+
+            <View style={styles.summaryItem}>
+              <View
+                style={[styles.summaryIcon, { backgroundColor: "#EF444420" }]}
+              >
+                <Ionicons
+                  name="alert-circle"
+                  size={20}
+                  color="#EF4444"
+                />
+              </View>
+              <Text style={[styles.summaryValue, { color: "#EF4444" }]}>
+                {exceeded}
+              </Text>
+              <Text
+                style={[styles.summaryLabel, { color: colors.text.secondary }]}
+              >
+                Exceeded
+              </Text>
+            </View>
+          </View>
+        )}
+
         {budgetProgress.length === 0 ? (
           <View style={styles.emptyState}>
             {/* Feature Showcase for Empty State */}
@@ -522,29 +522,35 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     alignItems: "center",
     marginHorizontal: spacing.md,
-    marginVertical: spacing.sm,
+    marginTop: 0,
+    marginBottom: spacing.md,
     padding: spacing.md,
     borderRadius: borderRadius.lg,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   summaryItem: {
     flex: 1,
     alignItems: "center",
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   summaryIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
   },
   summaryValue: {
-    fontSize: 20,
-    fontWeight: "800",
+    fontSize: 16,
+    fontWeight: "700",
   },
   summaryLabel: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 11,
+    fontWeight: "500",
     textAlign: "center",
   },
   addButton: {
@@ -556,7 +562,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   centerContainer: {
     flex: 1,
@@ -569,16 +575,18 @@ const styles = StyleSheet.create({
   },
   budgetList: {
     gap: spacing.md,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.lg,
   },
   budgetCard: {
-    padding: spacing.md,
+    padding: spacing.lg,
     borderRadius: borderRadius.lg,
     gap: spacing.md,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   budgetHeader: {
     flexDirection: "row",
@@ -726,15 +734,20 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   suggestionsSection: {
-    marginTop: spacing.lg,
-    paddingTop: spacing.md,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.lg,
   },
   suggestionButton: {
     flexDirection: "row",
     alignItems: "center",
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
     gap: spacing.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   suggestionText: {
     flex: 1,
