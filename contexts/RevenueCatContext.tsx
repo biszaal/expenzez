@@ -7,6 +7,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
+import { debugService } from "../services/debugService";
 
 // RevenueCat module variables - will be set during initialization
 let Purchases: any = null;
@@ -132,7 +133,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       // Listen for purchase updates
       Purchases.addCustomerInfoUpdateListener((info) => {
         console.log("[RevenueCat] Customer info updated");
-        processCustomerInfo(info);
+        processCustomerInfo(info).catch(console.error);
       });
 
       // Fetch available offerings
@@ -166,17 +167,27 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
       const info = await Purchases.getCustomerInfo();
-      processCustomerInfo(info);
+      await processCustomerInfo(info);
     } catch (error) {
       setIsPro(false);
     }
   };
 
-  const processCustomerInfo = (info: any) => {
+  const processCustomerInfo = async (info: any) => {
     setCustomerInfo(info);
 
     // Check if user has active "premium" entitlement
-    const hasPremium = info.entitlements.active["premium"] !== undefined;
+    let hasPremium = info.entitlements.active["premium"] !== undefined;
+
+    // Override with debug flag if enabled (dev builds only)
+    if (debugService.isDevEnvironment()) {
+      const debugPremiumEnabled = await debugService.isDebugPremiumEnabled();
+      if (debugPremiumEnabled) {
+        hasPremium = true;
+        console.log("[RevenueCat] Debug premium override enabled");
+      }
+    }
+
     setIsPro(hasPremium);
     setHasActiveSubscription(hasPremium);
 
@@ -235,7 +246,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const { customerInfo: info } = await Purchases.purchasePackage(pkg);
 
-      processCustomerInfo(info);
+      await processCustomerInfo(info);
       setIsLoading(false);
 
       return { success: true };
@@ -266,7 +277,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const info = await Purchases.restorePurchases();
 
-      processCustomerInfo(info);
+      await processCustomerInfo(info);
       setIsLoading(false);
 
       const hasPremium = info.entitlements.active["premium"] !== undefined;

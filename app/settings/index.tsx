@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import Constants from "expo-constants";
 import React, { useState } from "react";
 import {
   StyleSheet,
@@ -809,6 +810,68 @@ export default function SettingsPage() {
             </View>
           </View>
 
+          {/* Debug Settings - Only shown in development builds */}
+          {(() => {
+            const isDevBuild = !Constants.appOwnership || Constants.appOwnership === "expo";
+            if (!isDevBuild) return null;
+
+            const [debugPremiumEnabled, setDebugPremiumEnabled] = React.useState(false);
+
+            React.useEffect(() => {
+              const loadDebugState = async () => {
+                const { debugService } = await import("../../services/debugService");
+                const enabled = await debugService.isDebugPremiumEnabled();
+                setDebugPremiumEnabled(enabled);
+              };
+              loadDebugState();
+            }, []);
+
+            return (
+              <View style={styles.section}>
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    { color: colors.text.primary, marginBottom: 12 },
+                  ]}
+                >
+                  ⚙️ Developer Settings
+                </Text>
+                <View
+                  style={[
+                    styles.settingItem,
+                    {
+                      backgroundColor: colors.background.secondary,
+                      borderColor: colors.primary[200],
+                    },
+                  ]}
+                >
+                  <View style={styles.settingItemContent}>
+                    <Text style={[styles.settingText, { color: colors.text.primary }]}>
+                      Premium Override
+                    </Text>
+                    <Text style={[styles.settingSubtext, { color: colors.text.secondary }]}>
+                      Enable premium features for testing
+                    </Text>
+                  </View>
+                  <Switch
+                    value={debugPremiumEnabled}
+                    onValueChange={async () => {
+                      const { debugService } = await import("../../services/debugService");
+                      const newValue = await debugService.toggleDebugPremium();
+                      setDebugPremiumEnabled(newValue);
+                      Alert.alert(
+                        "Debug Premium",
+                        `Premium override is now ${newValue ? "enabled" : "disabled"}.\n\nPlease restart the app for changes to take effect.`
+                      );
+                    }}
+                    trackColor={{ false: "#767577", true: colors.primary[500] }}
+                    thumbColor="#f4f3f4"
+                  />
+                </View>
+              </View>
+            );
+          })()}
+
           {/* Sign Out */}
           <View style={styles.section}>
             <TouchableOpacity
@@ -977,6 +1040,15 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontSize: 15,
     flex: 1,
+  },
+  settingItemContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  settingSubtext: {
+    fontSize: 12,
+    marginTop: 4,
+    opacity: 0.7,
   },
   settingValue: {
     flexDirection: "row",
