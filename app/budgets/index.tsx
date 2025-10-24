@@ -13,6 +13,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useSubscription } from "../../hooks/useSubscription";
+import { PremiumFeature } from "../../services/subscriptionService";
 import { budgetService, BudgetProgress } from "../../services/budgetService";
 import { EXPENSE_CATEGORIES } from "../../services/expenseStorage";
 import { spacing, borderRadius, typography } from "../../constants/theme";
@@ -22,11 +24,26 @@ import { FeatureShowcase } from "../../components/premium/FeatureShowcase";
 
 export default function BudgetsScreen() {
   const { colors } = useTheme();
+  const { isPremium, hasFeatureAccess } = useSubscription();
   const [budgetProgress, setBudgetProgress] = useState<BudgetProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showLimitPrompt, setShowLimitPrompt] = useState(false);
-  const [budgetLimit, setBudgetLimit] = useState(5); // Default to free tier
+  const [budgetLimit, setBudgetLimit] = useState(3); // Free tier: 3 budgets max
+
+  // Handle adding a new budget with subscription check
+  const handleAddBudget = () => {
+    const budgetAccess = hasFeatureAccess(PremiumFeature.UNLIMITED_BUDGETS, {
+      budgetCount: budgetProgress.length,
+    });
+
+    if (!budgetAccess.hasAccess) {
+      setShowLimitPrompt(true);
+      return;
+    }
+
+    router.push("/budgets/edit");
+  };
 
   useEffect(() => {
     loadBudgets();
@@ -307,7 +324,7 @@ export default function BudgetsScreen() {
         </View>
 
         <TouchableOpacity
-          onPress={() => router.push("/budgets/edit")}
+          onPress={handleAddBudget}
           style={[styles.addButton, { backgroundColor: colors.primary[500] }]}
         >
           <Ionicons name="add" size={20} color="#fff" />
@@ -406,7 +423,7 @@ export default function BudgetsScreen() {
                 {
                   icon: "wallet",
                   label: "Budgets",
-                  freeValue: "5",
+                  freeValue: "3",
                   premiumValue: "Unlimited",
                 },
                 {
@@ -438,7 +455,7 @@ export default function BudgetsScreen() {
               your financial goals.
             </Text>
             <TouchableOpacity
-              onPress={() => router.push("/budgets/edit")}
+              onPress={handleAddBudget}
               style={[
                 styles.emptyButton,
                 { backgroundColor: colors.primary[500] },
