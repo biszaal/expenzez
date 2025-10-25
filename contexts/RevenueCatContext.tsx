@@ -7,7 +7,6 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
-import debugService from "../services/debugService";
 
 // RevenueCat module variables - will be set during initialization
 let Purchases: any = null;
@@ -170,32 +169,12 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateCustomerInfo = async () => {
     try {
       if (!Purchases) {
-        // Check debug flag even when Purchases SDK isn't available (e.g., in Expo Go)
-        if (debugService.isDevEnvironment()) {
-          const debugPremiumEnabled = await debugService.isDebugPremiumEnabled();
-          if (debugPremiumEnabled) {
-            setIsPro(true);
-            setHasActiveSubscription(true);
-            console.log("[RevenueCat] Debug premium override enabled (no SDK)");
-            return;
-          }
-        }
         setIsPro(false);
         return;
       }
       const info = await Purchases.getCustomerInfo();
       await processCustomerInfo(info);
     } catch (error) {
-      // Still check debug flag on error
-      if (debugService.isDevEnvironment()) {
-        const debugPremiumEnabled = await debugService.isDebugPremiumEnabled();
-        if (debugPremiumEnabled) {
-          setIsPro(true);
-          setHasActiveSubscription(true);
-          console.log("[RevenueCat] Debug premium override enabled (error fallback)");
-          return;
-        }
-      }
       setIsPro(false);
     }
   };
@@ -204,16 +183,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     setCustomerInfo(info);
 
     // Check if user has active "premium" entitlement
-    let hasPremium = info.entitlements.active["premium"] !== undefined;
-
-    // Override with debug flag if enabled (dev builds only)
-    if (debugService.isDevEnvironment()) {
-      const debugPremiumEnabled = await debugService.isDebugPremiumEnabled();
-      if (debugPremiumEnabled) {
-        hasPremium = true;
-        console.log("[RevenueCat] Debug premium override enabled");
-      }
-    }
+    const hasPremium = info.entitlements.active["premium"] !== undefined;
 
     setIsPro(hasPremium);
     setHasActiveSubscription(hasPremium);

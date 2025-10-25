@@ -1,8 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
-import React, { useState } from "react";
-import { debugService } from "../../services/debugService";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
   Alert,
   Linking,
   ActivityIndicator,
+  Clipboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme, ColorScheme } from "../../contexts/ThemeContext";
@@ -35,8 +35,62 @@ export default function SettingsPage() {
   const { refreshCustomerInfo } = useRevenueCat();
 
   // Local state for settings
-  const [currency, setCurrency] = useState("GBP");
   const [restoringPurchases, setRestoringPurchases] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [advancedExpanded, setAdvancedExpanded] = useState(false);
+
+  // Load userId from AsyncStorage on mount
+  useEffect(() => {
+    const loadUserId = async () => {
+      try {
+        const AsyncStorage = (
+          await import("@react-native-async-storage/async-storage")
+        ).default;
+        const SecureStoreModule = await import("expo-secure-store");
+        const SecureStore = SecureStoreModule.default || SecureStoreModule;
+
+        // Try to get the idToken which contains the actual UUID in the 'sub' claim
+        const idToken = await SecureStore.getItemAsync("idToken", {
+          keychainService: "expenzez-tokens",
+        });
+
+        if (idToken) {
+          try {
+            // Decode JWT (just the payload, no signature verification needed for display)
+            const parts = idToken.split(".");
+            if (parts.length === 3) {
+              // Add padding if needed
+              const payload = parts[1];
+              const padded = payload + "===".substring(0, (4 - (payload.length % 4)) % 4);
+              // Use atob for base64 decoding (works in React Native)
+              const decoded = JSON.parse(atob(padded));
+              const userId = decoded.sub;
+              if (userId) {
+                console.log("[Settings] Extracted userId from idToken:", userId);
+                setUserId(userId);
+                return;
+              }
+            }
+          } catch (decodeError) {
+            console.error("[Settings] Failed to decode idToken:", decodeError);
+          }
+        }
+
+        // Fallback: try to get from user object if idToken decode fails
+        const userStr = await AsyncStorage.getItem("user");
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          const id = user?.sub || user?.id;
+          if (id) {
+            setUserId(id);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading userId:", error);
+      }
+    };
+    loadUserId();
+  }, []);
 
   const themeOptions = [
     {
@@ -58,29 +112,6 @@ export default function SettingsPage() {
       description: "Follow your phone's setting",
     },
   ];
-
-  const currencyOptions = [
-    { code: "GBP", symbol: "£", name: "British Pound" },
-    { code: "USD", symbol: "$", name: "US Dollar" },
-    { code: "EUR", symbol: "€", name: "Euro" },
-    { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
-    { code: "AUD", symbol: "A$", name: "Australian Dollar" },
-    { code: "JPY", symbol: "¥", name: "Japanese Yen" },
-  ];
-
-  const handleCurrencyPress = () => {
-    Alert.alert("Select Currency", "Choose your preferred currency", [
-      ...currencyOptions.map((option) => ({
-        text: `${option.symbol} ${option.name}`,
-        onPress: () => setCurrency(option.code),
-        style:
-          currency === option.code
-            ? ("default" as const)
-            : ("default" as const),
-      })),
-      { text: "Cancel", style: "cancel" as const },
-    ]);
-  };
 
   const handleExportData = () => {
     Alert.alert("Export Data", "Export your financial data as CSV or PDF?", [
@@ -153,6 +184,17 @@ export default function SettingsPage() {
       Alert.alert("Error", error.message || "Failed to restore purchases.");
     } finally {
       setRestoringPurchases(false);
+    }
+  };
+
+  const handleCopyAccountId = async () => {
+    if (userId) {
+      try {
+        await Clipboard.setString(userId);
+        Alert.alert("Copied", "Account ID copied to clipboard");
+      } catch (error) {
+        Alert.alert("Error", "Failed to copy Account ID");
+      }
     }
   };
 
@@ -296,46 +338,6 @@ export default function SettingsPage() {
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
               App Settings
             </Text>
-
-            <TouchableOpacity
-              style={[
-                styles.settingItem,
-                {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                },
-                shadows.sm,
-              ]}
-              onPress={handleCurrencyPress}
-            >
-              <Ionicons
-                name="card-outline"
-                size={22}
-                color={colors.primary[500]}
-                style={{ marginRight: 14 }}
-              />
-              <Text
-                style={[styles.settingText, { color: colors.text.primary }]}
-              >
-                Currency
-              </Text>
-              <View style={styles.settingValue}>
-                <Text
-                  style={[
-                    styles.settingValueText,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  {currencyOptions.find((c) => c.code === currency)?.symbol}{" "}
-                  {currency}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={colors.text.tertiary}
-                />
-              </View>
-            </TouchableOpacity>
 
             <TouchableOpacity
               style={[
@@ -813,75 +815,112 @@ export default function SettingsPage() {
             </View>
           </View>
 
-          {/* Debug Settings - Only shown in development builds */}
-          {(() => {
-            const isDevBuild = !Constants.appOwnership || Constants.appOwnership === "expo";
-            if (!isDevBuild) return null;
+          {/* Advanced */}
+          <View style={styles.section}>
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+              onPress={() => setAdvancedExpanded(!advancedExpanded)}
+            >
+              <Ionicons
+                name="settings-outline"
+                size={22}
+                color={colors.primary[500]}
+                style={{ marginRight: 14 }}
+              />
+              <Text
+                style={[styles.settingText, { color: colors.text.primary }]}
+              >
+                Advanced Settings
+              </Text>
+              <Ionicons
+                name={advancedExpanded ? "chevron-up" : "chevron-down"}
+                size={20}
+                color={colors.text.tertiary}
+              />
+            </TouchableOpacity>
 
-            const [debugPremiumEnabled, setDebugPremiumEnabled] = React.useState(false);
+            {advancedExpanded && (
+              <View
+                style={[
+                  styles.advancedContainer,
+                  {
+                    backgroundColor: colors.background.primary,
+                    borderColor: colors.border.light,
+                  },
+                  shadows.sm,
+                ]}
+              >
+                <View style={styles.advancedItem}>
+                  <View style={styles.advancedItemLeft}>
+                    <Text
+                      style={[
+                        styles.advancedLabel,
+                        { color: colors.text.secondary },
+                      ]}
+                    >
+                      Account ID
+                    </Text>
+                    {userId && (
+                      <Text
+                        style={[
+                          styles.advancedValue,
+                          { color: colors.text.primary },
+                        ]}
+                        numberOfLines={1}
+                        ellipsizeMode="middle"
+                      >
+                        {userId}
+                      </Text>
+                    )}
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.copyButton,
+                      { backgroundColor: colors.primary[500] },
+                    ]}
+                    onPress={handleCopyAccountId}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name="copy"
+                      size={16}
+                      color="white"
+                    />
+                  </TouchableOpacity>
+                </View>
 
-            React.useEffect(() => {
-              const loadDebugState = async () => {
-                const enabled = await debugService.isDebugPremiumEnabled();
-                setDebugPremiumEnabled(enabled);
-              };
-              loadDebugState();
-            }, []);
-
-            return (
-              <View style={styles.section}>
-                <Text
-                  style={[
-                    styles.sectionTitle,
-                    { color: colors.text.primary, marginBottom: 12 },
-                  ]}
-                >
-                  ⚙️ Developer Settings
-                </Text>
                 <View
                   style={[
-                    styles.settingItem,
-                    {
-                      backgroundColor: colors.background.secondary,
-                      borderColor: colors.primary[200],
-                    },
+                    styles.advancedDivider,
+                    { backgroundColor: colors.border.light },
                   ]}
-                >
-                  <View style={styles.settingItemContent}>
-                    <Text style={[styles.settingText, { color: colors.text.primary }]}>
-                      Premium Override
-                    </Text>
-                    <Text style={[styles.settingSubtext, { color: colors.text.secondary }]}>
-                      Enable premium features for testing
-                    </Text>
-                  </View>
-                  <Switch
-                    value={debugPremiumEnabled}
-                    onValueChange={async () => {
-                      try {
-                        console.log("[Settings] Toggle pressed");
-                        const newValue = await debugService.toggleDebugPremium();
-                        console.log("[Settings] Debug premium toggled to:", newValue);
-                        setDebugPremiumEnabled(newValue);
-                        // Refresh customer info immediately to reflect the change
-                        console.log("[Settings] Calling refreshCustomerInfo...");
-                        await refreshCustomerInfo();
-                        console.log("[Settings] refreshCustomerInfo completed");
-                        Alert.alert(
-                          "Debug Premium",
-                          `Premium override is now ${newValue ? "enabled" : "disabled"}.`
-                        );
-                      } catch (error) {
-                        console.error("[Settings] Error toggling debug premium:", error);
-                      }
-                    }}
-                    trackColor={{ false: "#767577", true: colors.primary[500] }}
-                    thumbColor="#f4f3f4"
+                />
+
+                <View style={styles.advancedNote}>
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={16}
+                    color={colors.text.secondary}
                   />
+                  <Text
+                    style={[
+                      styles.advancedNoteText,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
+                    Share this ID with support if you need help
+                  </Text>
                 </View>
               </View>
-            );
-          })()}
+            )}
+          </View>
 
           {/* Sign Out */}
           <View style={styles.section}>
@@ -1198,5 +1237,58 @@ const styles = StyleSheet.create({
   restoreLinkText: {
     fontSize: 13,
     fontWeight: "500",
+  },
+  advancedContainer: {
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: "hidden",
+    marginTop: 8,
+  },
+  advancedItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  advancedItemLeft: {
+    flex: 1,
+    marginRight: 8,
+  },
+  advancedLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 6,
+    opacity: 0.7,
+  },
+  advancedValue: {
+    fontSize: 13,
+    fontWeight: "600",
+    fontFamily: "Courier New",
+  },
+  copyButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  advancedDivider: {
+    height: 1,
+    marginHorizontal: 16,
+  },
+  advancedNote: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  advancedNoteText: {
+    fontSize: 12,
+    lineHeight: 16,
+    flex: 1,
+    opacity: 0.7,
   },
 });

@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { BillPreferencesAPI } from "../../services/api/billPreferencesAPI";
 import dayjs from "dayjs";
 
 // Bill Icon Component with fallbacks
@@ -238,16 +239,55 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
 }) => {
   const { colors } = useTheme();
   const [paidBills, setPaidBills] = React.useState<Set<string>>(new Set());
+  const [loadingBillId, setLoadingBillId] = React.useState<string | null>(null);
 
-  // Handle marking bill as paid
-  const handleMarkAsPaid = (bill: DetectedBill) => {
-    const newPaidBills = new Set(paidBills);
-    if (newPaidBills.has(bill.id)) {
-      newPaidBills.delete(bill.id);
-    } else {
-      newPaidBills.add(bill.id);
+  // Load paid bills from backend on component mount
+  useEffect(() => {
+    const loadPaidBills = async () => {
+      try {
+        const preferences = await BillPreferencesAPI.getBillPreferences();
+        // Find all bills that have been marked as paid (have paidAt timestamp)
+        const paidBillIds = preferences
+          .filter(p => (p as any).paidAt !== undefined && (p as any).paidAt !== null)
+          .map(p => p.billId);
+        setPaidBills(new Set(paidBillIds));
+        console.log("[EnhancedBillsList] Loaded paid bills from backend:", paidBillIds);
+      } catch (error) {
+        console.error("[EnhancedBillsList] Error loading paid bills:", error);
+      }
+    };
+    loadPaidBills();
+  }, []);
+
+  // Handle marking bill as paid - call backend API
+  const handleMarkAsPaid = async (bill: DetectedBill) => {
+    try {
+      const newPaidBills = new Set(paidBills);
+      const isPaid = !newPaidBills.has(bill.id);
+
+      // Set loading state
+      setLoadingBillId(bill.id);
+
+      // Call backend API
+      const success = await BillPreferencesAPI.markBillAsPaid(bill.id, isPaid);
+
+      if (success) {
+        // Update local state only after successful backend call
+        if (isPaid) {
+          newPaidBills.add(bill.id);
+        } else {
+          newPaidBills.delete(bill.id);
+        }
+        setPaidBills(newPaidBills);
+        console.log("[EnhancedBillsList] Bill marked as paid in backend:", { billId: bill.id, isPaid });
+      } else {
+        console.error("[EnhancedBillsList] Failed to mark bill as paid on backend");
+      }
+    } catch (error) {
+      console.error("[EnhancedBillsList] Error marking bill as paid:", error);
+    } finally {
+      setLoadingBillId(null);
     }
-    setPaidBills(newPaidBills);
   };
 
   const getBillUrgency = (dueDate: string) => {
@@ -513,11 +553,15 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
                                   backgroundColor: "transparent",
                                   borderColor: colors.text.tertiary,
                                 },
+                            loadingBillId === bill.id && { opacity: 0.6 },
                           ]}
                           onPress={(e) => {
                             e.stopPropagation();
-                            handleMarkAsPaid(bill);
+                            if (loadingBillId !== bill.id) {
+                              handleMarkAsPaid(bill);
+                            }
                           }}
+                          disabled={loadingBillId === bill.id}
                         >
                           {paidBills.has(bill.id) && (
                             <Ionicons

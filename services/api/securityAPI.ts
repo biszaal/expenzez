@@ -1,6 +1,7 @@
 import { api } from "../config/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CryptoJS from "crypto-js";
+import { secureStorage } from "../secureStorage";
 
 export interface SecuritySettings {
   userId: string;
@@ -124,10 +125,10 @@ export const securityAPI = {
         console.log(
           "🔒 [SecurityAPI] Clearing old local PIN before storing new PIN"
         );
-        await AsyncStorage.removeItem("@expenzez_app_password");
+        await secureStorage.removePinHash();
 
-        // Store new PIN locally for offline validation
-        await AsyncStorage.setItem("@expenzez_app_password", request.pin);
+        // Store new PIN securely in SecureStore for offline validation
+        await secureStorage.storePinHash(request.pin);
         await AsyncStorage.setItem("@expenzez_security_enabled", "true");
         if (request.biometricEnabled) {
           await AsyncStorage.setItem("@expenzez_biometric_enabled", "true");
@@ -137,7 +138,7 @@ export const securityAPI = {
         await AsyncStorage.removeItem("@expenzez_pin_removed");
 
         console.log(
-          "🔒 [SecurityAPI] ✅ PIN setup successful - old PIN cleared, new PIN stored locally and on server"
+          "🔒 [SecurityAPI] ✅ PIN setup successful - old PIN cleared, new PIN stored securely in SecureStore"
         );
         console.log("🔒 [SecurityAPI] Server response:", response.data);
         return { success: true };
@@ -164,7 +165,7 @@ export const securityAPI = {
       // Fallback: store locally if server is unavailable
       if (error.response?.status === 404 || !error.response) {
         console.log(
-          "🔒 [SecurityAPI] ⚠️ Server unavailable, storing PIN locally only"
+          "🔒 [SecurityAPI] ⚠️ Server unavailable, storing PIN locally securely"
         );
         console.log("🔒 [SecurityAPI] Error details:", error.message);
 
@@ -172,9 +173,9 @@ export const securityAPI = {
         console.log(
           "🔒 [SecurityAPI] Clearing old local PIN before storing new PIN (fallback)"
         );
-        await AsyncStorage.removeItem("@expenzez_app_password");
+        await secureStorage.removePinHash();
 
-        await AsyncStorage.setItem("@expenzez_app_password", request.pin);
+        await secureStorage.storePinHash(request.pin);
         await AsyncStorage.setItem("@expenzez_security_enabled", "true");
         if (request.biometricEnabled) {
           await AsyncStorage.setItem("@expenzez_biometric_enabled", "true");
@@ -184,7 +185,7 @@ export const securityAPI = {
         await AsyncStorage.removeItem("@expenzez_pin_removed");
 
         console.log(
-          "🔒 [SecurityAPI] ✅ PIN stored locally as fallback (server will sync later)"
+          "🔒 [SecurityAPI] ✅ PIN stored securely in SecureStore as fallback (server will sync later)"
         );
         return { success: true };
       }
@@ -219,18 +220,16 @@ export const securityAPI = {
         return { success: false, error: "Security not enabled" };
       }
 
-      // First validate locally for immediate feedback
-      const localPin = await AsyncStorage.getItem("@expenzez_app_password");
+      // First validate locally using SecureStore for immediate feedback
+      const hasLocalPin = await secureStorage.hasPinHash();
       console.log("🔒 [SecurityAPI] Local PIN check:", {
-        hasLocalPin: !!localPin,
-        localPin: localPin?.substring(0, 2) + "***",
+        hasLocalPin: hasLocalPin,
         requestPin: request.pin.substring(0, 2) + "***",
-        matches: localPin === request.pin,
       });
 
       // If no local PIN exists, validation should fail
-      if (!localPin) {
-        console.log("🔒 [SecurityAPI] No local PIN found, validation failed");
+      if (!hasLocalPin) {
+        console.log("🔒 [SecurityAPI] No local PIN found in SecureStore, validation failed");
 
         // EMERGENCY FIX: If no PIN exists, completely disable security to prevent lock loop
         console.log(
@@ -246,8 +245,10 @@ export const securityAPI = {
         return { success: false, error: "No PIN set up - security disabled" };
       }
 
-      if (localPin === request.pin) {
-        console.log("🔒 [SecurityAPI] Local validation successful");
+      // Verify PIN against secure hash
+      const isValid = await secureStorage.verifyPin(request.pin);
+      if (isValid) {
+        console.log("🔒 [SecurityAPI] Local validation successful (SecureStore)");
         // Try to sync with server, but don't fail if server is down
         try {
           const encryptedPin = await encryptPin(request.pin);
@@ -286,10 +287,10 @@ export const securityAPI = {
 
       if (response.status === 200) {
         console.log(
-          "🔒 [SecurityAPI] Server validation successful, updating local storage"
+          "🔒 [SecurityAPI] Server validation successful, updating SecureStore with PIN hash"
         );
-        // Update local storage with server's PIN
-        await AsyncStorage.setItem("@expenzez_app_password", request.pin);
+        // Update local storage with server's PIN (store hash securely)
+        await secureStorage.storePinHash(request.pin);
         return { success: true };
       } else {
         console.log(
@@ -305,14 +306,14 @@ export const securityAPI = {
           errorType: error.constructor.name,
           status: error.response?.status,
           isNetworkError: !error.response,
-          hasLocalPin: !!(await AsyncStorage.getItem("@expenzez_app_password")),
+          hasLocalPin: await secureStorage.hasPinHash(),
         }
       );
 
       // For security endpoints, server failures (like 401) are expected for incorrect PINs
       // Always fallback to local validation if server fails
-      const localPin = await AsyncStorage.getItem("@expenzez_app_password");
-      if (localPin && localPin === request.pin) {
+      const isValid = await secureStorage.verifyPin(request.pin);
+      if (isValid) {
         console.log(
           "🔒 [SecurityAPI] Local PIN validation successful (server failed)"
         );
@@ -362,23 +363,25 @@ export const securityAPI = {
         error.response?.status || error.message
       );
 
-      // Fallback: return local settings
-      const localPin = await AsyncStorage.getItem("@expenzez_app_password");
+      // Fallback: return local settings from SecureStore
+      const hasLocalPin = await secureStorage.hasPinHash();
       const biometricEnabled = await AsyncStorage.getItem(
         "@expenzez_biometric_enabled"
       );
       const user = await AsyncStorage.getItem("user");
 
       console.log("🔒 [SecurityAPI] Local fallback check:", {
-        hasLocalPin: !!localPin,
+        hasLocalPin: hasLocalPin,
         hasUser: !!user,
         biometricEnabled: biometricEnabled === "true",
       });
 
-      if (localPin && user) {
+      if (hasLocalPin && user) {
         try {
           const userObj = JSON.parse(user);
-          const encryptedPin = await encryptPin(localPin);
+          // For fallback, create a dummy encrypted PIN value
+          // The actual PIN hash is securely stored in SecureStore
+          const encryptedPin = "secure-pin-hash-stored-in-keychain";
 
           const localSettings = {
             userId: userObj.username || userObj.id,
@@ -473,7 +476,7 @@ export const securityAPI = {
       });
 
       if (response.status === 200) {
-        await AsyncStorage.setItem("@expenzez_app_password", newPin);
+        await secureStorage.storePinHash(newPin);
         return { success: true };
       } else {
         return { success: false, error: "Failed to change PIN" };
@@ -482,9 +485,9 @@ export const securityAPI = {
       console.error("Change PIN error:", error);
 
       // Fallback: validate old PIN locally and change locally
-      const localPin = await AsyncStorage.getItem("@expenzez_app_password");
-      if (localPin === oldPin) {
-        await AsyncStorage.setItem("@expenzez_app_password", newPin);
+      const isOldPinValid = await secureStorage.verifyPin(oldPin);
+      if (isOldPinValid) {
+        await secureStorage.storePinHash(newPin);
         return { success: true };
       }
 
@@ -503,9 +506,9 @@ export const securityAPI = {
       const response = await api.delete(`/security/pin/${deviceId}`);
 
       if (response.status === 200) {
-        // Clear local storage
+        // Clear secure storage
+        await secureStorage.removePinHash();
         await AsyncStorage.multiRemove([
-          "@expenzez_app_password",
           "@expenzez_security_enabled",
           "@expenzez_biometric_enabled",
         ]);
@@ -530,9 +533,9 @@ export const securityAPI = {
         );
       }
 
-      // Fallback: clear local storage
+      // Fallback: clear secure storage
+      await secureStorage.removePinHash();
       await AsyncStorage.multiRemove([
-        "@expenzez_app_password",
         "@expenzez_security_enabled",
         "@expenzez_biometric_enabled",
       ]);
