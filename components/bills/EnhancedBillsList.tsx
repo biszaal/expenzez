@@ -245,7 +245,8 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
   useEffect(() => {
     const loadPaidBills = async () => {
       try {
-        const preferences = await BillPreferencesAPI.getBillPreferences();
+        // Use getAllBillPreferences() to get ALL preferences (not just ignored ones)
+        const preferences = await BillPreferencesAPI.getAllBillPreferences();
         // Find all bills that have been marked as paid (have paidAt timestamp)
         const paidBillIds = preferences
           .filter(p => (p as any).paidAt !== undefined && (p as any).paidAt !== null)

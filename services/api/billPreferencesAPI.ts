@@ -228,9 +228,43 @@ export class BillPreferencesAPI {
 
   /**
    * Get bill preferences with additional filtering and merging capabilities
+   * NOTE: This returns ONLY ignored/excluded bills. Use getAllBillPreferences() for all preferences.
    */
   static async getBillPreferences(): Promise<BillPreference[]> {
     return this.getBillExclusions();
+  }
+
+  /**
+   * Get ALL bill preferences (including paid bills, ignored bills, etc.)
+   * This returns the full list without filtering
+   */
+  static async getAllBillPreferences(): Promise<BillPreference[]> {
+    try {
+      console.log('[BillPreferencesAPI] Fetching all bill preferences...');
+
+      const response = await api.get<BillPreferencesResponse>('/bills/preferences');
+
+      console.log('[BillPreferencesAPI] Retrieved all preferences:', {
+        count: response.data.count,
+        preferences: response.data.preferences?.map(p => ({
+          billId: p.billId,
+          customName: p.customName,
+          isIgnored: p.isIgnored,
+          paidAt: p.paidAt
+        }))
+      });
+
+      // Return ALL preferences without filtering
+      return response.data.preferences || [];
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        console.log('[BillPreferencesAPI] No bill preferences found - user has no preferences');
+        return [];
+      }
+
+      console.error('[BillPreferencesAPI] Error fetching all bill preferences:', error);
+      throw error;
+    }
   }
 
   /**
