@@ -265,6 +265,15 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
       const newPaidBills = new Set(paidBills);
       const isPaid = !newPaidBills.has(bill.id);
 
+      // 🔍 Debug: Log bill details before calling API
+      console.log("[EnhancedBillsList] About to mark bill as paid:", {
+        billId: bill.id,
+        billIdType: typeof bill.id,
+        isPaid,
+        isPaidType: typeof isPaid,
+        fullBill: bill
+      });
+
       // Set loading state
       setLoadingBillId(bill.id);
 
