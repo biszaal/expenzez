@@ -154,15 +154,15 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
           ]}
         >
           <View style={styles.donutChart}>
-            <Svg width={280} height={280} style={{ position: "absolute" }}>
+            <Svg width={240} height={240} style={{ position: "absolute" }}>
               {/* Background Ring */}
               <Circle
-                cx={140}
-                cy={140}
-                r={120}
+                cx={120}
+                cy={120}
+                r={100}
                 fill="none"
                 stroke={colors.background.secondary}
-                strokeWidth={28}
+                strokeWidth={24}
               />
 
               {/* Progress Ring with Rounded Caps */}
@@ -171,66 +171,66 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                   {/* Shadow Ring for Over-Budget Effect */}
                   {monthlySpentPercentage > 100 && (
                     <AnimatedCircle
-                      cx={140}
-                      cy={140}
-                      r={120}
+                      cx={120}
+                      cy={120}
+                      r={100}
                       fill="none"
                       stroke={colors.error[300]}
-                      strokeWidth={28}
+                      strokeWidth={24}
                       strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 120}`}
+                      strokeDasharray={`${2 * Math.PI * 100}`}
                       strokeDashoffset={animatedProgress.interpolate({
                         inputRange: [0, 1],
-                        outputRange: [2 * Math.PI * 120, 0],
+                        outputRange: [2 * Math.PI * 100, 0],
                       })}
-                      transform={`rotate(-90 140 140)`}
+                      transform={`rotate(-90 120 120)`}
                       opacity={0.3}
                     />
                   )}
 
                   {/* Main Progress Ring */}
                   <AnimatedCircle
-                    cx={140}
-                    cy={140}
-                    r={120}
+                    cx={120}
+                    cy={120}
+                    r={100}
                     fill="none"
                     stroke={
                       monthlyOverBudget
                         ? colors.error[500]
                         : colors.primary[500]
                     }
-                    strokeWidth={28}
+                    strokeWidth={24}
                     strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 120}`}
+                    strokeDasharray={`${2 * Math.PI * 100}`}
                     strokeDashoffset={animatedProgress.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [2 * Math.PI * 120, 0],
+                      outputRange: [2 * Math.PI * 100, 0],
                     })}
-                    transform={`rotate(-90 140 140)`}
+                    transform={`rotate(-90 120 120)`}
                   />
 
                   {/* Over-Budget Second Ring */}
                   {monthlySpentPercentage > 100 && (
                     <AnimatedCircle
-                      cx={140}
-                      cy={140}
-                      r={120}
+                      cx={120}
+                      cy={120}
+                      r={100}
                       fill="none"
                       stroke={colors.error[500]}
-                      strokeWidth={28}
+                      strokeWidth={24}
                       strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 120}`}
+                      strokeDasharray={`${2 * Math.PI * 100}`}
                       strokeDashoffset={animatedProgress.interpolate({
                         inputRange: [0, 1],
                         outputRange: [
-                          2 * Math.PI * 120,
+                          2 * Math.PI * 100,
                           2 *
                             Math.PI *
-                            120 *
+                            100 *
                             (1 - (monthlySpentPercentage - 100) / 100),
                         ],
                       })}
-                      transform={`rotate(-90 140 140)`}
+                      transform={`rotate(-90 120 120)`}
                     />
                   )}
                 </>
