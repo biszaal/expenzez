@@ -315,18 +315,40 @@ export class BillPreferencesAPI {
    */
   static async markBillAsPaid(billId: string, isPaid: boolean): Promise<boolean> {
     try {
-      console.log('[BillPreferencesAPI] Marking bill as paid:', { billId, isPaid });
+      // Validate inputs before sending
+      if (!billId) {
+        console.error('[BillPreferencesAPI] billId is required but was:', billId);
+        throw new Error('billId is required');
+      }
 
-      const response = await api.put('/bills/preferences', {
-        action: 'paid',
+      if (isPaid === undefined || isPaid === null) {
+        console.error('[BillPreferencesAPI] isPaid must be a boolean but was:', isPaid);
+        throw new Error('isPaid must be a boolean value');
+      }
+
+      console.log('[BillPreferencesAPI] Marking bill as paid:', {
         billId,
-        isPaid
+        isPaid,
+        billIdType: typeof billId,
+        isPaidType: typeof isPaid
       });
+
+      const requestBody = {
+        action: 'paid',
+        billId: String(billId), // Ensure it's a string
+        isPaid: Boolean(isPaid) // Ensure it's a boolean
+      };
+
+      console.log('[BillPreferencesAPI] Request body:', JSON.stringify(requestBody));
+
+      const response = await api.put('/bills/preferences', requestBody);
 
       console.log('[BillPreferencesAPI] Successfully marked bill as paid:', response.data);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('[BillPreferencesAPI] Error marking bill as paid:', error);
+      console.error('[BillPreferencesAPI] Error response:', error?.response?.data);
+      console.error('[BillPreferencesAPI] Error status:', error?.response?.status);
       return false;
     }
   }
