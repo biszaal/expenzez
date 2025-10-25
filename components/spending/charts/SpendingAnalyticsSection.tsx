@@ -180,13 +180,16 @@ export const SpendingAnalyticsSection: React.FC<
                   const isIncrease = thisMonthTotal > lastMonthTotal;
                   const arrowName = isIncrease ? "arrow-up" : "arrow-down";
                   const arrowColor = isIncrease ? colors.error[500] : colors.success[500];
+                  const backgroundColor = isIncrease
+                    ? 'rgba(239, 68, 68, 0.1)'  // Light red background for increase
+                    : 'rgba(34, 197, 94, 0.1)';  // Light green background for decrease
 
                   return (
                     <View style={styles.currentValueContainer}>
                       <Text
                         style={[
                           styles.currentValue,
-                          { color: colors.text.primary },
+                          { color: arrowColor },
                         ]}
                       >
                         £
@@ -194,7 +197,10 @@ export const SpendingAnalyticsSection: React.FC<
                           dailySpendingData.data.length - 1
                         ]?.toFixed(2) || "0.00"}
                       </Text>
-                      <View style={styles.currentValueMeta}>
+                      <View style={[
+                        styles.currentValueMeta,
+                        { backgroundColor }
+                      ]}>
                         <Ionicons
                           name={arrowName}
                           size={16}
@@ -203,7 +209,7 @@ export const SpendingAnalyticsSection: React.FC<
                         <Text
                           style={[
                             styles.currentValueLabel,
-                            { color: colors.text.secondary },
+                            { color: arrowColor },
                           ]}
                         >
                           vs. {daysToCompare}{" "}
