@@ -286,15 +286,20 @@ export const SpendingAnalyticsSection: React.FC<
                     {dailySpendingData.prevMonthData &&
                       dailySpendingData.prevMonthData.some((v) => v > 0) &&
                       (() => {
-                        const thisMonthTotal = dailySpendingData.data.reduce(
-                          (a, b) => a + b,
-                          0
+                        // Only compare up to the same day in both months for fair comparison
+                        // Current month has data up to today, so compare previous month up to the same day
+                        const daysToCompare = Math.min(
+                          dailySpendingData.data.length,
+                          dailySpendingData.prevMonthData.length
                         );
+
+                        const thisMonthTotal = dailySpendingData.data
+                          .slice(0, daysToCompare)
+                          .reduce((a, b) => a + b, 0);
                         const lastMonthTotal =
-                          dailySpendingData.prevMonthData.reduce(
-                            (a, b) => a + b,
-                            0
-                          );
+                          dailySpendingData.prevMonthData
+                            .slice(0, daysToCompare)
+                            .reduce((a, b) => a + b, 0);
                         const diff = thisMonthTotal - lastMonthTotal;
                         const percentChange =
                           lastMonthTotal > 0
