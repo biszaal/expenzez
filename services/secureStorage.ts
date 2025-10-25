@@ -11,6 +11,8 @@ const SECURE_KEYS = {
   BIOMETRIC_KEY: 'expenzez_biometric_key',
   SESSION_TOKEN: 'expenzez_session_token',
   DEVICE_KEY: 'expenzez_device_key',
+  USER_DATA: 'expenzez_user_data',
+  USER_PROFILE: 'expenzez_user_profile',
 } as const;
 
 // AsyncStorage keys for non-sensitive data
@@ -447,7 +449,9 @@ class SecureStorageService {
       await this.removePinHash();
       await SecureStore.deleteItemAsync(SECURE_KEYS.BIOMETRIC_KEY);
       await SecureStore.deleteItemAsync(SECURE_KEYS.SESSION_TOKEN);
-      
+      await SecureStore.deleteItemAsync(SECURE_KEYS.USER_DATA);
+      await SecureStore.deleteItemAsync(SECURE_KEYS.USER_PROFILE);
+
       // Clear AsyncStorage items
       await AsyncStorage.multiRemove([
         STORAGE_KEYS.SECURITY_ENABLED,
@@ -456,14 +460,16 @@ class SecureStorageService {
         STORAGE_KEYS.APP_LOCKED,
         STORAGE_KEYS.SECURITY_SETTINGS,
       ]);
-      
+
       // Clear legacy storage keys
       await AsyncStorage.multiRemove([
         '@expenzez_app_password',
         '@expenzez_encrypted_pin',
         '@expenzez_pin_removed',
+        'user', // Old user data location
+        'profile', // Old profile location
       ]);
-      
+
     } catch (error) {
       console.error('🔒 [SecureStorage] ❌ Failed to clear security data:', error);
       throw new Error('Failed to clear security data');
@@ -484,6 +490,177 @@ class SecureStorageService {
     }
     
     return result === 0;
+  }
+
+  /**
+   * Store user data securely in SecureStore
+   */
+  async storeUserDataSecurely(userData: any): Promise<void> {
+    try {
+      if (!userData) {
+        console.warn('🔒 [SecureStorage] User data is empty, skipping storage');
+        return;
+      }
+
+      // Serialize user data
+      const serialized = typeof userData === 'string' ? userData : JSON.stringify(userData);
+
+      // Store in secure store
+      await SecureStore.setItemAsync(SECURE_KEYS.USER_DATA, serialized, {
+        requireAuthentication: false,
+        keychainService: 'expenzez-security',
+      });
+
+      console.log('🔒 [SecureStorage] ✅ User data stored securely');
+    } catch (error) {
+      console.error('🔒 [SecureStorage] ❌ Failed to store user data securely:', error);
+      throw new Error('Failed to store user data securely');
+    }
+  }
+
+  /**
+   * Retrieve user data securely from SecureStore
+   */
+  async getUserDataSecurely(): Promise<any | null> {
+    try {
+      const serialized = await SecureStore.getItemAsync(SECURE_KEYS.USER_DATA);
+
+      if (!serialized) {
+        return null;
+      }
+
+      // Try to parse as JSON
+      try {
+        return JSON.parse(serialized);
+      } catch {
+        // If not JSON, return as string
+        return serialized;
+      }
+    } catch (error) {
+      console.error('🔒 [SecureStorage] ❌ Failed to retrieve user data securely:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if user data exists in SecureStore
+   */
+  async hasUserData(): Promise<boolean> {
+    try {
+      const data = await SecureStore.getItemAsync(SECURE_KEYS.USER_DATA);
+      return !!data;
+    } catch (error) {
+      console.error('🔒 [SecureStorage] ❌ Failed to check user data existence:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Clear user data from SecureStore
+   */
+  async clearUserDataSecurely(): Promise<void> {
+    try {
+      await SecureStore.deleteItemAsync(SECURE_KEYS.USER_DATA);
+      await SecureStore.deleteItemAsync(SECURE_KEYS.USER_PROFILE);
+      console.log('🔒 [SecureStorage] ✅ User data cleared securely');
+    } catch (error) {
+      console.error('🔒 [SecureStorage] ❌ Failed to clear user data securely:', error);
+      throw new Error('Failed to clear user data securely');
+    }
+  }
+
+  /**
+   * Store user profile data securely
+   */
+  async storeUserProfileSecurely(profileData: any): Promise<void> {
+    try {
+      if (!profileData) {
+        console.warn('🔒 [SecureStorage] Profile data is empty, skipping storage');
+        return;
+      }
+
+      const serialized = typeof profileData === 'string' ? profileData : JSON.stringify(profileData);
+
+      await SecureStore.setItemAsync(SECURE_KEYS.USER_PROFILE, serialized, {
+        requireAuthentication: false,
+        keychainService: 'expenzez-security',
+      });
+
+      console.log('🔒 [SecureStorage] ✅ User profile stored securely');
+    } catch (error) {
+      console.error('🔒 [SecureStorage] ❌ Failed to store user profile securely:', error);
+      throw new Error('Failed to store user profile securely');
+    }
+  }
+
+  /**
+   * Retrieve user profile data securely
+   */
+  async getUserProfileSecurely(): Promise<any | null> {
+    try {
+      const serialized = await SecureStore.getItemAsync(SECURE_KEYS.USER_PROFILE);
+
+      if (!serialized) {
+        return null;
+      }
+
+      try {
+        return JSON.parse(serialized);
+      } catch {
+        return serialized;
+      }
+    } catch (error) {
+      console.error('🔒 [SecureStorage] ❌ Failed to retrieve user profile securely:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Migrate user data from AsyncStorage to SecureStore
+   */
+  async migrateUserData(): Promise<boolean> {
+    try {
+      console.log('🔒 [SecureStorage] Starting user data migration...');
+
+      // Check if we already have secure user data
+      const hasSecureData = await this.hasUserData();
+      if (hasSecureData) {
+        console.log('🔒 [SecureStorage] Secure user data already exists, skipping migration');
+        return true;
+      }
+
+      // Get user data from AsyncStorage
+      const userData = await AsyncStorage.getItem('user');
+      if (userData) {
+        try {
+          // Validate it's valid JSON
+          JSON.parse(userData);
+          // Store in SecureStore
+          await this.storeUserDataSecurely(userData);
+          console.log('🔒 [SecureStorage] ✅ User data migrated to SecureStore');
+        } catch (parseError) {
+          console.warn('🔒 [SecureStorage] Invalid user data JSON, skipping');
+          return false;
+        }
+      }
+
+      // Migrate profile data if exists
+      const profileData = await AsyncStorage.getItem('profile');
+      if (profileData) {
+        try {
+          JSON.parse(profileData);
+          await this.storeUserProfileSecurely(profileData);
+          console.log('🔒 [SecureStorage] ✅ User profile migrated to SecureStore');
+        } catch (parseError) {
+          console.warn('🔒 [SecureStorage] Invalid profile data JSON, skipping');
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('🔒 [SecureStorage] ❌ Failed to migrate user data:', error);
+      return false;
+    }
   }
 
   // Backward compatibility methods for migration

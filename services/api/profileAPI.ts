@@ -81,7 +81,7 @@ export const profileAPI = {
     return response.data;
   },
 
-  // Get goals with caching
+  // Get goals with caching - now uses goalsAPI for better fallback support
   getGoals: async () => {
     // 🚨 CRITICAL: User-specific cache key
     const AsyncStorage = (
@@ -98,11 +98,69 @@ export const profileAPI = {
       return cached;
     }
 
-    const response = await api.get("/goals");
+    try {
+      console.log("[ProfileAPI] Fetching goals from API...");
+      // Try the main /goals endpoint first
+      const response = await api.get("/goals");
 
-    // Cache for 5 minutes since goals might be updated moderately
-    setCachedData(cacheKey, response.data, 5 * 60 * 1000);
-    return response.data;
+      if (response && response.data) {
+        // Handle both new format (activeGoals/completedGoals) and old format (savingsGoals)
+        let goalsData = response.data;
+
+        // If we got the old format with savingsGoals, convert to new format
+        if (goalsData.savingsGoals && !goalsData.activeGoals) {
+          console.log("[ProfileAPI] Converting legacy savingsGoals format...");
+          const allGoals = goalsData.savingsGoals || [];
+          goalsData = {
+            activeGoals: allGoals.filter((g: any) => !g.isCompleted),
+            completedGoals: allGoals.filter((g: any) => g.isCompleted),
+            goalProgress: allGoals.map((g: any) => ({
+              goalId: g.id || g.goalId,
+              progressPercentage: g.targetAmount > 0 ? Math.round((g.currentAmount / g.targetAmount) * 100) : 0,
+              amountRemaining: Math.max(g.targetAmount - g.currentAmount, 0),
+              daysRemaining: g.targetDate ? Math.ceil((new Date(g.targetDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0,
+              isOnTrack: true
+            })),
+            totalSavedTowardsGoals: allGoals.reduce((sum: number, g: any) => sum + (g.currentAmount || 0), 0),
+            totalGoalAmount: allGoals.reduce((sum: number, g: any) => sum + (g.targetAmount || 0), 0),
+            averageMonthlyProgress: 0,
+            recommendations: [],
+            motivationalMessage: "Great progress! Keep building towards your financial goals!",
+            lastUpdated: new Date().toISOString()
+          };
+        }
+
+        console.log("[ProfileAPI] Successfully fetched goals:", {
+          activeGoals: goalsData.activeGoals?.length || 0,
+          completedGoals: goalsData.completedGoals?.length || 0
+        });
+
+        // Cache for 5 minutes
+        setCachedData(cacheKey, goalsData, 5 * 60 * 1000);
+        return goalsData;
+      } else {
+        console.warn("[ProfileAPI] Goals API returned empty response, using fallback");
+        return { activeGoals: [], completedGoals: [], goalProgress: [] };
+      }
+    } catch (error: any) {
+      console.error("[ProfileAPI] Error fetching goals:", error);
+
+      // Fallback data structure for when API fails
+      const fallbackData = {
+        activeGoals: [],
+        completedGoals: [],
+        goalProgress: [],
+        totalSavedTowardsGoals: 0,
+        totalGoalAmount: 0,
+        averageMonthlyProgress: 0,
+        recommendations: [],
+        motivationalMessage: "Start setting financial goals to track your savings journey!",
+        lastUpdated: new Date().toISOString()
+      };
+
+      setCachedData(cacheKey, fallbackData, 5 * 60 * 1000);
+      return fallbackData;
+    }
   },
 
   // Create a new savings goal

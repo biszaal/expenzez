@@ -1,6 +1,7 @@
 import { api } from "../config/apiClient";
 import { deviceManager } from "../deviceManager";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { secureStorage } from "../secureStorage";
 
 export interface UserSecurityPreferences {
   appLockEnabled: boolean;
@@ -342,15 +343,11 @@ export const enhancedSecurityAPI = {
         )[0];
 
         if (mostRecentPin && mostRecentPin.encryptedPin) {
-          // Store the PIN locally
-          await AsyncStorage.setItem(
-            "@expenzez_app_password",
-            mostRecentPin.encryptedPin
-          );
-          await AsyncStorage.setItem("@expenzez_has_pin", "true");
+          // Store the PIN securely in SecureStore
+          await secureStorage.storePinHash(mostRecentPin.encryptedPin);
 
           console.log(
-            "✅ [Enhanced Security] PIN synced from server successfully"
+            "✅ [Enhanced Security] PIN synced from server successfully to SecureStore"
           );
           return { success: true };
         } else {
@@ -389,8 +386,8 @@ export const enhancedSecurityAPI = {
       // Get device ID
       const deviceId = await deviceManager.getDeviceId();
 
-      // Check if PIN exists locally
-      const hasLocalPin = await AsyncStorage.getItem("@expenzez_app_password");
+      // Check if PIN exists locally in SecureStore
+      const hasLocalPin = await secureStorage.hasPinHash();
       const needsSync = !hasLocalPin;
 
       if (needsSync) {
@@ -413,10 +410,9 @@ export const enhancedSecurityAPI = {
         // If this device doesn't have PIN locally, sync it now
         if (needsSync) {
           console.log("🔐 [Enhanced Security] Syncing PIN to local device...");
-          await AsyncStorage.setItem("@expenzez_app_password", pin);
-          await AsyncStorage.setItem("@expenzez_has_pin", "true");
+          await secureStorage.storePinHash(pin);
           console.log(
-            "✅ [Enhanced Security] PIN synced to local device successfully"
+            "✅ [Enhanced Security] PIN synced to local device successfully in SecureStore"
           );
         }
 

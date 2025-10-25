@@ -3,13 +3,12 @@
  * Controls access to premium features with upgrade prompts
  */
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { useFeatureAccess } from '../hooks/useSubscription';
-import { debugService } from '../services/debugService';
 import { PremiumFeature } from '../services/subscriptionService';
 
 interface PremiumGateProps {
@@ -80,25 +79,8 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
   const { colors } = useTheme();
   const router = useRouter();
   const featureAccess = useFeatureAccess(feature, currentUsage);
-  const [debugPremiumEnabled, setDebugPremiumEnabled] = useState(false);
 
-  // Check debug premium status on mount
-  useEffect(() => {
-    const checkDebugPremium = async () => {
-      if (debugService.isDevEnvironment()) {
-        const enabled = await debugService.isDebugPremiumEnabled();
-        setDebugPremiumEnabled(enabled);
-      }
-    };
-    checkDebugPremium();
-  }, []);
-
-  console.log("[PremiumGate]", feature, "hasAccess:", featureAccess.hasAccess, "debugPremium:", debugPremiumEnabled);
-
-  // If debug premium is enabled, always grant access for testing
-  if (debugPremiumEnabled) {
-    return <>{children}</>;
-  }
+  console.log("[PremiumGate]", feature, "hasAccess:", featureAccess.hasAccess);
 
   // If user has access, render children
   if (featureAccess.hasAccess) {
@@ -112,7 +94,18 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
 
   // Default upgrade prompt
   return (
-    <View style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+      {/* Back Button Header */}
+      <View style={styles.headerContainer}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
+        </TouchableOpacity>
+      </View>
+
       <View style={[styles.promptCard, { backgroundColor: colors.background.primary }]}>
         {/* Premium Icon */}
         <View style={[styles.iconContainer, { backgroundColor: colors.primary[100] }]}>
@@ -162,7 +155,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
           </TouchableOpacity>
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -210,14 +203,26 @@ export const PremiumBadge: React.FC<{ size?: 'small' | 'medium' }> = ({ size = '
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    flexDirection: 'column',
+    backgroundColor: '#f5f5f5',
+  },
+  headerContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  backButton: {
+    padding: 8,
   },
   promptCard: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 40,
     borderRadius: 16,
     padding: 32,
-    alignItems: 'center',
     maxWidth: 400,
     width: '100%',
     shadowColor: '#000',

@@ -25,6 +25,7 @@ import BiometricSecurityLock from "../components/BiometricSecurityLock";
 import SplashScreen from "./SplashScreen";
 import PinInput from "../components/PinInput";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MigrationService } from "../services/migrationService";
 
 // Global error handlers to catch crashes
 if (typeof global !== "undefined" && (global as any).ErrorUtils) {
@@ -153,6 +154,30 @@ function RootLayoutNav() {
     };
 
     quickSessionCheck();
+  }, []);
+
+  // Run data migrations on app startup
+  useEffect(() => {
+    const runMigrations = async () => {
+      try {
+        console.log("🔄 [Layout] Starting data migrations on app startup...");
+        const result = await MigrationService.runMigrations();
+
+        if (result.success) {
+          console.log("✅ [Layout] Migrations completed successfully:", {
+            migrationsRun: result.migrationsRun,
+            cleanedKeys: result.cleanedKeys,
+          });
+        } else {
+          console.warn("⚠️ [Layout] Some migrations had errors:", result.errors);
+        }
+      } catch (error) {
+        console.error("❌ [Layout] Failed to run migrations:", error);
+        // Don't block app startup on migration failure
+      }
+    };
+
+    runMigrations();
   }, []);
 
   // Check onboarding completion status

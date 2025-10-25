@@ -10,6 +10,7 @@ export interface BillPreference {
   userModified: boolean;
   createdAt: number;
   updatedAt: number;
+  paidAt?: number; // Timestamp when bill was marked as paid (null if not paid)
   exclusionReason?: 'not_recurring' | 'no_longer_active' | 'incorrect_detection' | 'user_choice';
   reason?: string;
   excludedAt?: number;
@@ -305,6 +306,27 @@ export class BillPreferencesAPI {
       return true;
     } catch (error) {
       console.error('[BillPreferencesAPI] Error saving bill preference:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Mark a bill as paid or unpaid
+   */
+  static async markBillAsPaid(billId: string, isPaid: boolean): Promise<boolean> {
+    try {
+      console.log('[BillPreferencesAPI] Marking bill as paid:', { billId, isPaid });
+
+      const response = await api.put('/bills/preferences', {
+        action: 'paid',
+        billId,
+        isPaid
+      });
+
+      console.log('[BillPreferencesAPI] Successfully marked bill as paid:', response.data);
+      return true;
+    } catch (error) {
+      console.error('[BillPreferencesAPI] Error marking bill as paid:', error);
       return false;
     }
   }

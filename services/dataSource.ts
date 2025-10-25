@@ -501,7 +501,17 @@ export const getGoals = async () => {
 export const getSavingsGoals = async () => {
   try {
     const response = await profileAPI.getGoals();
-    return response.savingsGoals || [];
+    // Handle both response formats: savingsGoals (legacy) or activeGoals/completedGoals (current)
+    if (response && typeof response === 'object') {
+      if (response.savingsGoals) {
+        return response.savingsGoals;
+      }
+      // Combine active and completed goals
+      const activeGoals = response.activeGoals || [];
+      const completedGoals = response.completedGoals || [];
+      return [...activeGoals, ...completedGoals];
+    }
+    return [];
   } catch (error) {
     console.error("Error loading savings goals:", error);
     return [];

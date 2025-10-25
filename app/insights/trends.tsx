@@ -16,7 +16,6 @@ import { insightsEngine, MonthlySpendingTrend } from '../../services/insightsEng
 import { spacing, borderRadius } from '../../constants/theme';
 import { PremiumFeature } from '../../services/subscriptionService';
 import { useSubscription } from '../../hooks/useSubscription';
-import { debugService } from '../../services/debugService';
 import { PremiumGate } from '../../components/PremiumGate';
 import { AnalyticsSummary } from '../../components/analytics/AnalyticsSummary';
 
@@ -29,20 +28,8 @@ export default function TrendsAnalysisScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<3 | 6 | 12>(6);
   const [activeTab, setActiveTab] = useState<'trends' | 'analytics'>('trends');
-  const [debugPremiumEnabled, setDebugPremiumEnabled] = useState(false);
 
-  // Check debug premium status on mount
-  useEffect(() => {
-    const checkDebugPremium = async () => {
-      if (debugService.isDevEnvironment()) {
-        const enabled = await debugService.isDebugPremiumEnabled();
-        setDebugPremiumEnabled(enabled);
-      }
-    };
-    checkDebugPremium();
-  }, []);
-
-  console.log("[TrendsAnalysisScreen] isPremium:", isPremium, "debugPremium:", debugPremiumEnabled);
+  console.log("[TrendsAnalysisScreen] isPremium:", isPremium);
 
   useEffect(() => {
     loadTrends();

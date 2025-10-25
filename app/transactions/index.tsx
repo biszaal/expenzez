@@ -57,11 +57,13 @@ export default function TransactionsScreen() {
   const { showSuccess, showError } = useAlert();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [allLoadedTransactions, setAllLoadedTransactions] = useState<Transaction[]>([]); // Cache all loaded transactions
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState<string>(""); // Empty = show all
+  const [selectedMonth, setSelectedMonth] = useState<string>(dayjs().format("YYYY-MM")); // Default to current month
   const [lastUpdated, setLastUpdated] = useState(dayjs().format("HH:mm"));
+  const [loadMoreMonths, setLoadMoreMonths] = useState(false); // Tracks if user wants more months
 
   // Edit modal state
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -113,21 +115,21 @@ export default function TransactionsScreen() {
     };
   };
 
-  const fetchTransactions = async (showRefresh = false) => {
+  const fetchTransactions = async (showRefresh = false, monthsToFetch = 1) => {
     try {
       if (showRefresh) setRefreshing(true);
       else setLoading(true);
 
-      // Always fetch last 12 months to have all months available in filter
+      // Fetch only specified months to reduce initial load
       const startDate = dayjs()
-        .subtract(12, "months")
+        .subtract(monthsToFetch - 1, "months")
         .startOf("month")
         .format("YYYY-MM-DD");
       const endDate = dayjs().endOf("month").format("YYYY-MM-DD");
-      const limit = 2400; // ~200 per month for 12 months
+      const limit = monthsToFetch * 300; // ~300 per month
 
       console.log(
-        `[Transactions] Fetching last 12 months (${startDate} to ${endDate})...`
+        `[Transactions] Fetching ${monthsToFetch} month(s) (${startDate} to ${endDate})...`
       );
 
       const transactionsResponse = await transactionAPI.getTransactions({
@@ -143,8 +145,6 @@ export default function TransactionsScreen() {
       ) {
         const formattedTransactions: Transaction[] =
           transactionsResponse.transactions.map((tx: any) => {
-            console.log(`[Transactions] Processing transaction:`, tx);
-
             // Get the original amount (should be positive) - ensure it's a number
             const originalAmount = Math.abs(
               Number(tx.originalAmount || tx.amount || 0)
@@ -176,14 +176,30 @@ export default function TransactionsScreen() {
               isPending: tx.isPending || false,
             };
 
-            console.log(`[Transactions] Formatted transaction:`, formatted);
             return formatted;
           });
 
         console.log(
-          `[Transactions] Setting ${formattedTransactions.length} formatted transactions`
+          `[Transactions] Loaded ${formattedTransactions.length} transactions`
         );
-        setTransactions(formattedTransactions);
+
+        // Merge with previously loaded transactions to build full cache
+        const merged = [...allLoadedTransactions, ...formattedTransactions];
+        const uniqueTransactions = Array.from(
+          new Map(merged.map(tx => [tx.id, tx])).values()
+        );
+
+        setAllLoadedTransactions(uniqueTransactions);
+
+        // Filter to show selected month or all if in "load more" mode
+        const toDisplay = loadMoreMonths
+          ? uniqueTransactions
+          : uniqueTransactions.filter(tx => {
+              const txMonth = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
+              return selectedMonth ? txMonth === selectedMonth : true;
+            });
+
+        setTransactions(toDisplay);
         setLastUpdated(dayjs().format("HH:mm"));
 
         if (showRefresh) {
@@ -206,7 +222,15 @@ export default function TransactionsScreen() {
   };
 
   const onRefresh = () => {
-    fetchTransactions(true);
+    // When refreshing, fetch 3 months to populate more cache
+    fetchTransactions(true, 3);
+  };
+
+  // Helper function to load all months (when user clicks "Load More" or similar)
+  const loadAllMonths = async () => {
+    setLoadMoreMonths(true);
+    // Fetch 12 months worth of data
+    await fetchTransactions(false, 12);
   };
 
   // Handle edit transaction
@@ -267,7 +291,9 @@ export default function TransactionsScreen() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      fetchTransactions();
+      // Fetch 6 months on initial load to populate month filter and improve UX
+      // This is still much faster than loading all 12 months
+      fetchTransactions(false, 6);
     }
   }, [isLoggedIn]); // Only fetch on login, filter client-side when month changes
 
@@ -276,6 +302,27 @@ export default function TransactionsScreen() {
       setSearchQuery(decodeURIComponent(merchant));
     }
   }, [merchant]);
+
+  // Handle month selection - fetch more months if needed or filter from cache
+  useEffect(() => {
+    if (selectedMonth && allLoadedTransactions.length > 0) {
+      const monthTransactions = allLoadedTransactions.filter(tx => {
+        const txMonth = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
+        return txMonth === selectedMonth;
+      });
+
+      if (monthTransactions.length > 0) {
+        // Already have data for this month
+        setTransactions(monthTransactions);
+      } else {
+        // Need to fetch this month
+        const monthIndex = dayjs(selectedMonth).diff(dayjs().startOf("month"), "month", true);
+        const monthsToFetch = Math.abs(Math.ceil(monthIndex)) + 1;
+        console.log(`[Transactions] Selected month not loaded, fetching ${monthsToFetch} months...`);
+        fetchTransactions(false, monthsToFetch);
+      }
+    }
+  }, [selectedMonth]);
 
   // Auto-select the most recent month when transactions are loaded - but don't auto-filter
   useEffect(() => {
@@ -321,10 +368,11 @@ export default function TransactionsScreen() {
     }
   }, [transactions]);
 
-  // Generate available months from transactions
+  // Generate available months from ALL loaded transactions (cache), not just filtered view
   const availableMonths = useMemo(() => {
     const monthsSet = new Set<string>();
-    transactions.forEach((tx) => {
+    // Use allLoadedTransactions to show all months that have been fetched
+    allLoadedTransactions.forEach((tx) => {
       const month = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
       monthsSet.add(month);
     });
@@ -334,14 +382,14 @@ export default function TransactionsScreen() {
       Array.from(monthsSet).sort().reverse()
     );
 
-    // Show more months since user has 975 transactions
-    const months = Array.from(monthsSet).sort().reverse().slice(0, 12);
+    // Show all available months sorted by most recent first
+    const months = Array.from(monthsSet).sort().reverse();
     return months.map((month) => ({
       key: month,
       label: dayjs(month).format("MMM YY"),
       isActive: true,
     }));
-  }, [transactions]);
+  }, [allLoadedTransactions]);
 
   // Filter and group transactions
   const { filteredTransactions, pendingTransactions } = useMemo(() => {
