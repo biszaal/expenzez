@@ -201,6 +201,20 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // 🔍 DEBUG: Log raw axios error for /bills/preferences requests
+    if (originalRequest.url?.includes('/bills/preferences')) {
+      console.log('[API Interceptor] RAW ERROR for /bills/preferences:', {
+        url: originalRequest.url,
+        method: originalRequest.method,
+        requestData: originalRequest.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data,
+        responseHeaders: error.response?.headers,
+        errorMessage: error.message
+      });
+    }
+
     // Create error context for better logging
     const errorContext = {
       endpoint: originalRequest.url,
