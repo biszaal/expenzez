@@ -163,39 +163,58 @@ export const SpendingAnalyticsSection: React.FC<
                 </View>
 
                 {/* Current Day Value Display */}
-                {dailySpendingData && dailySpendingData.data.length > 0 && (
-                  <View style={styles.currentValueContainer}>
-                    <Text
-                      style={[
-                        styles.currentValue,
-                        { color: colors.success[500] },
-                      ]}
-                    >
-                      £
-                      {dailySpendingData.data[
-                        dailySpendingData.data.length - 1
-                      ]?.toFixed(2) || "0.00"}
-                    </Text>
-                    <View style={styles.currentValueMeta}>
-                      <Ionicons
-                        name="arrow-down"
-                        size={16}
-                        color={colors.success[500]}
-                      />
+                {dailySpendingData && dailySpendingData.data.length > 0 && (() => {
+                  // Calculate comparison for arrow direction and color
+                  const daysToCompare = Math.min(
+                    dailySpendingData.data.length,
+                    dailySpendingData.prevMonthData?.length || 0
+                  );
+
+                  const thisMonthTotal = dailySpendingData.data
+                    .slice(0, daysToCompare)
+                    .reduce((a, b) => a + b, 0);
+                  const lastMonthTotal = dailySpendingData.prevMonthData
+                    ?.slice(0, daysToCompare)
+                    .reduce((a, b) => a + b, 0) || 0;
+
+                  const isIncrease = thisMonthTotal > lastMonthTotal;
+                  const arrowName = isIncrease ? "arrow-up" : "arrow-down";
+                  const arrowColor = isIncrease ? colors.error[500] : colors.success[500];
+
+                  return (
+                    <View style={styles.currentValueContainer}>
                       <Text
                         style={[
-                          styles.currentValueLabel,
-                          { color: colors.text.secondary },
+                          styles.currentValue,
+                          { color: colors.text.primary },
                         ]}
                       >
-                        vs. {dayjs().date()}{" "}
-                        {dayjs(selectedMonth)
-                          .subtract(1, "month")
-                          .format("MMM")}
+                        £
+                        {dailySpendingData.data[
+                          dailySpendingData.data.length - 1
+                        ]?.toFixed(2) || "0.00"}
                       </Text>
+                      <View style={styles.currentValueMeta}>
+                        <Ionicons
+                          name={arrowName}
+                          size={16}
+                          color={arrowColor}
+                        />
+                        <Text
+                          style={[
+                            styles.currentValueLabel,
+                            { color: colors.text.secondary },
+                          ]}
+                        >
+                          vs. {daysToCompare}{" "}
+                          {dayjs(selectedMonth)
+                            .subtract(1, "month")
+                            .format("MMM")}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                )}
+                  );
+                })()}
 
                 {/* Mini Stat Cards - IMPROVED LAYOUT */}
                 {dailySpendingData && dailySpendingData.data.length > 0 && (
