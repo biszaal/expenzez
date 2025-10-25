@@ -347,8 +347,34 @@ export class BillPreferencesAPI {
       return true;
     } catch (error: any) {
       console.error('[BillPreferencesAPI] Error marking bill as paid:', error);
-      console.error('[BillPreferencesAPI] Error response:', error?.response?.data);
-      console.error('[BillPreferencesAPI] Error status:', error?.response?.status);
+
+      // Try to get the raw axios error before transformation
+      if (error?.config) {
+        console.error('[BillPreferencesAPI] Request config:', {
+          url: error.config.url,
+          method: error.config.method,
+          data: error.config.data
+        });
+      }
+
+      // Check for raw axios response
+      if (error?.response) {
+        console.error('[BillPreferencesAPI] Raw error response:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      } else {
+        console.error('[BillPreferencesAPI] No response object in error');
+      }
+
+      // Also check the original error if it was transformed
+      if (error?.originalError) {
+        console.error('[BillPreferencesAPI] Original error:', error.originalError);
+      }
+
+      console.error('[BillPreferencesAPI] Full error object:', JSON.stringify(error, null, 2));
       return false;
     }
   }
