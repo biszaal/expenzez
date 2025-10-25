@@ -104,7 +104,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
 
           {analytics.forecast.slice(0, 3).map((forecast, index) => (
             <View
-              key={forecast.month}
+              key={`forecast-${forecast.month}`}
               style={[
                 styles.forecastItem,
                 index === analytics.forecast.slice(0, 3).length - 1 && styles.lastItem
@@ -148,7 +148,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
 
           {analytics.categoryTrends.slice(0, 5).map((trend, index) => (
             <View
-              key={trend.category}
+              key={`trend-${trend.category}`}
               style={[
                 styles.trendItem,
                 index === Math.min(4, analytics.categoryTrends.length - 1) && styles.lastItem
@@ -198,7 +198,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
 
           {analytics.anomalies.slice(0, 3).map((anomaly, index) => (
             <View
-              key={anomaly.transactionId}
+              key={`anomaly-${anomaly.transactionId}-${index}`}
               style={[
                 styles.anomalyItem,
                 {
