@@ -1,13 +1,13 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import dayjs from 'dayjs';
-import { AchievementCalculator } from './achievementCalculator';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import dayjs from "dayjs";
+import { AchievementCalculator } from "./achievementCalculator";
 
 export interface XPAction {
   id: string;
   name: string;
   description: string;
   xp: number;
-  category: 'daily' | 'weekly' | 'milestone';
+  category: "daily" | "weekly" | "milestone";
   cooldown?: number; // cooldown in minutes
 }
 
@@ -22,96 +22,96 @@ export interface UserXPData {
 }
 
 export class XPService {
-  private static readonly XP_STORAGE_KEY = '@user_xp_data';
+  private static readonly XP_STORAGE_KEY = "@user_xp_data";
   private static readonly XP_PER_LEVEL = 100;
 
   // XP Actions matching our UI guide
   private static readonly XP_ACTIONS: XPAction[] = [
     // Daily Activities
     {
-      id: 'add-expense',
-      name: 'Add Expense',
-      description: 'Track your daily spending',
+      id: "add-expense",
+      name: "Add Expense",
+      description: "Track your daily spending",
       xp: 5,
-      category: 'daily',
-      cooldown: 5 // 5 minutes between rewards
+      category: "daily",
+      cooldown: 5, // 5 minutes between rewards
     },
     {
-      id: 'add-income',
-      name: 'Add Income',
-      description: 'Track your income sources',
+      id: "add-income",
+      name: "Add Income",
+      description: "Track your income sources",
       xp: 5,
-      category: 'daily',
-      cooldown: 5 // 5 minutes between rewards
+      category: "daily",
+      cooldown: 5, // 5 minutes between rewards
     },
     {
-      id: 'check-progress',
-      name: 'Check Progress',
-      description: 'Review your financial stats',
+      id: "check-progress",
+      name: "Check Progress",
+      description: "Review your financial stats",
       xp: 3,
-      category: 'daily',
-      cooldown: 60 // 1 hour between rewards
+      category: "daily",
+      cooldown: 60, // 1 hour between rewards
     },
 
     // Weekly Goals
     {
-      id: 'week-streak',
-      name: '7-Day Streak',
-      description: 'Track expenses for a full week',
+      id: "week-streak",
+      name: "7-Day Streak",
+      description: "Track expenses for a full week",
       xp: 25,
-      category: 'weekly'
+      category: "weekly",
     },
     {
-      id: 'budget-review',
-      name: 'Budget Review',
-      description: 'Stay within weekly budget',
+      id: "budget-review",
+      name: "Budget Review",
+      description: "Stay within weekly budget",
       xp: 20,
-      category: 'weekly'
+      category: "weekly",
     },
 
     // Major Milestones
     {
-      id: 'transaction-10',
-      name: '10 Transactions',
-      description: 'First milestone reached',
+      id: "transaction-10",
+      name: "10 Transactions",
+      description: "First milestone reached",
       xp: 20,
-      category: 'milestone'
+      category: "milestone",
     },
     {
-      id: 'transaction-25',
-      name: '25 Transactions',
-      description: 'Getting into the habit',
+      id: "transaction-25",
+      name: "25 Transactions",
+      description: "Getting into the habit",
       xp: 50,
-      category: 'milestone'
+      category: "milestone",
     },
     {
-      id: 'transaction-100',
-      name: '100 Transactions',
-      description: 'Century milestone',
+      id: "transaction-100",
+      name: "100 Transactions",
+      description: "Century milestone",
       xp: 100,
-      category: 'milestone'
+      category: "milestone",
     },
     {
-      id: 'transaction-250',
-      name: '250 Transactions',
-      description: 'Expert tracker',
+      id: "transaction-250",
+      name: "250 Transactions",
+      description: "Expert tracker",
       xp: 200,
-      category: 'milestone'
+      category: "milestone",
     },
     {
-      id: 'transaction-500',
-      name: '500 Transactions',
-      description: 'Master of tracking',
+      id: "transaction-500",
+      name: "500 Transactions",
+      description: "Master of tracking",
       xp: 300,
-      category: 'milestone'
+      category: "milestone",
     },
     {
-      id: 'master-saver',
-      name: 'Master Saver',
-      description: 'Save 20% of income for 3 months',
+      id: "master-saver",
+      name: "Master Saver",
+      description: "Save 20% of income for 3 months",
       xp: 300,
-      category: 'milestone'
-    }
+      category: "milestone",
+    },
   ];
 
   /**
@@ -125,7 +125,7 @@ export class XPService {
       dailyXP: 0,
       weeklyXP: 0,
       monthlyXP: 0,
-      lastResetDate: dayjs().format('YYYY-MM-DD')
+      lastResetDate: dayjs().format("YYYY-MM-DD"),
     };
 
     try {
@@ -136,7 +136,7 @@ export class XPService {
         return this.resetCountersIfNeeded(userData);
       }
     } catch (error) {
-      console.error('[XPService] Error loading XP data:', error);
+      console.error("[XPService] Error loading XP data:", error);
     }
 
     await this.saveUserXP(defaultData);
@@ -146,13 +146,16 @@ export class XPService {
   /**
    * Award XP for a specific action
    */
-  static async awardXP(actionId: string, userId: string): Promise<{
+  static async awardXP(
+    actionId: string,
+    userId: string
+  ): Promise<{
     xpAwarded: number;
     newLevel: number;
     levelUp: boolean;
     message: string;
   }> {
-    const action = this.XP_ACTIONS.find(a => a.id === actionId);
+    const action = this.XP_ACTIONS.find((a) => a.id === actionId);
     if (!action) {
       throw new Error(`Unknown XP action: ${actionId}`);
     }
@@ -163,14 +166,14 @@ export class XPService {
     // Check cooldown
     if (action.cooldown && userData.lastActions[actionId]) {
       const lastAction = dayjs(userData.lastActions[actionId]);
-      const minutesSince = dayjs().diff(lastAction, 'minute');
+      const minutesSince = dayjs().diff(lastAction, "minute");
 
       if (minutesSince < action.cooldown) {
         return {
           xpAwarded: 0,
           newLevel: userData.level,
           levelUp: false,
-          message: `Wait ${action.cooldown - minutesSince} minutes before earning XP for this action again`
+          message: `Wait ${action.cooldown - minutesSince} minutes before earning XP for this action again`,
         };
       }
     }
@@ -182,13 +185,13 @@ export class XPService {
 
     // Update category counters
     switch (action.category) {
-      case 'daily':
+      case "daily":
         userData.dailyXP += action.xp;
         break;
-      case 'weekly':
+      case "weekly":
         userData.weeklyXP += action.xp;
         break;
-      case 'milestone':
+      case "milestone":
         userData.monthlyXP += action.xp;
         break;
     }
@@ -201,13 +204,15 @@ export class XPService {
     // Save data
     await this.saveUserXP(userData);
 
-    console.log(`[XPService] Awarded ${action.xp} XP for ${action.name}. Total: ${userData.totalXP}, Level: ${newLevel}`);
+    console.log(
+      `[XPService] Awarded ${action.xp} XP for ${action.name}. Total: ${userData.totalXP}, Level: ${newLevel}`
+    );
 
     return {
       xpAwarded: action.xp,
       newLevel,
       levelUp,
-      message: `+${action.xp} XP for ${action.name}!`
+      message: `+${action.xp} XP for ${action.name}!`,
     };
   }
 
@@ -236,7 +241,7 @@ export class XPService {
       level,
       currentLevelXP,
       xpToNextLevel,
-      progressPercent
+      progressPercent,
     };
   }
 
@@ -244,21 +249,21 @@ export class XPService {
    * Reset daily/weekly counters if needed
    */
   private static resetCountersIfNeeded(userData: UserXPData): UserXPData {
-    const today = dayjs().format('YYYY-MM-DD');
+    const today = dayjs().format("YYYY-MM-DD");
     const lastReset = dayjs(userData.lastResetDate);
 
     // Reset daily counter
-    if (!dayjs().isSame(lastReset, 'day')) {
+    if (!dayjs().isSame(lastReset, "day")) {
       userData.dailyXP = 0;
     }
 
     // Reset weekly counter
-    if (!dayjs().isSame(lastReset, 'week')) {
+    if (!dayjs().isSame(lastReset, "week")) {
       userData.weeklyXP = 0;
     }
 
     // Reset monthly counter
-    if (!dayjs().isSame(lastReset, 'month')) {
+    if (!dayjs().isSame(lastReset, "month")) {
       userData.monthlyXP = 0;
     }
 
@@ -273,7 +278,7 @@ export class XPService {
     try {
       await AsyncStorage.setItem(this.XP_STORAGE_KEY, JSON.stringify(userData));
     } catch (error) {
-      console.error('[XPService] Error saving XP data:', error);
+      console.error("[XPService] Error saving XP data:", error);
     }
   }
 
@@ -288,14 +293,14 @@ export class XPService {
    * Check if user can earn XP for an action
    */
   static async canEarnXP(actionId: string): Promise<boolean> {
-    const action = this.XP_ACTIONS.find(a => a.id === actionId);
+    const action = this.XP_ACTIONS.find((a) => a.id === actionId);
     if (!action || !action.cooldown) return true;
 
     const userData = await this.initializeUserXP();
     if (!userData.lastActions[actionId]) return true;
 
     const lastAction = dayjs(userData.lastActions[actionId]);
-    const minutesSince = dayjs().diff(lastAction, 'minute');
+    const minutesSince = dayjs().diff(lastAction, "minute");
 
     return minutesSince >= action.cooldown;
   }
@@ -306,22 +311,31 @@ export class XPService {
   static async syncWithAchievements(userId: string): Promise<void> {
     try {
       // Get achievement data to sync XP
-      const achievementData = await AchievementCalculator.calculateUserAchievements(userId);
+      const achievementData =
+        await AchievementCalculator.calculateUserAchievements(userId);
       const userData = await this.initializeUserXP();
 
       // Only sync if this is the first time (user has no XP yet)
       // This ensures achievement XP is added initially but daily XP is preserved
       const achievementXP = achievementData.progress.totalPoints;
       if (userData.totalXP === 0 && achievementXP > 0) {
-        console.log('[XPService] Initial sync with achievements:', achievementXP, 'XP');
+        console.log(
+          "[XPService] Initial sync with achievements:",
+          achievementXP,
+          "XP"
+        );
         userData.totalXP = achievementXP;
         userData.level = Math.floor(userData.totalXP / this.XP_PER_LEVEL) + 1;
         await this.saveUserXP(userData);
       } else {
-        console.log('[XPService] Preserving existing XP progress:', userData.totalXP, 'XP');
+        console.log(
+          "[XPService] Preserving existing XP progress:",
+          userData.totalXP,
+          "XP"
+        );
       }
     } catch (error) {
-      console.error('[XPService] Error syncing with achievements:', error);
+      console.error("[XPService] Error syncing with achievements:", error);
     }
   }
 }
