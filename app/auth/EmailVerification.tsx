@@ -238,7 +238,12 @@ export default function EmailVerification() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background.primary }]}>
+      <SafeAreaView
+        style={[
+          styles.safeArea,
+          { backgroundColor: colors.background.primary },
+        ]}
+      >
         <KeyboardAvoidingView
           style={styles.keyboardView}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -255,21 +260,31 @@ export default function EmailVerification() {
                 style={styles.backButton}
                 onPress={() => router.back()}
               >
-                <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
+                <Ionicons
+                  name="chevron-back"
+                  size={24}
+                  color={colors.text.primary}
+                />
               </TouchableOpacity>
 
               <View style={styles.headerContent}>
                 <Image
-                source={require("../../assets/images/transparent-logo.png")}
-                style={styles.appLogo}
-                resizeMode="contain"
-              />
+                  source={require("../../assets/images/transparent-logo.png")}
+                  style={styles.appLogo}
+                  resizeMode="contain"
+                />
 
-                <Typography variant="h1" style={[styles.title, { color: colors.text.primary }]}>
+                <Typography
+                  variant="h1"
+                  style={[styles.title, { color: colors.text.primary }]}
+                >
                   Verify Your Email
                 </Typography>
 
-                <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
+                <Typography
+                  variant="body"
+                  style={[styles.subtitle, { color: colors.text.secondary }]}
+                >
                   {params.email
                     ? "We've sent a 6-digit verification code to:"
                     : "Enter the 6-digit verification code sent to your email:"}
@@ -290,11 +305,19 @@ export default function EmailVerification() {
             </View>
 
             {/* Form Container */}
-            <View style={[styles.glassCard, { backgroundColor: colors.background.secondary }]}>
+            <View
+              style={[
+                styles.glassCard,
+                { backgroundColor: colors.background.secondary },
+              ]}
+            >
               <View style={styles.formContent}>
                 {/* Verification Code Input */}
                 <View style={styles.inputContainer}>
-                  <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]}>
+                  <Typography
+                    variant="body"
+                    style={[styles.inputLabel, { color: colors.text.primary }]}
+                  >
                     Verification Code
                   </Typography>
                   <TextField
@@ -312,7 +335,10 @@ export default function EmailVerification() {
 
                 {/* Verify Button */}
                 <TouchableOpacity
-                  style={[styles.verifyButton, { backgroundColor: colors.primary[500] }]}
+                  style={[
+                    styles.verifyButton,
+                    { backgroundColor: colors.primary[500] },
+                  ]}
                   onPress={handleVerification}
                   disabled={isVerifying || verificationCode.length !== 6}
                   activeOpacity={0.9}
@@ -342,7 +368,13 @@ export default function EmailVerification() {
 
                 {/* Resend Code */}
                 <View style={styles.resendContainer}>
-                  <Typography variant="body" style={[styles.resendText, { color: colors.text.secondary }]}>
+                  <Typography
+                    variant="body"
+                    style={[
+                      styles.resendText,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
                     Didn't receive the code?
                   </Typography>
 
@@ -352,13 +384,19 @@ export default function EmailVerification() {
                     style={styles.resendButton}
                   >
                     {isResending ? (
-                      <ActivityIndicator size="small" color={colors.primary[500]} />
+                      <ActivityIndicator
+                        size="small"
+                        color={colors.primary[500]}
+                      />
                     ) : (
                       <Typography
                         variant="body"
                         style={[
                           styles.resendButtonText,
-                          { color: colors.primary[500], opacity: resendTimer > 0 ? 0.5 : 1 },
+                          {
+                            color: colors.primary[500],
+                            opacity: resendTimer > 0 ? 0.5 : 1,
+                          },
                         ]}
                         weight="medium"
                       >
@@ -371,13 +409,24 @@ export default function EmailVerification() {
                 </View>
 
                 {/* Help Text */}
-                <View style={[styles.helpContainer, { backgroundColor: colors.primary[500] + '10', borderColor: colors.primary[500] + '20' }]}>
+                <View
+                  style={[
+                    styles.helpContainer,
+                    {
+                      backgroundColor: colors.primary[500] + "10",
+                      borderColor: colors.primary[500] + "20",
+                    },
+                  ]}
+                >
                   <Ionicons
                     name="information-circle"
                     size={20}
                     color={colors.primary[500]}
                   />
-                  <Typography variant="caption" style={[styles.helpText, { color: colors.text.secondary }]}>
+                  <Typography
+                    variant="caption"
+                    style={[styles.helpText, { color: colors.text.secondary }]}
+                  >
                     Check your spam folder if you don't see the email. The code
                     expires in 24 hours.
                   </Typography>
@@ -431,6 +480,11 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     alignItems: "center",
+  },
+  appLogo: {
+    width: 60,
+    height: 60,
+    marginBottom: 16,
   },
   logoContainer: {
     marginBottom: 16,
