@@ -77,10 +77,23 @@ export default function PersonalInformationScreen() {
             "../../services/config/apiCache"
           );
           // Clear the user-specific cache key
-          const userId = user?.sub || user?.id || user?.email || user?.username || "default";
+          const userId =
+            user?.sub || user?.id || user?.email || user?.username || "default";
           const cacheKey = `user_profile_${userId}`;
+          
+          // Debug: Check if cache exists before clearing
+          const { getCachedData } = await import("../../services/config/apiCache");
+          const cachedBefore = getCachedData(cacheKey);
+          console.log(`🔍 [Personal] Cache before clearing:`, { cacheKey, cachedBefore: !!cachedBefore });
+          
           await clearCachedData(cacheKey);
-          console.log(`🧹 [Personal] Cleared profile cache for user: ${userId}`);
+          
+          // Debug: Check if cache exists after clearing
+          const cachedAfter = getCachedData(cacheKey);
+          console.log(`🔍 [Personal] Cache after clearing:`, { cacheKey, cachedAfter: !!cachedAfter });
+          console.log(
+            `🧹 [Personal] Cleared profile cache for user: ${userId}`
+          );
         } catch (cacheError) {
           console.warn("⚠️ [Personal] Could not clear cache:", cacheError);
         }
@@ -90,9 +103,11 @@ export default function PersonalInformationScreen() {
           "📊 [Personal] Profile API response:",
           JSON.stringify(data, null, 2)
         );
-        
+
         // Debug: Check if the API call is actually being made
-        console.log("🔍 [Personal] Force refresh flag:", { forceRefresh: true });
+        console.log("🔍 [Personal] Force refresh flag:", {
+          forceRefresh: true,
+        });
         console.log("🔍 [Personal] Specific fields check:", {
           phone: data?.phone,
           phone_number: data?.phone_number,
