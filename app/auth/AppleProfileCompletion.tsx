@@ -16,6 +16,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from './AuthContext';
 import { spacing, borderRadius, layout } from '../../constants/theme';
 import { useAlert } from '../../hooks/useAlert';
+import { profileAPI } from '../../services/api/profileAPI';
 
 export default function AppleProfileCompletion() {
   const router = useRouter();
@@ -63,18 +64,65 @@ export default function AppleProfileCompletion() {
       return;
     }
 
+    // Validate phone number (UK format)
+    const phoneRegex = /^(\+44|0)[1-9]\d{9,10}$/;
+    if (!phoneRegex.test(formData.phone.replace(/\s/g, ''))) {
+      showError('Please enter a valid UK phone number (e.g., +44 7xxx xxx xxx or 07xxx xxx xxx)');
+      return;
+    }
+
+    // Validate date of birth format (DD/MM/YYYY)
+    const dobRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012])\/(19|20)\d\d$/;
+    if (!dobRegex.test(formData.dateOfBirth)) {
+      showError('Please enter date of birth in DD/MM/YYYY format');
+      return;
+    }
+
+    // Validate address minimum length
+    if (formData.address.length < 5) {
+      showError('Please enter a complete address');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // TODO: Send profile completion data to backend
-      console.log('Profile completion data:', formData);
-      
-      // For now, show success and redirect to main app
+      // Parse name into firstName and lastName
+      const nameParts = formData.name.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      console.log('[AppleProfileCompletion] Submitting profile data:', {
+        firstName,
+        lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        postcode: formData.postcode,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender
+      });
+
+      // Send profile completion data to backend
+      await profileAPI.updateProfile({
+        firstName,
+        lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        postcode: formData.postcode,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender
+      });
+
+      console.log('[AppleProfileCompletion] Profile updated successfully');
       showSuccess('Profile completed successfully! Welcome to Expenzez!');
       router.replace('/(tabs)');
-      
+
     } catch (error: any) {
-      console.error('Profile completion error:', error);
-      showError('Failed to complete profile. Please try again.');
+      console.error('[AppleProfileCompletion] Error:', error);
+      showError(error.message || 'Failed to complete profile. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -394,20 +442,6 @@ export default function AppleProfileCompletion() {
                       style={{ color: 'white' }}
                     >
                       {isLoading ? 'Completing Profile...' : 'Complete Profile & Continue'}
-                    </Typography>
-                  </TouchableOpacity>
-
-                  {/* Skip for now */}
-                  <TouchableOpacity
-                    style={styles.skipButton}
-                    onPress={() => router.replace('/(tabs)')}
-                  >
-                    <Typography
-                      variant="body"
-                      style={{ color: colors.text.secondary }}
-                      align="center"
-                    >
-                      Skip for now (you can complete this later)
                     </Typography>
                   </TouchableOpacity>
                 </View>

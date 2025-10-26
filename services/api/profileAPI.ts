@@ -49,7 +49,10 @@ export const profileAPI = {
     email: string;
     phone?: string;
     address?: string;
+    city?: string;
+    postcode?: string;
     dateOfBirth?: string;
+    gender?: string;
     occupation?: string;
     company?: string;
   }) => {
