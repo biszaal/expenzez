@@ -117,8 +117,10 @@ export default function AppleProfileFlow() {
 
     setIsLoading(true);
     try {
+      console.log("[AppleProfileFlow] About to call profileAPI.updateProfile...");
+
       // Call backend to save profile data
-      await profileAPI.updateProfile({
+      const result = await profileAPI.updateProfile({
         firstName: submitValues.givenName,
         lastName: submitValues.familyName,
         email: submitValues.email,
@@ -130,15 +132,24 @@ export default function AppleProfileFlow() {
         gender: submitValues.gender,
       });
 
-      console.log("[AppleProfileFlow] Profile completed successfully");
+      console.log("[AppleProfileFlow] Profile API response:", result);
+      console.log("[AppleProfileFlow] Profile completed successfully!");
       showSuccess("Profile completed successfully! Welcome to Expenzez!");
+
+      // Small delay to ensure data is saved before redirect
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Redirect to main app
       router.replace("/(tabs)");
     } catch (error: any) {
       console.error("[AppleProfileFlow] Profile completion error:", error);
+      console.error("[AppleProfileFlow] Error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       showError(
-        error.message || "Failed to complete profile. Please try again."
+        error.response?.data?.message || error.message || "Failed to complete profile. Please try again."
       );
     } finally {
       setIsLoading(false);
