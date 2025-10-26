@@ -132,12 +132,19 @@ export default function HomeScreen() {
   // Save manual balance to database
   const saveManualBalance = async (balance: number) => {
     try {
+      console.log("🔍 [saveManualBalance] Setting manual balance:", balance);
       const response = await api.put("/profile", {
         manualBalance: balance,
         isManualBalance: true,
       });
 
       const profile = response.data?.profile ?? response.data;
+      console.log("🔍 [saveManualBalance] Profile response:", {
+        manualBalance: profile?.manualBalance,
+        isManualBalance: profile?.isManualBalance,
+        cachedBalance: profile?.cachedBalance
+      });
+      
       setManualBalance(profile?.manualBalance ?? balance);
       setIsManualBalance(profile?.isManualBalance ?? true);
 
@@ -170,17 +177,16 @@ export default function HomeScreen() {
 
   // Get current display balance (manual or calculated)
   const getDisplayBalance = () => {
-    const displayBalance = isManualBalance && manualBalance !== null
-      ? manualBalance
-      : totalBalance;
-    
+    const displayBalance =
+      isManualBalance && manualBalance !== null ? manualBalance : totalBalance;
+
     console.log("🔍 [getDisplayBalance] Debug:", {
       isManualBalance,
       manualBalance,
       totalBalance,
-      displayBalance
+      displayBalance,
     });
-    
+
     return displayBalance;
   };
 
@@ -320,7 +326,7 @@ export default function HomeScreen() {
           isManualBalance,
           finalBalance,
           currentManualBalance: manualBalance,
-          currentTotalBalance: totalBalance
+          currentTotalBalance: totalBalance,
         });
       } else {
         setTotalBalance(finalBalance);
@@ -329,7 +335,7 @@ export default function HomeScreen() {
           isManualBalance,
           finalBalance,
           currentManualBalance: manualBalance,
-          currentTotalBalance: totalBalance
+          currentTotalBalance: totalBalance,
         });
       }
 
