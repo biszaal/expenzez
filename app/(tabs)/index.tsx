@@ -224,9 +224,9 @@ export default function HomeScreen() {
       let useFallbackBalance = false;
 
       try {
-        balanceSummary = await balanceAPI.getSummary({ 
-          useCache: !isRefresh, 
-          forceRefresh: isRefresh 
+        balanceSummary = await balanceAPI.getSummary({
+          useCache: !isRefresh,
+          forceRefresh: isRefresh,
         });
         console.log("✅ Balance summary loaded from API:", balanceSummary);
       } catch (error: any) {
@@ -306,7 +306,14 @@ export default function HomeScreen() {
         console.log(`✅ Balance from server summary: ${finalBalance}`);
       }
 
-      setTotalBalance(finalBalance);
+      // Set the appropriate balance based on user's balance mode
+      if (isManualBalance) {
+        setManualBalance(finalBalance);
+        console.log(`✅ Manual balance updated: ${finalBalance}`);
+      } else {
+        setTotalBalance(finalBalance);
+        console.log(`✅ Calculated balance updated: ${finalBalance}`);
+      }
 
       console.log("💰 [Home] Financial summary:", {
         totalBalance: finalBalance,
