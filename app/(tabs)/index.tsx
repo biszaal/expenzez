@@ -171,7 +171,6 @@ export default function HomeScreen() {
     }
   };
 
-
   // Get current display balance (manual or calculated)
   const getDisplayBalance = () => {
     return isManualBalance && manualBalance !== null
@@ -225,7 +224,10 @@ export default function HomeScreen() {
       let useFallbackBalance = false;
 
       try {
-        balanceSummary = await balanceAPI.getSummary({ useCache: true });
+        balanceSummary = await balanceAPI.getSummary({ 
+          useCache: !isRefresh, 
+          forceRefresh: isRefresh 
+        });
         console.log("✅ Balance summary loaded from API:", balanceSummary);
       } catch (error: any) {
         console.warn(
