@@ -9,6 +9,7 @@ export default function RegisterStep1({
   values,
   onChange,
   onNext,
+  usernameOnly = false, // New prop for Apple Sign In flow
 }: any) {
   const { colors } = useTheme();
   const [usernameStatus, setUsernameStatus] = useState<{
@@ -46,16 +47,23 @@ export default function RegisterStep1({
   }, [values.username]);
   
   const handleNext = () => {
-    // Validate required fields
-    if (!values.givenName.trim() || !values.familyName.trim() || !values.username.trim()) {
+    // Validate username (always required)
+    if (!values.username.trim()) {
       return;
+    }
+
+    // Validate name fields (only if not usernameOnly mode)
+    if (!usernameOnly) {
+      if (!values.givenName.trim() || !values.familyName.trim()) {
+        return;
+      }
     }
 
     // Check if username exists
     if (usernameStatus.exists) {
       return;
     }
-    
+
     onNext();
   };
 
@@ -64,40 +72,47 @@ export default function RegisterStep1({
       {/* Header */}
       <View style={styles.header}>
         <Typography variant="h2" style={[styles.title, { color: colors.text.primary }]}>
-          Personal Details
+          {usernameOnly ? "Choose a Username" : "Personal Details"}
         </Typography>
         <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
-          Tell us your name and choose a username
+          {usernameOnly
+            ? "Pick a unique username for your account"
+            : "Tell us your name and choose a username"}
         </Typography>
       </View>
 
       {/* Form Fields */}
       <View style={styles.formFields}>
-        <View style={styles.inputContainer}>
-          <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
-            First Name
-          </Typography>
-          <TextField
-            placeholder="Enter your first name"
-            value={values.givenName}
-            onChangeText={(v) => onChange("givenName", v)}
-            autoCapitalize="words"
-            placeholderTextColor={colors.text.tertiary}
-          />
-        </View>
+        {/* Name fields - only show in regular registration */}
+        {!usernameOnly && (
+          <>
+            <View style={styles.inputContainer}>
+              <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+                First Name
+              </Typography>
+              <TextField
+                placeholder="Enter your first name"
+                value={values.givenName}
+                onChangeText={(v) => onChange("givenName", v)}
+                autoCapitalize="words"
+                placeholderTextColor={colors.text.tertiary}
+              />
+            </View>
 
-        <View style={styles.inputContainer}>
-          <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
-            Last Name
-          </Typography>
-          <TextField
-            placeholder="Enter your last name"
-            value={values.familyName}
-            onChangeText={(v) => onChange("familyName", v)}
-            autoCapitalize="words"
-            placeholderTextColor={colors.text.tertiary}
-          />
-        </View>
+            <View style={styles.inputContainer}>
+              <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
+                Last Name
+              </Typography>
+              <TextField
+                placeholder="Enter your last name"
+                value={values.familyName}
+                onChangeText={(v) => onChange("familyName", v)}
+                autoCapitalize="words"
+                placeholderTextColor={colors.text.tertiary}
+              />
+            </View>
+          </>
+        )}
 
         <View style={styles.inputContainer}>
           <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
@@ -154,9 +169,8 @@ export default function RegisterStep1({
         onPress={handleNext}
         style={[styles.continueButton, { backgroundColor: colors.primary[500] }]}
         disabled={
-          !values.givenName.trim() ||
-          !values.familyName.trim() ||
           !values.username.trim() ||
+          (!usernameOnly && (!values.givenName.trim() || !values.familyName.trim())) ||
           usernameStatus.checking ||
           usernameStatus.exists === true
         }
