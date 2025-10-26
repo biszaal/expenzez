@@ -62,7 +62,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
         
         <View style={styles.premiumTransactionsList}>
           {transactions.slice(0, 4).map((tx, idx) => (
-            <View key={tx.id} style={[
+            <View key={`${tx.id}-${idx}`} style={[
               styles.premiumTransactionItem,
               idx < 3 && { borderBottomWidth: 1, borderBottomColor: colors.background.secondary }
             ]}>
