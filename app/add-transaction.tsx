@@ -13,7 +13,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../contexts/ThemeContext";
 import { transactionAPI } from "../services/api";
 import { useXP } from "../hooks/useXP";
@@ -207,39 +206,8 @@ export default function AddTransaction() {
           result.transaction?.id
         );
 
-        // Save transaction data to AsyncStorage for immediate balance update
-        const newTransaction = {
-          id: result.transaction?.id || `tx_${Date.now()}`,
-          amount: transactionAmount,
-          description: name.trim(),
-          category: selectedCategory.name,
-          type: transactionType === "expense" ? "debit" : "credit",
-          date: new Date().toISOString(),
-          timestamp: new Date().toISOString(),
-          merchant: name.trim(),
-          accountId: "manual",
-          bankName: "Manual Entry",
-          originalAmount: Math.abs(transactionAmount),
-          accountType: "Manual Account",
-          isPending: false,
-          currency: "GBP",
-        };
-
-        try {
-          await AsyncStorage.setItem(
-            "newTransaction",
-            JSON.stringify(newTransaction)
-          );
-          console.log(
-            "💰 [AddTransaction] Transaction saved to AsyncStorage for immediate balance update:",
-            newTransaction
-          );
-        } catch (error) {
-          console.error(
-            "💰 [AddTransaction] Error saving to AsyncStorage:",
-            error
-          );
-        }
+        // Transaction saved successfully - balance will be updated by backend
+        console.log("💰 [AddTransaction] Transaction saved, balance will be updated by backend");
 
         Alert.alert(
           "Success",
