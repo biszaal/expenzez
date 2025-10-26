@@ -112,11 +112,8 @@ export default function HomeScreen() {
       const profile = response.data?.profile ?? response.data;
 
       if (profile) {
-        // Use cachedBalance as the primary balance source
-        if (profile.cachedBalance !== undefined) {
-          setTotalBalance(profile.cachedBalance);
-        }
-
+        // Only set manual balance and mode, don't override totalBalance
+        // The balance will be set from the API response in loadData()
         if (
           profile.manualBalance !== null &&
           profile.manualBalance !== undefined
@@ -173,9 +170,18 @@ export default function HomeScreen() {
 
   // Get current display balance (manual or calculated)
   const getDisplayBalance = () => {
-    return isManualBalance && manualBalance !== null
+    const displayBalance = isManualBalance && manualBalance !== null
       ? manualBalance
       : totalBalance;
+    
+    console.log("🔍 [getDisplayBalance] Debug:", {
+      isManualBalance,
+      manualBalance,
+      totalBalance,
+      displayBalance
+    });
+    
+    return displayBalance;
   };
 
   // Load data function
@@ -310,9 +316,21 @@ export default function HomeScreen() {
       if (isManualBalance) {
         setManualBalance(finalBalance);
         console.log(`✅ Manual balance updated: ${finalBalance}`);
+        console.log("🔍 [Balance Update] State values:", {
+          isManualBalance,
+          finalBalance,
+          currentManualBalance: manualBalance,
+          currentTotalBalance: totalBalance
+        });
       } else {
         setTotalBalance(finalBalance);
         console.log(`✅ Calculated balance updated: ${finalBalance}`);
+        console.log("🔍 [Balance Update] State values:", {
+          isManualBalance,
+          finalBalance,
+          currentManualBalance: manualBalance,
+          currentTotalBalance: totalBalance
+        });
       }
 
       console.log("💰 [Home] Financial summary:", {
