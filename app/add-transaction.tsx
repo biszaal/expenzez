@@ -201,7 +201,10 @@ export default function AddTransaction() {
 
       // Award XP for adding a transaction (for both expenses and income)
       if (result) {
-        console.log("✅ Transaction saved successfully with ID:", result.transaction?.id);
+        console.log(
+          "✅ Transaction saved successfully with ID:",
+          result.transaction?.id
+        );
 
         Alert.alert(
           "Success",
