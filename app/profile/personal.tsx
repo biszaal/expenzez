@@ -84,6 +84,16 @@ export default function PersonalInformationScreen() {
           "📊 [Personal] Profile API response:",
           JSON.stringify(data, null, 2)
         );
+        console.log(
+          "🔍 [Personal] Specific fields check:",
+          {
+            phone: data?.phone,
+            phone_number: data?.phone_number,
+            dateOfBirth: data?.dateOfBirth,
+            birthdate: data?.birthdate,
+            address: data?.address
+          }
+        );
 
         // Debug: Check if data is null or empty
         if (!data) {
@@ -99,15 +109,15 @@ export default function PersonalInformationScreen() {
           // Map the API response to form fields
           const mappedData = {
             firstName:
-              data.firstName || data.givenName || data.first_name || "",
-            lastName: data.lastName || data.familyName || data.last_name || "",
+              data.firstName || data.given_name || data.givenName || data.first_name || "",
+            lastName: data.lastName || data.family_name || data.familyName || data.last_name || "",
             email: data.email || "",
-            phone: data.phone || data.phoneNumber || data.phone_number || "",
+            phone: data.phone || data.phone_number || data.phoneNumber || "",
             address: data.address || "",
             city: data.city || "",
             country: data.country || "",
             dateOfBirth:
-              data.dateOfBirth || data.date_of_birth || data.birthDate || "",
+              data.dateOfBirth || data.birthdate || data.date_of_birth || data.birthDate || "",
             occupation: data.occupation || "",
             company: data.company || "",
           };
