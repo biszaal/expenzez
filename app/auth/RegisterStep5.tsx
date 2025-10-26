@@ -5,8 +5,9 @@ import {
   ScrollView,
   ActivityIndicator,
   StyleSheet,
+  TextInput,
 } from "react-native";
-import { Button, TextField, Typography } from "../../components/ui";
+import { Button, Typography } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -283,8 +284,17 @@ export default function RegisterStep5({
 
               {/* Phone Number Field */}
               <View style={styles.phoneInputWrapper}>
-                <TextField
+                <TextInput
+                  style={[
+                    styles.phoneInput,
+                    {
+                      backgroundColor: colors.background.primary,
+                      borderColor: colors.border.light,
+                      color: colors.text.primary,
+                    },
+                  ]}
                   placeholder="Enter phone number"
+                  placeholderTextColor={colors.text.tertiary}
                   value={phoneNumber}
                   onChangeText={(text) => {
                     setPhoneNumber(text);
@@ -292,7 +302,6 @@ export default function RegisterStep5({
                     // Don't update parent form state here - only on submit with proper formatting
                   }}
                   keyboardType="phone-pad"
-                  placeholderTextColor={colors.text.tertiary}
                   editable={true}
                   autoFocus={false}
                 />
@@ -486,8 +495,6 @@ const styles = StyleSheet.create({
   },
   phoneInputWrapper: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
     position: "relative",
   },
   phoneInput: {
@@ -496,6 +503,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
+    paddingRight: 40, // Space for clear button
     fontSize: 15,
     minHeight: 48,
   },
