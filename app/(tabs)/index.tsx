@@ -369,8 +369,8 @@ export default function HomeScreen() {
           "[Home] Sample transaction data:",
           transactionsData.transactions.slice(0, 2)
         );
-        allTransactions = transactionsData.transactions.map((tx: any) => ({
-          id: tx.id || `tx_${Date.now()}_${Math.random()}`,
+        allTransactions = transactionsData.transactions.map((tx: any, index: number) => ({
+          id: tx.id || `tx_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
           amount: tx.amount || 0,
           description: tx.description || "Unknown Transaction",
           date: tx.date || new Date().toISOString(),
@@ -549,53 +549,14 @@ export default function HomeScreen() {
   // Check for new transactions when screen comes into focus
   const checkForNewTransaction = async () => {
     try {
-      console.log("💰 [Home] Checking AsyncStorage for new transactions...");
-      const newTransactionData = await AsyncStorage.getItem("newTransaction");
-      console.log(
-        "💰 [Home] AsyncStorage data:",
-        newTransactionData ? "Found data" : "No data"
-      );
-
-      if (newTransactionData) {
-        const newTransaction = JSON.parse(newTransactionData);
-        console.log(
-          "💰 [Home] Found new transaction in storage:",
-          newTransaction
-        );
-
-        // Add to local transactions list immediately (avoid duplicates from API)
-        setTransactions((prev) => {
-          console.log(
-            "💰 [Home] Adding transaction to list. Previous count:",
-            prev.length
-          );
-          // Check if transaction already exists to avoid duplicates
-          const transactionExists = prev.some((tx) => tx.id === newTransaction.id);
-          if (transactionExists) {
-            console.log(
-              "💰 [Home] Transaction already exists in list (from API), skipping duplicate"
-            );
-            return prev;
-          }
-          const newList = [newTransaction, ...prev];
-          console.log("💰 [Home] New list count:", newList.length);
-          return newList;
-        });
-
-        // Update balance immediately
-        updateBalanceOnTransaction(newTransaction);
-
-        // Clear the storage
-        await AsyncStorage.removeItem("newTransaction");
-
-        console.log(
-          "💰 [Home] New transaction added to local state and storage cleared"
-        );
-      } else {
-        console.log("💰 [Home] No new transactions found in AsyncStorage");
-      }
+      console.log("💰 [Home] Checking for new transactions...");
+      
+      // Clear any stale AsyncStorage data to prevent duplicates
+      await AsyncStorage.removeItem("newTransaction");
+      
+      console.log("💰 [Home] AsyncStorage cleared, relying on API refresh for new transactions");
     } catch (error) {
-      console.error("💰 [Home] Error processing new transaction:", error);
+      console.error("💰 [Home] Error clearing AsyncStorage:", error);
     }
   };
 
