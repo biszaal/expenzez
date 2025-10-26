@@ -184,7 +184,7 @@ export default function Login() {
         if (result.success) {
           if (result.needsProfileCompletion) {
             router.replace({
-              pathname: "/auth/AppleProfileCompletion",
+              pathname: "/auth/AppleProfileFlow",
               params: {
                 user: JSON.stringify(result.user),
               },
