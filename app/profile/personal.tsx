@@ -222,24 +222,14 @@ export default function PersonalInformationScreen() {
         showError("Last name is required");
         return;
       }
-      if (!formData.email.trim()) {
-        showError("Email is required");
-        return;
-      }
-
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        showError("Please enter a valid email address");
-        return;
-      }
 
       console.log("💾 [PersonalInfo] Saving profile data:", formData);
 
+      // Note: Email is intentionally excluded from updates (readonly for security)
       const updateData = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        email: formData.email.trim(),
+        email: formData.email.trim(), // Included for backend compatibility, but will not be updated
         phone: formData.phone?.trim() || "",
         address: formData.address?.trim() || "",
         dateOfBirth: formData.dateOfBirth?.trim() || "",
@@ -506,21 +496,19 @@ export default function PersonalInformationScreen() {
                   styles.textInput,
                   {
                     borderColor: colors.border.light,
-                    backgroundColor: colors.background.primary,
-                    color: colors.text.primary,
-                  },
-                  !isEditing && {
                     backgroundColor: colors.gray[50],
                     color: colors.text.secondary,
                   },
                 ]}
                 value={formData.email}
-                onChangeText={(value) => handleFieldChange("email", value)}
-                editable={isEditing}
+                editable={false}
                 placeholder="Enter email address"
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
+              <Text style={[styles.helperText, { color: colors.text.tertiary }]}>
+                Email address cannot be changed for security reasons
+              </Text>
             </View>
 
             <View style={styles.formField}>
@@ -731,5 +719,10 @@ const styles = StyleSheet.create({
   textArea: {
     height: 80,
     textAlignVertical: "top",
+  },
+  helperText: {
+    fontSize: 12,
+    marginTop: 4,
+    fontStyle: "italic",
   },
 });
