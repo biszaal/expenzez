@@ -37,6 +37,14 @@ export class XPService {
       cooldown: 5 // 5 minutes between rewards
     },
     {
+      id: 'add-income',
+      name: 'Add Income',
+      description: 'Track your income sources',
+      xp: 5,
+      category: 'daily',
+      cooldown: 5 // 5 minutes between rewards
+    },
+    {
       id: 'check-progress',
       name: 'Check Progress',
       description: 'Review your financial stats',
