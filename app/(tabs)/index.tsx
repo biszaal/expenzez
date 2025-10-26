@@ -369,21 +369,25 @@ export default function HomeScreen() {
           "[Home] Sample transaction data:",
           transactionsData.transactions.slice(0, 2)
         );
-        allTransactions = transactionsData.transactions.map((tx: any, index: number) => ({
-          id: tx.id || `tx_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
-          amount: tx.amount || 0,
-          description: tx.description || "Unknown Transaction",
-          date: tx.date || new Date().toISOString(),
-          timestamp: tx.date || new Date().toISOString(),
-          merchant: tx.merchant || tx.description || "Manual Entry",
-          category: tx.category || "General",
-          accountId: tx.accountId || "manual",
-          type: tx.type || (tx.amount < 0 ? "debit" : "credit"),
-          originalAmount: Math.abs(tx.amount || 0),
-          accountType: tx.accountType || "Manual Account",
-          isPending: tx.isPending || false,
-          currency: tx.currency || "GBP",
-        }));
+        allTransactions = transactionsData.transactions.map(
+          (tx: any, index: number) => ({
+            id:
+              tx.id ||
+              `tx_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
+            amount: tx.amount || 0,
+            description: tx.description || "Unknown Transaction",
+            date: tx.date || new Date().toISOString(),
+            timestamp: tx.date || new Date().toISOString(),
+            merchant: tx.merchant || tx.description || "Manual Entry",
+            category: tx.category || "General",
+            accountId: tx.accountId || "manual",
+            type: tx.type || (tx.amount < 0 ? "debit" : "credit"),
+            originalAmount: Math.abs(tx.amount || 0),
+            accountType: tx.accountType || "Manual Account",
+            isPending: tx.isPending || false,
+            currency: tx.currency || "GBP",
+          })
+        );
       }
 
       // Sort by date (newest first)
@@ -550,11 +554,13 @@ export default function HomeScreen() {
   const checkForNewTransaction = async () => {
     try {
       console.log("💰 [Home] Checking for new transactions...");
-      
+
       // Clear any stale AsyncStorage data to prevent duplicates
       await AsyncStorage.removeItem("newTransaction");
-      
-      console.log("💰 [Home] AsyncStorage cleared, relying on API refresh for new transactions");
+
+      console.log(
+        "💰 [Home] AsyncStorage cleared, relying on API refresh for new transactions"
+      );
     } catch (error) {
       console.error("💰 [Home] Error clearing AsyncStorage:", error);
     }
