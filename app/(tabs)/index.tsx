@@ -193,20 +193,15 @@ export default function HomeScreen() {
       // Save the updated manual balance to database
       saveManualBalance(newManualBalance);
     } else {
-      // Update calculated balance using all transactions
-      setTransactions((prevTransactions) => {
-        const allTransactions = [transaction, ...prevTransactions];
-        const newBalance = TransactionService.calculateBalance(allTransactions);
-        setTotalBalance(newBalance);
-
+      // Update calculated balance immediately
+      setTotalBalance((prevBalance) => {
+        const newBalance = prevBalance + transaction.amount;
         console.log("💰 [Home] Calculated balance updated:", {
-          oldBalance: totalBalance,
+          oldBalance: prevBalance,
           newBalance: newBalance,
           transactionAmount: transaction.amount,
-          totalTransactions: allTransactions.length,
         });
-
-        return allTransactions;
+        return newBalance;
       });
     }
 
@@ -553,16 +548,53 @@ export default function HomeScreen() {
   // Check for new transactions when screen comes into focus
   const checkForNewTransaction = async () => {
     try {
-      console.log("💰 [Home] Checking for new transactions...");
-
-      // Clear any stale AsyncStorage data to prevent duplicates
-      await AsyncStorage.removeItem("newTransaction");
-
+      console.log("💰 [Home] Checking AsyncStorage for new transactions...");
+      const newTransactionData = await AsyncStorage.getItem("newTransaction");
       console.log(
-        "💰 [Home] AsyncStorage cleared, relying on API refresh for new transactions"
+        "💰 [Home] AsyncStorage data:",
+        newTransactionData ? "Found data" : "No data"
       );
+
+      if (newTransactionData) {
+        const newTransaction = JSON.parse(newTransactionData);
+        console.log(
+          "💰 [Home] Found new transaction in storage:",
+          newTransaction
+        );
+
+        // Update balance immediately
+        updateBalanceOnTransaction(newTransaction);
+
+        // Add to local transactions list for immediate display
+        setTransactions((prev) => {
+          console.log(
+            "💰 [Home] Adding transaction to list. Previous count:",
+            prev.length
+          );
+          // Check if transaction already exists to avoid duplicates
+          const transactionExists = prev.some((tx) => tx.id === newTransaction.id);
+          if (transactionExists) {
+            console.log(
+              "💰 [Home] Transaction already exists in list, skipping duplicate"
+            );
+            return prev;
+          }
+          const newList = [newTransaction, ...prev];
+          console.log("💰 [Home] New list count:", newList.length);
+          return newList;
+        });
+
+        // Clear the storage
+        await AsyncStorage.removeItem("newTransaction");
+
+        console.log(
+          "💰 [Home] New transaction added to local state and balance updated"
+        );
+      } else {
+        console.log("💰 [Home] No new transactions found in AsyncStorage");
+      }
     } catch (error) {
-      console.error("💰 [Home] Error clearing AsyncStorage:", error);
+      console.error("💰 [Home] Error processing new transaction:", error);
     }
   };
 
