@@ -66,15 +66,21 @@ export default function PersonalInformationScreen() {
       setLoading(true);
       try {
         console.log("🔍 [Personal] Fetching profile data...");
-        console.log("🔍 [Personal] Current user from AuthContext:", JSON.stringify(user, null, 2));
+        console.log(
+          "🔍 [Personal] Current user from AuthContext:",
+          JSON.stringify(user, null, 2)
+        );
 
         // Clear cache and force refresh to bypass cache
         try {
           const { clearCachedData } = await import(
             "../../services/config/apiCache"
           );
-          await clearCachedData("user_profile");
-          console.log("🧹 [Personal] Cleared profile cache");
+          // Clear the user-specific cache key
+          const userId = user?.sub || user?.id || user?.email || user?.username || "default";
+          const cacheKey = `user_profile_${userId}`;
+          await clearCachedData(cacheKey);
+          console.log(`🧹 [Personal] Cleared profile cache for user: ${userId}`);
         } catch (cacheError) {
           console.warn("⚠️ [Personal] Could not clear cache:", cacheError);
         }
@@ -84,16 +90,16 @@ export default function PersonalInformationScreen() {
           "📊 [Personal] Profile API response:",
           JSON.stringify(data, null, 2)
         );
-        console.log(
-          "🔍 [Personal] Specific fields check:",
-          {
-            phone: data?.phone,
-            phone_number: data?.phone_number,
-            dateOfBirth: data?.dateOfBirth,
-            birthdate: data?.birthdate,
-            address: data?.address
-          }
-        );
+        
+        // Debug: Check if the API call is actually being made
+        console.log("🔍 [Personal] Force refresh flag:", { forceRefresh: true });
+        console.log("🔍 [Personal] Specific fields check:", {
+          phone: data?.phone,
+          phone_number: data?.phone_number,
+          dateOfBirth: data?.dateOfBirth,
+          birthdate: data?.birthdate,
+          address: data?.address,
+        });
 
         // Debug: Check if data is null or empty
         if (!data) {
@@ -109,15 +115,28 @@ export default function PersonalInformationScreen() {
           // Map the API response to form fields
           const mappedData = {
             firstName:
-              data.firstName || data.given_name || data.givenName || data.first_name || "",
-            lastName: data.lastName || data.family_name || data.familyName || data.last_name || "",
+              data.firstName ||
+              data.given_name ||
+              data.givenName ||
+              data.first_name ||
+              "",
+            lastName:
+              data.lastName ||
+              data.family_name ||
+              data.familyName ||
+              data.last_name ||
+              "",
             email: data.email || "",
             phone: data.phone || data.phone_number || data.phoneNumber || "",
             address: data.address || "",
             city: data.city || "",
             country: data.country || "",
             dateOfBirth:
-              data.dateOfBirth || data.birthdate || data.date_of_birth || data.birthDate || "",
+              data.dateOfBirth ||
+              data.birthdate ||
+              data.date_of_birth ||
+              data.birthDate ||
+              "",
             occupation: data.occupation || "",
             company: data.company || "",
           };
@@ -175,8 +194,16 @@ export default function PersonalInformationScreen() {
         // Try to use user data as fallback on error
         const userData = user
           ? {
-              firstName: user.name?.split(" ")[0] || user.given_name || user.firstName || "",
-              lastName: user.name?.split(" ").slice(1).join(" ") || user.family_name || user.lastName || "",
+              firstName:
+                user.name?.split(" ")[0] ||
+                user.given_name ||
+                user.firstName ||
+                "",
+              lastName:
+                user.name?.split(" ").slice(1).join(" ") ||
+                user.family_name ||
+                user.lastName ||
+                "",
               email: user.email || "",
               phone: user.phone_number || user.phone || "",
               address: user.address || "",
@@ -523,7 +550,9 @@ export default function PersonalInformationScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
-              <Text style={[styles.helperText, { color: colors.text.tertiary }]}>
+              <Text
+                style={[styles.helperText, { color: colors.text.tertiary }]}
+              >
                 Email address cannot be changed for security reasons
               </Text>
             </View>
