@@ -66,6 +66,7 @@ export default function PersonalInformationScreen() {
       setLoading(true);
       try {
         console.log("🔍 [Personal] Fetching profile data...");
+        console.log("🔍 [Personal] Current user from AuthContext:", JSON.stringify(user, null, 2));
 
         // Clear cache and force refresh to bypass cache
         try {
@@ -153,21 +154,27 @@ export default function PersonalInformationScreen() {
           );
           setFormData(userData);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("❌ [Personal] Error loading profile:", error);
+        console.error("❌ [Personal] Error details:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          stack: error.stack,
+        });
         // Try to use user data as fallback on error
         const userData = user
           ? {
-              firstName: user.name?.split(" ")[0] || "",
-              lastName: user.name?.split(" ").slice(1).join(" ") || "",
+              firstName: user.name?.split(" ")[0] || user.given_name || user.firstName || "",
+              lastName: user.name?.split(" ").slice(1).join(" ") || user.family_name || user.lastName || "",
               email: user.email || "",
-              phone: "",
-              address: "",
+              phone: user.phone_number || user.phone || "",
+              address: user.address || "",
               city: "",
               country: "",
-              dateOfBirth: "",
-              occupation: "",
-              company: "",
+              dateOfBirth: user.birthdate || user.dateOfBirth || "",
+              occupation: user.occupation || "",
+              company: user.company || "",
             }
           : {
               firstName: "",
