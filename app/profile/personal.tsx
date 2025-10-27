@@ -44,11 +44,19 @@ export default function PersonalInformationScreen() {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return { year: "", month: "", day: "" };
 
-      return {
+      const result = {
         year: date.getFullYear().toString(),
         month: (date.getMonth() + 1).toString().padStart(2, "0"),
         day: date.getDate().toString().padStart(2, "0"),
       };
+
+      console.log("🔍 [PersonalInfo] Parsing date:", {
+        input: dateString,
+        parsedDate: date.toISOString(),
+        result
+      });
+
+      return result;
     } catch (error) {
       console.warn("Error parsing date:", error);
       return { year: "", month: "", day: "" };
@@ -60,10 +68,26 @@ export default function PersonalInformationScreen() {
     if (!year || !month || !day) return "";
     
     try {
-      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      const yearNum = parseInt(year);
+      const monthNum = parseInt(month);
+      const dayNum = parseInt(day);
+      
+      console.log("🔍 [PersonalInfo] Combining date components:", {
+        year, month, day,
+        yearNum, monthNum, dayNum
+      });
+      
+      const date = new Date(yearNum, monthNum - 1, dayNum);
       if (isNaN(date.getTime())) return "";
       
-      return date.toISOString().split("T")[0];
+      const result = date.toISOString().split("T")[0];
+      console.log("🔍 [PersonalInfo] Combined date result:", {
+        input: { year, month, day },
+        date: date.toISOString(),
+        result
+      });
+      
+      return result;
     } catch (error) {
       console.warn("Error combining date components:", error);
       return "";
@@ -451,6 +475,14 @@ export default function PersonalInformationScreen() {
         formData.birthMonth?.trim() || "",
         formData.birthDay?.trim() || ""
       );
+
+      console.log("🔍 [PersonalInfo] Date components debug:", {
+        birthYear: formData.birthYear?.trim(),
+        birthMonth: formData.birthMonth?.trim(),
+        birthDay: formData.birthDay?.trim(),
+        combinedDateOfBirth,
+        originalDateOfBirth: formData.dateOfBirth
+      });
 
       // Note: Email is intentionally excluded from updates (readonly for security)
       const updateData = {
