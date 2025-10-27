@@ -128,7 +128,7 @@ export default function AppleProfileFlow() {
         address: submitValues.address,
         city: submitValues.city,
         postcode: submitValues.postcode,
-        dateOfBirth: submitValues.dob,
+        birthdate: submitValues.dob,
         gender: submitValues.gender,
       });
 

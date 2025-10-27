@@ -37,35 +37,38 @@ export default function PersonalInformationScreen() {
   const [formData, setFormData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Parse date of birth into components
-  const parseDateOfBirth = (dateString: string) => {
+  // Parse birthdate (MM/DD/YYYY) into components
+  const parseBirthdate = (dateString: string) => {
     if (!dateString) return { year: "", month: "", day: "" };
 
     try {
-      // Parse the ISO date string and use UTC methods to avoid timezone issues
-      const date = new Date(dateString + "T00:00:00.000Z"); // Force UTC interpretation
-      if (isNaN(date.getTime())) return { year: "", month: "", day: "" };
+      // Parse MM/DD/YYYY format
+      const [month, day, year] = dateString.split("/");
+      
+      if (!month || !day || !year) {
+        console.warn("Invalid birthdate format:", dateString);
+        return { year: "", month: "", day: "" };
+      }
 
       const result = {
-        year: date.getUTCFullYear().toString(),
-        month: (date.getUTCMonth() + 1).toString().padStart(2, "0"),
-        day: date.getUTCDate().toString().padStart(2, "0"),
+        year: year,
+        month: month.padStart(2, "0"),
+        day: day.padStart(2, "0"),
       };
 
-      console.log("🔍 [PersonalInfo] Parsing date:", {
+      console.log("🔍 [PersonalInfo] Parsing birthdate:", {
         input: dateString,
-        parsedDate: date.toISOString(),
         result,
       });
 
       return result;
     } catch (error) {
-      console.warn("Error parsing date:", error);
+      console.warn("Error parsing birthdate:", error);
       return { year: "", month: "", day: "" };
     }
   };
 
-  // Combine date components into ISO string
+  // Combine date components into MM/DD/YYYY format
   const combineDateComponents = (year: string, month: string, day: string) => {
     if (!year || !month || !day) return "";
 
@@ -83,14 +86,15 @@ export default function PersonalInformationScreen() {
         dayNum,
       });
 
-      // Use UTC date to avoid timezone issues
-      const date = new Date(Date.UTC(yearNum, monthNum - 1, dayNum));
+      // Validate the date
+      const date = new Date(yearNum, monthNum - 1, dayNum);
       if (isNaN(date.getTime())) return "";
 
-      const result = date.toISOString().split("T")[0];
+      // Format as MM/DD/YYYY
+      const result = `${monthNum.toString().padStart(2, "0")}/${dayNum.toString().padStart(2, "0")}/${yearNum}`;
+      
       console.log("🔍 [PersonalInfo] Combined date result:", {
         input: { year, month, day },
-        date: date.toISOString(),
         result,
       });
 
@@ -101,12 +105,16 @@ export default function PersonalInformationScreen() {
     }
   };
 
-  // Format date of birth for display
-  const formatDateOfBirth = (dateString: string) => {
+  // Format birthdate for display
+  const formatBirthdate = (dateString: string) => {
     if (!dateString) return "";
 
     try {
-      const date = new Date(dateString);
+      // Parse MM/DD/YYYY format
+      const [month, day, year] = dateString.split("/");
+      if (!month || !day || !year) return dateString;
+
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       if (isNaN(date.getTime())) return dateString;
 
       return date.toLocaleDateString("en-GB", {
@@ -115,7 +123,7 @@ export default function PersonalInformationScreen() {
         year: "numeric",
       });
     } catch (error) {
-      console.warn("Error formatting date:", error);
+      console.warn("Error formatting birthdate:", error);
       return dateString;
     }
   };
@@ -184,8 +192,8 @@ export default function PersonalInformationScreen() {
   // Initialize form with user data from AuthContext
   useEffect(() => {
     if (user && !formData) {
-      const dateComponents = parseDateOfBirth(
-        user.birthdate || user.dateOfBirth || ""
+      const dateComponents = parseBirthdate(
+        user.birthdate || ""
       );
       const initialData = {
         firstName: user.given_name || user.firstName || "",
@@ -196,7 +204,7 @@ export default function PersonalInformationScreen() {
         city: "",
         postcode: "",
         country: "",
-        dateOfBirth: user.birthdate || user.dateOfBirth || "",
+        birthdate: user.birthdate || "",
         birthYear: dateComponents.year,
         birthMonth: dateComponents.month,
         birthDay: dateComponents.day,
@@ -290,14 +298,14 @@ export default function PersonalInformationScreen() {
             ? parseAddress(data.address)
             : { street: "", city: "", postcode: "", country: "" };
 
-          // Parse date of birth into components
-          const dateOfBirth =
-            data.dateOfBirth ||
+          // Parse birthdate into components
+          const birthdate =
             data.birthdate ||
+            data.dateOfBirth ||
             data.date_of_birth ||
             data.birthDate ||
             "";
-          const dateComponents = parseDateOfBirth(dateOfBirth);
+          const dateComponents = parseBirthdate(birthdate);
 
           // Map the API response to form fields
           const mappedData = {
@@ -319,7 +327,7 @@ export default function PersonalInformationScreen() {
             city: data.city || addressData.city || "",
             postcode: data.postcode || addressData.postcode || "",
             country: data.country || addressData.country || "",
-            dateOfBirth: dateOfBirth,
+            birthdate: birthdate,
             birthYear: dateComponents.year,
             birthMonth: dateComponents.month,
             birthDay: dateComponents.day,
@@ -346,7 +354,7 @@ export default function PersonalInformationScreen() {
                 address: "",
                 city: "",
                 country: "",
-                dateOfBirth: "",
+                birthdate: "",
                 occupation: "",
                 company: "",
               }
@@ -358,7 +366,7 @@ export default function PersonalInformationScreen() {
                 address: "",
                 city: "",
                 country: "",
-                dateOfBirth: "",
+                birthdate: "",
                 occupation: "",
                 company: "",
               };
@@ -378,8 +386,8 @@ export default function PersonalInformationScreen() {
           stack: error.stack,
         });
         // Try to use user data as fallback on error
-        const fallbackDateComponents = parseDateOfBirth(
-          user?.birthdate || user?.dateOfBirth || ""
+        const fallbackDateComponents = parseBirthdate(
+          user?.birthdate || ""
         );
         const userData = user
           ? {
@@ -399,7 +407,7 @@ export default function PersonalInformationScreen() {
               city: "",
               postcode: "",
               country: "",
-              dateOfBirth: user.birthdate || user.dateOfBirth || "",
+              birthdate: user.birthdate || "",
               birthYear: fallbackDateComponents.year,
               birthMonth: fallbackDateComponents.month,
               birthDay: fallbackDateComponents.day,
@@ -476,8 +484,8 @@ export default function PersonalInformationScreen() {
 
       const combinedAddress = addressParts.join(", ");
 
-      // Combine date components into ISO string
-      const combinedDateOfBirth = combineDateComponents(
+      // Combine date components into MM/DD/YYYY string
+      const combinedBirthdate = combineDateComponents(
         formData.birthYear?.trim() || "",
         formData.birthMonth?.trim() || "",
         formData.birthDay?.trim() || ""
@@ -487,8 +495,8 @@ export default function PersonalInformationScreen() {
         birthYear: formData.birthYear?.trim(),
         birthMonth: formData.birthMonth?.trim(),
         birthDay: formData.birthDay?.trim(),
-        combinedDateOfBirth,
-        originalDateOfBirth: formData.dateOfBirth,
+        combinedBirthdate,
+        originalBirthdate: formData.birthdate,
       });
 
       // Note: Email is intentionally excluded from updates (readonly for security)
@@ -501,7 +509,7 @@ export default function PersonalInformationScreen() {
         city: formData.city?.trim() || "",
         postcode: formData.postcode?.trim() || "",
         country: formData.country?.trim() || "",
-        dateOfBirth: combinedDateOfBirth || formData.dateOfBirth?.trim() || "",
+        birthdate: combinedBirthdate || formData.birthdate?.trim() || "",
         occupation: formData.occupation?.trim() || "",
         company: formData.company?.trim() || "",
       };
@@ -528,7 +536,8 @@ export default function PersonalInformationScreen() {
       // Get the correct user-specific cache key
       const userStr = await AsyncStorage.getItem("user");
       const user = userStr ? JSON.parse(userStr) : null;
-      const userId = user?.sub || user?.id || user?.email || user?.username || "default";
+      const userId =
+        user?.sub || user?.id || user?.email || user?.username || "default";
       const cacheKey = `user_profile_${userId}`;
 
       // Clear the profile cache with the correct user-specific key
@@ -937,11 +946,11 @@ export default function PersonalInformationScreen() {
                   />
                 </View>
               </View>
-              {!isEditing && formData.dateOfBirth && (
+              {!isEditing && formData.birthdate && (
                 <Text
                   style={[styles.helperText, { color: colors.text.tertiary }]}
                 >
-                  {formatDateOfBirth(formData.dateOfBirth)}
+                  {formatBirthdate(formData.birthdate)}
                 </Text>
               )}
             </View>
