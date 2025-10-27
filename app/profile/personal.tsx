@@ -7,6 +7,7 @@ import {
   Alert,
   Text,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { useAlert } from "../../hooks/useAlert";
@@ -524,8 +525,14 @@ export default function PersonalInformationScreen() {
         "../../services/config/apiCache"
       );
 
-      // Clear the profile cache (uses "user_profile" key in cachedApiCall)
-      await clearCachedData("user_profile");
+      // Get the correct user-specific cache key
+      const userStr = await AsyncStorage.getItem("user");
+      const user = userStr ? JSON.parse(userStr) : null;
+      const userId = user?.sub || user?.id || user?.email || user?.username || "default";
+      const cacheKey = `user_profile_${userId}`;
+
+      // Clear the profile cache with the correct user-specific key
+      await clearCachedData(cacheKey);
 
       console.log("🧹 [PersonalInfo] Cleared profile cache");
 
