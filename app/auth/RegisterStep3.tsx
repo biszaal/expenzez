@@ -28,10 +28,10 @@ export default function RegisterStep3({
     }
 
     if (!emailRegex.test(values.email)) {
-      setEmailStatus({ 
-        checking: false, 
+      setEmailStatus({
+        checking: false,
         exists: false,
-        error: "Please enter a valid email address"
+        error: "Please enter a valid email address",
       });
       return;
     }
@@ -40,7 +40,7 @@ export default function RegisterStep3({
     setEmailStatus({
       checking: false,
       exists: false, // We assume available - server will validate during registration
-      error: undefined
+      error: undefined,
     });
   }, [values.email]);
 
@@ -67,10 +67,14 @@ export default function RegisterStep3({
     const hasUpperCase = /[A-Z]/.test(values.password);
     const hasLowerCase = /[a-z]/.test(values.password);
     const hasNumbers = /\d/.test(values.password);
-    const hasSymbols = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(values.password);
+    const hasSymbols = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(
+      values.password
+    );
 
     if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSymbols) {
-      setLocalPasswordError("Password must contain uppercase, lowercase, number, and symbol");
+      setLocalPasswordError(
+        "Password must contain uppercase, lowercase, number, and symbol"
+      );
       return;
     }
 
@@ -81,7 +85,12 @@ export default function RegisterStep3({
   const currentError = passwordError || localPasswordError;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: colors.background.secondary },
+      ]}
+    >
       {/* Glass Progress Indicator */}
       <View style={styles.progressContainer}>
         <View style={styles.completedStep}>
@@ -93,15 +102,21 @@ export default function RegisterStep3({
         </View>
         <View style={styles.completedLine} />
         <View style={styles.activeStep}>
-          <Typography variant="caption" style={styles.activeStepText}>3</Typography>
+          <Typography variant="caption" style={styles.activeStepText}>
+            3
+          </Typography>
         </View>
         <View style={styles.progressLine} />
         <View style={styles.inactiveStep}>
-          <Typography variant="caption" style={styles.stepText}>4</Typography>
+          <Typography variant="caption" style={styles.stepText}>
+            4
+          </Typography>
         </View>
         <View style={styles.progressLine} />
         <View style={styles.inactiveStep}>
-          <Typography variant="caption" style={styles.stepText}>5</Typography>
+          <Typography variant="caption" style={styles.stepText}>
+            5
+          </Typography>
         </View>
       </View>
 
@@ -135,21 +150,41 @@ export default function RegisterStep3({
             textContentType="emailAddress"
             style={styles.input}
           />
-          
+
           {/* Clean Email Status */}
           {values.email && (
             <View style={styles.statusContainer}>
               {emailStatus.error ? (
                 <>
-                  <Ionicons name="close-circle" size={16} color={colors.error[500]} />
-                  <Typography variant="caption" style={StyleSheet.flatten([styles.statusText, { color: colors.error[600] }])}>
+                  <Ionicons
+                    name="close-circle"
+                    size={16}
+                    color={colors.error[500]}
+                  />
+                  <Typography
+                    variant="caption"
+                    style={StyleSheet.flatten([
+                      styles.statusText,
+                      { color: colors.error[600] },
+                    ])}
+                  >
                     {emailStatus.error}
                   </Typography>
                 </>
-              ) : values.email.includes('@') && !emailStatus.error ? (
+              ) : values.email.includes("@") && !emailStatus.error ? (
                 <>
-                  <Ionicons name="checkmark-circle" size={16} color={colors.success[500]} />
-                  <Typography variant="caption" style={StyleSheet.flatten([styles.statusText, { color: colors.success[600] }])}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color={colors.success[500]}
+                  />
+                  <Typography
+                    variant="caption"
+                    style={StyleSheet.flatten([
+                      styles.statusText,
+                      { color: colors.success[600] },
+                    ])}
+                  >
                     Valid email format
                   </Typography>
                 </>
@@ -205,9 +240,17 @@ export default function RegisterStep3({
 
           <View style={styles.requirementItem}>
             <Ionicons
-              name={values.password.length >= 8 ? "checkmark-circle" : "ellipse-outline"}
+              name={
+                values.password.length >= 8
+                  ? "checkmark-circle"
+                  : "ellipse-outline"
+              }
               size={16}
-              color={values.password.length >= 8 ? "#10b981" : "rgba(255, 255, 255, 0.4)"}
+              color={
+                values.password.length >= 8
+                  ? "#10b981"
+                  : "rgba(255, 255, 255, 0.4)"
+              }
             />
             <Typography variant="caption" style={styles.requirementText}>
               At least 8 characters
@@ -216,9 +259,17 @@ export default function RegisterStep3({
 
           <View style={styles.requirementItem}>
             <Ionicons
-              name={/[A-Z]/.test(values.password) ? "checkmark-circle" : "ellipse-outline"}
+              name={
+                /[A-Z]/.test(values.password)
+                  ? "checkmark-circle"
+                  : "ellipse-outline"
+              }
               size={16}
-              color={/[A-Z]/.test(values.password) ? "#10b981" : "rgba(255, 255, 255, 0.4)"}
+              color={
+                /[A-Z]/.test(values.password)
+                  ? "#10b981"
+                  : "rgba(255, 255, 255, 0.4)"
+              }
             />
             <Typography variant="caption" style={styles.requirementText}>
               One uppercase letter
@@ -227,9 +278,17 @@ export default function RegisterStep3({
 
           <View style={styles.requirementItem}>
             <Ionicons
-              name={/[a-z]/.test(values.password) ? "checkmark-circle" : "ellipse-outline"}
+              name={
+                /[a-z]/.test(values.password)
+                  ? "checkmark-circle"
+                  : "ellipse-outline"
+              }
               size={16}
-              color={/[a-z]/.test(values.password) ? "#10b981" : "rgba(255, 255, 255, 0.4)"}
+              color={
+                /[a-z]/.test(values.password)
+                  ? "#10b981"
+                  : "rgba(255, 255, 255, 0.4)"
+              }
             />
             <Typography variant="caption" style={styles.requirementText}>
               One lowercase letter
@@ -238,9 +297,17 @@ export default function RegisterStep3({
 
           <View style={styles.requirementItem}>
             <Ionicons
-              name={/\d/.test(values.password) ? "checkmark-circle" : "ellipse-outline"}
+              name={
+                /\d/.test(values.password)
+                  ? "checkmark-circle"
+                  : "ellipse-outline"
+              }
               size={16}
-              color={/\d/.test(values.password) ? "#10b981" : "rgba(255, 255, 255, 0.4)"}
+              color={
+                /\d/.test(values.password)
+                  ? "#10b981"
+                  : "rgba(255, 255, 255, 0.4)"
+              }
             />
             <Typography variant="caption" style={styles.requirementText}>
               One number
@@ -249,9 +316,17 @@ export default function RegisterStep3({
 
           <View style={styles.requirementItem}>
             <Ionicons
-              name={/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(values.password) ? "checkmark-circle" : "ellipse-outline"}
+              name={
+                /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(values.password)
+                  ? "checkmark-circle"
+                  : "ellipse-outline"
+              }
               size={16}
-              color={/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(values.password) ? "#10b981" : "rgba(255, 255, 255, 0.4)"}
+              color={
+                /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(values.password)
+                  ? "#10b981"
+                  : "rgba(255, 255, 255, 0.4)"
+              }
             />
             <Typography variant="caption" style={styles.requirementText}>
               One special character
@@ -301,9 +376,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   progressContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 16,
     paddingHorizontal: 16,
   },
@@ -311,63 +386,63 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
     borderWidth: 0,
   },
   activeStep: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
     borderWidth: 0,
   },
   inactiveStep: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
     borderWidth: 0,
   },
   completedLine: {
     width: 24,
     height: 2,
     marginHorizontal: 4,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   progressLine: {
     width: 24,
     height: 2,
     marginHorizontal: 4,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   stepText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: 'transparent',
+    fontWeight: "600",
+    color: "transparent",
   },
   activeStepText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: 'transparent',
+    fontWeight: "600",
+    color: "transparent",
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
   },
   title: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
   },
   formFields: {
@@ -379,10 +454,10 @@ const styles = StyleSheet.create({
   inputLabel: {
     marginBottom: 6,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   input: {
-    borderWidth: 1,
+    borderWidth: 0,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -390,8 +465,8 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 8,
     paddingHorizontal: 4,
     gap: 6,
@@ -411,8 +486,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   requirementItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 4,
     gap: 6,
   },
@@ -421,8 +496,8 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 12,
     borderRadius: 10,
     borderWidth: 1,
@@ -435,8 +510,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 16,
     gap: 12,
   },
