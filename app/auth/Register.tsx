@@ -167,7 +167,7 @@ export default function Register() {
         email: submitValues.email,
         password: submitValues.password,
         phone_number: submitValues.phone_number,
-        birthdate: submitValues.dob,
+        dateOfBirth: submitValues.dob,
         address: submitValues.address,
         gender: submitValues.gender,
       });
