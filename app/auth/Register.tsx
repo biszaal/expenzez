@@ -86,7 +86,7 @@ export default function Register() {
       return;
     }
 
-    // CRITICAL: Ensure birthdate is EXACTLY 10 characters in YYYY-MM-DD format for AWS Cognito
+    // Convert birthdate from YYYY-MM-DD to MM/DD/YYYY format for backend
     if (submitValues.dob) {
       console.log("🔍 [Register] Original birthdate received:", {
         value: submitValues.dob,
@@ -110,10 +110,14 @@ export default function Register() {
         return;
       }
 
-      // Update with date-only format
-      submitValues.dob = dateOnly;
-      console.log("✅ [Register] Birthdate validated and formatted:", {
-        value: submitValues.dob,
+      // Convert from YYYY-MM-DD to MM/DD/YYYY format
+      const [year, month, day] = dateOnly.split("-");
+      const formattedDate = `${month}/${day}/${year}`;
+      
+      submitValues.dob = formattedDate;
+      console.log("✅ [Register] Birthdate converted to MM/DD/YYYY:", {
+        original: dateOnly,
+        converted: submitValues.dob,
         length: submitValues.dob.length,
       });
     }
