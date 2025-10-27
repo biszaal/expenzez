@@ -18,7 +18,8 @@ export const profileAPI = {
       user?.sub || user?.id || user?.email || user?.username || "default";
 
     const cacheKey = `user_profile_${userId}`;
-    const cached = getCachedData(cacheKey);
+    const cached = await getCachedData(cacheKey);
+    console.log(`🔍 [ProfileAPI] Cache check for ${cacheKey}:`, { cached: !!cached, userId });
     if (cached) {
       console.log(`✅ [ProfileAPI] Using cached profile for user: ${userId}`);
       return cached;
