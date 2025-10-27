@@ -4,18 +4,15 @@ import {
   View,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   Alert,
   Text,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { useAlert } from "../../hooks/useAlert";
 import { Header, Section, ListItem, Button } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
-import { spacing, borderRadius, shadows } from "../../constants/theme";
+import { spacing } from "../../constants/theme";
 import { getProfile } from "../../services/dataSource";
 import { profileAPI } from "../../services/api/profileAPI";
 import { useAuth } from "../../app/auth/AuthContext";
@@ -29,7 +26,6 @@ import { useAuth } from "../../app/auth/AuthContext";
  * - Save changes
  */
 export default function PersonalInformationScreen() {
-  const router = useRouter();
   const { isLoggedIn } = useAuthGuard();
   const { showSuccess, showError } = useAlert();
   const { colors } = useTheme();
@@ -43,13 +39,22 @@ export default function PersonalInformationScreen() {
   // Initialize form with user data from AuthContext
   useEffect(() => {
     if (user && !formData) {
+      const dateComponents = parseDateOfBirth(
+        user.birthdate || user.dateOfBirth || ""
+      );
       const initialData = {
         firstName: user.given_name || user.firstName || "",
         lastName: user.family_name || user.lastName || "",
         email: user.email || "",
         phone: user.phone_number || user.phone || "",
         address: user.address || "",
+        city: "",
+        postcode: "",
+        country: "",
         dateOfBirth: user.birthdate || user.dateOfBirth || "",
+        birthYear: dateComponents.year,
+        birthMonth: dateComponents.month,
+        birthDay: dateComponents.day,
         occupation: user.occupation || "",
         company: user.company || "",
       };
@@ -59,7 +64,7 @@ export default function PersonalInformationScreen() {
       );
       setFormData(initialData);
     }
-  }, [user]);
+  }, [user, formData]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -136,8 +141,19 @@ export default function PersonalInformationScreen() {
 
         if (data) {
           // Parse address if it's a single string
-          const addressData = data.address ? parseAddress(data.address) : { street: "", city: "", postcode: "", country: "" };
-          
+          const addressData = data.address
+            ? parseAddress(data.address)
+            : { street: "", city: "", postcode: "", country: "" };
+
+          // Parse date of birth into components
+          const dateOfBirth =
+            data.dateOfBirth ||
+            data.birthdate ||
+            data.date_of_birth ||
+            data.birthDate ||
+            "";
+          const dateComponents = parseDateOfBirth(dateOfBirth);
+
           // Map the API response to form fields
           const mappedData = {
             firstName:
@@ -158,12 +174,10 @@ export default function PersonalInformationScreen() {
             city: data.city || addressData.city || "",
             postcode: data.postcode || addressData.postcode || "",
             country: data.country || addressData.country || "",
-            dateOfBirth:
-              data.dateOfBirth ||
-              data.birthdate ||
-              data.date_of_birth ||
-              data.birthDate ||
-              "",
+            dateOfBirth: dateOfBirth,
+            birthYear: dateComponents.year,
+            birthMonth: dateComponents.month,
+            birthDay: dateComponents.day,
             occupation: data.occupation || "",
             company: data.company || "",
           };
@@ -219,6 +233,9 @@ export default function PersonalInformationScreen() {
           stack: error.stack,
         });
         // Try to use user data as fallback on error
+        const fallbackDateComponents = parseDateOfBirth(
+          user?.birthdate || user?.dateOfBirth || ""
+        );
         const userData = user
           ? {
               firstName:
@@ -235,8 +252,12 @@ export default function PersonalInformationScreen() {
               phone: user.phone_number || user.phone || "",
               address: user.address || "",
               city: "",
+              postcode: "",
               country: "",
               dateOfBirth: user.birthdate || user.dateOfBirth || "",
+              birthYear: fallbackDateComponents.year,
+              birthMonth: fallbackDateComponents.month,
+              birthDay: fallbackDateComponents.day,
               occupation: user.occupation || "",
               company: user.company || "",
             }
@@ -247,8 +268,12 @@ export default function PersonalInformationScreen() {
               phone: "",
               address: "",
               city: "",
+              postcode: "",
               country: "",
               dateOfBirth: "",
+              birthYear: "",
+              birthMonth: "",
+              birthDay: "",
               occupation: "",
               company: "",
             };
@@ -273,19 +298,52 @@ export default function PersonalInformationScreen() {
       </Text>
     );
 
+  // Parse date of birth into components
+  const parseDateOfBirth = (dateString: string) => {
+    if (!dateString) return { year: "", month: "", day: "" };
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return { year: "", month: "", day: "" };
+
+      return {
+        year: date.getFullYear().toString(),
+        month: (date.getMonth() + 1).toString().padStart(2, "0"),
+        day: date.getDate().toString().padStart(2, "0"),
+      };
+    } catch (error) {
+      console.warn("Error parsing date:", error);
+      return { year: "", month: "", day: "" };
+    }
+  };
+
+  // Combine date components into ISO string
+  const combineDateComponents = (year: string, month: string, day: string) => {
+    if (!year || !month || !day) return "";
+
+    try {
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      if (isNaN(date.getTime())) return "";
+
+      return date.toISOString().split("T")[0];
+    } catch (error) {
+      console.warn("Error combining date components:", error);
+      return "";
+    }
+  };
+
   // Format date of birth for display
   const formatDateOfBirth = (dateString: string) => {
     if (!dateString) return "";
-    
+
     try {
-      // Handle both ISO format and simple date format
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return dateString; // Return original if invalid
-      
-      return date.toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
+      if (isNaN(date.getTime())) return dateString;
+
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
       });
     } catch (error) {
       console.warn("Error formatting date:", error);
@@ -293,66 +351,51 @@ export default function PersonalInformationScreen() {
     }
   };
 
-  // Format date for input (YYYY-MM-DD)
-  const formatDateForInput = (dateString: string) => {
-    if (!dateString) return "";
-    
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return dateString;
-      
-      return date.toISOString().split('T')[0];
-    } catch (error) {
-      console.warn("Error formatting date for input:", error);
-      return dateString;
-    }
-  };
-
   // Format phone number for display
   const formatPhoneNumber = (phone: string) => {
     if (!phone) return "";
-    
+
     // Remove all non-digit characters
-    const cleaned = phone.replace(/\D/g, '');
-    
+    const cleaned = phone.replace(/\D/g, "");
+
     // Format UK phone numbers
-    if (cleaned.startsWith('44') && cleaned.length === 12) {
+    if (cleaned.startsWith("44") && cleaned.length === 12) {
       return `+44 ${cleaned.slice(2, 6)} ${cleaned.slice(6, 9)} ${cleaned.slice(9)}`;
-    } else if (cleaned.startsWith('0') && cleaned.length === 11) {
+    } else if (cleaned.startsWith("0") && cleaned.length === 11) {
       return `+44 ${cleaned.slice(1, 5)} ${cleaned.slice(5, 8)} ${cleaned.slice(8)}`;
     }
-    
+
     return phone; // Return original if not a standard UK format
   };
 
   // Parse address into components
   const parseAddress = (address: string) => {
     if (!address) return { street: "", city: "", postcode: "", country: "" };
-    
+
     // Parse UK address format: "Street, City, Postcode, Country"
-    const parts = address.split(',').map(part => part.trim());
-    
+    const parts = address.split(",").map((part) => part.trim());
+
     // For the address "Richard Street South, west bromwich, England, B70 8AN, United Kingdom"
     // parts[0] = "Richard Street South" (street)
-    // parts[1] = "west bromwich" (city) 
+    // parts[1] = "west bromwich" (city)
     // parts[2] = "England" (this should be country, not postcode)
     // parts[3] = "B70 8AN" (this should be postcode)
     // parts[4] = "United Kingdom" (this should be country)
-    
+
     // Look for postcode pattern (UK postcodes: letters + numbers + space + letters + numbers)
     const postcodePattern = /\b[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}\b/i;
     let postcode = "";
     let country = "";
     let street = parts[0] || "";
     let city = parts[1] || "";
-    
+
     // Find postcode and country
     for (let i = 2; i < parts.length; i++) {
       if (postcodePattern.test(parts[i])) {
         postcode = parts[i];
         // Everything after postcode is country
         if (i + 1 < parts.length) {
-          country = parts.slice(i + 1).join(', ');
+          country = parts.slice(i + 1).join(", ");
         }
         break;
       } else if (i === parts.length - 1) {
@@ -360,12 +403,12 @@ export default function PersonalInformationScreen() {
         country = parts[i];
       }
     }
-    
+
     return {
       street,
       city,
       postcode,
-      country
+      country,
     };
   };
 
@@ -397,10 +440,17 @@ export default function PersonalInformationScreen() {
         formData.address?.trim() || "",
         formData.city?.trim() || "",
         formData.postcode?.trim() || "",
-        formData.country?.trim() || ""
-      ].filter(part => part.length > 0);
-      
-      const combinedAddress = addressParts.join(', ');
+        formData.country?.trim() || "",
+      ].filter((part) => part.length > 0);
+
+      const combinedAddress = addressParts.join(", ");
+
+      // Combine date components into ISO string
+      const combinedDateOfBirth = combineDateComponents(
+        formData.birthYear?.trim() || "",
+        formData.birthMonth?.trim() || "",
+        formData.birthDay?.trim() || ""
+      );
 
       // Note: Email is intentionally excluded from updates (readonly for security)
       const updateData = {
@@ -412,7 +462,7 @@ export default function PersonalInformationScreen() {
         city: formData.city?.trim() || "",
         postcode: formData.postcode?.trim() || "",
         country: formData.country?.trim() || "",
-        dateOfBirth: formData.dateOfBirth?.trim() || "",
+        dateOfBirth: combinedDateOfBirth || formData.dateOfBirth?.trim() || "",
         occupation: formData.occupation?.trim() || "",
         company: formData.company?.trim() || "",
       };
@@ -710,7 +760,9 @@ export default function PersonalInformationScreen() {
                     color: colors.text.secondary,
                   },
                 ]}
-                value={isEditing ? formData.phone : formatPhoneNumber(formData.phone)}
+                value={
+                  isEditing ? formData.phone : formatPhoneNumber(formData.phone)
+                }
                 onChangeText={(value) => handleFieldChange("phone", value)}
                 editable={isEditing}
                 placeholder="Enter phone number"
@@ -722,26 +774,128 @@ export default function PersonalInformationScreen() {
               <Text style={[styles.fieldLabel, { color: colors.text.primary }]}>
                 Date of Birth
               </Text>
-              <TextInput
-                style={[
-                  styles.textInput,
-                  {
-                    borderColor: colors.border.light,
-                    backgroundColor: colors.background.primary,
-                    color: colors.text.primary,
-                  },
-                  !isEditing && {
-                    backgroundColor: colors.gray[50],
-                    color: colors.text.secondary,
-                  },
-                ]}
-                value={isEditing ? formatDateForInput(formData.dateOfBirth) : formatDateOfBirth(formData.dateOfBirth)}
-                onChangeText={(value) =>
-                  handleFieldChange("dateOfBirth", value)
-                }
-                editable={isEditing}
-                placeholder="YYYY-MM-DD"
-              />
+              <View style={styles.formRow}>
+                <View
+                  style={[
+                    styles.formField,
+                    { flex: 1, marginRight: spacing.xs },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.subFieldLabel,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
+                    Day
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      {
+                        borderColor: colors.border.light,
+                        backgroundColor: colors.background.primary,
+                        color: colors.text.primary,
+                      },
+                      !isEditing && {
+                        backgroundColor: colors.gray[50],
+                        color: colors.text.secondary,
+                      },
+                    ]}
+                    value={isEditing ? formData.birthDay : formData.birthDay}
+                    onChangeText={(value) =>
+                      handleFieldChange("birthDay", value)
+                    }
+                    editable={isEditing}
+                    placeholder="DD"
+                    keyboardType="numeric"
+                    maxLength={2}
+                  />
+                </View>
+                <View
+                  style={[
+                    styles.formField,
+                    { flex: 1, marginHorizontal: spacing.xs },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.subFieldLabel,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
+                    Month
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      {
+                        borderColor: colors.border.light,
+                        backgroundColor: colors.background.primary,
+                        color: colors.text.primary,
+                      },
+                      !isEditing && {
+                        backgroundColor: colors.gray[50],
+                        color: colors.text.secondary,
+                      },
+                    ]}
+                    value={
+                      isEditing ? formData.birthMonth : formData.birthMonth
+                    }
+                    onChangeText={(value) =>
+                      handleFieldChange("birthMonth", value)
+                    }
+                    editable={isEditing}
+                    placeholder="MM"
+                    keyboardType="numeric"
+                    maxLength={2}
+                  />
+                </View>
+                <View
+                  style={[
+                    styles.formField,
+                    { flex: 1, marginLeft: spacing.xs },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.subFieldLabel,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
+                    Year
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      {
+                        borderColor: colors.border.light,
+                        backgroundColor: colors.background.primary,
+                        color: colors.text.primary,
+                      },
+                      !isEditing && {
+                        backgroundColor: colors.gray[50],
+                        color: colors.text.secondary,
+                      },
+                    ]}
+                    value={isEditing ? formData.birthYear : formData.birthYear}
+                    onChangeText={(value) =>
+                      handleFieldChange("birthYear", value)
+                    }
+                    editable={isEditing}
+                    placeholder="YYYY"
+                    keyboardType="numeric"
+                    maxLength={4}
+                  />
+                </View>
+              </View>
+              {!isEditing && formData.dateOfBirth && (
+                <Text
+                  style={[styles.helperText, { color: colors.text.tertiary }]}
+                >
+                  {formatDateOfBirth(formData.dateOfBirth)}
+                </Text>
+              )}
             </View>
           </View>
         </Section>
@@ -969,6 +1123,12 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginBottom: 6,
     opacity: 0.8,
+  },
+  subFieldLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 4,
+    opacity: 0.7,
   },
   textInput: {
     borderWidth: 1,
