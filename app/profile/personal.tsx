@@ -37,15 +37,32 @@ export default function PersonalInformationScreen() {
   const [formData, setFormData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Parse birthdate (MM/DD/YYYY) into components
+  // Parse birthdate (MM/DD/YYYY or ISO format) into components
   const parseBirthdate = (dateString: string) => {
     if (!dateString) return { year: "", month: "", day: "" };
 
     try {
-      // Parse MM/DD/YYYY format
-      const [month, day, year] = dateString.split("/");
+      let year, month, day;
+
+      // Check if it's ISO format (YYYY-MM-DD)
+      if (dateString.includes("-") && dateString.length === 10) {
+        const [isoYear, isoMonth, isoDay] = dateString.split("-");
+        year = isoYear;
+        month = isoMonth;
+        day = isoDay;
+      } 
+      // Check if it's MM/DD/YYYY format
+      else if (dateString.includes("/")) {
+        const [monthPart, dayPart, yearPart] = dateString.split("/");
+        year = yearPart;
+        month = monthPart;
+        day = dayPart;
+      } else {
+        console.warn("Unknown birthdate format:", dateString);
+        return { year: "", month: "", day: "" };
+      }
       
-      if (!month || !day || !year) {
+      if (!year || !month || !day) {
         console.warn("Invalid birthdate format:", dateString);
         return { year: "", month: "", day: "" };
       }
@@ -58,6 +75,7 @@ export default function PersonalInformationScreen() {
 
       console.log("🔍 [PersonalInfo] Parsing birthdate:", {
         input: dateString,
+        format: dateString.includes("-") ? "ISO" : "MM/DD/YYYY",
         result,
       });
 
@@ -92,7 +110,7 @@ export default function PersonalInformationScreen() {
 
       // Format as MM/DD/YYYY
       const result = `${monthNum.toString().padStart(2, "0")}/${dayNum.toString().padStart(2, "0")}/${yearNum}`;
-      
+
       console.log("🔍 [PersonalInfo] Combined date result:", {
         input: { year, month, day },
         result,
@@ -192,9 +210,7 @@ export default function PersonalInformationScreen() {
   // Initialize form with user data from AuthContext
   useEffect(() => {
     if (user && !formData) {
-      const dateComponents = parseBirthdate(
-        user.birthdate || ""
-      );
+      const dateComponents = parseBirthdate(user.birthdate || "");
       const initialData = {
         firstName: user.given_name || user.firstName || "",
         lastName: user.family_name || user.lastName || "",
@@ -305,6 +321,15 @@ export default function PersonalInformationScreen() {
             data.date_of_birth ||
             data.birthDate ||
             "";
+          
+          console.log("🔍 [PersonalInfo] Raw birthdate data:", {
+            data_birthdate: data.birthdate,
+            data_dateOfBirth: data.dateOfBirth,
+            data_date_of_birth: data.date_of_birth,
+            data_birthDate: data.birthDate,
+            final_birthdate: birthdate,
+          });
+          
           const dateComponents = parseBirthdate(birthdate);
 
           // Map the API response to form fields
@@ -386,9 +411,7 @@ export default function PersonalInformationScreen() {
           stack: error.stack,
         });
         // Try to use user data as fallback on error
-        const fallbackDateComponents = parseBirthdate(
-          user?.birthdate || ""
-        );
+        const fallbackDateComponents = parseBirthdate(user?.birthdate || "");
         const userData = user
           ? {
               firstName:
