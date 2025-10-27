@@ -80,17 +80,25 @@ export default function PersonalInformationScreen() {
           const userId =
             user?.sub || user?.id || user?.email || user?.username || "default";
           const cacheKey = `user_profile_${userId}`;
-          
+
           // Debug: Check if cache exists before clearing
-          const { getCachedData } = await import("../../services/config/apiCache");
-          const cachedBefore = getCachedData(cacheKey);
-          console.log(`🔍 [Personal] Cache before clearing:`, { cacheKey, cachedBefore: !!cachedBefore });
-          
+          const { getCachedData } = await import(
+            "../../services/config/apiCache"
+          );
+          const cachedBefore = await getCachedData(cacheKey);
+          console.log(`🔍 [Personal] Cache before clearing:`, {
+            cacheKey,
+            cachedBefore: !!cachedBefore,
+          });
+
           await clearCachedData(cacheKey);
-          
+
           // Debug: Check if cache exists after clearing
-          const cachedAfter = getCachedData(cacheKey);
-          console.log(`🔍 [Personal] Cache after clearing:`, { cacheKey, cachedAfter: !!cachedAfter });
+          const cachedAfter = await getCachedData(cacheKey);
+          console.log(`🔍 [Personal] Cache after clearing:`, {
+            cacheKey,
+            cachedAfter: !!cachedAfter,
+          });
           console.log(
             `🧹 [Personal] Cleared profile cache for user: ${userId}`
           );
