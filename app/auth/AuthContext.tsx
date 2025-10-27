@@ -25,7 +25,7 @@ interface User {
   lastName?: string;
   phone_number?: string;
   phone?: string;
-  dateOfBirth?: string;
+  birthdate?: string;
   occupation?: string;
   company?: string;
 }

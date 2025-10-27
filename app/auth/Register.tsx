@@ -167,7 +167,7 @@ export default function Register() {
         email: submitValues.email,
         password: submitValues.password,
         phone_number: submitValues.phone_number,
-        dateOfBirth: submitValues.dob,
+        birthdate: submitValues.dob,
         address: submitValues.address,
         gender: submitValues.gender,
       });
@@ -299,7 +299,9 @@ export default function Register() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* Header Section */}
@@ -313,7 +315,11 @@ export default function Register() {
         </TouchableOpacity>
 
         <View style={styles.headerContent}>
-          <Typography variant="h2" style={[styles.welcomeTitle, { color: colors.text.primary }]} align="center">
+          <Typography
+            variant="h2"
+            style={[styles.welcomeTitle, { color: colors.text.primary }]}
+            align="center"
+          >
             Create Account
           </Typography>
         </View>
@@ -322,7 +328,12 @@ export default function Register() {
       </View>
 
       {/* Progress Bar */}
-      <View style={[styles.progressContainer, { backgroundColor: colors.background.secondary }]}>
+      <View
+        style={[
+          styles.progressContainer,
+          { backgroundColor: colors.background.secondary },
+        ]}
+      >
         <View
           style={[
             styles.progressBar,
@@ -336,99 +347,113 @@ export default function Register() {
 
       {/* Step Counter */}
       <View style={styles.stepCounter}>
-        <Typography variant="body" style={[styles.stepText, { color: colors.text.secondary }]}>
+        <Typography
+          variant="body"
+          style={[styles.stepText, { color: colors.text.secondary }]}
+        >
           Step {step} of 5
         </Typography>
       </View>
 
-        <KeyboardAvoidingView
-          style={styles.keyboardView}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+          {/* Glass Form Container */}
+          <View
+            style={[
+              styles.glassCard,
+              { backgroundColor: colors.background.secondary },
+            ]}
           >
-            {/* Glass Form Container */}
-            <View style={[styles.glassCard, { backgroundColor: colors.background.secondary }]}>
-              <View style={styles.formContent}>
-                {registrationError ? (
-                  <View style={styles.errorContainer}>
-                    <Ionicons name="warning" size={20} color="white" />
-                    <Typography variant="body" style={styles.errorText}>
-                      {registrationError}
-                    </Typography>
-                  </View>
-                ) : null}
+            <View style={styles.formContent}>
+              {registrationError ? (
+                <View style={styles.errorContainer}>
+                  <Ionicons name="warning" size={20} color="white" />
+                  <Typography variant="body" style={styles.errorText}>
+                    {registrationError}
+                  </Typography>
+                </View>
+              ) : null}
 
-                {step === 1 && (
-                  <RegisterStep1
-                    values={values}
-                    onChange={handleChange}
-                    onNext={handleNext}
-                  />
-                )}
-                {step === 2 && (
-                  <RegisterStep2
-                    values={values}
-                    onChange={handleChange}
-                    onNext={handleNext}
-                    onBack={handleBack}
-                  />
-                )}
-                {step === 3 && (
-                  <RegisterStep3
-                    values={values}
-                    onChange={handleChange}
-                    onNext={handleNext}
-                    onBack={handleBack}
-                    passwordError={passwordError}
-                  />
-                )}
-                {step === 4 && (
-                  <RegisterStep4
-                    values={values}
-                    onChange={handleChange}
-                    onNext={handleNext}
-                    onBack={handleBack}
-                  />
-                )}
-                {step === 5 && (
-                  <RegisterStep5
-                    values={values}
-                    onChange={handleChange}
-                    onBack={handleBack}
-                    onSubmit={handleSubmit}
-                    isLoading={isLoading}
-                  />
-                )}
+              {step === 1 && (
+                <RegisterStep1
+                  values={values}
+                  onChange={handleChange}
+                  onNext={handleNext}
+                />
+              )}
+              {step === 2 && (
+                <RegisterStep2
+                  values={values}
+                  onChange={handleChange}
+                  onNext={handleNext}
+                  onBack={handleBack}
+                />
+              )}
+              {step === 3 && (
+                <RegisterStep3
+                  values={values}
+                  onChange={handleChange}
+                  onNext={handleNext}
+                  onBack={handleBack}
+                  passwordError={passwordError}
+                />
+              )}
+              {step === 4 && (
+                <RegisterStep4
+                  values={values}
+                  onChange={handleChange}
+                  onNext={handleNext}
+                  onBack={handleBack}
+                />
+              )}
+              {step === 5 && (
+                <RegisterStep5
+                  values={values}
+                  onChange={handleChange}
+                  onBack={handleBack}
+                  onSubmit={handleSubmit}
+                  isLoading={isLoading}
+                />
+              )}
 
-                {/* Login Link */}
-                <View style={styles.loginLinkContainer}>
+              {/* Login Link */}
+              <View style={styles.loginLinkContainer}>
+                <Typography
+                  variant="body"
+                  style={[
+                    styles.loginLinkText,
+                    { color: colors.text.secondary },
+                  ]}
+                  align="center"
+                >
+                  Already have an account?{" "}
+                </Typography>
+                <TouchableOpacity onPress={() => router.replace("/auth/Login")}>
                   <Typography
                     variant="body"
-                    style={[styles.loginLinkText, { color: colors.text.secondary }]}
-                    align="center"
+                    style={[
+                      styles.loginLinkBold,
+                      { color: colors.primary[500] },
+                    ]}
                   >
-                    Already have an account?{" "}
+                    Sign In
                   </Typography>
-                  <TouchableOpacity onPress={() => router.replace("/auth/Login")}>
-                    <Typography
-                      variant="body"
-                      style={[styles.loginLinkBold, { color: colors.primary[500] }]}
-                    >
-                      Sign In
-                    </Typography>
-                  </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
               </View>
             </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </SafeAreaView>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

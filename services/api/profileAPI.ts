@@ -64,7 +64,7 @@ export const profileAPI = {
     address?: string;
     city?: string;
     postcode?: string;
-    dateOfBirth?: string;
+    birthdate?: string;
     gender?: string;
     occupation?: string;
     company?: string;
