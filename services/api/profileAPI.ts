@@ -19,7 +19,10 @@ export const profileAPI = {
 
     const cacheKey = `user_profile_${userId}`;
     const cached = await getCachedData(cacheKey);
-    console.log(`🔍 [ProfileAPI] Cache check for ${cacheKey}:`, { cached: !!cached, userId });
+    console.log(`🔍 [ProfileAPI] Cache check for ${cacheKey}:`, {
+      cached: !!cached,
+      userId,
+    });
     if (cached) {
       console.log(`✅ [ProfileAPI] Using cached profile for user: ${userId}`);
       return cached;
@@ -46,7 +49,7 @@ export const profileAPI = {
         statusText: error.response?.statusText,
         data: error.response?.data,
         url: error.config?.url,
-        method: error.config?.method
+        method: error.config?.method,
       });
       throw error;
     }
@@ -66,8 +69,23 @@ export const profileAPI = {
     occupation?: string;
     company?: string;
   }) => {
-    const response = await api.put("/profile", profileData);
-    return response.data;
+    console.log("🔍 [ProfileAPI] updateProfile called with:", profileData);
+    try {
+      const response = await api.put("/profile", profileData);
+      console.log("✅ [ProfileAPI] updateProfile success:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ [ProfileAPI] updateProfile error:", error);
+      console.error("❌ [ProfileAPI] Error details:", {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+      throw error;
+    }
   },
 
   // Get credit score with caching
@@ -129,30 +147,47 @@ export const profileAPI = {
             completedGoals: allGoals.filter((g: any) => g.isCompleted),
             goalProgress: allGoals.map((g: any) => ({
               goalId: g.id || g.goalId,
-              progressPercentage: g.targetAmount > 0 ? Math.round((g.currentAmount / g.targetAmount) * 100) : 0,
+              progressPercentage:
+                g.targetAmount > 0
+                  ? Math.round((g.currentAmount / g.targetAmount) * 100)
+                  : 0,
               amountRemaining: Math.max(g.targetAmount - g.currentAmount, 0),
-              daysRemaining: g.targetDate ? Math.ceil((new Date(g.targetDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0,
-              isOnTrack: true
+              daysRemaining: g.targetDate
+                ? Math.ceil(
+                    (new Date(g.targetDate).getTime() - Date.now()) /
+                      (1000 * 60 * 60 * 24)
+                  )
+                : 0,
+              isOnTrack: true,
             })),
-            totalSavedTowardsGoals: allGoals.reduce((sum: number, g: any) => sum + (g.currentAmount || 0), 0),
-            totalGoalAmount: allGoals.reduce((sum: number, g: any) => sum + (g.targetAmount || 0), 0),
+            totalSavedTowardsGoals: allGoals.reduce(
+              (sum: number, g: any) => sum + (g.currentAmount || 0),
+              0
+            ),
+            totalGoalAmount: allGoals.reduce(
+              (sum: number, g: any) => sum + (g.targetAmount || 0),
+              0
+            ),
             averageMonthlyProgress: 0,
             recommendations: [],
-            motivationalMessage: "Great progress! Keep building towards your financial goals!",
-            lastUpdated: new Date().toISOString()
+            motivationalMessage:
+              "Great progress! Keep building towards your financial goals!",
+            lastUpdated: new Date().toISOString(),
           };
         }
 
         console.log("[ProfileAPI] Successfully fetched goals:", {
           activeGoals: goalsData.activeGoals?.length || 0,
-          completedGoals: goalsData.completedGoals?.length || 0
+          completedGoals: goalsData.completedGoals?.length || 0,
         });
 
         // Cache for 5 minutes
         setCachedData(cacheKey, goalsData, 5 * 60 * 1000);
         return goalsData;
       } else {
-        console.warn("[ProfileAPI] Goals API returned empty response, using fallback");
+        console.warn(
+          "[ProfileAPI] Goals API returned empty response, using fallback"
+        );
         return { activeGoals: [], completedGoals: [], goalProgress: [] };
       }
     } catch (error: any) {
@@ -167,8 +202,9 @@ export const profileAPI = {
         totalGoalAmount: 0,
         averageMonthlyProgress: 0,
         recommendations: [],
-        motivationalMessage: "Start setting financial goals to track your savings journey!",
-        lastUpdated: new Date().toISOString()
+        motivationalMessage:
+          "Start setting financial goals to track your savings journey!",
+        lastUpdated: new Date().toISOString(),
       };
 
       setCachedData(cacheKey, fallbackData, 5 * 60 * 1000);

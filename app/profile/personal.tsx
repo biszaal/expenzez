@@ -508,9 +508,12 @@ export default function PersonalInformationScreen() {
       console.log("📤 [PersonalInfo] Sending update request:", updateData);
 
       // Call the API to update profile
+      console.log("🔍 [PersonalInfo] About to call profileAPI.updateProfile");
       const response = await profileAPI.updateProfile(updateData);
 
       console.log("📥 [PersonalInfo] Update response:", response);
+      console.log("📥 [PersonalInfo] Response status:", response?.status);
+      console.log("📥 [PersonalInfo] Response data:", response?.data);
 
       console.log("✅ [PersonalInfo] Profile updated successfully");
       setIsEditing(false);
