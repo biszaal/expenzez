@@ -135,6 +135,9 @@ export default function PersonalInformationScreen() {
         }
 
         if (data) {
+          // Parse address if it's a single string
+          const addressData = data.address ? parseAddress(data.address) : { street: "", city: "", postcode: "", country: "" };
+          
           // Map the API response to form fields
           const mappedData = {
             firstName:
@@ -151,9 +154,10 @@ export default function PersonalInformationScreen() {
               "",
             email: data.email || "",
             phone: data.phone || data.phone_number || data.phoneNumber || "",
-            address: data.address || "",
-            city: data.city || "",
-            country: data.country || "",
+            address: addressData.street || data.address || "",
+            city: data.city || addressData.city || "",
+            postcode: data.postcode || addressData.postcode || "",
+            country: data.country || addressData.country || "",
             dateOfBirth:
               data.dateOfBirth ||
               data.birthdate ||
@@ -269,6 +273,102 @@ export default function PersonalInformationScreen() {
       </Text>
     );
 
+  // Format date of birth for display
+  const formatDateOfBirth = (dateString: string) => {
+    if (!dateString) return "";
+    
+    try {
+      // Handle both ISO format and simple date format
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return dateString; // Return original if invalid
+      
+      return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      });
+    } catch (error) {
+      console.warn("Error formatting date:", error);
+      return dateString;
+    }
+  };
+
+  // Format date for input (YYYY-MM-DD)
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return "";
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return dateString;
+      
+      return date.toISOString().split('T')[0];
+    } catch (error) {
+      console.warn("Error formatting date for input:", error);
+      return dateString;
+    }
+  };
+
+  // Format phone number for display
+  const formatPhoneNumber = (phone: string) => {
+    if (!phone) return "";
+    
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    
+    // Format UK phone numbers
+    if (cleaned.startsWith('44') && cleaned.length === 12) {
+      return `+44 ${cleaned.slice(2, 6)} ${cleaned.slice(6, 9)} ${cleaned.slice(9)}`;
+    } else if (cleaned.startsWith('0') && cleaned.length === 11) {
+      return `+44 ${cleaned.slice(1, 5)} ${cleaned.slice(5, 8)} ${cleaned.slice(8)}`;
+    }
+    
+    return phone; // Return original if not a standard UK format
+  };
+
+  // Parse address into components
+  const parseAddress = (address: string) => {
+    if (!address) return { street: "", city: "", postcode: "", country: "" };
+    
+    // Parse UK address format: "Street, City, Postcode, Country"
+    const parts = address.split(',').map(part => part.trim());
+    
+    // For the address "Richard Street South, west bromwich, England, B70 8AN, United Kingdom"
+    // parts[0] = "Richard Street South" (street)
+    // parts[1] = "west bromwich" (city) 
+    // parts[2] = "England" (this should be country, not postcode)
+    // parts[3] = "B70 8AN" (this should be postcode)
+    // parts[4] = "United Kingdom" (this should be country)
+    
+    // Look for postcode pattern (UK postcodes: letters + numbers + space + letters + numbers)
+    const postcodePattern = /\b[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}\b/i;
+    let postcode = "";
+    let country = "";
+    let street = parts[0] || "";
+    let city = parts[1] || "";
+    
+    // Find postcode and country
+    for (let i = 2; i < parts.length; i++) {
+      if (postcodePattern.test(parts[i])) {
+        postcode = parts[i];
+        // Everything after postcode is country
+        if (i + 1 < parts.length) {
+          country = parts.slice(i + 1).join(', ');
+        }
+        break;
+      } else if (i === parts.length - 1) {
+        // If no postcode found, last part is country
+        country = parts[i];
+      }
+    }
+    
+    return {
+      street,
+      city,
+      postcode,
+      country
+    };
+  };
+
   // Handle form field changes
   const handleFieldChange = (field: string, value: string) => {
     setFormData((prev) => ({
@@ -292,13 +392,26 @@ export default function PersonalInformationScreen() {
 
       console.log("💾 [PersonalInfo] Saving profile data:", formData);
 
+      // Combine address fields into a single string for backend compatibility
+      const addressParts = [
+        formData.address?.trim() || "",
+        formData.city?.trim() || "",
+        formData.postcode?.trim() || "",
+        formData.country?.trim() || ""
+      ].filter(part => part.length > 0);
+      
+      const combinedAddress = addressParts.join(', ');
+
       // Note: Email is intentionally excluded from updates (readonly for security)
       const updateData = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(), // Included for backend compatibility, but will not be updated
         phone: formData.phone?.trim() || "",
-        address: formData.address?.trim() || "",
+        address: combinedAddress,
+        city: formData.city?.trim() || "",
+        postcode: formData.postcode?.trim() || "",
+        country: formData.country?.trim() || "",
         dateOfBirth: formData.dateOfBirth?.trim() || "",
         occupation: formData.occupation?.trim() || "",
         company: formData.company?.trim() || "",
@@ -597,7 +710,7 @@ export default function PersonalInformationScreen() {
                     color: colors.text.secondary,
                   },
                 ]}
-                value={formData.phone}
+                value={isEditing ? formData.phone : formatPhoneNumber(formData.phone)}
                 onChangeText={(value) => handleFieldChange("phone", value)}
                 editable={isEditing}
                 placeholder="Enter phone number"
@@ -622,7 +735,7 @@ export default function PersonalInformationScreen() {
                     color: colors.text.secondary,
                   },
                 ]}
-                value={formData.dateOfBirth}
+                value={isEditing ? formatDateForInput(formData.dateOfBirth) : formatDateOfBirth(formData.dateOfBirth)}
                 onChangeText={(value) =>
                   handleFieldChange("dateOfBirth", value)
                 }
@@ -638,12 +751,11 @@ export default function PersonalInformationScreen() {
           <View style={styles.formContainer}>
             <View style={styles.formField}>
               <Text style={[styles.fieldLabel, { color: colors.text.primary }]}>
-                Address
+                Street Address
               </Text>
               <TextInput
                 style={[
                   styles.textInput,
-                  styles.textArea,
                   {
                     borderColor: colors.border.light,
                     backgroundColor: colors.background.primary,
@@ -657,9 +769,89 @@ export default function PersonalInformationScreen() {
                 value={formData.address}
                 onChangeText={(value) => handleFieldChange("address", value)}
                 editable={isEditing}
-                placeholder="Enter your address"
-                multiline
-                numberOfLines={3}
+                placeholder="Enter street address"
+              />
+            </View>
+
+            <View style={styles.formRow}>
+              <View
+                style={[styles.formField, { flex: 1, marginRight: spacing.sm }]}
+              >
+                <Text
+                  style={[styles.fieldLabel, { color: colors.text.primary }]}
+                >
+                  City
+                </Text>
+                <TextInput
+                  style={[
+                    styles.textInput,
+                    {
+                      borderColor: colors.border.light,
+                      backgroundColor: colors.background.primary,
+                      color: colors.text.primary,
+                    },
+                    !isEditing && {
+                      backgroundColor: colors.gray[50],
+                      color: colors.text.secondary,
+                    },
+                  ]}
+                  value={formData.city}
+                  onChangeText={(value) => handleFieldChange("city", value)}
+                  editable={isEditing}
+                  placeholder="Enter city"
+                />
+              </View>
+              <View
+                style={[styles.formField, { flex: 1, marginLeft: spacing.sm }]}
+              >
+                <Text
+                  style={[styles.fieldLabel, { color: colors.text.primary }]}
+                >
+                  Postcode
+                </Text>
+                <TextInput
+                  style={[
+                    styles.textInput,
+                    {
+                      borderColor: colors.border.light,
+                      backgroundColor: colors.background.primary,
+                      color: colors.text.primary,
+                    },
+                    !isEditing && {
+                      backgroundColor: colors.gray[50],
+                      color: colors.text.secondary,
+                    },
+                  ]}
+                  value={formData.postcode}
+                  onChangeText={(value) => handleFieldChange("postcode", value)}
+                  editable={isEditing}
+                  placeholder="Enter postcode"
+                  autoCapitalize="characters"
+                />
+              </View>
+            </View>
+
+            <View style={styles.formField}>
+              <Text style={[styles.fieldLabel, { color: colors.text.primary }]}>
+                Country
+              </Text>
+              <TextInput
+                style={[
+                  styles.textInput,
+                  {
+                    borderColor: colors.border.light,
+                    backgroundColor: colors.background.primary,
+                    color: colors.text.primary,
+                  },
+                  !isEditing && {
+                    backgroundColor: colors.gray[50],
+                    color: colors.text.secondary,
+                  },
+                ]}
+                value={formData.country}
+                onChangeText={(value) => handleFieldChange("country", value)}
+                editable={isEditing}
+                placeholder="Enter country"
               />
             </View>
           </View>
