@@ -27,6 +27,7 @@ export const profileAPI = {
 
     console.log(`📥 [ProfileAPI] Fetching fresh profile for user: ${userId}`);
     try {
+      console.log(`🔍 [ProfileAPI] Making API call to /profile`);
       const response = await api.get("/profile");
       console.log(`📥 [ProfileAPI] API response status: ${response.status}`);
       console.log(
@@ -39,6 +40,14 @@ export const profileAPI = {
       return response.data;
     } catch (error) {
       console.error(`❌ [ProfileAPI] Error fetching profile:`, error);
+      console.error(`❌ [ProfileAPI] Error details:`, {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        method: error.config?.method
+      });
       throw error;
     }
   },
