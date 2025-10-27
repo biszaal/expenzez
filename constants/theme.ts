@@ -49,7 +49,7 @@ export const lightColors = {
   gray: {
     50: "#FAFAFA",
     100: "#F4F4F5",
-    200: "#E4E4E7", 
+    200: "#E4E4E7",
     300: "#D4D4D8",
     400: "#A1A1AA",
     500: "#71717A",
@@ -89,35 +89,46 @@ export const lightColors = {
 
   // Clean background system with neutral tones
   background: {
-    primary: "#FFFFFF",     // Pure white
-    secondary: "#FAFAFA",   // Very subtle gray tint
-    tertiary: "#F4F4F5",    // Light gray background
+    primary: "#FFFFFF", // Pure white
+    secondary: "#FAFAFA", // Very subtle gray tint
+    tertiary: "#F4F4F5", // Light gray background
     overlay: "rgba(139, 92, 246, 0.02)", // Subtle purple overlay
   },
 
   // Minimal text hierarchy
   text: {
-    primary: "#18181B",     // Near black - high contrast
-    secondary: "#52525B",   // Medium gray - readable
-    tertiary: "#A1A1AA",    // Light gray - subtle text
-    inverse: "#FFFFFF",     // White text on dark backgrounds
-    muted: "#D4D4D8",      // Very light - placeholders
+    primary: "#18181B", // Near black - high contrast
+    secondary: "#52525B", // Medium gray - readable
+    tertiary: "#A1A1AA", // Light gray - subtle text
+    inverse: "#FFFFFF", // White text on dark backgrounds
+    muted: "#D4D4D8", // Very light - placeholders
+    textSecondary: "#52525B", // Alias for secondary
   },
+
+  // Divider colors
+  divider: "#E4E4E7", // Light gray divider
 
   // Simple border system
   border: {
-    light: "#F3E8FF",      // Very subtle purple tint
-    medium: "#E9D5FF",     // Standard borders with purple tint
-    dark: "#D8B4FE",       // Pronounced borders
-    focus: "#8B5CF6",      // Purple focus state
+    light: "#F3E8FF", // Very subtle purple tint
+    medium: "#E9D5FF", // Standard borders with purple tint
+    dark: "#D8B4FE", // Pronounced borders
+    focus: "#8B5CF6", // Purple focus state
   },
 
   // Minimal shadow system
   shadow: {
     subtle: "rgba(0, 0, 0, 0.02)", // Almost invisible
-    soft: "rgba(0, 0, 0, 0.05)",   // Gentle elevation
-    medium: "rgba(0, 0, 0, 0.08)",  // Card elevation
-    strong: "rgba(0, 0, 0, 0.12)",  // Modal/overlay
+    soft: "rgba(0, 0, 0, 0.05)", // Gentle elevation
+    medium: "rgba(0, 0, 0, 0.08)", // Card elevation
+    strong: "rgba(0, 0, 0, 0.12)", // Modal/overlay
+  },
+
+  // Card colors
+  card: {
+    background: "#FFFFFF",
+    border: "#F3E8FF",
+    shadow: "rgba(0, 0, 0, 0.02)",
   },
 
   // Additional utility colors for components
@@ -277,35 +288,46 @@ export const darkColors = {
 
   // Clean background system for dark mode with purple tints
   background: {
-    primary: "#0F0F11",     // Deep black with purple hint
-    secondary: "#1A1625",   // Dark purple tint
-    tertiary: "#2A1F3D",    // Card backgrounds with purple
+    primary: "#0F0F11", // Deep black with purple hint
+    secondary: "#1A1625", // Dark purple tint
+    tertiary: "#2A1F3D", // Card backgrounds with purple
     overlay: "rgba(139, 92, 246, 0.05)", // Purple overlay
   },
 
   // Minimal text hierarchy for dark mode
   text: {
-    primary: "#FAFAFA",     // Near white - high contrast
-    secondary: "#D4D4D8",   // Light gray - readable  
-    tertiary: "#A1A1AA",    // Medium gray - subtle text
-    inverse: "#18181B",     // Dark text on light backgrounds
-    muted: "#52525B",      // Very dark - placeholders
+    primary: "#FAFAFA", // Near white - high contrast
+    secondary: "#D4D4D8", // Light gray - readable
+    tertiary: "#A1A1AA", // Medium gray - subtle text
+    inverse: "#18181B", // Dark text on light backgrounds
+    muted: "#52525B", // Very dark - placeholders
+    textSecondary: "#D4D4D8", // Alias for secondary
   },
+
+  // Divider colors for dark mode
+  divider: "#3F3F46", // Dark gray divider
 
   // Simple border system for dark mode with purple tints
   border: {
-    light: "#2A1F3D",      // Very subtle purple tint
-    medium: "#3D2A5C",     // Standard borders with purple
-    dark: "#52525B",       // Pronounced borders
-    focus: "#C084FC",      // Purple focus state for dark mode
+    light: "#2A1F3D", // Very subtle purple tint
+    medium: "#3D2A5C", // Standard borders with purple
+    dark: "#52525B", // Pronounced borders
+    focus: "#C084FC", // Purple focus state for dark mode
   },
 
   // Minimal shadow system for dark mode
   shadow: {
     subtle: "rgba(0, 0, 0, 0.5)", // More visible in dark mode
-    soft: "rgba(0, 0, 0, 0.6)",   // Gentle elevation
+    soft: "rgba(0, 0, 0, 0.6)", // Gentle elevation
     medium: "rgba(0, 0, 0, 0.7)", // Card elevation
     strong: "rgba(0, 0, 0, 0.8)", // Modal/overlay
+  },
+
+  // Card colors for dark mode
+  card: {
+    background: "#1A1625",
+    border: "#2A1F3D",
+    shadow: "rgba(0, 0, 0, 0.5)",
   },
 
   // Additional utility colors for components (same as light theme)
@@ -405,10 +427,10 @@ export const typography = {
 
   // Simplified font weights - professional hierarchy
   fontWeights: {
-    normal: "400",   // Regular text
-    medium: "500",   // Slightly emphasized
+    normal: "400", // Regular text
+    medium: "500", // Slightly emphasized
     semibold: "600", // Important text
-    bold: "700",     // Headings and strong emphasis
+    bold: "700", // Headings and strong emphasis
   },
 
   // Alias for backward compatibility
@@ -422,36 +444,36 @@ export const typography = {
 
   // Clean line heights for readability
   lineHeights: {
-    tight: 1.25,    // Headings
-    normal: 1.5,    // Body text  
-    relaxed: 1.6,   // Long form content
+    tight: 1.25, // Headings
+    normal: 1.5, // Body text
+    relaxed: 1.6, // Long form content
   },
 
   // Minimal letter spacing
   letterSpacing: {
-    tight: -0.25,   // Headings
-    normal: 0,      // Body text
-    wide: 0.25,     // Buttons and labels
+    tight: -0.25, // Headings
+    normal: 0, // Body text
+    wide: 0.25, // Buttons and labels
   },
 };
 
 // Minimal spacing system - consistent rhythm
 export const spacing = {
-  xs: 4,     // Tight spacing
-  sm: 8,     // Small gaps
-  md: 16,    // Standard spacing
-  lg: 24,    // Comfortable spacing  
-  xl: 32,    // Large spacing
+  xs: 4, // Tight spacing
+  sm: 8, // Small gaps
+  md: 16, // Standard spacing
+  lg: 24, // Comfortable spacing
+  xl: 32, // Large spacing
   "2xl": 48, // Section spacing
   "3xl": 64, // Page spacing
 };
 
 // Minimal border radius system - subtle and clean with more curves
 export const borderRadius = {
-  sm: 8,     // Small elements
-  md: 12,    // Standard elements
-  lg: 16,    // Cards and containers
-  xl: 20,    // Large containers
+  sm: 8, // Small elements
+  md: 12, // Standard elements
+  lg: 16, // Cards and containers
+  xl: 20, // Large containers
   "2xl": 24, // Special containers
   "3xl": 32, // Extra large containers - more curved
   "4xl": 40, // Very large containers - very curved
@@ -500,12 +522,12 @@ export const shadows = createShadows("light");
 
 // Minimal layout system - clean and spacious
 export const layout = {
-  screenPadding: 20,   // Reduced padding for cleaner look
-  cardPadding: 16,     // More compact cards
-  buttonHeight: 44,    // Slightly smaller buttons
-  inputHeight: 44,     // Matching input height
-  headerHeight: 56,    // Standard header height
-  tabHeight: 60,       // Tab bar height
+  screenPadding: 20, // Reduced padding for cleaner look
+  cardPadding: 16, // More compact cards
+  buttonHeight: 44, // Slightly smaller buttons
+  inputHeight: 44, // Matching input height
+  headerHeight: 56, // Standard header height
+  tabHeight: 60, // Tab bar height
 };
 
 export default {

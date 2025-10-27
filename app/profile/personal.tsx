@@ -36,6 +36,120 @@ export default function PersonalInformationScreen() {
   const [formData, setFormData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Parse date of birth into components
+  const parseDateOfBirth = (dateString: string) => {
+    if (!dateString) return { year: "", month: "", day: "" };
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return { year: "", month: "", day: "" };
+
+      return {
+        year: date.getFullYear().toString(),
+        month: (date.getMonth() + 1).toString().padStart(2, "0"),
+        day: date.getDate().toString().padStart(2, "0"),
+      };
+    } catch (error) {
+      console.warn("Error parsing date:", error);
+      return { year: "", month: "", day: "" };
+    }
+  };
+
+  // Combine date components into ISO string
+  const combineDateComponents = (year: string, month: string, day: string) => {
+    if (!year || !month || !day) return "";
+    
+    try {
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      if (isNaN(date.getTime())) return "";
+      
+      return date.toISOString().split("T")[0];
+    } catch (error) {
+      console.warn("Error combining date components:", error);
+      return "";
+    }
+  };
+
+  // Format date of birth for display
+  const formatDateOfBirth = (dateString: string) => {
+    if (!dateString) return "";
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return dateString;
+
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      });
+    } catch (error) {
+      console.warn("Error formatting date:", error);
+      return dateString;
+    }
+  };
+
+  // Format phone number for display
+  const formatPhoneNumber = (phone: string) => {
+    if (!phone) return "";
+
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, "");
+
+    // Format UK phone numbers
+    if (cleaned.startsWith("44") && cleaned.length === 12) {
+      return `+44 ${cleaned.slice(2, 6)} ${cleaned.slice(6, 9)} ${cleaned.slice(9)}`;
+    } else if (cleaned.startsWith("0") && cleaned.length === 11) {
+      return `+44 ${cleaned.slice(1, 5)} ${cleaned.slice(5, 8)} ${cleaned.slice(8)}`;
+    }
+
+    return phone; // Return original if not a standard UK format
+  };
+
+  // Parse address into components
+  const parseAddress = (address: string) => {
+    if (!address) return { street: "", city: "", postcode: "", country: "" };
+
+    // Parse UK address format: "Street, City, Postcode, Country"
+    const parts = address.split(",").map((part) => part.trim());
+
+    // For the address "Richard Street South, west bromwich, England, B70 8AN, United Kingdom"
+    // parts[0] = "Richard Street South" (street)
+    // parts[1] = "west bromwich" (city)
+    // parts[2] = "England" (this should be country, not postcode)
+    // parts[3] = "B70 8AN" (this should be postcode)
+    // parts[4] = "United Kingdom" (this should be country)
+
+    // Look for postcode pattern (UK postcodes: letters + numbers + space + letters + numbers)
+    const postcodePattern = /\b[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}\b/i;
+    let postcode = "";
+    let country = "";
+    let street = parts[0] || "";
+    let city = parts[1] || "";
+
+    // Find postcode and country
+    for (let i = 2; i < parts.length; i++) {
+      if (postcodePattern.test(parts[i])) {
+        postcode = parts[i];
+        // Everything after postcode is country
+        if (i + 1 < parts.length) {
+          country = parts.slice(i + 1).join(", ");
+        }
+        break;
+      } else if (i === parts.length - 1) {
+        // If no postcode found, last part is country
+        country = parts[i];
+      }
+    }
+
+    return {
+      street,
+      city,
+      postcode,
+      country,
+    };
+  };
+
   // Initialize form with user data from AuthContext
   useEffect(() => {
     if (user && !formData) {
@@ -297,120 +411,6 @@ export default function PersonalInformationScreen() {
         Unable to load profile
       </Text>
     );
-
-  // Parse date of birth into components
-  const parseDateOfBirth = (dateString: string) => {
-    if (!dateString) return { year: "", month: "", day: "" };
-
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return { year: "", month: "", day: "" };
-
-      return {
-        year: date.getFullYear().toString(),
-        month: (date.getMonth() + 1).toString().padStart(2, "0"),
-        day: date.getDate().toString().padStart(2, "0"),
-      };
-    } catch (error) {
-      console.warn("Error parsing date:", error);
-      return { year: "", month: "", day: "" };
-    }
-  };
-
-  // Combine date components into ISO string
-  const combineDateComponents = (year: string, month: string, day: string) => {
-    if (!year || !month || !day) return "";
-
-    try {
-      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-      if (isNaN(date.getTime())) return "";
-
-      return date.toISOString().split("T")[0];
-    } catch (error) {
-      console.warn("Error combining date components:", error);
-      return "";
-    }
-  };
-
-  // Format date of birth for display
-  const formatDateOfBirth = (dateString: string) => {
-    if (!dateString) return "";
-
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return dateString;
-
-      return date.toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
-    } catch (error) {
-      console.warn("Error formatting date:", error);
-      return dateString;
-    }
-  };
-
-  // Format phone number for display
-  const formatPhoneNumber = (phone: string) => {
-    if (!phone) return "";
-
-    // Remove all non-digit characters
-    const cleaned = phone.replace(/\D/g, "");
-
-    // Format UK phone numbers
-    if (cleaned.startsWith("44") && cleaned.length === 12) {
-      return `+44 ${cleaned.slice(2, 6)} ${cleaned.slice(6, 9)} ${cleaned.slice(9)}`;
-    } else if (cleaned.startsWith("0") && cleaned.length === 11) {
-      return `+44 ${cleaned.slice(1, 5)} ${cleaned.slice(5, 8)} ${cleaned.slice(8)}`;
-    }
-
-    return phone; // Return original if not a standard UK format
-  };
-
-  // Parse address into components
-  const parseAddress = (address: string) => {
-    if (!address) return { street: "", city: "", postcode: "", country: "" };
-
-    // Parse UK address format: "Street, City, Postcode, Country"
-    const parts = address.split(",").map((part) => part.trim());
-
-    // For the address "Richard Street South, west bromwich, England, B70 8AN, United Kingdom"
-    // parts[0] = "Richard Street South" (street)
-    // parts[1] = "west bromwich" (city)
-    // parts[2] = "England" (this should be country, not postcode)
-    // parts[3] = "B70 8AN" (this should be postcode)
-    // parts[4] = "United Kingdom" (this should be country)
-
-    // Look for postcode pattern (UK postcodes: letters + numbers + space + letters + numbers)
-    const postcodePattern = /\b[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}\b/i;
-    let postcode = "";
-    let country = "";
-    let street = parts[0] || "";
-    let city = parts[1] || "";
-
-    // Find postcode and country
-    for (let i = 2; i < parts.length; i++) {
-      if (postcodePattern.test(parts[i])) {
-        postcode = parts[i];
-        // Everything after postcode is country
-        if (i + 1 < parts.length) {
-          country = parts.slice(i + 1).join(", ");
-        }
-        break;
-      } else if (i === parts.length - 1) {
-        // If no postcode found, last part is country
-        country = parts[i];
-      }
-    }
-
-    return {
-      street,
-      city,
-      postcode,
-      country,
-    };
-  };
 
   // Handle form field changes
   const handleFieldChange = (field: string, value: string) => {
