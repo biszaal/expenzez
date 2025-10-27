@@ -41,19 +41,20 @@ export default function PersonalInformationScreen() {
     if (!dateString) return { year: "", month: "", day: "" };
 
     try {
-      const date = new Date(dateString);
+      // Parse the ISO date string and use UTC methods to avoid timezone issues
+      const date = new Date(dateString + "T00:00:00.000Z"); // Force UTC interpretation
       if (isNaN(date.getTime())) return { year: "", month: "", day: "" };
 
       const result = {
-        year: date.getFullYear().toString(),
-        month: (date.getMonth() + 1).toString().padStart(2, "0"),
-        day: date.getDate().toString().padStart(2, "0"),
+        year: date.getUTCFullYear().toString(),
+        month: (date.getUTCMonth() + 1).toString().padStart(2, "0"),
+        day: date.getUTCDate().toString().padStart(2, "0"),
       };
 
       console.log("🔍 [PersonalInfo] Parsing date:", {
         input: dateString,
         parsedDate: date.toISOString(),
-        result
+        result,
       });
 
       return result;
@@ -66,27 +67,32 @@ export default function PersonalInformationScreen() {
   // Combine date components into ISO string
   const combineDateComponents = (year: string, month: string, day: string) => {
     if (!year || !month || !day) return "";
-    
+
     try {
       const yearNum = parseInt(year);
       const monthNum = parseInt(month);
       const dayNum = parseInt(day);
-      
+
       console.log("🔍 [PersonalInfo] Combining date components:", {
-        year, month, day,
-        yearNum, monthNum, dayNum
+        year,
+        month,
+        day,
+        yearNum,
+        monthNum,
+        dayNum,
       });
-      
-      const date = new Date(yearNum, monthNum - 1, dayNum);
+
+      // Use UTC date to avoid timezone issues
+      const date = new Date(Date.UTC(yearNum, monthNum - 1, dayNum));
       if (isNaN(date.getTime())) return "";
-      
+
       const result = date.toISOString().split("T")[0];
       console.log("🔍 [PersonalInfo] Combined date result:", {
         input: { year, month, day },
         date: date.toISOString(),
-        result
+        result,
       });
-      
+
       return result;
     } catch (error) {
       console.warn("Error combining date components:", error);
@@ -481,7 +487,7 @@ export default function PersonalInformationScreen() {
         birthMonth: formData.birthMonth?.trim(),
         birthDay: formData.birthDay?.trim(),
         combinedDateOfBirth,
-        originalDateOfBirth: formData.dateOfBirth
+        originalDateOfBirth: formData.dateOfBirth,
       });
 
       // Note: Email is intentionally excluded from updates (readonly for security)
