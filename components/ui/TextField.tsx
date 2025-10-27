@@ -14,6 +14,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 interface TextFieldProps {
   label?: string;
   placeholder?: string;
+  placeholderTextColor?: string;
   value: string;
   onChangeText: (text: string) => void;
   secureTextEntry?: boolean;
@@ -33,7 +34,7 @@ interface TextFieldProps {
   inputStyle?: TextStyle;
   labelStyle?: TextStyle;
   // iOS-specific password autofill props
-  textContentType?: 
+  textContentType?:
     | "none"
     | "URL"
     | "addressCity"
@@ -67,6 +68,7 @@ interface TextFieldProps {
 export default function TextField({
   label,
   placeholder,
+  placeholderTextColor,
   value,
   onChangeText,
   secureTextEntry = false,
@@ -170,7 +172,7 @@ export default function TextField({
         <TextInput
           style={inputStyleArray}
           placeholder={placeholder}
-          
+          placeholderTextColor={placeholderTextColor || colors.text.muted}
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={secureTextEntry && !showPassword}

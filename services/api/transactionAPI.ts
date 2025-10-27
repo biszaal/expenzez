@@ -7,6 +7,7 @@ export interface Transaction {
   category: string;
   description: string;
   date: string;
+  type: "debit" | "credit";
 }
 
 export interface TransactionCreateData {
@@ -127,7 +128,9 @@ export const transactionAPI = {
   },
 
   // Delete transaction
-  deleteTransaction: async (transactionId: string): Promise<{ message: string; success: boolean }> => {
+  deleteTransaction: async (
+    transactionId: string
+  ): Promise<{ message: string; success: boolean }> => {
     const response = await api.delete(`/transactions/${transactionId}`);
     return response.data;
   },

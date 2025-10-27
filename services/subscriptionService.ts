@@ -3,40 +3,40 @@
  * Helper functions for subscription management and feature access control
  */
 
-import { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
+import { CustomerInfo, PurchasesPackage } from "react-native-purchases";
 
 // Premium features that require subscription
 export enum PremiumFeature {
   // AI Features
-  AI_CHAT = 'ai_chat',
-  AI_INSIGHTS = 'ai_insights',
-  AI_PREDICTIONS = 'ai_predictions',
+  AI_CHAT = "ai_chat",
+  AI_INSIGHTS = "ai_insights",
+  AI_PREDICTIONS = "ai_predictions",
 
   // Alerts & Briefs
-  PROACTIVE_ALERTS = 'proactive_alerts',
-  DAILY_BRIEFS = 'daily_briefs',
-  ADVANCED_ALERTS = 'advanced_alerts',
+  PROACTIVE_ALERTS = "proactive_alerts",
+  DAILY_BRIEFS = "daily_briefs",
+  ADVANCED_ALERTS = "advanced_alerts",
 
   // Budgets
-  UNLIMITED_BUDGETS = 'unlimited_budgets',
-  BUDGET_GOALS = 'budget_goals',
+  UNLIMITED_BUDGETS = "unlimited_budgets",
+  BUDGET_GOALS = "budget_goals",
 
   // Analytics
-  ADVANCED_ANALYTICS = 'advanced_analytics',
-  TREND_ANALYSIS = 'trend_analysis',
-  EXPORT_REPORTS = 'export_reports',
+  ADVANCED_ANALYTICS = "advanced_analytics",
+  TREND_ANALYSIS = "trend_analysis",
+  EXPORT_REPORTS = "export_reports",
 
   // Banking
-  OPEN_BANKING = 'open_banking',
-  BANK_SYNC = 'bank_sync',
+  OPEN_BANKING = "open_banking",
+  BANK_SYNC = "bank_sync",
 
   // Data Management
-  CSV_IMPORT = 'csv_import',
+  CSV_IMPORT = "csv_import",
 
   // Other
-  AD_FREE = 'ad_free',
-  PRIORITY_SUPPORT = 'priority_support',
-  CUSTOM_CATEGORIES = 'custom_categories',
+  AD_FREE = "ad_free",
+  PRIORITY_SUPPORT = "priority_support",
+  CUSTOM_CATEGORIES = "custom_categories",
 }
 
 // Free tier limits
@@ -89,8 +89,8 @@ class SubscriptionService {
         }
         return {
           hasAccess: false,
-          reason: 'Daily AI query limit reached',
-          upgradeMessage: 'Upgrade to Premium for unlimited AI queries',
+          reason: "Daily AI query limit reached",
+          upgradeMessage: "Upgrade to Premium for unlimited AI queries",
         };
 
       case PremiumFeature.UNLIMITED_BUDGETS:
@@ -101,21 +101,21 @@ class SubscriptionService {
         return {
           hasAccess: false,
           reason: `Maximum of ${FREE_TIER_LIMITS.MAX_BUDGETS} budgets reached`,
-          upgradeMessage: 'Upgrade to Premium for unlimited budgets',
+          upgradeMessage: "Upgrade to Premium for unlimited budgets",
         };
 
       case PremiumFeature.PROACTIVE_ALERTS:
         // Basic alerts available for free
         return {
           hasAccess: true,
-          reason: 'Basic alerts only',
+          reason: "Basic alerts only",
         };
 
       case PremiumFeature.DAILY_BRIEFS:
         // Daily briefs available for free (view only)
         return {
           hasAccess: true,
-          reason: 'View only - limited features',
+          reason: "View only - limited features",
         };
 
       // Premium-only features
@@ -133,8 +133,8 @@ class SubscriptionService {
       case PremiumFeature.AD_FREE:
         return {
           hasAccess: false,
-          reason: 'Premium feature',
-          upgradeMessage: 'Upgrade to Premium to unlock this feature',
+          reason: "Premium feature",
+          upgradeMessage: "Upgrade to Premium to unlock this feature",
         };
 
       default:
@@ -157,7 +157,8 @@ class SubscriptionService {
       };
     }
 
-    const hasPremium = customerInfo.entitlements.active['premium'] !== undefined;
+    const hasPremium =
+      customerInfo.entitlements.active["premium"] !== undefined;
 
     if (!hasPremium) {
       return {
@@ -170,7 +171,7 @@ class SubscriptionService {
       };
     }
 
-    const premiumEntitlement = customerInfo.entitlements.active['premium'];
+    const premiumEntitlement = customerInfo.entitlements.active["premium"];
     const expiryDate = premiumEntitlement.expirationDate
       ? new Date(premiumEntitlement.expirationDate)
       : null;
@@ -180,7 +181,7 @@ class SubscriptionService {
 
     return {
       isPremium: true,
-      isInTrial: premiumEntitlement.periodType === 'trial',
+      isInTrial: premiumEntitlement.periodType === "trial",
       expiryDate,
       daysRemaining,
       productId: premiumEntitlement.productIdentifier,
@@ -196,9 +197,9 @@ class SubscriptionService {
     const price = product.priceString;
     const period = product.subscriptionPeriod;
 
-    if (period?.includes('M') || period?.includes('MONTH')) {
+    if (period?.includes("M") || period?.includes("MONTH")) {
       return `${price}/month`;
-    } else if (period?.includes('Y') || period?.includes('YEAR')) {
+    } else if (period?.includes("Y") || period?.includes("YEAR")) {
       return `${price}/year`;
     }
 
@@ -208,8 +209,11 @@ class SubscriptionService {
   /**
    * Calculate savings for annual subscription
    */
-  calculateAnnualSavings(monthlyPackage: PurchasesPackage | undefined, annualPackage: PurchasesPackage | undefined): string {
-    if (!monthlyPackage || !annualPackage) return '17%';
+  calculateAnnualSavings(
+    monthlyPackage: PurchasesPackage | undefined,
+    annualPackage: PurchasesPackage | undefined
+  ): string {
+    if (!monthlyPackage || !annualPackage) return "17%";
 
     const monthlyPrice = monthlyPackage.product.price;
     const annualPrice = annualPackage.product.price;
@@ -224,25 +228,26 @@ class SubscriptionService {
    */
   getFeatureUpgradeMessage(feature: PremiumFeature): string {
     const messages: { [key in PremiumFeature]: string } = {
-      [PremiumFeature.AI_CHAT]: 'Get unlimited AI financial advice',
-      [PremiumFeature.AI_INSIGHTS]: 'Unlock unlimited AI insights',
-      [PremiumFeature.AI_PREDICTIONS]: 'Predict future spending with AI',
-      [PremiumFeature.PROACTIVE_ALERTS]: 'Get advanced proactive alerts',
-      [PremiumFeature.DAILY_BRIEFS]: 'Receive personalized daily briefs',
-      [PremiumFeature.ADVANCED_ALERTS]: 'Advanced smart alerts & notifications',
-      [PremiumFeature.UNLIMITED_BUDGETS]: 'Create unlimited budgets',
-      [PremiumFeature.BUDGET_GOALS]: 'Set and track budget goals',
-      [PremiumFeature.ADVANCED_ANALYTICS]: 'Access advanced analytics',
-      [PremiumFeature.TREND_ANALYSIS]: 'Analyze spending trends',
-      [PremiumFeature.EXPORT_REPORTS]: 'Export reports to PDF/CSV',
-      [PremiumFeature.OPEN_BANKING]: 'Connect your bank accounts',
-      [PremiumFeature.BANK_SYNC]: 'Automatic transaction sync',
-      [PremiumFeature.AD_FREE]: 'Enjoy ad-free experience',
-      [PremiumFeature.PRIORITY_SUPPORT]: 'Get priority support',
-      [PremiumFeature.CUSTOM_CATEGORIES]: 'Create custom categories',
+      [PremiumFeature.AI_CHAT]: "Get unlimited AI financial advice",
+      [PremiumFeature.AI_INSIGHTS]: "Unlock unlimited AI insights",
+      [PremiumFeature.AI_PREDICTIONS]: "Predict future spending with AI",
+      [PremiumFeature.PROACTIVE_ALERTS]: "Get advanced proactive alerts",
+      [PremiumFeature.DAILY_BRIEFS]: "Receive personalized daily briefs",
+      [PremiumFeature.ADVANCED_ALERTS]: "Advanced smart alerts & notifications",
+      [PremiumFeature.UNLIMITED_BUDGETS]: "Create unlimited budgets",
+      [PremiumFeature.BUDGET_GOALS]: "Set and track budget goals",
+      [PremiumFeature.ADVANCED_ANALYTICS]: "Access advanced analytics",
+      [PremiumFeature.TREND_ANALYSIS]: "Analyze spending trends",
+      [PremiumFeature.EXPORT_REPORTS]: "Export reports to PDF/CSV",
+      [PremiumFeature.OPEN_BANKING]: "Connect your bank accounts",
+      [PremiumFeature.BANK_SYNC]: "Automatic transaction sync",
+      [PremiumFeature.CSV_IMPORT]: "Import transactions from CSV files",
+      [PremiumFeature.AD_FREE]: "Enjoy ad-free experience",
+      [PremiumFeature.PRIORITY_SUPPORT]: "Get priority support",
+      [PremiumFeature.CUSTOM_CATEGORIES]: "Create custom categories",
     };
 
-    return messages[feature] || 'Unlock this premium feature';
+    return messages[feature] || "Unlock this premium feature";
   }
 
   /**
@@ -260,18 +265,23 @@ class SubscriptionService {
    * Get trial period message
    */
   getTrialMessage(isInTrial: boolean, daysRemaining: number | null): string {
-    if (!isInTrial) return '';
+    if (!isInTrial) return "";
 
-    if (daysRemaining === null) return 'Trial active';
+    if (daysRemaining === null) return "Trial active";
 
     if (daysRemaining > 1) {
       return `${daysRemaining} days left in your trial`;
     } else if (daysRemaining === 1) {
-      return 'Last day of your trial';
+      return "Last day of your trial";
     } else {
-      return 'Trial ending today';
+      return "Trial ending today";
     }
   }
 }
 
 export const subscriptionService = new SubscriptionService();
+
+// Hook for using subscription service
+export const useSubscription = () => {
+  return subscriptionService;
+};
