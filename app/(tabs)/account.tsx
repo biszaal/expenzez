@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Circle } from "react-native-svg";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
@@ -205,31 +204,6 @@ export default function AccountScreen() {
     return new Date().getFullYear().toString();
   };
 
-  // Calculate profile completion percentage
-  const profileCompletion = useMemo(() => {
-    const fields = [
-      profile?.firstName,
-      profile?.lastName,
-      profile?.email,
-      profile?.phoneNumber,
-      profile?.dateOfBirth,
-      profile?.address?.street,
-      profile?.address?.city,
-      profile?.address?.postcode,
-    ];
-
-    const completedFields = fields.filter(
-      (field) => field && field.toString().trim() !== ""
-    ).length;
-    const totalFields = fields.length;
-    const percentage = (completedFields / totalFields) * 100;
-
-    return {
-      percentage: Math.round(percentage),
-      completedFields,
-      totalFields,
-    };
-  }, [profile]);
 
   // Handle support and export
   const openSupport = () => {
@@ -408,37 +382,6 @@ export default function AccountScreen() {
           >
             <View style={styles.profileContent}>
               <View style={styles.avatarContainer}>
-                {/* Completion Ring */}
-                <Svg width={104} height={104} style={{ position: "absolute" }}>
-                  {/* Background Ring */}
-                  <Circle
-                    cx={52}
-                    cy={52}
-                    r={48}
-                    fill="none"
-                    stroke={colors.background.secondary}
-                    strokeWidth={4}
-                  />
-                  {/* Progress Ring */}
-                  <Circle
-                    cx={52}
-                    cy={52}
-                    r={48}
-                    fill="none"
-                    stroke={
-                      profileCompletion.percentage === 100
-                        ? colors.success[500]
-                        : profileCompletion.percentage >= 70
-                          ? colors.primary[500]
-                          : colors.warning[500]
-                    }
-                    strokeWidth={4}
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 48}`}
-                    strokeDashoffset={`${2 * Math.PI * 48 * (1 - profileCompletion.percentage / 100)}`}
-                    transform="rotate(-90 52 52)"
-                  />
-                </Svg>
                 <View
                   style={[
                     styles.avatar,
@@ -447,24 +390,6 @@ export default function AccountScreen() {
                 >
                   <Text style={styles.avatarText}>{getUserInitials()}</Text>
                 </View>
-                {/* Completion Badge */}
-                {profileCompletion.percentage < 100 && (
-                  <View
-                    style={[
-                      styles.completionBadge,
-                      { backgroundColor: colors.background.primary },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.completionText,
-                        { color: colors.primary[500] },
-                      ]}
-                    >
-                      {profileCompletion.percentage}%
-                    </Text>
-                  </View>
-                )}
               </View>
               <View style={styles.profileDetails}>
                 <Text
@@ -1166,20 +1091,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600" as const,
     color: "white",
-  },
-  completionBadge: {
-    position: "absolute" as const,
-    bottom: 0,
-    right: 0,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.full,
-    borderWidth: 2,
-    borderColor: "white",
-  },
-  completionText: {
-    fontSize: 11,
-    fontWeight: "700" as const,
   },
   profileDetails: {
     flex: 1,
