@@ -273,27 +273,44 @@ export const authAPI = {
   },
 
   resendVerification: async (data: { email?: string; username?: string }) => {
-    const response = await api.post("/auth/resend-verification", data);
-    return response.data;
+    try {
+      // Use new custom verification email endpoint for beautiful emails
+      const response = await api.post("/auth/send-verification-email", {
+        username: data.username || data.email
+      });
+      return response.data;
+    } catch (error: any) {
+      // Fallback to old endpoint if new one fails
+      console.log("Custom verification email failed, trying fallback:", error.message);
+      const response = await api.post("/auth/resend-verification", data);
+      return response.data;
+    }
   },
 
   forgotPassword: async (data: { username: string }) => {
     try {
-      // Use the working Cognito endpoint first
-      const authResponse = await axios.post(
-        `${CURRENT_API_CONFIG.baseURL}/auth/forgot-password`,
-        data,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      return authResponse.data;
-    } catch (error: any) {
-      // Fallback to main API if needed
-      const response = await api.post("/auth/forgot-password", data);
+      // Use new custom password reset email endpoint for beautiful emails
+      const response = await api.post("/auth/forgot-password-custom", data);
       return response.data;
+    } catch (error: any) {
+      // Fallback to old Cognito endpoint if custom one fails
+      console.log("Custom password reset email failed, trying fallback:", error.message);
+      try {
+        const authResponse = await axios.post(
+          `${CURRENT_API_CONFIG.baseURL}/auth/forgot-password`,
+          data,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        return authResponse.data;
+      } catch (fallbackError: any) {
+        // Final fallback to main API
+        const response = await api.post("/auth/forgot-password", data);
+        return response.data;
+      }
     }
   },
 
