@@ -56,7 +56,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
       icon: "document-text",
       format: "csv",
       dataType: "transactions",
-      color: colors.success[500],
+      color: colors.success.main,
     },
   ];
 
@@ -625,7 +625,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
                 <Ionicons
                   name="calendar-outline"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
                 <View style={styles.dateInfo}>
                   <Text
@@ -684,7 +684,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
                 <Ionicons
                   name="calendar-outline"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
                 <View style={styles.dateInfo}>
                   <Text
@@ -790,7 +790,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
                 <Ionicons
                   name="information-circle"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
                 <Text
                   style={[styles.tipText, { color: colors.text.secondary }]}
@@ -803,7 +803,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
                 <Ionicons
                   name="shield-checkmark"
                   size={20}
-                  color={colors.success[500]}
+                  color={colors.success.main}
                 />
                 <Text
                   style={[styles.tipText, { color: colors.text.secondary }]}
@@ -812,7 +812,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
                 </Text>
               </View>
               <View style={styles.tipItem}>
-                <Ionicons name="time" size={20} color={colors.warning[500]} />
+                <Ionicons name="time" size={20} color={colors.warning.main} />
                 <Text
                   style={[styles.tipText, { color: colors.text.secondary }]}
                 >
@@ -832,7 +832,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
                 { backgroundColor: colors.background.primary },
               ]}
             >
-              <ActivityIndicator size="large" color={colors.primary[500]} />
+              <ActivityIndicator size="large" color={colors.primary.main} />
               <Text
                 style={[styles.loadingTitle, { color: colors.text.primary }]}
               >

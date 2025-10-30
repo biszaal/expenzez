@@ -46,7 +46,7 @@ export const TabLoadingScreen: React.FC<TabLoadingScreenProps> = ({
             style={[
               styles.dot,
               { 
-                backgroundColor: colors.primary[500],
+                backgroundColor: colors.primary.main,
                 opacity: fadeAnim 
               }
             ]} 
@@ -55,7 +55,7 @@ export const TabLoadingScreen: React.FC<TabLoadingScreenProps> = ({
             style={[
               styles.dot,
               { 
-                backgroundColor: colors.primary[500],
+                backgroundColor: colors.primary.main,
                 opacity: fadeAnim 
               }
             ]} 
@@ -64,7 +64,7 @@ export const TabLoadingScreen: React.FC<TabLoadingScreenProps> = ({
             style={[
               styles.dot,
               { 
-                backgroundColor: colors.primary[500],
+                backgroundColor: colors.primary.main,
                 opacity: fadeAnim 
               }
             ]} 

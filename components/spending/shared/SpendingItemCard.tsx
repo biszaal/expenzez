@@ -65,7 +65,7 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
         styles.itemCardPressable,
         {
           transform: [{ scale: pressed ? 0.98 : 1 }],
-          shadowColor: colors.primary[500],
+          shadowColor: colors.primary.main,
           shadowOpacity: pressed ? 0.15 : 0.08,
           shadowRadius: 12,
           elevation: pressed ? 4 : 2,
@@ -89,7 +89,7 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
             <View
               style={[
                 styles.itemIconBg,
-                { backgroundColor: colors.primary[100] },
+                { backgroundColor: colors.primary.main[100] },
               ]}
             >
               {showCategory ? (
@@ -100,7 +100,7 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
                 <CategoryIcon
                   iconName={item.icon}
                   categoryName={item.name}
-                  color={colors.primary[600]}
+                  color={colors.primary.main[600]}
                   size={20}
                 />
               )}
@@ -117,7 +117,7 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
                     styles.itemCardAmount,
                     {
                       color: overBudget
-                        ? colors.error[500]
+                        ? colors.error.main
                         : colors.text.primary,
                     },
                   ]}
@@ -144,8 +144,8 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
                         size={10}
                         color={
                           trend.direction === "up"
-                            ? colors.error[500]
-                            : colors.success[500]
+                            ? colors.error.main
+                            : colors.success.main
                         }
                       />
                       <Text
@@ -154,8 +154,8 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
                           {
                             color:
                               trend.direction === "up"
-                                ? colors.error[500]
-                                : colors.success[500],
+                                ? colors.error.main
+                                : colors.success.main,
                           },
                         ]}
                       >
@@ -185,10 +185,10 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
                 styles.itemCardPercentage,
                 {
                   color: overBudget
-                    ? colors.error[500]
+                    ? colors.error.main
                     : percent > 80
-                      ? colors.warning[500]
-                      : colors.success[500],
+                      ? colors.warning.main
+                      : colors.success.main,
                 },
               ]}
             >
@@ -211,14 +211,14 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
                   styles.itemCardProgressBar,
                   {
                     width: `${Math.min(percentageOfTotal, 100)}%`,
-                    backgroundColor: colors.primary[500],
+                    backgroundColor: colors.primary.main,
                   },
                 ]}
               />
             </View>
             <View style={styles.progressInfo}>
               <Text
-                style={[styles.progressText, { color: colors.primary[600] }]}
+                style={[styles.progressText, { color: colors.primary.main[600] }]}
               >
                 {Math.round(percentageOfTotal)}% of total
               </Text>

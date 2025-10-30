@@ -79,7 +79,7 @@ export const EnhancedQuickActions: React.FC = () => {
             activeOpacity={0.8}
           >
             <LinearGradient
-              colors={action.colors}
+              colors={action.colors as [string, string]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.actionGradient}

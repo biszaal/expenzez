@@ -188,7 +188,7 @@ export default function PinSetupScreen({ onComplete }: PinSetupScreenProps) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
             {loadingMessage}
           </Text>

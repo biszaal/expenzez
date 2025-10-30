@@ -332,7 +332,7 @@ export default function ChangePinScreen() {
           <Ionicons
             name="chevron-back"
             size={24}
-            color={colors.primary[500]}
+            color={colors.primary.main}
           />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
@@ -349,7 +349,7 @@ export default function ChangePinScreen() {
             style={[
               styles.progressStep,
               {
-                backgroundColor: step <= currentStep ? colors.primary[500] : colors.gray[200],
+                backgroundColor: step <= currentStep ? colors.primary.main : colors.gray[200],
               },
             ]}
           />

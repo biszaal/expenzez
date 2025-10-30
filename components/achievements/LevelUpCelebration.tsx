@@ -82,6 +82,7 @@ export const LevelUpCelebration: React.FC<LevelUpCelebrationProps> = ({
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [visible]);
 
   const handleClose = () => {

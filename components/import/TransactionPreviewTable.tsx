@@ -168,7 +168,7 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
             <Ionicons
               name={selectedIds.size === transactions.length ? "checkbox" : "square-outline"}
               size={20}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
             <Text style={[styles.selectAllText, { color: colors.text.secondary }]}>
               {selectedIds.size === transactions.length ? "Deselect All" : "Select All"}
@@ -201,11 +201,11 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
                 {
                   backgroundColor:
                     sortBy === col
-                      ? colors.primary[100]
+                      ? colors.primary.main[100]
                       : colors.background.tertiary,
                   borderColor:
                     sortBy === col
-                      ? colors.primary[300]
+                      ? colors.primary.main[300]
                       : colors.background.tertiary,
                 },
               ]}
@@ -217,7 +217,7 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
                   {
                     color:
                       sortBy === col
-                        ? colors.primary[500]
+                        ? colors.primary.main
                         : colors.text.secondary,
                   },
                 ]}
@@ -228,7 +228,7 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
                 <Ionicons
                   name={sortOrder === "asc" ? "arrow-up" : "arrow-down"}
                   size={12}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                   style={{ marginLeft: 4 }}
                 />
               )}
@@ -284,7 +284,7 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
               <Ionicons
                 name={selectedIds.has(item.id) ? "checkbox" : "square-outline"}
                 size={18}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
 
@@ -339,7 +339,7 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
                 <Ionicons
                   name="pencil"
                   size={16}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </TouchableOpacity>
               <TouchableOpacity

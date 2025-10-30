@@ -538,7 +538,7 @@ export default function AIAssistantScreen() {
             <Ionicons
               name="chevron-back"
               size={24}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
 
@@ -557,7 +557,7 @@ export default function AIAssistantScreen() {
                   width: 32,
                   height: 32,
                   borderRadius: 16,
-                  backgroundColor: colors.primary[500] + "15",
+                  backgroundColor: colors.primary.main + "15",
                   alignItems: "center",
                   justifyContent: "center",
                   marginRight: 8,
@@ -566,7 +566,7 @@ export default function AIAssistantScreen() {
                 <Ionicons
                   name="sparkles"
                   size={18}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </View>
               <Text
@@ -599,7 +599,7 @@ export default function AIAssistantScreen() {
               borderRadius: 20,
               backgroundColor: loading
                 ? colors.background.tertiary
-                : colors.error[500] + "15",
+                : colors.error.main + "15",
               alignItems: "center",
               justifyContent: "center",
               opacity: loading ? 0.5 : 1,
@@ -608,7 +608,7 @@ export default function AIAssistantScreen() {
             <Ionicons
               name="trash-outline"
               size={18}
-              color={loading ? colors.text.tertiary : colors.error[500]}
+              color={loading ? colors.text.tertiary : colors.error.main}
             />
           </TouchableOpacity>
         </View>
@@ -673,7 +673,7 @@ export default function AIAssistantScreen() {
                         width: 40,
                         height: 40,
                         borderRadius: 20,
-                        backgroundColor: colors.primary[500],
+                        backgroundColor: colors.primary.main,
                         alignItems: "center",
                         justifyContent: "center",
                         marginRight: 12,
@@ -779,7 +779,7 @@ export default function AIAssistantScreen() {
                     {/* AI Insights */}
                     <View
                       style={{
-                        backgroundColor: colors.primary[500] + "10",
+                        backgroundColor: colors.primary.main + "10",
                         borderRadius: borderRadius.lg,
                         padding: 12,
                         marginBottom: 12,
@@ -865,15 +865,15 @@ export default function AIAssistantScreen() {
 
                     {proactiveInsights.slice(0, 2).map((insight, index) => {
                       const typeColors = {
-                        celebration: colors.success[500],
-                        warning: colors.warning[500],
-                        tip: colors.primary[500],
-                        suggestion: colors.secondary[500],
+                        celebration: colors.success.main,
+                        warning: colors.warning.main,
+                        tip: colors.primary.main,
+                        suggestion: colors.secondary.main,
                         motivation: colors.accent[500],
                       };
 
                       const typeColor =
-                        typeColors[insight.type] || colors.primary[500];
+                        typeColors[insight.type] || colors.primary.main;
 
                       return (
                         <TouchableOpacity
@@ -997,13 +997,13 @@ export default function AIAssistantScreen() {
                           <TouchableOpacity
                             key={index}
                             style={{
-                              backgroundColor: colors.primary[500] + "15",
+                              backgroundColor: colors.primary.main + "15",
                               borderRadius: borderRadius.xl,
                               paddingHorizontal: 12,
                               paddingVertical: 8,
                               margin: 4,
                               borderWidth: 1,
-                              borderColor: colors.primary[500] + "30",
+                              borderColor: colors.primary.main + "30",
                               flexDirection: "row",
                               alignItems: "center",
                             }}
@@ -1013,13 +1013,13 @@ export default function AIAssistantScreen() {
                             <Ionicons
                               name="chatbubble"
                               size={14}
-                              color={colors.primary[500]}
+                              color={colors.primary.main}
                             />
                             <Text
                               style={{
                                 fontSize: 14,
                                 fontWeight: "500",
-                                color: colors.primary[500],
+                                color: colors.primary.main,
                                 marginLeft: 6,
                               }}
                             >
@@ -1051,7 +1051,7 @@ export default function AIAssistantScreen() {
                       width: 32,
                       height: 32,
                       borderRadius: 16,
-                      backgroundColor: colors.primary[500],
+                      backgroundColor: colors.primary.main,
                       alignItems: "center",
                       justifyContent: "center",
                       marginRight: 8,
@@ -1071,7 +1071,7 @@ export default function AIAssistantScreen() {
                     borderRadius: 20,
                     backgroundColor:
                       msg.role === "user"
-                        ? colors.primary[500]
+                        ? colors.primary.main
                         : colors.background.primary,
                     shadowColor: "#000",
                     shadowOffset: { width: 0, height: 1 },
@@ -1145,7 +1145,7 @@ export default function AIAssistantScreen() {
                     width: 32,
                     height: 32,
                     borderRadius: 16,
-                    backgroundColor: colors.primary[500],
+                    backgroundColor: colors.primary.main,
                     alignItems: "center",
                     justifyContent: "center",
                     marginRight: 8,
@@ -1172,7 +1172,7 @@ export default function AIAssistantScreen() {
                     elevation: 2,
                   }}
                 >
-                  <ActivityIndicator size="small" color={colors.primary[500]} />
+                  <ActivityIndicator size="small" color={colors.primary.main} />
                   <Text
                     style={{
                       marginLeft: 8,
@@ -1195,7 +1195,7 @@ export default function AIAssistantScreen() {
                 bottom: 80,
                 left: 16,
                 right: 16,
-                backgroundColor: colors.warning[500],
+                backgroundColor: colors.warning.main,
                 borderRadius: 12,
                 padding: 12,
                 flexDirection: "row",
@@ -1281,7 +1281,7 @@ export default function AIAssistantScreen() {
                   backgroundColor:
                     !input.trim() || loading
                       ? colors.background.tertiary
-                      : colors.primary[500],
+                      : colors.primary.main,
                   alignItems: "center",
                   justifyContent: "center",
                   shadowColor: "#000",

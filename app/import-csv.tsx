@@ -910,7 +910,7 @@ export default function CSVImportScreen() {
             <Ionicons
               name="chevron-back"
               size={24}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
           <Text style={[styles.title, { color: colors.text.primary }]}>
@@ -984,8 +984,8 @@ export default function CSVImportScreen() {
             style={[
               styles.selectButton,
               {
-                backgroundColor: colors.primary[100],
-                borderColor: colors.primary[300],
+                backgroundColor: colors.primary.main[100],
+                borderColor: colors.primary.main[300],
               },
             ]}
             onPress={handleFileSelect}
@@ -994,15 +994,15 @@ export default function CSVImportScreen() {
             <Ionicons
               name="document-text"
               size={24}
-              color={colors.primary[600]}
+              color={colors.primary.main[600]}
             />
             <Text
-              style={[styles.selectButtonText, { color: colors.primary[600] }]}
+              style={[styles.selectButtonText, { color: colors.primary.main[600] }]}
             >
               {loading ? "Reading file..." : "Select CSV File"}
             </Text>
             {loading && (
-              <ActivityIndicator size="small" color={colors.primary[600]} />
+              <ActivityIndicator size="small" color={colors.primary.main[600]} />
             )}
           </TouchableOpacity>
 
@@ -1138,7 +1138,7 @@ export default function CSVImportScreen() {
               style={[
                 styles.importButton,
                 {
-                  backgroundColor: colors.primary[500],
+                  backgroundColor: colors.primary.main,
                   opacity: importing ? 0.6 : 1,
                 },
               ]}

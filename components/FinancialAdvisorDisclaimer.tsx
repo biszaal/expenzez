@@ -45,7 +45,7 @@ This tool is designed to help you understand your spending patterns and develop 
             Not Certified Financial Advice
           </Text>
           <TouchableOpacity onPress={() => setModalVisible(true)}>
-            <Text style={[styles.readMoreText, { color: colors.primary[600] }]}>
+            <Text style={[styles.readMoreText, { color: colors.primary.main[600] }]}>
               Read More
             </Text>
           </TouchableOpacity>
@@ -76,7 +76,7 @@ This tool is designed to help you understand your spending patterns and develop 
               </Text>
 
               <TouchableOpacity
-                style={[styles.understoodButton, { backgroundColor: colors.primary[500] }]}
+                style={[styles.understoodButton, { backgroundColor: colors.primary.main }]}
                 onPress={() => setModalVisible(false)}
               >
                 <Text style={styles.understoodButtonText}>I Understand</Text>
@@ -121,7 +121,7 @@ This tool is designed to help you understand your spending patterns and develop 
             </Text>
 
             <TouchableOpacity
-              style={[styles.understoodButton, { backgroundColor: colors.primary[500] }]}
+              style={[styles.understoodButton, { backgroundColor: colors.primary.main }]}
               onPress={() => setModalVisible(false)}
             >
               <Text style={styles.understoodButtonText}>I Understand</Text>

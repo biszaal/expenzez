@@ -216,7 +216,7 @@ export default function UpcomingBillsScreen() {
   const getBillColor = (daysUntilDue: number) => {
     if (daysUntilDue <= 3) return '#EF4444'; // Red - urgent
     if (daysUntilDue <= 7) return '#F59E0B'; // Orange - soon
-    return colors.primary[500]; // Blue - normal
+    return colors.primary.main; // Blue - normal
   };
 
   const getDaysText = (days: number) => {
@@ -264,8 +264,8 @@ export default function UpcomingBillsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[colors.primary[500]]}
-            tintColor={colors.primary[500]}
+            colors={[colors.primary.main]}
+            tintColor={colors.primary.main}
           />
         }
       >
@@ -281,7 +281,7 @@ export default function UpcomingBillsScreen() {
               </Text>
             </View>
             <View style={styles.summaryIconContainer}>
-              <View style={[styles.summaryIcon, { backgroundColor: colors.primary[500] }]}>
+              <View style={[styles.summaryIcon, { backgroundColor: colors.primary.main }]}>
                 <Ionicons name="calendar" size={24} color="white" />
               </View>
             </View>
@@ -412,7 +412,7 @@ export default function UpcomingBillsScreen() {
                 onPress={() => handleExcludeBill('not_recurring')}
               >
                 <View style={styles.exclusionOptionIcon}>
-                  <Ionicons name="repeat-outline" size={24} color={colors.primary[500]} />
+                  <Ionicons name="repeat-outline" size={24} color={colors.primary.main} />
                 </View>
                 <View style={styles.exclusionOptionText}>
                   <Text style={[styles.exclusionOptionTitle, { color: colors.text.primary }]}>
@@ -429,7 +429,7 @@ export default function UpcomingBillsScreen() {
                 onPress={() => handleExcludeBill('no_longer_active')}
               >
                 <View style={styles.exclusionOptionIcon}>
-                  <Ionicons name="stop-circle-outline" size={24} color={colors.primary[500]} />
+                  <Ionicons name="stop-circle-outline" size={24} color={colors.primary.main} />
                 </View>
                 <View style={styles.exclusionOptionText}>
                   <Text style={[styles.exclusionOptionTitle, { color: colors.text.primary }]}>
@@ -446,7 +446,7 @@ export default function UpcomingBillsScreen() {
                 onPress={() => handleExcludeBill('incorrect_detection')}
               >
                 <View style={styles.exclusionOptionIcon}>
-                  <Ionicons name="alert-circle-outline" size={24} color={colors.primary[500]} />
+                  <Ionicons name="alert-circle-outline" size={24} color={colors.primary.main} />
                 </View>
                 <View style={styles.exclusionOptionText}>
                   <Text style={[styles.exclusionOptionTitle, { color: colors.text.primary }]}>

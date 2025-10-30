@@ -78,7 +78,7 @@ function CreditScorePage() {
           ]}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={26} color={colors.primary[500]} />
+          <Ionicons name="chevron-back" size={26} color={colors.primary.main} />
         </TouchableOpacity>
         <Text style={[styles.topBarTitle, { color: colors.text.primary }]}>
           Credit Score
@@ -96,7 +96,7 @@ function CreditScorePage() {
           <Text style={[styles.scoreTitle, { color: colors.text.primary }]}>
             Your Credit Score
           </Text>
-          <Text style={[styles.scoreValue, { color: colors.primary[500] }]}>
+          <Text style={[styles.scoreValue, { color: colors.primary.main }]}>
             {creditScore !== null ? creditScore : "N/A"}
           </Text>
           <Text
@@ -108,7 +108,7 @@ function CreditScorePage() {
         <TouchableOpacity
           style={[
             styles.refreshButton,
-            { backgroundColor: colors.primary[500] },
+            { backgroundColor: colors.primary.main },
             shadows.sm,
           ]}
           onPress={handleRefresh}

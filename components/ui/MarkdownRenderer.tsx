@@ -72,7 +72,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             <Text style={{
               fontSize,
               fontWeight: '600',
-              color: colors.primary[500],
+              color: colors.primary.main,
               marginRight: 8,
               minWidth: 20,
             }}>
@@ -105,7 +105,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             <Text style={{
               fontSize,
               fontWeight: '600',
-              color: colors.primary[500],
+              color: colors.primary.main,
               marginRight: 8,
               minWidth: 12,
             }}>

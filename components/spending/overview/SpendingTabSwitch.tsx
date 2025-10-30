@@ -30,7 +30,7 @@ export const SpendingTabSwitch: React.FC<SpendingTabSwitchProps> = ({
             {
               backgroundColor:
                 selectedTab === "summary"
-                  ? colors.primary[500]
+                  ? colors.primary.main
                   : "transparent",
             },
           ]}
@@ -44,7 +44,7 @@ export const SpendingTabSwitch: React.FC<SpendingTabSwitchProps> = ({
                 backgroundColor:
                   selectedTab === "summary"
                     ? `${colors.text.inverse}25`
-                    : `${colors.primary[500]}15`,
+                    : `${colors.primary.main}15`,
               },
             ]}
           >
@@ -54,7 +54,7 @@ export const SpendingTabSwitch: React.FC<SpendingTabSwitchProps> = ({
               color={
                 selectedTab === "summary"
                   ? colors.text.inverse
-                  : colors.primary[500]
+                  : colors.primary.main
               }
             />
           </View>
@@ -65,7 +65,7 @@ export const SpendingTabSwitch: React.FC<SpendingTabSwitchProps> = ({
                 color:
                   selectedTab === "summary"
                     ? colors.text.inverse
-                    : colors.primary[500],
+                    : colors.primary.main,
               },
             ]}
           >
@@ -79,7 +79,7 @@ export const SpendingTabSwitch: React.FC<SpendingTabSwitchProps> = ({
             {
               backgroundColor:
                 selectedTab === "categories"
-                  ? colors.primary[500]
+                  ? colors.primary.main
                   : "transparent",
             },
           ]}
@@ -93,7 +93,7 @@ export const SpendingTabSwitch: React.FC<SpendingTabSwitchProps> = ({
                 backgroundColor:
                   selectedTab === "categories"
                     ? `${colors.text.inverse}25`
-                    : `${colors.primary[500]}15`,
+                    : `${colors.primary.main}15`,
               },
             ]}
           >
@@ -103,7 +103,7 @@ export const SpendingTabSwitch: React.FC<SpendingTabSwitchProps> = ({
               color={
                 selectedTab === "categories"
                   ? colors.text.inverse
-                  : colors.primary[500]
+                  : colors.primary.main
               }
             />
           </View>
@@ -114,7 +114,7 @@ export const SpendingTabSwitch: React.FC<SpendingTabSwitchProps> = ({
                 color:
                   selectedTab === "categories"
                     ? colors.text.inverse
-                    : colors.primary[500],
+                    : colors.primary.main,
               },
             ]}
           >

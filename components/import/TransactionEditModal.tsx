@@ -124,7 +124,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
             <Ionicons
               name="close"
               size={24}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
           <Text style={[styles.title, { color: colors.text.primary }]}>
@@ -145,7 +145,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                 editedTransaction.merchant.trim() &&
                 amountText &&
                 parseFloat(amountText) > 0
-                  ? colors.primary[500]
+                  ? colors.primary.main
                   : colors.text.secondary
               }
             />
@@ -168,7 +168,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                 {
                   backgroundColor: colors.background.secondary,
                   color: colors.text.primary,
-                  borderColor: colors.primary[200],
+                  borderColor: colors.primary.main[200],
                 },
               ]}
               value={new Date(editedTransaction.date)
@@ -191,7 +191,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                 {
                   backgroundColor: colors.background.secondary,
                   color: colors.text.primary,
-                  borderColor: colors.primary[200],
+                  borderColor: colors.primary.main[200],
                 },
               ]}
               value={editedTransaction.merchant}
@@ -212,7 +212,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                 {
                   backgroundColor: colors.background.secondary,
                   color: colors.text.primary,
-                  borderColor: colors.primary[200],
+                  borderColor: colors.primary.main[200],
                 },
               ]}
               value={editedTransaction.description || ""}
@@ -239,7 +239,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                   {
                     backgroundColor: colors.background.secondary,
                     color: colors.text.primary,
-                    borderColor: colors.primary[200],
+                    borderColor: colors.primary.main[200],
                   },
                 ]}
                 value={amountText}
@@ -268,12 +268,12 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                     {
                       backgroundColor:
                         editedTransaction.type === type
-                          ? colors.primary[500]
+                          ? colors.primary.main
                           : colors.background.secondary,
                       borderColor:
                         editedTransaction.type === type
-                          ? colors.primary[500]
-                          : colors.primary[200],
+                          ? colors.primary.main
+                          : colors.primary.main[200],
                     },
                   ]}
                   onPress={() => updateField("type", type)}
@@ -306,7 +306,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                 styles.categoryButton,
                 {
                   backgroundColor: colors.background.secondary,
-                  borderColor: colors.primary[200],
+                  borderColor: colors.primary.main[200],
                 },
               ]}
               onPress={() => setShowCategoryPicker(!showCategoryPicker)}
@@ -322,7 +322,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
               <Ionicons
                 name={showCategoryPicker ? "chevron-up" : "chevron-down"}
                 size={20}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
 
@@ -341,7 +341,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                       {
                         backgroundColor:
                           editedTransaction.category === cat.id
-                            ? colors.primary[50]
+                            ? colors.primary.main[50]
                             : "transparent",
                         borderBottomColor: colors.background.tertiary,
                       },
@@ -357,7 +357,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                         {
                           color:
                             editedTransaction.category === cat.id
-                              ? colors.primary[500]
+                              ? colors.primary.main
                               : colors.text.primary,
                         },
                       ]}
@@ -368,7 +368,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                       <Ionicons
                         name="checkmark"
                         size={20}
-                        color={colors.primary[500]}
+                        color={colors.primary.main}
                       />
                     )}
                   </TouchableOpacity>

@@ -73,6 +73,7 @@ export default function EmailVerification() {
       const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [resendTimer]);
 
   const handleVerification = async () => {
@@ -292,7 +293,7 @@ export default function EmailVerification() {
 
                 <Typography
                   variant="body"
-                  style={[styles.email, { color: colors.primary[500] }]}
+                  style={[styles.email, { color: colors.primary.main }]}
                   weight="semibold"
                 >
                   {params.email ||
@@ -307,7 +308,7 @@ export default function EmailVerification() {
             {/* Form Container */}
             <View
               style={[
-                styles.glassCard,
+                styles.card,
                 { backgroundColor: colors.background.secondary },
               ]}
             >
@@ -337,7 +338,7 @@ export default function EmailVerification() {
                 <TouchableOpacity
                   style={[
                     styles.verifyButton,
-                    { backgroundColor: colors.primary[500] },
+                    { backgroundColor: colors.primary.main },
                   ]}
                   onPress={handleVerification}
                   disabled={isVerifying || verificationCode.length !== 6}
@@ -386,7 +387,7 @@ export default function EmailVerification() {
                     {isResending ? (
                       <ActivityIndicator
                         size="small"
-                        color={colors.primary[500]}
+                        color={colors.primary.main}
                       />
                     ) : (
                       <Typography
@@ -394,7 +395,7 @@ export default function EmailVerification() {
                         style={[
                           styles.resendButtonText,
                           {
-                            color: colors.primary[500],
+                            color: colors.primary.main,
                             opacity: resendTimer > 0 ? 0.5 : 1,
                           },
                         ]}
@@ -413,15 +414,15 @@ export default function EmailVerification() {
                   style={[
                     styles.helpContainer,
                     {
-                      backgroundColor: colors.primary[500] + "10",
-                      borderColor: colors.primary[500] + "20",
+                      backgroundColor: colors.primary.main + "10",
+                      borderColor: colors.primary.main + "20",
                     },
                   ]}
                 >
                   <Ionicons
                     name="information-circle"
                     size={20}
-                    color={colors.primary[500]}
+                    color={colors.primary.main}
                   />
                   <Typography
                     variant="caption"
@@ -606,5 +607,18 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     lineHeight: 16,
+  },
+  card: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });

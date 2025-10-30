@@ -102,14 +102,14 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
+          <Ionicons name="chevron-back" size={24} color={colors.primary.main} />
         </TouchableOpacity>
       </View>
 
       <View style={[styles.promptCard, { backgroundColor: colors.background.primary }]}>
         {/* Premium Icon */}
-        <View style={[styles.iconContainer, { backgroundColor: colors.primary[100] }]}>
-          <Ionicons name="diamond" size={48} color={colors.primary[500]} />
+        <View style={[styles.iconContainer, { backgroundColor: colors.primary.main[100] }]}>
+          <Ionicons name="diamond" size={48} color={colors.primary.main} />
         </View>
 
         {/* Title */}
@@ -134,7 +134,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
 
         {/* Upgrade Button */}
         <TouchableOpacity
-          style={[styles.upgradeButton, { backgroundColor: colors.primary[500] }]}
+          style={[styles.upgradeButton, { backgroundColor: colors.primary.main }]}
           onPress={() => router.push('/subscription/plans')}
           activeOpacity={0.8}
         >
@@ -179,7 +179,7 @@ export const PremiumBadge: React.FC<{ size?: 'small' | 'medium' }> = ({ size = '
     <View
       style={[
         styles.badge,
-        { backgroundColor: colors.primary[500] },
+        { backgroundColor: colors.primary.main },
         size === 'medium' && styles.badgeMedium,
       ]}
     >

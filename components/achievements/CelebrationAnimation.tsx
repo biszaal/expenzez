@@ -72,6 +72,7 @@ export const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [visible, achievement]);
 
   const handleClose = () => {

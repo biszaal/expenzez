@@ -126,7 +126,7 @@ export default function CSVImportPreviewScreen() {
                 {
                   text: "View Transactions",
                   onPress: () => {
-                    router.replace("/(tabs)/transactions");
+                    router.replace("/transactions");
                   },
                 },
               ]
@@ -163,7 +163,7 @@ export default function CSVImportPreviewScreen() {
           <Ionicons
             name="chevron-back"
             size={24}
-            color={colors.primary[500]}
+            color={colors.primary.main}
           />
         </TouchableOpacity>
         <View style={styles.headerTitle}>
@@ -182,21 +182,21 @@ export default function CSVImportPreviewScreen() {
         <View
           style={[
             styles.summaryCard,
-            { backgroundColor: colors.primary[50] },
+            { backgroundColor: colors.primary.main[50] },
           ]}
         >
           <View style={styles.summaryContent}>
-            <Text style={[styles.summaryValue, { color: colors.primary[700] }]}>
+            <Text style={[styles.summaryValue, { color: colors.primary.main[700] }]}>
               {transactions.length}
             </Text>
-            <Text style={[styles.summaryLabel, { color: colors.primary[600] }]}>
+            <Text style={[styles.summaryLabel, { color: colors.primary.main[600] }]}>
               Transactions
             </Text>
           </View>
           <Ionicons
             name="list-outline"
             size={32}
-            color={colors.primary[200]}
+            color={colors.primary.main[200]}
           />
         </View>
 
@@ -233,7 +233,7 @@ export default function CSVImportPreviewScreen() {
           <Ionicons
             name="information-circle-outline"
             size={20}
-            color={colors.primary[500]}
+            color={colors.primary.main}
           />
           <Text style={[styles.instructionText, { color: colors.text.secondary }]}>
             Review the transactions below. You can edit categories, amounts, or delete unwanted transactions before importing.
@@ -263,12 +263,12 @@ export default function CSVImportPreviewScreen() {
         <TouchableOpacity
           style={[
             styles.cancelButton,
-            { borderColor: colors.primary[300] },
+            { borderColor: colors.primary.main[300] },
           ]}
           onPress={() => router.back()}
           disabled={importing}
         >
-          <Text style={[styles.cancelButtonText, { color: colors.primary[500] }]}>
+          <Text style={[styles.cancelButtonText, { color: colors.primary.main }]}>
             Cancel
           </Text>
         </TouchableOpacity>
@@ -277,7 +277,7 @@ export default function CSVImportPreviewScreen() {
           style={[
             styles.importButton,
             {
-              backgroundColor: colors.primary[500],
+              backgroundColor: colors.primary.main,
               opacity: importing || transactions.length === 0 ? 0.6 : 1,
             },
           ]}

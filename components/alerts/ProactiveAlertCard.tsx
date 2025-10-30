@@ -36,8 +36,8 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
   const [dismissed, setDismissed] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(1));
 
-  // Early return if theme is not available
-  if (!theme || !colors) {
+  // Early return if colors is not available
+  if (!colors) {
     return null;
   }
 
@@ -103,7 +103,7 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
       style={[
         styles.card,
         {
-          backgroundColor: colors.card,
+          backgroundColor: colors.card.background,
           opacity: fadeAnim,
           borderLeftColor: alertColor,
         },
@@ -121,7 +121,7 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
         <View style={styles.headerLeft}>
           <Text style={styles.alertIcon}>{alertIcon}</Text>
           <View style={styles.headerText}>
-            <Text style={[styles.title, { color: colors.text }]}>
+            <Text style={[styles.title, { color: colors.text.primary }]}>
               {alert.title}
             </Text>
             <View style={styles.metaRow}>
@@ -151,20 +151,20 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
           {dismissing ? (
             <ActivityIndicator
               size="small"
-              color={colors.textSecondary}
+              color={colors.secondary.main}
             />
           ) : (
             <Ionicons
               name="close"
               size={20}
-              color={colors.textSecondary}
+              color={colors.secondary.main}
             />
           )}
         </TouchableOpacity>
       </View>
 
       {/* Message */}
-      <Text style={[styles.message, { color: colors.textSecondary }]}>
+      <Text style={[styles.message, { color: colors.secondary.main }]}>
         {alert.message}
       </Text>
 
@@ -176,13 +176,13 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
               <Text
                 style={[
                   styles.metadataLabel,
-                  { color: colors.textSecondary },
+                  { color: colors.secondary.main },
                 ]}
               >
                 Usage:
               </Text>
               <Text
-                style={[styles.metadataValue, { color: colors.text }]}
+                style={[styles.metadataValue, { color: colors.text.primary }]}
               >
                 {alert.metadata.percentage}%
               </Text>
@@ -193,13 +193,13 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
               <Text
                 style={[
                   styles.metadataLabel,
-                  { color: colors.textSecondary },
+                  { color: colors.secondary.main },
                 ]}
               >
                 Remaining:
               </Text>
               <Text
-                style={[styles.metadataValue, { color: colors.text }]}
+                style={[styles.metadataValue, { color: colors.text.primary }]}
               >
                 £{alert.metadata.remaining.toFixed(2)}
               </Text>
@@ -210,13 +210,13 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
               <Text
                 style={[
                   styles.metadataLabel,
-                  { color: colors.textSecondary },
+                  { color: colors.secondary.main },
                 ]}
               >
                 Amount:
               </Text>
               <Text
-                style={[styles.metadataValue, { color: colors.text }]}
+                style={[styles.metadataValue, { color: colors.text.primary }]}
               >
                 £{alert.metadata.amount.toFixed(2)}
               </Text>
@@ -240,24 +240,24 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
           <TouchableOpacity
             style={[
               styles.acknowledgeButton,
-              { borderColor: colors.border },
+              { borderColor: colors.border.medium },
             ]}
             onPress={handleAcknowledge}
             disabled={acknowledging}
           >
             {acknowledging ? (
-              <ActivityIndicator size="small" color={colors.text} />
+              <ActivityIndicator size="small" color={colors.text.primary} />
             ) : (
               <>
                 <Ionicons
                   name="checkmark"
                   size={16}
-                  color={colors.text}
+                  color={colors.text.primary}
                 />
                 <Text
                   style={[
                     styles.acknowledgeButtonText,
-                    { color: colors.text },
+                    { color: colors.text.primary },
                   ]}
                 >
                   Got it
@@ -269,7 +269,7 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
       </View>
 
       {/* Timestamp */}
-      <Text style={[styles.timestamp, { color: colors.textSecondary }]}>
+      <Text style={[styles.timestamp, { color: colors.secondary.main }]}>
         {getRelativeTime(alert.createdAt)}
       </Text>
     </Animated.View>

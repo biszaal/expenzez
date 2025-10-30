@@ -207,7 +207,9 @@ export default function AddTransaction() {
         );
 
         // Transaction saved successfully - balance will be updated by backend
-        console.log("💰 [AddTransaction] Transaction saved, balance will be updated by backend");
+        console.log(
+          "💰 [AddTransaction] Transaction saved, balance will be updated by backend"
+        );
 
         Alert.alert(
           "Success",
@@ -247,7 +249,7 @@ export default function AddTransaction() {
 
             // Track daily streak (if StreakService is available)
             // try {
-            //   await StreakService.recordTransaction();
+            //   await StreakService.incrementStreak();
             //   console.log("🔥 [AddTransaction] Daily streak recorded");
             // } catch (streakError) {
             //   console.error(
@@ -314,7 +316,7 @@ export default function AddTransaction() {
                   backgroundColor:
                     transactionType === "expense"
                       ? colors.primary.main
-                      : colors.background,
+                      : colors.background.primary,
                 },
               ]}
               onPress={() => {
@@ -344,7 +346,7 @@ export default function AddTransaction() {
                   backgroundColor:
                     transactionType === "income"
                       ? colors.primary.main
-                      : colors.background,
+                      : colors.background.primary,
                 },
               ]}
               onPress={() => {
@@ -439,7 +441,7 @@ export default function AddTransaction() {
                         backgroundColor:
                           selectedCategory.id === category.id
                             ? category.color
-                            : colors.background,
+                            : colors.background.primary,
                         borderColor:
                           selectedCategory.id === category.id
                             ? category.color

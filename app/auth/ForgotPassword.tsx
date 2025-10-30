@@ -35,6 +35,7 @@ export default function ForgotPasswordScreen() {
       }, 1000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [resendCooldown]);
 
   const handleSubmit = async () => {
@@ -155,11 +156,11 @@ export default function ForgotPasswordScreen() {
             </TouchableOpacity>
 
             <View style={styles.headerContent}>
-              <View style={[styles.logoContainer, { backgroundColor: colors.primary[500] + "15" }]}>
+              <View style={[styles.logoContainer, { backgroundColor: colors.primary.main + "15" }]}>
                 <Ionicons
                   name="lock-closed-outline"
                   size={40}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </View>
 
@@ -177,8 +178,8 @@ export default function ForgotPasswordScreen() {
             {/* Success State */}
             {emailSent && (
               <View style={styles.successContainer}>
-                <View style={[styles.successIconCircle, { backgroundColor: colors.success[500] + "20", borderColor: colors.border.light }]}>
-                  <Ionicons name="checkmark" size={40} color={colors.success[500]} />
+                <View style={[styles.successIconCircle, { backgroundColor: colors.success.main + "20", borderColor: colors.border.light }]}>
+                  <Ionicons name="checkmark" size={40} color={colors.success.main} />
                 </View>
 
                 <Typography variant="h2" style={[styles.successTitle, { color: colors.text.primary }]}>
@@ -207,13 +208,13 @@ export default function ForgotPasswordScreen() {
                 <TouchableOpacity
                   style={[
                     styles.resendCodeButton,
-                    { borderColor: colors.primary[500], opacity: resendCooldown > 0 || isLoading ? 0.6 : 1 },
+                    { borderColor: colors.primary.main, opacity: resendCooldown > 0 || isLoading ? 0.6 : 1 },
                   ]}
                   onPress={handleResend}
                   disabled={resendCooldown > 0 || isLoading}
                   activeOpacity={0.8}
                 >
-                  <Typography variant="body" style={[styles.resendButtonText, { color: colors.primary[500] }]}>
+                  <Typography variant="body" style={[styles.resendButtonText, { color: colors.primary.main }]}>
                     {resendCooldown > 0
                       ? `Resend in ${resendCooldown}s`
                       : isLoading
@@ -223,7 +224,7 @@ export default function ForgotPasswordScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.continueButton, { backgroundColor: colors.primary[500] }]}
+                  style={[styles.continueButton, { backgroundColor: colors.primary.main }]}
                   onPress={() => {
                     router.push({
                       pathname: "/auth/ResetPassword",
@@ -270,7 +271,7 @@ export default function ForgotPasswordScreen() {
                 <TouchableOpacity
                   style={[
                     styles.submitButton,
-                    { backgroundColor: colors.primary[500], opacity: isLoading ? 0.7 : 1 },
+                    { backgroundColor: colors.primary.main, opacity: isLoading ? 0.7 : 1 },
                   ]}
                   onPress={handleSubmit}
                   disabled={isLoading}
@@ -292,7 +293,7 @@ export default function ForgotPasswordScreen() {
                     style={styles.linkButton}
                     onPress={() => router.push("/auth/ForgotUsername")}
                   >
-                    <Typography variant="body" style={[styles.linkText, { color: colors.primary[500] }]}>
+                    <Typography variant="body" style={[styles.linkText, { color: colors.primary.main }]}>
                       Forgot username?
                     </Typography>
                   </TouchableOpacity>
@@ -307,7 +308,7 @@ export default function ForgotPasswordScreen() {
                       Back to{" "}
                       <Typography
                         variant="body"
-                        style={[styles.linkText, { color: colors.primary[500] }]}
+                        style={[styles.linkText, { color: colors.primary.main }]}
                         weight="semibold"
                       >
                         Sign In

@@ -92,9 +92,9 @@ export default function InsightsOverview() {
       case "celebration":
         return "#8B5CF6";
       case "info":
-        return colors.primary[500];
+        return colors.primary.main;
       default:
-        return colors.primary[500];
+        return colors.primary.main;
     }
   };
 
@@ -122,7 +122,7 @@ export default function InsightsOverview() {
           </Text>
         </View>
         <View style={styles.centerContent}>
-          <ActivityIndicator size="small" color={colors.primary[500]} />
+          <ActivityIndicator size="small" color={colors.primary.main} />
         </View>
       </View>
     );
@@ -147,7 +147,7 @@ export default function InsightsOverview() {
             <Ionicons
               name="chevron-forward"
               size={16}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
         </View>
@@ -177,13 +177,13 @@ export default function InsightsOverview() {
           onPress={() => router.push("/insights")}
           style={styles.headerButton}
         >
-          <Text style={[styles.viewAllText, { color: colors.primary[500] }]}>
+          <Text style={[styles.viewAllText, { color: colors.primary.main }]}>
             View All
           </Text>
           <Ionicons
             name="chevron-forward"
             size={16}
-            color={colors.primary[500]}
+            color={colors.primary.main}
           />
         </TouchableOpacity>
       </View>
@@ -250,7 +250,7 @@ export default function InsightsOverview() {
                     <Ionicons
                       name="chevron-forward"
                       size={14}
-                      color={colors.primary[500]}
+                      color={colors.primary.main}
                     />
                   </View>
                 )}
@@ -270,8 +270,8 @@ export default function InsightsOverview() {
                   style={[
                     styles.advisorNote,
                     {
-                      backgroundColor: colors.primary[50],
-                      borderColor: colors.primary[200],
+                      backgroundColor: colors.primary.main[50],
+                      borderColor: colors.primary.main[200],
                     },
                   ]}
                 >
@@ -279,19 +279,19 @@ export default function InsightsOverview() {
                     <Ionicons
                       name="person-circle"
                       size={16}
-                      color={colors.primary[600]}
+                      color={colors.primary.main[600]}
                     />
                     <Text
                       style={[
                         styles.advisorLabel,
-                        { color: colors.primary[700] },
+                        { color: colors.primary.main[700] },
                       ]}
                     >
                       Financial Advisor Note
                     </Text>
                   </View>
                   <Text
-                    style={[styles.advisorText, { color: colors.primary[800] }]}
+                    style={[styles.advisorText, { color: colors.primary.main[800] }]}
                   >
                     {insight.advisorNote}
                   </Text>
@@ -305,13 +305,13 @@ export default function InsightsOverview() {
                     <View
                       style={[
                         styles.metricBadge,
-                        { backgroundColor: colors.primary[100] },
+                        { backgroundColor: colors.primary.main[100] },
                       ]}
                     >
                       <Text
                         style={[
                           styles.metricText,
-                          { color: colors.primary[700] },
+                          { color: colors.primary.main[700] },
                         ]}
                       >
                         £{insight.amount.toFixed(0)}
@@ -322,13 +322,13 @@ export default function InsightsOverview() {
                     <View
                       style={[
                         styles.metricBadge,
-                        { backgroundColor: colors.primary[100] },
+                        { backgroundColor: colors.primary.main[100] },
                       ]}
                     >
                       <Text
                         style={[
                           styles.metricText,
-                          { color: colors.primary[700] },
+                          { color: colors.primary.main[700] },
                         ]}
                       >
                         {insight.percentage.toFixed(0)}%
@@ -350,14 +350,14 @@ export default function InsightsOverview() {
             ]}
           >
             <Text
-              style={[styles.viewAllButtonText, { color: colors.primary[600] }]}
+              style={[styles.viewAllButtonText, { color: colors.primary.main[600] }]}
             >
               View All Insights & Tips
             </Text>
             <Ionicons
               name="chevron-forward"
               size={16}
-              color={colors.primary[600]}
+              color={colors.primary.main[600]}
             />
           </TouchableOpacity>
         )}

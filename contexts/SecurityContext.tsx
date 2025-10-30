@@ -630,7 +630,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
                   "✅ [SecurityContext] PIN synced from server successfully using new endpoint"
                 );
                 // Update hasLocalPin for the rest of the logic
-                hasLocalPin = true;
+                hasLocalPin = await AsyncStorage.getItem("@expenzez_app_password");
               } else {
                 console.log(
                   "⚠️ [SecurityContext] PIN sync failed:",

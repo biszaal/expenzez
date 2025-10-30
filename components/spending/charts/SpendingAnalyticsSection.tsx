@@ -119,7 +119,7 @@ export const SpendingAnalyticsSection: React.FC<
                     <View
                       style={[
                         styles.premiumChartLegendDot,
-                        { backgroundColor: colors.primary[500] },
+                        { backgroundColor: colors.primary.main },
                       ]}
                     />
                     <Text
@@ -179,7 +179,7 @@ export const SpendingAnalyticsSection: React.FC<
 
                   const isIncrease = thisMonthTotal > lastMonthTotal;
                   const arrowName = isIncrease ? "arrow-up" : "arrow-down";
-                  const arrowColor = isIncrease ? colors.error[500] : colors.success[500];
+                  const arrowColor = isIncrease ? colors.error.main : colors.success.main;
                   const backgroundColor = isIncrease
                     ? 'rgba(239, 68, 68, 0.1)'  // Light red background for increase
                     : 'rgba(34, 197, 94, 0.1)';  // Light green background for decrease
@@ -235,13 +235,13 @@ export const SpendingAnalyticsSection: React.FC<
                       <View
                         style={[
                           styles.miniStatIcon,
-                          { backgroundColor: colors.primary[100] },
+                          { backgroundColor: colors.primary.main[100] },
                         ]}
                       >
                         <Ionicons
                           name="trending-up"
                           size={18}
-                          color={colors.primary[500]}
+                          color={colors.primary.main}
                         />
                       </View>
                       <View style={styles.miniStatContent}>
@@ -280,7 +280,7 @@ export const SpendingAnalyticsSection: React.FC<
                         <Ionicons
                           name="bar-chart-outline"
                           size={18}
-                          color={colors.success[500]}
+                          color={colors.success.main}
                         />
                       </View>
                       <View style={styles.miniStatContent}>
@@ -354,8 +354,8 @@ export const SpendingAnalyticsSection: React.FC<
                                 size={18}
                                 color={
                                   isIncrease
-                                    ? colors.error[500]
-                                    : colors.success[500]
+                                    ? colors.error.main
+                                    : colors.success.main
                                 }
                               />
                             </View>
@@ -365,8 +365,8 @@ export const SpendingAnalyticsSection: React.FC<
                                   styles.miniStatValue,
                                   {
                                     color: isIncrease
-                                      ? colors.error[500]
-                                      : colors.success[500],
+                                      ? colors.error.main
+                                      : colors.success.main,
                                   },
                                 ]}
                               >

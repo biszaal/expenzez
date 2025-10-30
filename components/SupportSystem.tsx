@@ -247,7 +247,7 @@ Thank you!`;
       subtitle: "Get help via email",
       icon: "mail",
       action: handleEmailSupport,
-      color: colors.primary[500],
+      color: colors.primary.main,
     },
     {
       id: "phone",
@@ -255,7 +255,7 @@ Thank you!`;
       subtitle: "Call our support team",
       icon: "call",
       action: handlePhoneSupport,
-      color: colors.success[500],
+      color: colors.success.main,
     },
     {
       id: "chat",
@@ -271,7 +271,7 @@ Thank you!`;
       subtitle: "Send us a message",
       icon: "document-text",
       action: () => setShowContactForm(true),
-      color: colors.warning[500],
+      color: colors.warning.main,
     },
   ];
 
@@ -374,7 +374,7 @@ Thank you!`;
                     {
                       backgroundColor:
                         selectedCategory === category.id
-                          ? colors.primary[500]
+                          ? colors.primary.main
                           : colors.background.primary,
                       borderColor: colors.border.light,
                     },
@@ -430,7 +430,7 @@ Thank you!`;
                 <Ionicons
                   name="shield-checkmark"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
                 <Text
                   style={[styles.quickLinkText, { color: colors.text.primary }]}
@@ -454,7 +454,7 @@ Thank you!`;
                 <Ionicons
                   name="document-text"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
                 <Text
                   style={[styles.quickLinkText, { color: colors.text.primary }]}
@@ -475,7 +475,7 @@ Thank you!`;
                 ]}
                 onPress={() => Linking.openURL("https://expenzez.com/status")}
               >
-                <Ionicons name="pulse" size={20} color={colors.success[500]} />
+                <Ionicons name="pulse" size={20} color={colors.success.main} />
                 <Text
                   style={[styles.quickLinkText, { color: colors.text.primary }]}
                 >
@@ -557,7 +557,7 @@ Thank you!`;
                         {
                           backgroundColor:
                             contactFormData.urgency === priority
-                              ? colors.primary[500]
+                              ? colors.primary.main
                               : colors.background.primary,
                           borderColor: colors.border.light,
                         },
@@ -608,7 +608,7 @@ Thank you!`;
                     {
                       backgroundColor: submitting
                         ? colors.gray[400]
-                        : colors.primary[500],
+                        : colors.primary.main,
                       opacity: submitting ? 0.7 : 1,
                     },
                   ]}

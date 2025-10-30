@@ -89,6 +89,7 @@ export default function BiometricSecurityLock({
       return () => animation.stop();
     } else {
       scaleAnim.setValue(1);
+      return undefined;
     }
   }, [isAuthenticating]);
 
@@ -733,7 +734,7 @@ export default function BiometricSecurityLock({
                   <Ionicons
                     name="lock-closed"
                     size={40}
-                    color={colors.primary[500]}
+                    color={colors.primary.main}
                   />
                 </Animated.View>
                 <Text
@@ -774,7 +775,7 @@ export default function BiometricSecurityLock({
                 <Text
                   style={[
                     styles.cancelButtonText,
-                    { color: colors.primary[500] },
+                    { color: colors.primary.main },
                   ]}
                 >
                   Cancel
@@ -828,7 +829,7 @@ export default function BiometricSecurityLock({
                 style={[
                   styles.passwordSubmitButton,
                   {
-                    backgroundColor: colors.primary[500],
+                    backgroundColor: colors.primary.main,
                     opacity: !password.trim() || isAuthenticating ? 0.5 : 1,
                   },
                 ]}

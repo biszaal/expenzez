@@ -263,8 +263,8 @@ export default function VerifyEmail() {
 
                 {/* Header Content */}
                 <View style={styles.headerContent}>
-                  <View style={[styles.iconContainer, { backgroundColor: colors.primary[500] + '15' }]}>
-                    <Ionicons name="mail-open" size={32} color={colors.primary[500]} />
+                  <View style={[styles.iconContainer, { backgroundColor: colors.primary.main + '15' }]}>
+                    <Ionicons name="mail-open" size={32} color={colors.primary.main} />
                   </View>
 
                   <Typography
@@ -297,12 +297,12 @@ export default function VerifyEmail() {
 
                     {/* User Info Display */}
                     {username && (
-                      <View style={[styles.userInfoDisplay, { backgroundColor: colors.primary[500] + '15', borderColor: colors.primary[500] + '30' }]}>
+                      <View style={[styles.userInfoDisplay, { backgroundColor: colors.primary.main + '15', borderColor: colors.primary.main + '30' }]}>
                         <View style={styles.userInfoContent}>
                           <Ionicons
                             name="person"
                             size={16}
-                            color={colors.primary[500]}
+                            color={colors.primary.main}
                           />
                           <Typography
                             variant="caption"
@@ -331,7 +331,7 @@ export default function VerifyEmail() {
                           value={code}
                           onChangeText={(text) => setCode(text.slice(0, 6))}
                           keyboardType="number-pad"
-                          style={[styles.enhancedInput, { color: colors.text.primary }]}
+                          style={styles.enhancedInput}
                           placeholderTextColor={colors.text.tertiary}
                         />
                       </View>
@@ -341,7 +341,7 @@ export default function VerifyEmail() {
                     <TouchableOpacity
                       style={[
                         styles.verifyButton,
-                        { backgroundColor: colors.primary[500], opacity: isLoading ? 0.7 : 1 },
+                        { backgroundColor: colors.primary.main, opacity: isLoading ? 0.7 : 1 },
                       ]}
                       onPress={handleConfirm}
                       disabled={isLoading}
@@ -375,7 +375,7 @@ export default function VerifyEmail() {
                       >
                         <Typography
                           variant="caption"
-                          style={{ color: colors.primary[500] }}
+                          style={{ color: colors.primary.main }}
                           weight="semibold"
                         >
                           {isResending ? "Sending..." : "Resend Code"}
@@ -396,7 +396,7 @@ export default function VerifyEmail() {
                         Back to{" "}
                         <Typography
                           variant="body"
-                          style={{ color: colors.primary[500] }}
+                          style={{ color: colors.primary.main }}
                           weight="bold"
                         >
                           Sign In
@@ -407,12 +407,12 @@ export default function VerifyEmail() {
               </View>
 
               {/* Help Text */}
-              <View style={[styles.helpSection, { backgroundColor: colors.primary[500] + '10', borderColor: colors.primary[500] + '20', borderWidth: 1, borderRadius: 10, padding: spacing.md, marginTop: spacing.md }]}>
+              <View style={[styles.helpSection, { backgroundColor: colors.primary.main + '10', borderColor: colors.primary.main + '20', borderWidth: 1, borderRadius: 10, padding: spacing.md, marginTop: spacing.md }]}>
                 <View style={styles.helpContent}>
                   <Ionicons
                     name="information-circle-outline"
                     size={16}
-                    color={colors.primary[500]}
+                    color={colors.primary.main}
                   />
                   <Typography variant="caption" style={[styles.helpText, { color: colors.text.secondary }]}>
                     Please check your email inbox and spam folder for the verification code

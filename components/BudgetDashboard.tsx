@@ -208,9 +208,9 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
         <View style={styles.budgetActions}>
           <TouchableOpacity
             onPress={() => onBudgetEdit?.(budget)}
-            style={[styles.actionButton, { backgroundColor: colors.primary[100] }]}
+            style={[styles.actionButton, { backgroundColor: colors.primary.main[100] }]}
           >
-            <Ionicons name="pencil" size={16} color={colors.primary[600]} />
+            <Ionicons name="pencil" size={16} color={colors.primary.main[600]} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleDeleteBudget(budget)}
@@ -290,7 +290,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
+        <ActivityIndicator size="large" color={colors.primary.main} />
         <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
           Loading budgets...
         </Text>
@@ -305,7 +305,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
         <RefreshControl
           refreshing={refreshing}
           onRefresh={() => loadBudgets(true)}
-          colors={[colors.primary[500]]}
+          colors={[colors.primary.main]}
         />
       }
     >
@@ -323,7 +323,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
       {summary && (
         <View style={[styles.summaryCard, { backgroundColor: colors.background.primary }]}>
           <LinearGradient
-            colors={[colors.primary[500], colors.primary[600]]}
+            colors={[colors.primary.main, colors.primary.main[600]]}
             style={styles.summaryGradient}
           >
             <Text style={styles.summaryTitle}>Monthly Overview</Text>
@@ -371,7 +371,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
           </Text>
           <TouchableOpacity
             onPress={onCreateBudget}
-            style={[styles.createButton, { backgroundColor: colors.primary[500] }]}
+            style={[styles.createButton, { backgroundColor: colors.primary.main }]}
           >
             <Ionicons name="add" size={20} color="#fff" />
             <Text style={styles.createButtonText}>New Budget</Text>

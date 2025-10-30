@@ -100,7 +100,9 @@ export default function AppleProfileFlow() {
       const dateOnly = submitValues.dob.split("T")[0];
 
       if (dateOnly.length !== 10 || !/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
-        showError("Invalid date format. Please select your date of birth again.");
+        showError(
+          "Invalid date format. Please select your date of birth again."
+        );
         return;
       }
 
@@ -117,7 +119,9 @@ export default function AppleProfileFlow() {
 
     setIsLoading(true);
     try {
-      console.log("[AppleProfileFlow] About to call profileAPI.updateProfile...");
+      console.log(
+        "[AppleProfileFlow] About to call profileAPI.updateProfile..."
+      );
 
       // Call backend to save profile data
       const result = await profileAPI.updateProfile({
@@ -137,7 +141,7 @@ export default function AppleProfileFlow() {
       showSuccess("Profile completed successfully! Welcome to Expenzez!");
 
       // Small delay to ensure data is saved before redirect
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Redirect to main app
       router.replace("/(tabs)");
@@ -149,7 +153,9 @@ export default function AppleProfileFlow() {
         status: error.response?.status,
       });
       showError(
-        error.response?.data?.message || error.message || "Failed to complete profile. Please try again."
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to complete profile. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -225,7 +231,7 @@ export default function AppleProfileFlow() {
                       styles.progressFill,
                       {
                         width: `${(step / totalSteps) * 100}%`,
-                        backgroundColor: colors.primary[500],
+                        backgroundColor: colors.primary.main,
                       },
                     ]}
                   />

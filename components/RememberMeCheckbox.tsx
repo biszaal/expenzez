@@ -21,10 +21,10 @@ export const RememberMeCheckbox: React.FC<RememberMeCheckboxProps> = ({
   const textColor = lightText ? 'white' : colors.text.primary;
   const checkboxBorderColor = lightText
     ? 'rgba(255, 255, 255, 0.6)'
-    : value ? colors.primary[500] : colors.text.secondary;
+    : value ? colors.primary.main : colors.text.secondary;
   const checkboxBackgroundColor = lightText
     ? value ? 'rgba(255, 255, 255, 0.3)' : 'transparent'
-    : value ? colors.primary[500] : 'transparent';
+    : value ? colors.primary.main : 'transparent';
   const checkmarkColor = lightText ? 'white' : colors.background.primary;
 
   return (

@@ -38,7 +38,7 @@ export const BudgetCenter: React.FC<BudgetCenterProps> = ({
       <Animated.Text style={[
         styles.donutCenterPercentage, 
         { 
-          color: monthlyOverBudget ? colors.error[500] : colors.primary[500],
+          color: monthlyOverBudget ? colors.error.main : colors.primary.main,
           opacity: animatedProgress.interpolate({
             inputRange: [0, 0.2, 1],
             outputRange: [0, 1, 1]
@@ -64,7 +64,7 @@ export const BudgetCenter: React.FC<BudgetCenterProps> = ({
       <Animated.Text style={[
         styles.donutCenterAmount, 
         { 
-          color: monthlyOverBudget ? colors.error[500] : colors.success[500],
+          color: monthlyOverBudget ? colors.error.main : colors.success.main,
           opacity: animatedProgress.interpolate({
             inputRange: [0, 0.4, 1],
             outputRange: [0, 1, 1]

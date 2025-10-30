@@ -55,7 +55,7 @@ export default function BudgetOverview() {
           </Text>
         </View>
         <View style={styles.centerContent}>
-          <ActivityIndicator size="small" color={colors.primary[500]} />
+          <ActivityIndicator size="small" color={colors.primary.main} />
         </View>
       </View>
     );
@@ -80,7 +80,7 @@ export default function BudgetOverview() {
             <Ionicons
               name="chevron-forward"
               size={16}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
         </View>
@@ -94,11 +94,11 @@ export default function BudgetOverview() {
             onPress={() => router.push("/budgets/edit")}
             style={[
               styles.createButton,
-              { backgroundColor: colors.primary[100] },
+              { backgroundColor: colors.primary.main[100] },
             ]}
           >
             <Text
-              style={[styles.createButtonText, { color: colors.primary[600] }]}
+              style={[styles.createButtonText, { color: colors.primary.main[600] }]}
             >
               Create Budget
             </Text>
@@ -123,13 +123,13 @@ export default function BudgetOverview() {
           onPress={() => router.push("/budgets")}
           style={styles.headerButton}
         >
-          <Text style={[styles.viewAllText, { color: colors.primary[500] }]}>
+          <Text style={[styles.viewAllText, { color: colors.primary.main }]}>
             View All
           </Text>
           <Ionicons
             name="chevron-forward"
             size={16}
-            color={colors.primary[500]}
+            color={colors.primary.main}
           />
         </TouchableOpacity>
       </View>
@@ -248,14 +248,14 @@ export default function BudgetOverview() {
           ]}
         >
           <Text
-            style={[styles.viewAllButtonText, { color: colors.primary[600] }]}
+            style={[styles.viewAllButtonText, { color: colors.primary.main[600] }]}
           >
             View All Budgets ({budgetProgress.length}+)
           </Text>
           <Ionicons
             name="chevron-forward"
             size={16}
-            color={colors.primary[600]}
+            color={colors.primary.main[600]}
           />
         </TouchableOpacity>
       )}

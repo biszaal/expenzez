@@ -23,7 +23,7 @@ export const MonthlyOverview: React.FC<MonthlyOverviewProps> = ({
       <View style={[styles.professionalMonthlyCard, { backgroundColor: colors.background.primary }, SHADOWS.lg]}>
         <View style={styles.professionalMonthlyHeader}>
           <View style={styles.professionalMonthlyHeaderLeft}>
-            <View style={[styles.professionalMonthlyIcon, { backgroundColor: colors.primary[500] }]}>
+            <View style={[styles.professionalMonthlyIcon, { backgroundColor: colors.primary.main }]}>
               <Ionicons name="calendar-outline" size={22} color="white" />
             </View>
             <View style={styles.professionalMonthlyHeaderText}>
@@ -36,14 +36,14 @@ export const MonthlyOverview: React.FC<MonthlyOverviewProps> = ({
             </View>
           </View>
           <TouchableOpacity
-            style={[styles.professionalViewAllButton, { backgroundColor: colors.primary[100] }]}
+            style={[styles.professionalViewAllButton, { backgroundColor: colors.primary.main[100] }]}
             onPress={() => router.push("/spending")}
             activeOpacity={0.7}
           >
-            <Text style={[styles.professionalViewAllText, { color: colors.primary[500] }]}>
+            <Text style={[styles.professionalViewAllText, { color: colors.primary.main }]}>
               View All
             </Text>
-            <Ionicons name="arrow-forward" size={16} color={colors.primary[500]} />
+            <Ionicons name="arrow-forward" size={16} color={colors.primary.main} />
           </TouchableOpacity>
         </View>
         

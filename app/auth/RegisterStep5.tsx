@@ -323,10 +323,10 @@ export default function RegisterStep5({
             {/* Phone Error Display */}
             {phoneError && (
               <View style={[styles.errorContainer, {
-                backgroundColor: colors.error[500] + '15',
-                borderColor: colors.error[500] + '30'
+                backgroundColor: colors.error.main + '15',
+                borderColor: colors.error.main + '30'
               }]}>
-                <Ionicons name="warning" size={20} color={colors.error[500]} />
+                <Ionicons name="warning" size={20} color={colors.error.main} />
                 <Typography variant="body" style={[styles.errorText, { color: colors.text.primary }]}>
                   {phoneError}
                 </Typography>
@@ -364,10 +364,10 @@ export default function RegisterStep5({
 
           {/* Privacy Note */}
           <View style={[styles.privacyNote, {
-            backgroundColor: colors.primary[500] + '15',
-            borderColor: colors.primary[500] + '30'
+            backgroundColor: colors.primary.main + '15',
+            borderColor: colors.primary.main + '30'
           }]}>
-            <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary[500]} />
+            <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary.main} />
             <Typography variant="caption" style={[styles.privacyText, { color: colors.text.primary }]}>
               Your phone number will be used for account verification and
               security purposes only.
@@ -422,7 +422,7 @@ export default function RegisterStep5({
         <Button
           title="Back"
           onPress={onBack}
-          style={[styles.backButton, { borderColor: colors.border.light }]}
+          style={StyleSheet.flatten([styles.backButton, { borderColor: colors.border.light }])}
           textStyle={{ color: colors.text.primary }}
         />
         <Button
@@ -430,7 +430,7 @@ export default function RegisterStep5({
           onPress={handleSubmit}
           style={StyleSheet.flatten([
             styles.submitButton,
-            { backgroundColor: colors.primary[500], opacity: isLoading ? 0.7 : 1 },
+            { backgroundColor: colors.primary.main, opacity: isLoading ? 0.7 : 1 },
           ])}
           disabled={isLoading || !phoneNumber.trim()}
         />
@@ -438,7 +438,7 @@ export default function RegisterStep5({
 
       {isLoading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <ActivityIndicator size="large" color={colors.primary.main} />
         </View>
       )}
     </View>

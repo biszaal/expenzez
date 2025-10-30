@@ -94,7 +94,7 @@ export const CompactSpendingSummary: React.FC<CompactSpendingSummaryProps> = ({
           </Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={colors.primary[500]} />
+          <ActivityIndicator size="small" color={colors.primary.main} />
         </View>
       </View>
     );
@@ -121,7 +121,7 @@ export const CompactSpendingSummary: React.FC<CompactSpendingSummaryProps> = ({
             <Ionicons
               name={isMinimized ? "chevron-down" : "chevron-up"}
               size={20}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
           {onViewAll && (
@@ -133,7 +133,7 @@ export const CompactSpendingSummary: React.FC<CompactSpendingSummaryProps> = ({
               <Ionicons
                 name="arrow-forward"
                 size={16}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
           )}
@@ -146,13 +146,13 @@ export const CompactSpendingSummary: React.FC<CompactSpendingSummaryProps> = ({
           <View
             style={[
               styles.primaryMetric,
-              { backgroundColor: colors.primary[50] || colors.primary[100] },
+              { backgroundColor: colors.primary.main[50] || colors.primary.main[100] },
             ]}
           >
             <Text style={[styles.primaryLabel, { color: colors.text.secondary }]}>
               This Month's Spending
             </Text>
-            <Text style={[styles.primaryValue, { color: colors.primary[500] }]}>
+            <Text style={[styles.primaryValue, { color: colors.primary.main }]}>
               {formatCurrency(spendingData.thisMonth)}
             </Text>
           </View>

@@ -136,7 +136,7 @@ export default function TransactionItem({
           style={[
             styles.amount,
             {
-              color: isIncome ? colors.success[500] : colors.text.primary,
+              color: isIncome ? colors.success.main : colors.text.primary,
             },
           ]}
         >

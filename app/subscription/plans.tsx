@@ -214,7 +214,7 @@ export default function SubscriptionPlansScreen() {
         ]}
       >
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
             Loading subscription options...
           </Text>
@@ -259,7 +259,7 @@ export default function SubscriptionPlansScreen() {
             <Ionicons
               name="checkmark-circle"
               size={64}
-              color={colors.success[500]}
+              color={colors.success.main}
             />
             <Text
               style={[
@@ -271,7 +271,7 @@ export default function SubscriptionPlansScreen() {
             </Text>
             {subscriptionStatus.isInTrial && trialMessage && (
               <Text
-                style={[styles.trialMessage, { color: colors.warning[500] }]}
+                style={[styles.trialMessage, { color: colors.warning.main }]}
               >
                 {trialMessage}
               </Text>
@@ -302,12 +302,12 @@ export default function SubscriptionPlansScreen() {
                 <Ionicons
                   name="checkmark-circle"
                   size={20}
-                  color={colors.success[500]}
+                  color={colors.success.main}
                 />
                 <Text
                   style={[styles.featureText, { color: colors.text.secondary }]}
                 >
-                  {feature}
+                  {feature.label}
                 </Text>
               </View>
             ))}
@@ -320,9 +320,9 @@ export default function SubscriptionPlansScreen() {
             disabled={purchasing}
             activeOpacity={0.8}
           >
-            <Ionicons name="refresh" size={16} color={colors.primary[500]} />
+            <Ionicons name="refresh" size={16} color={colors.primary.main} />
             <Text
-              style={[styles.restoreButtonText, { color: colors.primary[500] }]}
+              style={[styles.restoreButtonText, { color: colors.primary.main }]}
             >
               {purchasing ? "Restoring..." : "Restore Purchases"}
             </Text>
@@ -362,11 +362,11 @@ export default function SubscriptionPlansScreen() {
           <View
             style={[
               styles.trialBadge,
-              { backgroundColor: colors.success[500] + "20" },
+              { backgroundColor: colors.success.main + "20" },
             ]}
           >
-            <Ionicons name="star" size={16} color={colors.success[500]} />
-            <Text style={[styles.trialBadgeText, { color: colors.success[500] }]}>
+            <Ionicons name="star" size={16} color={colors.success.main} />
+            <Text style={[styles.trialBadgeText, { color: colors.success.main }]}>
               Start Your 14-Day Free Trial Now
             </Text>
           </View>
@@ -388,7 +388,7 @@ export default function SubscriptionPlansScreen() {
                 backgroundColor: colors.background.primary,
                 borderColor:
                   selectedPackage?.identifier === "monthly"
-                    ? colors.primary[500]
+                    ? colors.primary.main
                     : colors.border.light,
               },
               selectedPackage?.identifier === "monthly" && styles.selectedPlan,
@@ -416,7 +416,7 @@ export default function SubscriptionPlansScreen() {
                 backgroundColor: colors.background.primary,
                 borderColor:
                   selectedPackage?.identifier === "annual"
-                    ? colors.primary[500]
+                    ? colors.primary.main
                     : colors.border.light,
               },
               selectedPackage?.identifier === "annual" && styles.selectedPlan,
@@ -426,7 +426,7 @@ export default function SubscriptionPlansScreen() {
             <View
               style={[
                 styles.popularBadge,
-                { backgroundColor: colors.primary[500] },
+                { backgroundColor: colors.primary.main },
               ]}
             >
               <Text style={styles.popularText}>Most Popular - Save 17%</Text>
@@ -452,7 +452,7 @@ export default function SubscriptionPlansScreen() {
               >
                 £59.88
               </Text>
-              <Text style={[styles.savings, { color: colors.success[500] }]}>
+              <Text style={[styles.savings, { color: colors.success.main }]}>
                 Save £9.89
               </Text>
             </View>
@@ -467,11 +467,11 @@ export default function SubscriptionPlansScreen() {
           <View style={styles.featuresContainer}>
             {PREMIUM_FEATURES.map((feature, index) => (
               <View key={index} style={styles.featureItem}>
-                <View style={[styles.featureIcon, { backgroundColor: colors.primary[500] + "20" }]}>
+                <View style={[styles.featureIcon, { backgroundColor: colors.primary.main + "20" }]}>
                   <Ionicons
-                    name={feature.icon}
+                    name={feature.icon as any}
                     size={14}
-                    color={colors.primary[500]}
+                    color={colors.primary.main}
                   />
                 </View>
                 <Text
@@ -485,7 +485,7 @@ export default function SubscriptionPlansScreen() {
                 <Ionicons
                   name="checkmark-circle"
                   size={16}
-                  color={colors.success[500]}
+                  color={colors.success.main}
                 />
               </View>
             ))}
@@ -496,7 +496,7 @@ export default function SubscriptionPlansScreen() {
         <TouchableOpacity
           style={[
             styles.purchaseButton,
-            { backgroundColor: colors.primary[500] },
+            { backgroundColor: colors.primary.main },
             purchasing && styles.purchaseButtonDisabled,
           ]}
           onPress={handlePurchase}
@@ -519,9 +519,9 @@ export default function SubscriptionPlansScreen() {
           onPress={handleRestorePurchases}
           activeOpacity={0.8}
         >
-          <Ionicons name="refresh" size={16} color={colors.primary[500]} />
+          <Ionicons name="refresh" size={16} color={colors.primary.main} />
           <Text
-            style={[styles.restoreButtonText, { color: colors.primary[500] }]}
+            style={[styles.restoreButtonText, { color: colors.primary.main }]}
           >
             Restore Purchases
           </Text>
@@ -530,25 +530,25 @@ export default function SubscriptionPlansScreen() {
         {/* Key Benefits - Compact */}
         <View style={[styles.keyBenefitsSection, { backgroundColor: colors.background.primary + "80" }]}>
           <View style={styles.benefitRow}>
-            <Ionicons name="sparkles" size={20} color={colors.primary[500]} />
+            <Ionicons name="sparkles" size={20} color={colors.primary.main} />
             <Text style={[styles.benefitRowText, { color: colors.text.secondary }]}>
               50+ AI chats every single day
             </Text>
           </View>
           <View style={styles.benefitRow}>
-            <Ionicons name="wallet-outline" size={20} color={colors.primary[500]} />
+            <Ionicons name="wallet-outline" size={20} color={colors.primary.main} />
             <Text style={[styles.benefitRowText, { color: colors.text.secondary }]}>
               Unlimited budgets & goals
             </Text>
           </View>
           <View style={styles.benefitRow}>
-            <Ionicons name="analytics" size={20} color={colors.primary[500]} />
+            <Ionicons name="analytics" size={20} color={colors.primary.main} />
             <Text style={[styles.benefitRowText, { color: colors.text.secondary }]}>
               Advanced analytics & reports
             </Text>
           </View>
           <View style={styles.benefitRow}>
-            <Ionicons name="shield-outline" size={20} color={colors.primary[500]} />
+            <Ionicons name="shield-outline" size={20} color={colors.primary.main} />
             <Text style={[styles.benefitRowText, { color: colors.text.secondary }]}>
               Secure & private always
             </Text>
@@ -559,14 +559,14 @@ export default function SubscriptionPlansScreen() {
         <View
           style={[
             styles.guaranteeCard,
-            { borderColor: colors.success[500], backgroundColor: colors.success[500] + "10" },
+            { borderColor: colors.success.main, backgroundColor: colors.success.main + "10" },
           ]}
         >
           <View style={styles.guaranteeContent}>
             <Ionicons
               name="checkmark-circle"
               size={28}
-              color={colors.success[500]}
+              color={colors.success.main}
             />
             <View style={styles.guaranteeText}>
               <Text style={[styles.guaranteeTitle, { color: colors.text.primary }]}>
@@ -627,7 +627,7 @@ export default function SubscriptionPlansScreen() {
               <Ionicons
                 name="document-text-outline"
                 size={16}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
               <Text
                 style={[styles.legalLinkText, { color: colors.text.primary }]}
@@ -648,7 +648,7 @@ export default function SubscriptionPlansScreen() {
               <Ionicons
                 name="shield-checkmark-outline"
                 size={16}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
               <Text
                 style={[styles.legalLinkText, { color: colors.text.primary }]}

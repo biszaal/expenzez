@@ -35,6 +35,7 @@ export class ExpenzezFrontendError extends Error {
   public requiresLogout: boolean;
   public retryable: boolean;
   public retryAfter?: number;
+  public response?: any;
 
   constructor(
     code: string,
@@ -360,7 +361,7 @@ class ErrorHandlerService {
         const errorMessage =
           error.response?.data?.message || error.message || "";
 
-        let rateLimitCode = FrontendErrorCodes.RATE_LIMITED;
+        let rateLimitCode: string = FrontendErrorCodes.RATE_LIMITED;
         let rateLimitMessage =
           "You're chatting too fast! Please wait a moment before sending another message.";
 

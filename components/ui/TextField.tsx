@@ -104,7 +104,7 @@ export default function TextField({
     if (isFocused) {
       return {
         ...baseStyle,
-        borderColor: colors.primary[500],
+        borderColor: colors.primary.main,
         backgroundColor: colors.background.primary,
       };
     }
@@ -112,7 +112,7 @@ export default function TextField({
     if (error) {
       return {
         ...baseStyle,
-        borderColor: colors.error[500],
+        borderColor: colors.error.main,
       };
     }
 
@@ -150,7 +150,7 @@ export default function TextField({
   const getErrorStyle = () => {
     return {
       fontSize: typography.fontSizes.sm,
-      color: colors.error[500],
+      color: colors.error.main,
       marginTop: spacing.xs,
     };
   };
@@ -164,7 +164,7 @@ export default function TextField({
       {label && (
         <Text style={labelStyleArray}>
           {label}
-          {required && <Text style={{ color: colors.error[500] }}> *</Text>}
+          {required && <Text style={{ color: colors.error.main }}> *</Text>}
         </Text>
       )}
 

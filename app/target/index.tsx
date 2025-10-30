@@ -32,7 +32,7 @@ export default function TargetPage() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={26} color={colors.primary[500]} />
+          <Ionicons name="chevron-back" size={26} color={colors.primary.main} />
         </TouchableOpacity>
         <Text style={[styles.topBarTitle, { color: colors.text.primary }]}>
           Financial Goals
@@ -51,7 +51,7 @@ export default function TargetPage() {
             <Ionicons
               name="flag-outline"
               size={24}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
             <Text style={[styles.goalTitle, { color: colors.text.primary }]}>
               Emergency Fund
@@ -71,7 +71,7 @@ export default function TargetPage() {
                 style={[
                   styles.progressFill,
                   {
-                    backgroundColor: colors.primary[500],
+                    backgroundColor: colors.primary.main,
                     width: "48%", // 2400/5000 = 48%
                   },
                 ]}
@@ -88,7 +88,7 @@ export default function TargetPage() {
         <TouchableOpacity
           style={[
             styles.addButton,
-            { backgroundColor: colors.primary[500] },
+            { backgroundColor: colors.primary.main },
             shadows.sm,
           ]}
           onPress={() => {

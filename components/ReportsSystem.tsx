@@ -331,7 +331,7 @@ export const ReportsSystem: React.FC<ReportsSystemProps> = ({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
+        <ActivityIndicator size="large" color={colors.primary.main} />
         <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
           Generating reports...
         </Text>
@@ -360,7 +360,7 @@ export const ReportsSystem: React.FC<ReportsSystemProps> = ({
         <RefreshControl
           refreshing={refreshing}
           onRefresh={() => loadReportData(true)}
-          colors={[colors.primary[500]]}
+          colors={[colors.primary.main]}
         />
       }
     >
@@ -396,7 +396,7 @@ export const ReportsSystem: React.FC<ReportsSystemProps> = ({
             style={[
               styles.viewTab,
               {
-                backgroundColor: selectedView === view ? colors.primary[500] : colors.background.primary,
+                backgroundColor: selectedView === view ? colors.primary.main : colors.background.primary,
                 borderColor: colors.border.light,
               },
             ]}
@@ -497,7 +497,7 @@ export const ReportsSystem: React.FC<ReportsSystemProps> = ({
                         styles.trendBarFill,
                         {
                           height: Math.max(20, (month.expenses / 1000) * 100),
-                          backgroundColor: colors.primary[500],
+                          backgroundColor: colors.primary.main,
                         },
                       ]}
                     />

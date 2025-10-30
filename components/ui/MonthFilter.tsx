@@ -26,10 +26,10 @@ export default function MonthFilter({ selectedMonth, onMonthSelect, availableMon
               styles.monthChip,
               {
                 backgroundColor: selectedMonth === month.key 
-                  ? colors.primary[500] 
+                  ? colors.primary.main 
                   : colors.background.secondary,
                 borderColor: selectedMonth === month.key 
-                  ? colors.primary[500] 
+                  ? colors.primary.main 
                   : colors.border.light,
               }
             ]}

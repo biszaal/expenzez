@@ -186,8 +186,8 @@ export default function RegisterStep2({
                     borderColor: colors.border.light
                   },
                   values.gender === option.value && {
-                    backgroundColor: colors.primary[500],
-                    borderColor: colors.primary[500]
+                    backgroundColor: colors.primary.main,
+                    borderColor: colors.primary.main
                   }
                 ]}
               >
@@ -219,13 +219,13 @@ export default function RegisterStep2({
         <Button
           title="Back"
           onPress={onBack}
-          style={[styles.backButton, { borderColor: colors.border.light }]}
+          style={StyleSheet.flatten([styles.backButton, { borderColor: colors.border.light }])}
           textStyle={{ color: colors.text.primary }}
         />
         <Button
           title="Continue"
           onPress={handleNext}
-          style={[styles.continueButton, { backgroundColor: colors.primary[500] }]}
+          style={StyleSheet.flatten([styles.continueButton, { backgroundColor: colors.primary.main }])}
           disabled={!values.dob || !values.gender}
         />
       </View>
@@ -254,7 +254,7 @@ export default function RegisterStep2({
                 <TouchableOpacity onPress={handleDateCancel}>
                   <Typography
                     variant="body"
-                    style={{ color: colors.primary[500] }}
+                    style={{ color: colors.primary.main }}
                   >
                     Cancel
                   </Typography>
@@ -269,7 +269,7 @@ export default function RegisterStep2({
                 <TouchableOpacity onPress={handleDateConfirm}>
                   <Typography
                     variant="body"
-                    style={{ color: colors.primary[500] }}
+                    style={{ color: colors.primary.main }}
                     weight="medium"
                   >
                     Done

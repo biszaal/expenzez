@@ -47,11 +47,11 @@ export default function Typography({
       case "inverse":
         return { color: colors.text.inverse };
       case "success":
-        return { color: colors.success[500] };
+        return { color: colors.success.main };
       case "error":
-        return { color: colors.error[500] };
+        return { color: colors.error.main };
       case "warning":
-        return { color: colors.warning[500] };
+        return { color: colors.warning.main };
       default:
         return { color: colors.text.primary };
     }

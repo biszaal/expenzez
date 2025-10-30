@@ -55,11 +55,11 @@ export const SpendingMonthPicker: React.FC<SpendingMonthPickerProps> = ({
                     {
                       backgroundColor:
                         selectedMonth === monthObj.value
-                          ? colors.primary[500]
+                          ? colors.primary.main
                           : colors.background.primary,
                       borderColor:
                         selectedMonth === monthObj.value
-                          ? colors.primary[500]
+                          ? colors.primary.main
                           : colors.border.light,
                     },
                   ]}
