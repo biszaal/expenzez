@@ -9,14 +9,14 @@
       "distribution": "internal",
       "channel": "development",
       "env": {
-        "EXPO_PUBLIC_ENV": "development",
+        "EXPO_PUBLIC_ENV": "development"
       }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_ENV": "preview",
+        "EXPO_PUBLIC_ENV": "preview"
       },
       "ios": {
         "resourceClass": "m-medium"
@@ -30,9 +30,7 @@
       "channel": "production",
       "env": {
         "EXPO_PUBLIC_ENV": "production",
-        "EXPO_PUBLIC_API_BASE_URL": "https://3vgt8t6o38.execute-api.eu-west-2.amazonaws.com",
-        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyBKdk9qcTdI73WxPcxzroweCtPvuV5uvPY",
-        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_yfPFpbhaPCTmblZKDJMHMyRKhKH"
+        "EXPO_PUBLIC_API_BASE_URL": "https://jvgwbst4og.execute-api.eu-west-2.amazonaws.com"
       },
       "ios": {
         "enterpriseProvisioning": "universal",
