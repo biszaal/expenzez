@@ -22,7 +22,7 @@ export default function RegisterStep1({
   useEffect(() => {
     if (!values.username || values.username.length < 3) {
       setUsernameStatus({ checking: false });
-      return;
+      return undefined;
     }
 
     const timeoutId = setTimeout(async () => {
@@ -132,29 +132,29 @@ export default function RegisterStep1({
             <View style={styles.statusContainer}>
               {usernameStatus.checking ? (
                 <>
-                  <ActivityIndicator size="small" color={colors.primary[500]} />
+                  <ActivityIndicator size="small" color={colors.primary.main} />
                   <Typography variant="caption" style={[styles.statusText, { color: colors.text.secondary }]}>
                     Checking availability...
                   </Typography>
                 </>
               ) : usernameStatus.exists === true ? (
                 <>
-                  <Ionicons name="close-circle" size={16} color={colors.error[500]} />
-                  <Typography variant="caption" style={[styles.statusText, { color: colors.error[500] }]}>
+                  <Ionicons name="close-circle" size={16} color={colors.error.main} />
+                  <Typography variant="caption" style={[styles.statusText, { color: colors.error.main }]}>
                     Username taken. Choose another.
                   </Typography>
                 </>
               ) : usernameStatus.exists === false ? (
                 <>
-                  <Ionicons name="checkmark-circle" size={16} color={colors.success[500]} />
-                  <Typography variant="caption" style={[styles.statusText, { color: colors.success[500] }]}>
+                  <Ionicons name="checkmark-circle" size={16} color={colors.success.main} />
+                  <Typography variant="caption" style={[styles.statusText, { color: colors.success.main }]}>
                     Username available!
                   </Typography>
                 </>
               ) : usernameStatus.error ? (
                 <>
-                  <Ionicons name="warning" size={16} color={colors.warning[500]} />
-                  <Typography variant="caption" style={[styles.statusText, { color: colors.warning[500] }]}>
+                  <Ionicons name="warning" size={16} color={colors.warning.main} />
+                  <Typography variant="caption" style={[styles.statusText, { color: colors.warning.main }]}>
                     {usernameStatus.error}
                   </Typography>
                 </>
@@ -167,7 +167,7 @@ export default function RegisterStep1({
       <Button
         title="Continue"
         onPress={handleNext}
-        style={[styles.continueButton, { backgroundColor: colors.primary[500] }]}
+        style={StyleSheet.flatten([styles.continueButton, { backgroundColor: colors.primary.main }])}
         disabled={
           !values.username.trim() ||
           (!usernameOnly && (!values.givenName.trim() || !values.familyName.trim())) ||

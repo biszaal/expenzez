@@ -118,7 +118,7 @@ export default function ExpenseManagementPage() {
             onPress={() => router.back()}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
+            <Ionicons name="chevron-back" size={24} color={colors.primary.main} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
             Expenses
@@ -130,11 +130,11 @@ export default function ExpenseManagementPage() {
             onPress={() => setFilterModalVisible(true)}
             style={[styles.filterButton, { backgroundColor: colors.background.primary }]}
           >
-            <Ionicons name="funnel" size={20} color={colors.primary[500]} />
+            <Ionicons name="funnel" size={20} color={colors.primary.main} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push('/expenses/add')}
-            style={[styles.addButton, { backgroundColor: colors.primary[500] }]}
+            style={[styles.addButton, { backgroundColor: colors.primary.main }]}
           >
             <Ionicons name="add" size={20} color="#fff" />
           </TouchableOpacity>
@@ -146,38 +146,38 @@ export default function ExpenseManagementPage() {
         <View style={[styles.activeFilters, { backgroundColor: colors.background.primary }]}>
           <View style={styles.filterTags}>
             {selectedCategory && (
-              <View style={[styles.filterTag, { backgroundColor: colors.primary[100] }]}>
-                <Text style={[styles.filterTagText, { color: colors.primary[700] }]}>
+              <View style={[styles.filterTag, { backgroundColor: colors.primary.main[100] }]}>
+                <Text style={[styles.filterTagText, { color: colors.primary.main[700] }]}>
                   {selectedCategory}
                 </Text>
                 <TouchableOpacity onPress={() => setSelectedCategory('')}>
-                  <Ionicons name="close" size={16} color={colors.primary[700]} />
+                  <Ionicons name="close" size={16} color={colors.primary.main[700]} />
                 </TouchableOpacity>
               </View>
             )}
             {dateRange.startDate && (
-              <View style={[styles.filterTag, { backgroundColor: colors.primary[100] }]}>
-                <Text style={[styles.filterTagText, { color: colors.primary[700] }]}>
+              <View style={[styles.filterTag, { backgroundColor: colors.primary.main[100] }]}>
+                <Text style={[styles.filterTagText, { color: colors.primary.main[700] }]}>
                   From: {new Date(dateRange.startDate).toLocaleDateString()}
                 </Text>
                 <TouchableOpacity onPress={() => setDateRange(prev => ({ ...prev, startDate: undefined }))}>
-                  <Ionicons name="close" size={16} color={colors.primary[700]} />
+                  <Ionicons name="close" size={16} color={colors.primary.main[700]} />
                 </TouchableOpacity>
               </View>
             )}
             {dateRange.endDate && (
-              <View style={[styles.filterTag, { backgroundColor: colors.primary[100] }]}>
-                <Text style={[styles.filterTagText, { color: colors.primary[700] }]}>
+              <View style={[styles.filterTag, { backgroundColor: colors.primary.main[100] }]}>
+                <Text style={[styles.filterTagText, { color: colors.primary.main[700] }]}>
                   To: {new Date(dateRange.endDate).toLocaleDateString()}
                 </Text>
                 <TouchableOpacity onPress={() => setDateRange(prev => ({ ...prev, endDate: undefined }))}>
-                  <Ionicons name="close" size={16} color={colors.primary[700]} />
+                  <Ionicons name="close" size={16} color={colors.primary.main[700]} />
                 </TouchableOpacity>
               </View>
             )}
           </View>
           <TouchableOpacity onPress={clearFilters} style={styles.clearFiltersButton}>
-            <Text style={[styles.clearFiltersText, { color: colors.primary[600] }]}>
+            <Text style={[styles.clearFiltersText, { color: colors.primary.main[600] }]}>
               Clear All
             </Text>
           </TouchableOpacity>
@@ -200,11 +200,11 @@ export default function ExpenseManagementPage() {
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background.secondary }}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
-              <Text style={[styles.modalCancel, { color: colors.primary[500] }]}>Cancel</Text>
+              <Text style={[styles.modalCancel, { color: colors.primary.main }]}>Cancel</Text>
             </TouchableOpacity>
             <Text style={[styles.modalTitle, { color: colors.text.primary }]}>Filters</Text>
             <TouchableOpacity onPress={applyFilters}>
-              <Text style={[styles.modalApply, { color: colors.primary[500] }]}>Apply</Text>
+              <Text style={[styles.modalApply, { color: colors.primary.main }]}>Apply</Text>
             </TouchableOpacity>
           </View>
 
@@ -218,13 +218,13 @@ export default function ExpenseManagementPage() {
                 style={[
                   styles.categoryOption,
                   {
-                    backgroundColor: selectedCategory === '' ? colors.primary[100] : colors.background.primary,
+                    backgroundColor: selectedCategory === '' ? colors.primary.main[100] : colors.background.primary,
                     borderColor: colors.border.light,
                   },
                 ]}
               >
                 <Text style={{
-                  color: selectedCategory === '' ? colors.primary[600] : colors.text.primary,
+                  color: selectedCategory === '' ? colors.primary.main[600] : colors.text.primary,
                   fontWeight: selectedCategory === '' ? '600' : '400',
                 }}>
                   All Categories
@@ -237,13 +237,13 @@ export default function ExpenseManagementPage() {
                   style={[
                     styles.categoryOption,
                     {
-                      backgroundColor: selectedCategory === category.toLowerCase() ? colors.primary[100] : colors.background.primary,
+                      backgroundColor: selectedCategory === category.toLowerCase() ? colors.primary.main[100] : colors.background.primary,
                       borderColor: colors.border.light,
                     },
                   ]}
                 >
                   <Text style={{
-                    color: selectedCategory === category.toLowerCase() ? colors.primary[600] : colors.text.primary,
+                    color: selectedCategory === category.toLowerCase() ? colors.primary.main[600] : colors.text.primary,
                     fontWeight: selectedCategory === category.toLowerCase() ? '600' : '400',
                   }}>
                     {category}
@@ -284,12 +284,12 @@ export default function ExpenseManagementPage() {
                 setEditingExpense(null);
               }}
             >
-              <Text style={[styles.modalCancel, { color: colors.primary[500] }]}>Cancel</Text>
+              <Text style={[styles.modalCancel, { color: colors.primary.main }]}>Cancel</Text>
             </TouchableOpacity>
             <Text style={[styles.modalTitle, { color: colors.text.primary }]}>Edit Expense</Text>
             <TouchableOpacity onPress={handleSaveExpense} disabled={editLoading}>
               <Text style={[styles.modalApply, { 
-                color: editLoading ? colors.gray[400] : colors.primary[500] 
+                color: editLoading ? colors.gray[400] : colors.primary.main 
               }]}>
                 {editLoading ? 'Saving...' : 'Save'}
               </Text>
@@ -320,7 +320,7 @@ export default function ExpenseManagementPage() {
                     styles.categoryOption,
                     {
                       backgroundColor: editCategory === cat.toLowerCase() 
-                        ? colors.primary[100] 
+                        ? colors.primary.main[100] 
                         : colors.background.primary,
                       borderColor: colors.border.light,
                     },
@@ -329,7 +329,7 @@ export default function ExpenseManagementPage() {
                 >
                   <Text style={{
                     color: editCategory === cat.toLowerCase() 
-                      ? colors.primary[600] 
+                      ? colors.primary.main[600] 
                       : colors.text.primary,
                     fontWeight: editCategory === cat.toLowerCase() ? '600' : '400',
                   }}>
@@ -352,7 +352,7 @@ export default function ExpenseManagementPage() {
               <Ionicons
                 name="calendar-outline"
                 size={20}
-                color={colors.primary[500]}
+                color={colors.primary.main}
                 style={{ marginRight: 8 }}
               />
               <Text style={{ color: colors.text.primary }}>

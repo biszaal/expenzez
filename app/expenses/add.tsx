@@ -81,7 +81,7 @@ export default function AddExpensePage() {
           onPress={() => router.back()}
           style={{ marginRight: 12 }}
         >
-          <Ionicons name="chevron-back" size={28} color={colors.primary[500]} />
+          <Ionicons name="chevron-back" size={28} color={colors.primary.main} />
         </TouchableOpacity>
         <Text
           style={{
@@ -126,7 +126,7 @@ export default function AddExpensePage() {
               key={cat}
               style={[
                 styles.categoryOption,
-                category === cat && { backgroundColor: colors.primary[100] },
+                category === cat && { backgroundColor: colors.primary.main[100] },
               ]}
               onPress={() => setCategory(cat)}
             >
@@ -134,7 +134,7 @@ export default function AddExpensePage() {
                 style={{
                   color:
                     category === cat
-                      ? colors.primary[600]
+                      ? colors.primary.main[600]
                       : colors.text.primary,
                 }}
               >
@@ -160,7 +160,7 @@ export default function AddExpensePage() {
           <Ionicons
             name="calendar-outline"
             size={20}
-            color={colors.primary[500]}
+            color={colors.primary.main}
             style={{ marginRight: 8 }}
           />
           <Text style={{ color: colors.text.primary }}>
@@ -200,7 +200,7 @@ export default function AddExpensePage() {
 
         <TouchableOpacity
           style={{
-            backgroundColor: loading ? colors.gray[400] : colors.primary[500],
+            backgroundColor: loading ? colors.gray[400] : colors.primary.main,
             paddingVertical: 16,
             borderRadius: 12,
             alignItems: "center",

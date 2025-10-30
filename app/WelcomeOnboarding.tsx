@@ -10,6 +10,7 @@ import {
   Animated,
   Platform,
   Image,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "../contexts/ThemeContext";
@@ -36,7 +37,7 @@ export default function WelcomeOnboarding() {
         "Your intelligent financial companion for smarter money management",
       icon: "wallet-outline",
       illustration: require("../assets/images/onboarding/welcome.png"),
-      accentColor: colors.primary[500],
+      accentColor: colors.primary.main,
     },
     {
       id: "2",
@@ -44,7 +45,7 @@ export default function WelcomeOnboarding() {
       description: "AI-powered insights to understand your spending patterns",
       icon: "analytics-outline",
       illustration: require("../assets/images/onboarding/analytics.png"),
-      accentColor: colors.success[500],
+      accentColor: colors.success.main,
     },
     {
       id: "3",
@@ -53,7 +54,7 @@ export default function WelcomeOnboarding() {
         "Enterprise-grade encryption keeps your data safe and private",
       icon: "shield-checkmark-outline",
       illustration: require("../assets/images/onboarding/security.png"),
-      accentColor: colors.warning[500],
+      accentColor: colors.warning.main,
     },
     {
       id: "4",
@@ -62,7 +63,7 @@ export default function WelcomeOnboarding() {
         "Real-time notifications and budget tracking at your fingertips",
       icon: "notifications-outline",
       illustration: require("../assets/images/onboarding/notifications.png"),
-      accentColor: colors.primary[500],
+      accentColor: colors.primary.main,
     },
   ];
 
@@ -111,7 +112,7 @@ export default function WelcomeOnboarding() {
     router.push("/auth/Login");
   };
 
-  const scrollViewRef = useRef<typeof Animated.ScrollView>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const onScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { x: scrollX } } }],

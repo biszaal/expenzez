@@ -113,7 +113,7 @@ export default function TrendsAnalysisScreen() {
                         styles.bar,
                         {
                           height,
-                          backgroundColor: colors.primary[500],
+                          backgroundColor: colors.primary.main,
                           width: barWidth,
                         },
                       ]}
@@ -155,7 +155,7 @@ export default function TrendsAnalysisScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
             Analyzing spending trends...
           </Text>
@@ -170,7 +170,7 @@ export default function TrendsAnalysisScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
+            <Ionicons name="chevron-back" size={24} color={colors.primary.main} />
           </TouchableOpacity>
           <Text style={[styles.title, { color: colors.text.primary }]}>
             Spending Trends
@@ -189,8 +189,8 @@ export default function TrendsAnalysisScreen() {
               style={[
                 styles.periodButton,
                 {
-                  backgroundColor: selectedPeriod === period ? colors.primary[500] : 'transparent',
-                  borderColor: selectedPeriod === period ? colors.primary[500] : colors.border.light,
+                  backgroundColor: selectedPeriod === period ? colors.primary.main : 'transparent',
+                  borderColor: selectedPeriod === period ? colors.primary.main : colors.border.light,
                 },
               ]}
             >
@@ -216,7 +216,7 @@ export default function TrendsAnalysisScreen() {
             style={[
               styles.tabButton,
               {
-                borderBottomColor: activeTab === 'trends' ? colors.primary[500] : 'transparent',
+                borderBottomColor: activeTab === 'trends' ? colors.primary.main : 'transparent',
                 borderBottomWidth: activeTab === 'trends' ? 2 : 0,
               },
             ]}
@@ -225,7 +225,7 @@ export default function TrendsAnalysisScreen() {
               style={[
                 styles.tabButtonText,
                 {
-                  color: activeTab === 'trends' ? colors.primary[500] : colors.text.secondary,
+                  color: activeTab === 'trends' ? colors.primary.main : colors.text.secondary,
                   fontWeight: activeTab === 'trends' ? '600' : '500',
                 },
               ]}
@@ -239,7 +239,7 @@ export default function TrendsAnalysisScreen() {
             style={[
               styles.tabButton,
               {
-                borderBottomColor: activeTab === 'analytics' ? colors.primary[500] : 'transparent',
+                borderBottomColor: activeTab === 'analytics' ? colors.primary.main : 'transparent',
                 borderBottomWidth: activeTab === 'analytics' ? 2 : 0,
               },
             ]}
@@ -248,7 +248,7 @@ export default function TrendsAnalysisScreen() {
               style={[
                 styles.tabButtonText,
                 {
-                  color: activeTab === 'analytics' ? colors.primary[500] : colors.text.secondary,
+                  color: activeTab === 'analytics' ? colors.primary.main : colors.text.secondary,
                   fontWeight: activeTab === 'analytics' ? '600' : '500',
                 },
               ]}

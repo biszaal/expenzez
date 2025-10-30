@@ -97,7 +97,7 @@ export default function ProfileScreen() {
             <Ionicons
               name="chevron-back"
               size={24}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
           <View style={styles.headerText}>
@@ -124,7 +124,7 @@ export default function ProfileScreen() {
           <ListItem
             icon={{
               name: "person-outline",
-              backgroundColor: colors.primary[100],
+              backgroundColor: colors.primary.main[100],
             }}
             title="Personal Information"
             subtitle="Update your profile details"
@@ -157,7 +157,7 @@ export default function ProfileScreen() {
           <ListItem
             icon={{
               name: "color-palette-outline",
-              backgroundColor: colors.secondary[100],
+              backgroundColor: colors.secondary.main[100],
             }}
             title="Theme"
             subtitle="Choose your preferred theme"
@@ -180,7 +180,7 @@ export default function ProfileScreen() {
           <ListItem
             icon={{
               name: "key-outline",
-              backgroundColor: colors.secondary[100],
+              backgroundColor: colors.secondary.main[100],
             }}
             title="Change Password"
             subtitle="Update your account password"
@@ -192,7 +192,7 @@ export default function ProfileScreen() {
           <ListItem
             icon={{
               name: "finger-print-outline",
-              backgroundColor: colors.primary[100],
+              backgroundColor: colors.primary.main[100],
             }}
             title="Biometric Login"
             subtitle="Use fingerprint or face ID"
@@ -219,7 +219,7 @@ export default function ProfileScreen() {
           <ListItem
             icon={{
               name: "document-text-outline",
-              backgroundColor: colors.primary[100],
+              backgroundColor: colors.primary.main[100],
             }}
             title="Terms & Privacy"
             subtitle="Read our terms and privacy policy"
@@ -229,7 +229,7 @@ export default function ProfileScreen() {
           <ListItem
             icon={{
               name: "information-circle-outline",
-              backgroundColor: colors.primary[100],
+              backgroundColor: colors.primary.main[100],
             }}
             title="About Expenzez"
             subtitle="App version and information"

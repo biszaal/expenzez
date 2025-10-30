@@ -30,7 +30,7 @@ export default function PremiumPaywall({
         <Ionicons
           name="lock-closed"
           size={48}
-          color={colors.primary[500]}
+          color={colors.primary.main}
           style={styles.icon}
         />
 
@@ -45,7 +45,7 @@ export default function PremiumPaywall({
         </Text>
 
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.primary[500] }]}
+          style={[styles.button, { backgroundColor: colors.primary.main }]}
           onPress={handleUpgrade}
         >
           <Text style={[styles.buttonText, { color: colors.text.inverse }]}>
@@ -111,3 +111,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+

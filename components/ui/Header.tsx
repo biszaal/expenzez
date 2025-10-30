@@ -85,7 +85,7 @@ export default function Header({
       borderRadius: borderRadius.xl,
       alignItems: "center" as const,
       justifyContent: "center" as const,
-      backgroundColor: colors.primary[100],
+      backgroundColor: colors.primary.main[100],
       ...shadows.sm,
     };
   };
@@ -122,7 +122,7 @@ export default function Header({
               <Ionicons
                 name="chevron-back"
                 size={24}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
           ) : (
@@ -147,7 +147,7 @@ export default function Header({
               <Ionicons
                 name={rightButton.icon as any}
                 size={20}
-                color={rightButton.color || colors.primary[500]}
+                color={rightButton.color || colors.primary.main}
               />
             </TouchableOpacity>
           ) : (

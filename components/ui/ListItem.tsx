@@ -65,8 +65,8 @@ export default function ListItem({
       default:
         return {
           titleColor: colors.text.primary,
-          iconColor: colors.primary[500],
-          iconBackground: colors.primary[100],
+          iconColor: colors.primary.main,
+          iconBackground: colors.primary.main[100],
         };
     }
   };
@@ -152,7 +152,7 @@ export default function ListItem({
             <Ionicons
               name="chevron-forward"
               size={20}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           ))}
       </View>

@@ -273,7 +273,7 @@ export default function SettingsPage() {
                     },
                     colorScheme === option.key && {
                       backgroundColor:
-                        colors.primary[100] || "rgba(124, 58, 237, 0.1)",
+                        colors.primary.main[100] || "rgba(124, 58, 237, 0.1)",
                     },
                   ]}
                   onPress={() => setColorScheme(option.key)}
@@ -286,7 +286,7 @@ export default function SettingsPage() {
                         {
                           backgroundColor:
                             colorScheme === option.key
-                              ? colors.primary[500]
+                              ? colors.primary.main
                               : colors.background.tertiary,
                         },
                       ]}
@@ -325,7 +325,7 @@ export default function SettingsPage() {
                     <Ionicons
                       name="checkmark-circle"
                       size={22}
-                      color={colors.primary[500]}
+                      color={colors.primary.main}
                     />
                   )}
                 </TouchableOpacity>
@@ -353,7 +353,7 @@ export default function SettingsPage() {
               <Ionicons
                 name="wallet-outline"
                 size={22}
-                color={colors.primary[500]}
+                color={colors.primary.main}
                 style={{ marginRight: 14 }}
               />
               <Text
@@ -390,7 +390,7 @@ export default function SettingsPage() {
               <Ionicons
                 name="notifications-outline"
                 size={22}
-                color={colors.primary[500]}
+                color={colors.primary.main}
                 style={{ marginRight: 14 }}
               />
               <Text
@@ -419,7 +419,7 @@ export default function SettingsPage() {
               <Ionicons
                 name="shield-checkmark-outline"
                 size={22}
-                color={colors.primary[500]}
+                color={colors.primary.main}
                 style={{ marginRight: 14 }}
               />
               <Text
@@ -447,10 +447,10 @@ export default function SettingsPage() {
                 styles.subscriptionCard,
                 {
                   backgroundColor: isPremium
-                    ? colors.primary[50] || "rgba(124, 58, 237, 0.05)"
+                    ? colors.primary.main[50] || "rgba(124, 58, 237, 0.05)"
                     : colors.background.primary,
                   borderColor: isPremium
-                    ? colors.primary[200] || "rgba(124, 58, 237, 0.2)"
+                    ? colors.primary.main[200] || "rgba(124, 58, 237, 0.2)"
                     : colors.border.light,
                 },
                 shadows.sm,
@@ -461,7 +461,7 @@ export default function SettingsPage() {
                   <Ionicons
                     name={isPremium ? "diamond" : "diamond-outline"}
                     size={24}
-                    color={isPremium ? colors.primary[500] : colors.text.secondary}
+                    color={isPremium ? colors.primary.main : colors.text.secondary}
                   />
                   <Text
                     style={[
@@ -470,7 +470,7 @@ export default function SettingsPage() {
                     ]}
                   >
                     {subscriptionLoading ? (
-                      <ActivityIndicator size="small" color={colors.primary[500]} />
+                      <ActivityIndicator size="small" color={colors.primary.main} />
                     ) : isPremium ? (
                       "Premium"
                     ) : (
@@ -481,7 +481,7 @@ export default function SettingsPage() {
                     <View
                       style={[
                         styles.trialBadge,
-                        { backgroundColor: colors.warning[500] },
+                        { backgroundColor: colors.warning.main },
                       ]}
                     >
                       <Text style={styles.trialBadgeText}>TRIAL</Text>
@@ -532,7 +532,7 @@ export default function SettingsPage() {
                   <TouchableOpacity
                     style={[
                       styles.upgradeButton,
-                      { backgroundColor: colors.primary[500] },
+                      { backgroundColor: colors.primary.main },
                     ]}
                     onPress={() => router.push("/subscription/plans")}
                     activeOpacity={0.8}
@@ -575,18 +575,18 @@ export default function SettingsPage() {
                   activeOpacity={0.7}
                 >
                   {restoringPurchases ? (
-                    <ActivityIndicator size="small" color={colors.primary[500]} />
+                    <ActivityIndicator size="small" color={colors.primary.main} />
                   ) : (
                     <>
                       <Ionicons
                         name="refresh"
                         size={14}
-                        color={colors.primary[500]}
+                        color={colors.primary.main}
                       />
                       <Text
                         style={[
                           styles.restoreLinkText,
-                          { color: colors.primary[500] },
+                          { color: colors.primary.main },
                         ]}
                       >
                         Restore Purchases
@@ -618,7 +618,7 @@ export default function SettingsPage() {
               <Ionicons
                 name="download-outline"
                 size={22}
-                color={colors.primary[500]}
+                color={colors.primary.main}
                 style={{ marginRight: 14 }}
               />
               <Text
@@ -686,7 +686,7 @@ export default function SettingsPage() {
               <Ionicons
                 name="help-circle-outline"
                 size={22}
-                color={colors.primary[500]}
+                color={colors.primary.main}
                 style={{ marginRight: 14 }}
               />
               <Text
@@ -722,7 +722,7 @@ export default function SettingsPage() {
               <Ionicons
                 name="shield-checkmark-outline"
                 size={22}
-                color={colors.primary[500]}
+                color={colors.primary.main}
                 style={{ marginRight: 14 }}
               />
               <Text
@@ -751,7 +751,7 @@ export default function SettingsPage() {
               <Ionicons
                 name="document-text-outline"
                 size={22}
-                color={colors.primary[500]}
+                color={colors.primary.main}
                 style={{ marginRight: 14 }}
               />
               <Text
@@ -831,7 +831,7 @@ export default function SettingsPage() {
               <Ionicons
                 name="settings-outline"
                 size={22}
-                color={colors.primary[500]}
+                color={colors.primary.main}
                 style={{ marginRight: 14 }}
               />
               <Text
@@ -883,7 +883,7 @@ export default function SettingsPage() {
                   <TouchableOpacity
                     style={[
                       styles.copyButton,
-                      { backgroundColor: colors.primary[500] },
+                      { backgroundColor: colors.primary.main },
                     ]}
                     onPress={handleCopyAccountId}
                     activeOpacity={0.7}

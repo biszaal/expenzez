@@ -237,7 +237,7 @@ export default function CustomAddressSearch({
         {loading && (
           <ActivityIndicator 
             size="small" 
-            color={colors.primary[500]} 
+            color={colors.primary.main} 
             style={{ marginLeft: spacing.sm }}
           />
         )}
@@ -283,7 +283,7 @@ export default function CustomAddressSearch({
                   alignItems: 'center',
                   padding: spacing.md,
                   borderBottomWidth: index < suggestions.length - 1 ? 1 : 0,
-                  borderBottomColor: colors.border,
+                  borderBottomColor: colors.border.medium,
                 }}
               >
                 <Ionicons 

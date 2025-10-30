@@ -134,7 +134,7 @@ export default function HelpSupportScreen() {
               <Ionicons
                 name="chevron-back"
                 size={24}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
@@ -143,12 +143,12 @@ export default function HelpSupportScreen() {
             <TouchableOpacity
               style={[
                 styles.contactButton,
-                { backgroundColor: colors.primary[100] },
+                { backgroundColor: colors.primary.main[100] },
                 shadows.sm,
               ]}
               onPress={contactSupport}
             >
-              <Ionicons name="mail" size={20} color={colors.primary[500]} />
+              <Ionicons name="mail" size={20} color={colors.primary.main} />
             </TouchableOpacity>
           </View>
         </View>
@@ -178,13 +178,13 @@ export default function HelpSupportScreen() {
                 <View
                   style={[
                     styles.helpIcon,
-                    { backgroundColor: colors.primary[100] },
+                    { backgroundColor: colors.primary.main[100] },
                   ]}
                 >
                   <Ionicons
                     name={option.icon as any}
                     size={24}
-                    color={colors.primary[500]}
+                    color={colors.primary.main}
                   />
                 </View>
                 <Text
@@ -240,13 +240,13 @@ export default function HelpSupportScreen() {
                     <View
                       style={[
                         styles.faqIcon,
-                        { backgroundColor: colors.primary[100] },
+                        { backgroundColor: colors.primary.main[100] },
                       ]}
                     >
                       <Ionicons
                         name="help-circle-outline"
                         size={20}
-                        color={colors.primary[500]}
+                        color={colors.primary.main}
                       />
                     </View>
                     <View style={styles.faqText}>
@@ -327,7 +327,7 @@ export default function HelpSupportScreen() {
               <TouchableOpacity
                 style={[
                   styles.contactButton,
-                  { backgroundColor: colors.primary[500] },
+                  { backgroundColor: colors.primary.main },
                   shadows.sm,
                 ]}
                 onPress={contactSupport}

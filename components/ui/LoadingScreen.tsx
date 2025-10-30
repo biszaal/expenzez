@@ -116,7 +116,7 @@ export default function LoadingScreen({ message = "Loading...", variant = 'defau
       <LinearGradient
         colors={variant === 'login' 
           ? ['#4F46E5', '#7C3AED', '#EC4899'] 
-          : [colors.primary[400], colors.primary[600], colors.primary[800]]}
+          : [colors.primary.main[400], colors.primary.main[600], colors.primary.main[800]]}
         style={styles.container}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -167,7 +167,7 @@ export default function LoadingScreen({ message = "Loading...", variant = 'defau
                 <Ionicons 
                   name={variant === 'login' ? "shield-checkmark" : "wallet"} 
                   size={48} 
-                  color={colors.primary[500]} 
+                  color={colors.primary.main} 
                 />
               </LinearGradient>
 

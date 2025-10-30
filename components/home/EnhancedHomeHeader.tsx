@@ -32,9 +32,9 @@ export const EnhancedHomeHeader: React.FC = () => {
           onPress={() => router.push("/notifications")}
           activeOpacity={0.7}
         >
-          <Ionicons name="notifications-outline" size={22} color={colors.primary[500]} />
+          <Ionicons name="notifications-outline" size={22} color={colors.primary.main} />
           {unreadCount > 0 && (
-            <View style={[styles.notificationBadge, { backgroundColor: colors.error[500] }]}>
+            <View style={[styles.notificationBadge, { backgroundColor: colors.error.main }]}>
               <Text style={[styles.badgeText, { color: colors.background.primary }]}>
                 {unreadCount > 99 ? '99+' : unreadCount.toString()}
               </Text>
@@ -47,7 +47,7 @@ export const EnhancedHomeHeader: React.FC = () => {
           onPress={() => router.push("/profile")}
           activeOpacity={0.7}
         >
-          <Ionicons name="person-outline" size={22} color={colors.primary[500]} />
+          <Ionicons name="person-outline" size={22} color={colors.primary.main} />
         </TouchableOpacity>
       </View>
     </View>

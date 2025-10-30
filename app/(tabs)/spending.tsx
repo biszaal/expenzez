@@ -943,7 +943,7 @@ export default function SpendingPage() {
       monthlySpentPercentage === undefined ||
       monthlySpentPercentage === null
     ) {
-      return;
+      return undefined;
     }
 
     // Stop any ongoing animations
@@ -988,7 +988,7 @@ export default function SpendingPage() {
 
       // Only update if data has actually changed
       if (currentDataHash === lastProcessedDataRef.current) {
-        return; // No change, skip update
+        return undefined; // No change, skip update
       }
 
       // Add a small delay to prevent rapid successive calls
@@ -1013,6 +1013,7 @@ export default function SpendingPage() {
         updatingCategoriesRef.current = false;
       };
     }
+    return undefined;
   }, [
     selectedMonth,
     monthlyData,
@@ -1113,7 +1114,7 @@ export default function SpendingPage() {
           <Ionicons
             name="warning-outline"
             size={64}
-            color={colors.error[500]}
+            color={colors.error.main}
             style={styles.errorIcon}
           />
           <Text style={[styles.errorTitle, { color: colors.text.primary }]}>
@@ -1125,7 +1126,7 @@ export default function SpendingPage() {
           <TouchableOpacity
             style={[
               styles.retryButton,
-              { backgroundColor: colors.primary[500] },
+              { backgroundColor: colors.primary.main },
             ]}
             onPress={fetchData}
           >
@@ -1174,7 +1175,7 @@ export default function SpendingPage() {
               <View
                 style={[
                   styles.premiumBrandAccent,
-                  { backgroundColor: colors.primary[500] },
+                  { backgroundColor: colors.primary.main },
                 ]}
               />
             </View>
@@ -1198,7 +1199,7 @@ export default function SpendingPage() {
                 <Ionicons
                   name="information-circle"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </TouchableOpacity>
             </View>
@@ -1251,7 +1252,7 @@ export default function SpendingPage() {
               <TouchableOpacity
                 style={[
                   styles.emptyStateButton,
-                  { backgroundColor: colors.primary[500] },
+                  { backgroundColor: colors.primary.main },
                 ]}
                 onPress={() => router.push("/add-transaction")}
                 activeOpacity={0.8}
@@ -1301,7 +1302,7 @@ export default function SpendingPage() {
               <TouchableOpacity
                 style={[
                   styles.emptyStateButton,
-                  { backgroundColor: colors.primary[500] },
+                  { backgroundColor: colors.primary.main },
                 ]}
                 onPress={fetchData}
                 activeOpacity={0.8}
@@ -1350,7 +1351,7 @@ export default function SpendingPage() {
                 <Ionicons
                   name="stats-chart"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
                 <Text
                   style={[

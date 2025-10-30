@@ -30,7 +30,7 @@ export const CategoryMerchantSwitch: React.FC<CategoryMerchantSwitchProps> = ({
             {
               backgroundColor:
                 spendingTab === "categories"
-                  ? colors.primary[500]
+                  ? colors.primary.main
                   : "transparent",
             },
           ]}
@@ -43,7 +43,7 @@ export const CategoryMerchantSwitch: React.FC<CategoryMerchantSwitchProps> = ({
             color={
               spendingTab === "categories"
                 ? colors.text.inverse
-                : colors.primary[500]
+                : colors.primary.main
             }
           />
           <Text
@@ -53,7 +53,7 @@ export const CategoryMerchantSwitch: React.FC<CategoryMerchantSwitchProps> = ({
                 color:
                   spendingTab === "categories"
                     ? colors.text.inverse
-                    : colors.primary[500],
+                    : colors.primary.main,
               },
             ]}
           >
@@ -67,7 +67,7 @@ export const CategoryMerchantSwitch: React.FC<CategoryMerchantSwitchProps> = ({
             {
               backgroundColor:
                 spendingTab === "merchants"
-                  ? colors.primary[500]
+                  ? colors.primary.main
                   : "transparent",
             },
           ]}
@@ -80,7 +80,7 @@ export const CategoryMerchantSwitch: React.FC<CategoryMerchantSwitchProps> = ({
             color={
               spendingTab === "merchants"
                 ? colors.text.inverse
-                : colors.primary[500]
+                : colors.primary.main
             }
           />
           <Text
@@ -90,7 +90,7 @@ export const CategoryMerchantSwitch: React.FC<CategoryMerchantSwitchProps> = ({
                 color:
                   spendingTab === "merchants"
                     ? colors.text.inverse
-                    : colors.primary[500],
+                    : colors.primary.main,
               },
             ]}
           >

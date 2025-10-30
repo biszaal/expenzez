@@ -212,7 +212,7 @@ export default function Login() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
         <View style={styles.successContainer}>
-          <View style={[styles.successIconContainer, { backgroundColor: colors.primary[500] }]}>
+          <View style={[styles.successIconContainer, { backgroundColor: colors.primary.main }]}>
             <Ionicons name="shield-checkmark" size={60} color="white" />
           </View>
           <Typography variant="h2" style={[styles.successTitle, { color: colors.text.primary }]}>
@@ -241,8 +241,8 @@ export default function Login() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary[500] + "15" }]}>
-              <Ionicons name="lock-closed" size={48} color={colors.primary[500]} />
+            <View style={[styles.iconCircle, { backgroundColor: colors.primary.main + "15" }]}>
+              <Ionicons name="lock-closed" size={48} color={colors.primary.main} />
             </View>
           </View>
 
@@ -292,7 +292,7 @@ export default function Login() {
               <TouchableOpacity
                 onPress={() => router.push("/auth/ForgotPassword")}
               >
-                <Typography variant="body" style={[styles.forgotText, { color: colors.primary[500] }]}>
+                <Typography variant="body" style={[styles.forgotText, { color: colors.primary.main }]}>
                   Forgot Password?
                 </Typography>
               </TouchableOpacity>
@@ -300,7 +300,7 @@ export default function Login() {
 
             {/* Sign In Button */}
             <TouchableOpacity
-              style={[styles.signInButton, { backgroundColor: colors.primary[500] }]}
+              style={[styles.signInButton, { backgroundColor: colors.primary.main }]}
               onPress={handleLogin}
               disabled={isLoading}
               activeOpacity={0.8}
@@ -341,7 +341,7 @@ export default function Login() {
                 New to Expenzez?{" "}
               </Typography>
               <TouchableOpacity onPress={() => router.push("/auth/Register")}>
-                <Typography variant="body" style={[styles.registerTextBold, { color: colors.primary[500] }]}>
+                <Typography variant="body" style={[styles.registerTextBold, { color: colors.primary.main }]}>
                   Create Account
                 </Typography>
               </TouchableOpacity>

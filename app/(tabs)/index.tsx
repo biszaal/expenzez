@@ -142,9 +142,9 @@ export default function HomeScreen() {
       console.log("🔍 [saveManualBalance] Profile response:", {
         manualBalance: profile?.manualBalance,
         isManualBalance: profile?.isManualBalance,
-        cachedBalance: profile?.cachedBalance
+        cachedBalance: profile?.cachedBalance,
       });
-      
+
       setManualBalance(profile?.manualBalance ?? balance);
       setIsManualBalance(profile?.isManualBalance ?? true);
 
@@ -657,8 +657,8 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={refreshData}
-            colors={[colors.primary[500]]}
-            tintColor={colors.primary[500]}
+            colors={[colors.primary.main]}
+            tintColor={colors.primary.main}
           />
         }
       >

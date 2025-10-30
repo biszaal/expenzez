@@ -169,7 +169,7 @@ export default function ManageBalanceScreen() {
             <Text style={styles.sectionTitle}>Current Balance</Text>
             <View style={styles.currentBalanceCard}>
               <Text style={styles.currentBalanceLabel}>Total Balance</Text>
-              <Text style={[styles.currentBalanceAmount, { color: colors.primary[500] }]}>
+              <Text style={[styles.currentBalanceAmount, { color: colors.primary.main }]}>
                 £{currentBalance}
               </Text>
             </View>
@@ -239,7 +239,7 @@ export default function ManageBalanceScreen() {
           <TouchableOpacity
             style={[
               styles.updateButton,
-              { backgroundColor: colors.primary[500] },
+              { backgroundColor: colors.primary.main },
               saving && styles.updateButtonDisabled,
             ]}
             onPress={handleUpdateBalance}

@@ -100,7 +100,7 @@ export default function CompleteProfileScreen() {
             <Ionicons
               name="chevron-back"
               size={24}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
           <View>
@@ -328,7 +328,7 @@ export default function CompleteProfileScreen() {
               styles.submitButton,
               {
                 backgroundColor: isFormValid()
-                  ? colors.primary[500]
+                  ? colors.primary.main
                   : colors.gray[300],
               },
               shadows.md,

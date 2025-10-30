@@ -33,7 +33,7 @@ export const SpendingHeader: React.FC<SpendingHeaderProps> = ({
   const diffLabel = diff >= 0
     ? `▲ ${formatAmount(Math.abs(diff), currency)}`
     : `▼ ${formatAmount(Math.abs(diff), currency)}`;
-  const diffColor = diff >= 0 ? colors.error[500] : colors.success[500];
+  const diffColor = diff >= 0 ? colors.error.main : colors.success.main;
 
   return (
     <View style={[styles.premiumHeader, { backgroundColor: colors.background.secondary }]}>
@@ -54,7 +54,7 @@ export const SpendingHeader: React.FC<SpendingHeaderProps> = ({
                   year: "numeric",
                 })}
                 {currentMonth && (
-                  <Text style={[styles.currentIndicator, { color: colors.primary[500] }]}>
+                  <Text style={[styles.currentIndicator, { color: colors.primary.main }]}>
                     {" "}• Current
                   </Text>
                 )}

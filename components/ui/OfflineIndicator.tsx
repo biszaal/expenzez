@@ -36,7 +36,7 @@ export const OfflineIndicator: React.FC = () => {
       style={[
         styles.container,
         {
-          backgroundColor: colors.error[500] || '#FF6B6B',
+          backgroundColor: colors.error.main || '#FF6B6B',
           transform: [{ translateY: slideAnim }],
         },
       ]}

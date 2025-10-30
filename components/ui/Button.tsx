@@ -38,19 +38,19 @@ export default function Button({
     switch (variant) {
       case "primary":
         return {
-          backgroundColor: colors.primary[500],
+          backgroundColor: colors.primary.main,
           ...shadows.sm,
         };
       case "secondary":
         return {
-          backgroundColor: colors.secondary[500],
+          backgroundColor: colors.secondary.main,
           ...shadows.sm,
         };
       case "outline":
         return {
           backgroundColor: "transparent",
           borderWidth: 2,
-          borderColor: colors.primary[500],
+          borderColor: colors.primary.main,
         };
       case "ghost":
         return {
@@ -58,7 +58,7 @@ export default function Button({
         };
       default:
         return {
-          backgroundColor: colors.primary[500],
+          backgroundColor: colors.primary.main,
           ...shadows.sm,
         };
     }
@@ -100,7 +100,7 @@ export default function Button({
           return { color: colors.text.inverse };
         case "outline":
         case "ghost":
-          return { color: colors.primary[500] };
+          return { color: colors.primary.main };
         default:
           return { color: colors.text.inverse };
       }

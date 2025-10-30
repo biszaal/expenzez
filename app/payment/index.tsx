@@ -107,7 +107,7 @@ export default function PaymentMethodsScreen() {
               <Ionicons
                 name="chevron-back"
                 size={24}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Payment Methods</Text>
@@ -115,7 +115,7 @@ export default function PaymentMethodsScreen() {
               style={styles.addButton}
               onPress={() => showSuccess("Add new payment method")}
             >
-              <Ionicons name="add" size={24} color={colors.primary[500]} />
+              <Ionicons name="add" size={24} color={colors.primary.main} />
             </TouchableOpacity>
           </View>
         </View>
@@ -171,7 +171,7 @@ export default function PaymentMethodsScreen() {
                       onValueChange={() => toggleMethodStatus(method.id)}
                       trackColor={{
                         false: colors.gray[200],
-                        true: colors.primary[500],
+                        true: colors.primary.main,
                       }}
                       thumbColor={method.isActive ? "white" : colors.gray[300]}
                     />
@@ -191,7 +191,7 @@ export default function PaymentMethodsScreen() {
                 <Ionicons
                   name="add-circle-outline"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </View>
               <View style={styles.actionContent}>
@@ -203,7 +203,7 @@ export default function PaymentMethodsScreen() {
               <Ionicons
                 name="chevron-forward"
                 size={20}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
 
@@ -215,7 +215,7 @@ export default function PaymentMethodsScreen() {
                 <Ionicons
                   name="business-outline"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </View>
               <View style={styles.actionContent}>
@@ -227,7 +227,7 @@ export default function PaymentMethodsScreen() {
               <Ionicons
                 name="chevron-forward"
                 size={20}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
 
@@ -236,7 +236,7 @@ export default function PaymentMethodsScreen() {
                 <Ionicons
                   name="wallet-outline"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </View>
               <View style={styles.actionContent}>
@@ -246,7 +246,7 @@ export default function PaymentMethodsScreen() {
               <Ionicons
                 name="chevron-forward"
                 size={20}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
           </View>
@@ -261,7 +261,7 @@ export default function PaymentMethodsScreen() {
                 <Ionicons
                   name="shield-outline"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </View>
               <View style={styles.securityContent}>
@@ -275,7 +275,7 @@ export default function PaymentMethodsScreen() {
                 onValueChange={() => {}}
                 trackColor={{
                   false: colors.gray[200],
-                  true: colors.primary[500],
+                  true: colors.primary.main,
                 }}
                 thumbColor="white"
               />
@@ -286,7 +286,7 @@ export default function PaymentMethodsScreen() {
                 <Ionicons
                   name="finger-print-outline"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </View>
               <View style={styles.securityContent}>
@@ -302,7 +302,7 @@ export default function PaymentMethodsScreen() {
                 onValueChange={() => {}}
                 trackColor={{
                   false: colors.gray[200],
-                  true: colors.primary[500],
+                  true: colors.primary.main,
                 }}
                 thumbColor="white"
               />
@@ -313,7 +313,7 @@ export default function PaymentMethodsScreen() {
                 <Ionicons
                   name="notifications-outline"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </View>
               <View style={styles.securityContent}>
@@ -327,7 +327,7 @@ export default function PaymentMethodsScreen() {
                 onValueChange={() => {}}
                 trackColor={{
                   false: colors.gray[200],
-                  true: colors.primary[500],
+                  true: colors.primary.main,
                 }}
                 thumbColor="white"
               />
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primary[100],
+    backgroundColor: colors.primary.main[100],
     ...shadows.sm,
   },
   section: {
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   defaultBadge: {
-    backgroundColor: colors.primary[100],
+    backgroundColor: colors.primary.main[100],
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
   defaultText: {
     fontSize: typography.fontSizes.xs,
     fontWeight: "600" as const,
-    color: colors.primary[500],
+    color: colors.primary.main,
   },
   actionsCard: {
     backgroundColor: colors.background.primary,
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.primary[100],
+    backgroundColor: colors.primary.main[100],
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.primary[100],
+    backgroundColor: colors.primary.main[100],
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.primary[100],
+    backgroundColor: colors.primary.main[100],
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,

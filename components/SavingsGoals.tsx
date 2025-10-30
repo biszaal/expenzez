@@ -244,7 +244,7 @@ export default function SavingsGoals({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
+        <ActivityIndicator size="large" color={colors.primary.main} />
         <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
           Loading savings goals...
         </Text>
@@ -265,7 +265,7 @@ export default function SavingsGoals({
           </Text>
         </View>
         <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: colors.primary[500] }]}
+          style={[styles.addButton, { backgroundColor: colors.primary.main }]}
           onPress={() => setShowCreateModal(true)}
         >
           <Ionicons name="add" size={24} color="white" />
@@ -297,7 +297,7 @@ export default function SavingsGoals({
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={isCompleted ? ['#10B981', '#059669'] : [colors.primary[100], colors.primary[50]]}
+                  colors={isCompleted ? ['#10B981', '#059669'] : [colors.primary.main[100], colors.primary.main[50]]}
                   style={styles.goalGradient}
                 >
                   {/* Goal Header */}
@@ -326,7 +326,7 @@ export default function SavingsGoals({
                         style={[styles.actionButton, { backgroundColor: colors.background.secondary }]}
                         onPress={() => handleDeleteGoal(goal)}
                       >
-                        <Ionicons name="trash-outline" size={16} color={colors.error[500]} />
+                        <Ionicons name="trash-outline" size={16} color={colors.error.main} />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -344,7 +344,7 @@ export default function SavingsGoals({
                       <Text style={[styles.progressText, { color: colors.text.primary }]}>
                         {formatCurrency(goal.currentAmount)} of {formatCurrency(goal.targetAmount)}
                       </Text>
-                      <Text style={[styles.progressPercentage, { color: isCompleted ? '#10B981' : colors.primary[500] }]}>
+                      <Text style={[styles.progressPercentage, { color: isCompleted ? '#10B981' : colors.primary.main }]}>
                         {Math.round(progress)}%
                       </Text>
                     </View>
@@ -354,7 +354,7 @@ export default function SavingsGoals({
                           styles.progressFill,
                           {
                             width: `${progress}%`,
-                            backgroundColor: isCompleted ? '#10B981' : colors.primary[500],
+                            backgroundColor: isCompleted ? '#10B981' : colors.primary.main,
                           },
                         ]}
                       />
@@ -415,9 +415,9 @@ export default function SavingsGoals({
               disabled={submitting}
             >
               {submitting ? (
-                <ActivityIndicator size="small" color={colors.primary[500]} />
+                <ActivityIndicator size="small" color={colors.primary.main} />
               ) : (
-                <Text style={[styles.modalSave, { color: colors.primary[500] }]}>
+                <Text style={[styles.modalSave, { color: colors.primary.main }]}>
                   {editingGoal ? 'Update' : 'Create'}
                 </Text>
               )}
@@ -549,9 +549,9 @@ export default function SavingsGoals({
             </Text>
             <TouchableOpacity onPress={handleAddAmount} disabled={submitting}>
               {submitting ? (
-                <ActivityIndicator size="small" color={colors.primary[500]} />
+                <ActivityIndicator size="small" color={colors.primary.main} />
               ) : (
-                <Text style={[styles.modalSave, { color: colors.primary[500] }]}>Add</Text>
+                <Text style={[styles.modalSave, { color: colors.primary.main }]}>Add</Text>
               )}
             </TouchableOpacity>
           </View>

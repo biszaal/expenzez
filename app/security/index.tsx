@@ -1,10 +1,8 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
   Switch,
   ScrollView,
   Modal,
@@ -13,22 +11,27 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useFocusEffect } from "expo-router";
-import * as LocalAuthentication from "expo-local-authentication";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSecurity } from "../../contexts/SecurityContext";
 import { useTheme } from "../../contexts/ThemeContext";
-import { enhancedSecurityAPI } from "../../services/api/enhancedSecurityAPI";
-import { nativeSecurityAPI } from "../../services/api/nativeSecurityAPI";
-import { deviceManager } from "../../services/deviceManager";
-import { deviceAPI, DeviceInfo } from "../../services/api/deviceAPI";
 import PinInput from "../../components/PinInput";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { spacing, shadows } from "../../constants/theme";
+
+// Import custom hooks
+import { useDeviceManagement } from "../../hooks/useDeviceManagement";
+import { useBiometricSettings } from "../../hooks/useBiometricSettings";
+import { useSecurityActions } from "../../hooks/useSecurityActions";
+
+// Import utilities
 import {
-  spacing,
-  borderRadius,
-  shadows,
-  typography,
-} from "../../constants/theme";
+  formatDeviceType,
+  formatLastSeen,
+  getDeviceIcon,
+} from "../../utils/deviceFormatters";
+
+// Import styles
+import { securityStyles as styles } from "./styles";
 
 export default function SecurityScreen() {
   const router = useRouter();
@@ -40,44 +43,65 @@ export default function SecurityScreen() {
     enableSecurity,
     disableSecurity,
     checkSecurityStatus,
-    syncSecurityPreferences,
     unlockApp,
     extendSession,
   } = useSecurity();
-  const [hasBiometric, setHasBiometric] = useState(false);
-  const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPinVerification, setShowPinVerification] = useState(false);
-  const [pinInput, setPinInput] = useState("");
-  const [devices, setDevices] = useState<DeviceInfo[]>([]);
-  const [loadingDevices, setLoadingDevices] = useState(false);
-  const [currentDeviceId, setCurrentDeviceId] = useState<string | null>(null);
 
-  // Auto-verification effect
-  React.useEffect(() => {
-    if (pinInput.length === 5 && !isLoading) {
-      console.log(
-        "🔐 [Security] useEffect: PIN length 5, triggering auto-verification"
-      );
-      const timeoutId = setTimeout(() => {
-        console.log(
-          "🔐 [Security] useEffect: Executing verification after timeout"
-        );
-        verifyPinAndDisableSecurity();
-      }, 200);
+  // Custom hooks for device management
+  const {
+    devices,
+    loadingDevices,
+    currentDeviceId,
+    loadDevices,
+    loadCurrentDeviceId,
+    handleRevokeDevice,
+    handleTrustDevice,
+  } = useDeviceManagement();
 
-      // Cleanup timeout if component unmounts or pinInput changes
-      return () => clearTimeout(timeoutId);
-    }
-  }, [pinInput, isLoading]);
+  // Custom hook for biometric settings
+  const {
+    hasBiometric,
+    isBiometricEnabled,
+    checkBiometricAvailability,
+    loadBiometricSettings,
+    handleBiometricToggle,
+  } = useBiometricSettings(isSecurityEnabled);
 
-  // Local state to force UI updates when context state changes
+  // Custom hook for security actions
+  const {
+    isLoading,
+    showPinVerification,
+    pinInput,
+    setPinInput,
+    setShowPinVerification,
+    handleSecurityToggle,
+    verifyPinAndDisableSecurity,
+    changePassword,
+    resetSecurity,
+  } = useSecurityActions({
+    enableSecurity,
+    disableSecurity,
+    unlockApp,
+  });
+
+  // Local state for UI updates
   const [localSecurityEnabled, setLocalSecurityEnabled] =
-    useState(isSecurityEnabled);
+    React.useState(isSecurityEnabled);
 
-  // Debouncing refs to prevent excessive API calls
+  // Debouncing refs
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitializedRef = useRef(false);
+
+  // Auto-verification effect for PIN
+  React.useEffect(() => {
+    if (pinInput.length === 5 && !isLoading) {
+      const timeoutId = setTimeout(() => {
+        verifyPinAndDisableSecurity();
+      }, 200);
+      return () => clearTimeout(timeoutId);
+    }
+    return undefined;
+  }, [pinInput, isLoading, verifyPinAndDisableSecurity]);
 
   // Sync local state with context state
   React.useEffect(() => {
@@ -86,7 +110,7 @@ export default function SecurityScreen() {
     }
   }, [isSecurityEnabled, localSecurityEnabled]);
 
-  // Debounced security status check to prevent excessive API calls
+  // Debounced security status check
   const debouncedCheckSecurityStatus = useCallback(() => {
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
@@ -96,91 +120,61 @@ export default function SecurityScreen() {
     }, 300);
   }, [checkSecurityStatus]);
 
+  // Initialize screen
   React.useEffect(() => {
     const initializeScreen = async () => {
-      if (isInitializedRef.current) {
-        return;
-      }
-
+      if (isInitializedRef.current) return;
       isInitializedRef.current = true;
 
-      // Extend unlock session when accessing security settings to prevent auto-lock during disable
       try {
         await extendSession();
       } catch (error) {
         console.warn("Failed to extend session:", error);
       }
 
-      // Load all settings
-      checkBiometricAvailability();
-      loadBiometricSettings();
-      loadDevices();
-      loadCurrentDeviceId();
-
-      // Use debounced check to prevent excessive API calls
+      checkBiometricAvailability().catch(console.error);
+      loadBiometricSettings().catch(console.error);
+      loadDevices().catch(console.error);
+      loadCurrentDeviceId().catch(console.error);
       debouncedCheckSecurityStatus();
     };
 
     initializeScreen();
-  }, []); // Remove checkSecurityStatus from dependencies to prevent infinite loop
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Refresh security status when screen comes into focus (debounced)
+  // Refresh on focus
   useFocusEffect(
     React.useCallback(() => {
       const refreshWithDelay = async () => {
-        // Extend unlock session to prevent auto-lock while in security settings
         try {
           await extendSession();
         } catch (error) {
           console.warn("Failed to extend unlock session:", error);
         }
 
-        // CRITICAL: Check security status from server to get latest preferences
-        console.log("🔐 [SecuritySettings] Checking security status on focus...");
         try {
           await checkSecurityStatus();
         } catch (error) {
-          console.error("🔐 [SecuritySettings] Error checking security status:", error);
+          console.error("Error checking security status:", error);
         }
 
-        // Also sync local state for fallback
         setTimeout(async () => {
-          // Force component re-render by checking local state as fallback
           const securityEnabled = await AsyncStorage.getItem(
             "@expenzez_security_enabled"
           );
 
-          // Only sync local state if there's a clear mismatch
           if (securityEnabled === "true" && !isSecurityEnabled) {
-            console.log(
-              "🔐 [SecuritySettings] Syncing enabled state from storage (fallback)"
-            );
             setLocalSecurityEnabled(true);
           } else if (securityEnabled === "false" && isSecurityEnabled) {
-            console.log(
-              "🔐 [SecuritySettings] Syncing disabled state from storage (fallback)"
-            );
             setLocalSecurityEnabled(false);
           }
-        }, 100); // Reduced delay to make UI more responsive
+        }, 100);
       };
       refreshWithDelay();
-    }, [isSecurityEnabled, extendSession, checkSecurityStatus]) // Include checkSecurityStatus dependency
+    }, [isSecurityEnabled, extendSession, checkSecurityStatus])
   );
 
-  // React to direct security state changes (without excessive API calls)
-  React.useEffect(() => {
-    console.log("🔐 [SecuritySettings] Security state changed:", {
-      isSecurityEnabled,
-    });
-    // Only update biometric settings when security state changes
-    if (isSecurityEnabled) {
-      checkBiometricAvailability();
-      loadBiometricSettings();
-    }
-  }, [isSecurityEnabled]);
-
-  // Cleanup debounce timeout on unmount
+  // Cleanup debounce timeout
   React.useEffect(() => {
     return () => {
       if (debounceTimeoutRef.current) {
@@ -189,384 +183,12 @@ export default function SecurityScreen() {
     };
   }, []);
 
-  const checkBiometricAvailability = async () => {
-    try {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      setHasBiometric(hasHardware && isEnrolled);
-    } catch (error) {
-      console.error("Error checking biometric availability:", error);
-    }
-  };
-
-  const loadBiometricSettings = async () => {
-    try {
-      const biometricEnabled = await AsyncStorage.getItem(
-        "@expenzez_biometric_enabled"
-      );
-      setIsBiometricEnabled(biometricEnabled === "true");
-    } catch (error) {
-      console.error("Error loading biometric settings:", error);
-    }
-  };
-
-  const handleSecurityToggle = async (enabled: boolean) => {
-    setIsLoading(true);
-    try {
-      if (enabled) {
-        // ALWAYS require creating a new PIN when enabling security
-        // This ensures fresh PIN creation after any disable/reset
-        Alert.alert(
-          "Create PIN",
-          "You need to create a 5-digit PIN to enable app security.",
-          [
-            {
-              text: "Cancel",
-              style: "cancel",
-              onPress: () => {
-                // Reset loading state when cancelled
-                setIsLoading(false);
-              },
-            },
-            {
-              text: "Create PIN",
-              onPress: () => {
-                // Don't clear loading here - let the user see we're navigating
-                console.log(
-                  "🔐 [Security] Navigating to PIN creation (always create new PIN)"
-                );
-                router.push("/security/create-pin");
-                // Clear loading after a short delay
-                setTimeout(() => setIsLoading(false), 500);
-              },
-            },
-          ]
-        );
-        return; // Don't execute finally block immediately
-      } else {
-        Alert.alert(
-          "Disable Security",
-          "Enter your PIN to disable app security. This will remove password protection.",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Enter PIN",
-              style: "destructive",
-              onPress: () => {
-                setPinInput("");
-                setShowPinVerification(true);
-              },
-            },
-          ]
-        );
-      }
-    } catch (error) {
-      console.error("Error toggling security:", error);
-      Alert.alert("Error", "Failed to update security settings.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleBiometricToggle = async (enabled: boolean) => {
-    if (!hasBiometric) {
-      Alert.alert(
-        "Biometric Not Available",
-        "Biometric authentication is not available on this device."
-      );
-      return;
-    }
-
-    try {
-      await AsyncStorage.setItem(
-        "@expenzez_biometric_enabled",
-        enabled.toString()
-      );
-      setIsBiometricEnabled(enabled);
-
-      Alert.alert(
-        enabled ? "Biometric Enabled" : "Biometric Disabled",
-        enabled
-          ? "You can now use biometric authentication to unlock the app."
-          : "Biometric authentication has been disabled."
-      );
-    } catch (error) {
-      console.error("Error toggling biometric:", error);
-      Alert.alert("Error", "Failed to update biometric settings.");
-    }
-  };
-
-  const changePassword = () => {
-    Alert.alert(
-      "Change PIN",
-      "This will require you to verify your account password and current PIN. Continue?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Continue",
-          onPress: () => {
-            router.push("/security/change-pin");
-          },
-        },
-      ]
-    );
-  };
-
-  const verifyPinAndDisableSecurity = async () => {
-    console.log("🔐 [Security] verifyPinAndDisableSecurity called", {
-      isLoading,
-      pinInputLength: pinInput.length,
-      pinInput: pinInput.replace(/./g, "*"), // Hide PIN in logs
-    });
-
-    // Prevent multiple calls while loading or invalid PIN length
-    if (isLoading) {
-      console.log("🔐 [Security] Already loading, skipping verification");
-      return;
-    }
-
-    if (pinInput.length !== 5) {
-      console.log("🔐 [Security] PIN length not 5, skipping verification");
-      return;
-    }
-
-    try {
-      console.log("🔐 [Security] Starting PIN verification...");
-      setIsLoading(true);
-
-      let validation: { success: boolean; error?: any } = { success: false };
-
-      const deviceId = await deviceManager.getDeviceId();
-      console.log("🔐 [Security] Got device ID:", deviceId.slice(0, 8) + "...");
-
-      console.log("🔐 [Security] Calling nativeSecurityAPI.validatePin...");
-      validation = await nativeSecurityAPI.validatePin({
-        pin: pinInput,
-        deviceId,
-      });
-      console.log("🔐 [Security] PIN validation completed:", validation);
-
-      console.log("🔐 [Security] PIN validation result:", validation.success);
-
-      if (validation.success) {
-        // PIN is correct, proceed with disabling security
-        console.log("🔐 [Security] PIN correct, disabling security...");
-
-        // Small delay to show success state
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        setShowPinVerification(false);
-        setPinInput("");
-
-        console.log("🔐 [Security] Calling unlockApp...");
-        await unlockApp();
-        console.log("🔐 [Security] Calling disableSecurity...");
-        await disableSecurity();
-        console.log("🔐 [Security] Security disabled successfully");
-
-        Alert.alert(
-          "Security Disabled",
-          "App security has been disabled successfully."
-        );
-      } else {
-        // PIN is incorrect - reset PIN input and show error
-        console.log("🔐 [Security] PIN incorrect, showing error");
-        setPinInput("");
-        Alert.alert(
-          "Incorrect PIN",
-          "The PIN you entered is incorrect. Please try again. (Try 00000 for test mode)",
-          [
-            {
-              text: "Try Again",
-              onPress: () => {
-                console.log("🔐 [Security] User chose to try again");
-                setPinInput("");
-              },
-            },
-            {
-              text: "Cancel",
-              style: "cancel",
-              onPress: () => {
-                console.log("🔐 [Security] User cancelled verification");
-                setShowPinVerification(false);
-                setPinInput("");
-              },
-            },
-          ]
-        );
-      }
-    } catch (error) {
-      console.error("🔐 [Security] Error verifying PIN:", error);
-      console.error("🔐 [Security] Error details:", {
-        message: error?.message,
-        stack: error?.stack,
-        name: error?.name,
-      });
-      setPinInput("");
-      Alert.alert(
-        "Verification Failed",
-        `Failed to verify PIN: ${error?.message || "Unknown error"}. Try 00000 for test mode.`,
-        [
-          {
-            text: "Try Again",
-            onPress: () => {
-              console.log("🔐 [Security] User chose to retry after error");
-              setPinInput("");
-            },
-          },
-          {
-            text: "Cancel",
-            style: "cancel",
-            onPress: () => {
-              console.log("🔐 [Security] User cancelled after error");
-              setShowPinVerification(false);
-              setPinInput("");
-            },
-          },
-        ]
-      );
-    } finally {
-      console.log("🔐 [Security] PIN verification completed, clearing loading");
-      setIsLoading(false);
-    }
-  };
-
-  const loadCurrentDeviceId = async () => {
-    try {
-      const deviceId = await deviceManager.getDeviceId();
-      setCurrentDeviceId(deviceId);
-    } catch (error) {
-      console.error("Error getting current device ID:", error);
-    }
-  };
-
-  const loadDevices = async () => {
-    try {
-      setLoadingDevices(true);
-      const response = await deviceAPI.getDeviceList();
-      if (response.success) {
-        setDevices(response.devices);
-      }
-    } catch (error) {
-      console.error("Error loading devices:", error);
-      // Don't show error alert for now, just fail silently
-    } finally {
-      setLoadingDevices(false);
-    }
-  };
-
-  const handleRevokeDevice = async (deviceId: string, deviceName: string) => {
-    Alert.alert(
-      "Revoke Device",
-      `Are you sure you want to revoke access for "${deviceName}"? This device will need to log in again.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Revoke",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deviceAPI.revokeDevice(deviceId);
-              Alert.alert(
-                "Device Revoked",
-                `"${deviceName}" has been revoked successfully.`
-              );
-              await loadDevices(); // Reload the list
-            } catch (error) {
-              console.error("Error revoking device:", error);
-              Alert.alert(
-                "Error",
-                "Failed to revoke device. Please try again."
-              );
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleTrustDevice = async (deviceId: string, deviceName: string) => {
-    try {
-      await deviceAPI.trustDevice(deviceId);
-      Alert.alert("Device Trusted", `"${deviceName}" is now a trusted device.`);
-      await loadDevices(); // Reload the list
-    } catch (error) {
-      console.error("Error trusting device:", error);
-      Alert.alert("Error", "Failed to trust device. Please try again.");
-    }
-  };
-
-  const formatDeviceType = (device: DeviceInfo) => {
-    const parts = [];
-    if (device.platform) parts.push(device.platform);
-    if (device.deviceType) parts.push(device.deviceType);
-    if (device.browser) parts.push(device.browser);
-    return parts.join(" • ");
-  };
-
-  const formatLastSeen = (lastSeen: string) => {
-    const date = new Date(lastSeen);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-      return "Today";
-    } else if (diffDays === 1) {
-      return "Yesterday";
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
-  };
-
-  const resetSecurity = () => {
-    Alert.alert(
-      "Reset Security Settings",
-      "This will remove all security settings and require you to set them up again. Continue?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // IMMEDIATE UNLOCK: Unlock the app immediately before resetting security
-              await unlockApp();
-
-              await AsyncStorage.multiRemove([
-                "@expenzez_app_password",
-                "@expenzez_security_enabled",
-                "@expenzez_biometric_enabled",
-                "@expenzez_app_locked",
-              ]);
-              await disableSecurity();
-              Alert.alert(
-                "Security Reset",
-                "All security settings have been reset."
-              );
-            } catch (error) {
-              console.error("Error resetting security:", error);
-              Alert.alert("Error", "Failed to reset security settings.");
-            }
-          },
-        },
-      ]
-    );
-  };
-
   return (
     <SafeAreaView
-      style={[
-        styles.container,
-        { backgroundColor: colors.background.secondary },
-      ]}
+      style={[styles.container, { backgroundColor: colors.background.secondary }]}
     >
       {/* Header */}
-      <View
-        style={[styles.header, { backgroundColor: colors.background.primary }]}
-      >
+      <View style={[styles.header, { backgroundColor: colors.background.primary }]}>
         <View style={styles.headerContent}>
           <TouchableOpacity
             style={[
@@ -576,11 +198,7 @@ export default function SecurityScreen() {
             ]}
             onPress={() => router.back()}
           >
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color={colors.primary[500]}
-            />
+            <Ionicons name="chevron-back" size={24} color={colors.primary.main} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
             Security Settings
@@ -611,29 +229,17 @@ export default function SecurityScreen() {
                 <View
                   style={[
                     styles.settingIcon,
-                    { backgroundColor: colors.primary[100] },
+                    { backgroundColor: colors.primary.main[100] },
                   ]}
                 >
-                  <Ionicons
-                    name="lock-closed"
-                    size={20}
-                    color={colors.primary[500]}
-                  />
+                  <Ionicons name="lock-closed" size={20} color={colors.primary.main} />
                 </View>
                 <View style={styles.settingContent}>
-                  <Text
-                    style={[
-                      styles.settingTitle,
-                      { color: colors.text.primary },
-                    ]}
-                  >
+                  <Text style={[styles.settingTitle, { color: colors.text.primary }]}>
                     App Lock
                   </Text>
                   <Text
-                    style={[
-                      styles.settingSubtitle,
-                      { color: colors.text.secondary },
-                    ]}
+                    style={[styles.settingSubtitle, { color: colors.text.secondary }]}
                   >
                     {securityPreferences?.appLockEnabled
                       ? "Synced across all devices"
@@ -647,7 +253,7 @@ export default function SecurityScreen() {
                 disabled={isLoading}
                 trackColor={{
                   false: colors.gray[200],
-                  true: colors.primary[500],
+                  true: colors.primary.main,
                 }}
                 thumbColor={localSecurityEnabled ? "white" : colors.gray[300]}
               />
@@ -683,107 +289,29 @@ export default function SecurityScreen() {
                       { backgroundColor: colors.warning[100] },
                     ]}
                   >
-                    <Ionicons
-                      name="warning"
-                      size={20}
-                      color={colors.warning[600]}
-                    />
+                    <Ionicons name="warning" size={20} color={colors.warning[600]} />
                   </View>
                   <View style={styles.settingContent}>
                     <Text
-                      style={[
-                        styles.settingTitle,
-                        { color: colors.warning[700] },
-                      ]}
+                      style={[styles.settingTitle, { color: colors.warning[700] }]}
                     >
-                      Create PIN for This Device
+                      Create PIN
                     </Text>
                     <Text
-                      style={[
-                        styles.settingSubtitle,
-                        { color: colors.warning[600] },
-                      ]}
+                      style={[styles.settingSubtitle, { color: colors.warning[600] }]}
                     >
-                      App Lock is enabled on your account. Set up a PIN on this
-                      device to unlock the app.
+                      Set up PIN on this device
                     </Text>
                   </View>
                 </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={colors.warning[500]}
-                />
+                <Ionicons name="chevron-forward" size={20} color={colors.warning[600]} />
               </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {/* Security Status Section */}
-        {securityPreferences && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Security Status
-            </Text>
-            <View
-              style={[
-                styles.card,
-                { backgroundColor: colors.background.primary },
-                shadows.sm,
-              ]}
-            >
-              <View style={styles.infoItem}>
-                <Ionicons
-                  name="shield-checkmark"
-                  size={16}
-                  color={
-                    securityPreferences.appLockEnabled
-                      ? colors.success[500]
-                      : colors.gray[400]
-                  }
-                />
-                <Text
-                  style={[styles.infoText, { color: colors.text.secondary }]}
-                >
-                  App Lock:{" "}
-                  {securityPreferences.appLockEnabled
-                    ? "Enabled across all devices"
-                    : "Disabled"}
-                </Text>
-              </View>
-              <View style={styles.infoItem}>
-                <Ionicons
-                  name="phone-portrait"
-                  size={16}
-                  color={
-                    !needsPinSetup ? colors.success[500] : colors.warning[500]
-                  }
-                />
-                <Text
-                  style={[styles.infoText, { color: colors.text.secondary }]}
-                >
-                  This Device:{" "}
-                  {needsPinSetup ? "PIN setup required" : "PIN configured"}
-                </Text>
-              </View>
-              <View style={styles.infoItem}>
-                <Ionicons name="time" size={16} color={colors.primary[500]} />
-                <Text
-                  style={[styles.infoText, { color: colors.text.secondary }]}
-                >
-                  Session Timeout:{" "}
-                  {Math.round(
-                    (securityPreferences.sessionTimeout || 300000) / 60000
-                  )}{" "}
-                  minutes
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Biometric Authentication Section - Always show when security is enabled */}
-        {localSecurityEnabled && (
+        {/* Biometric Section */}
+        {isSecurityEnabled && !needsPinSetup && hasBiometric && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
               Biometric Authentication
@@ -803,55 +331,40 @@ export default function SecurityScreen() {
                       { backgroundColor: colors.success[100] },
                     ]}
                   >
-                    <Ionicons
-                      name="finger-print"
-                      size={20}
-                      color={colors.success[500]}
-                    />
+                    <Ionicons name="finger-print" size={20} color={colors.success.main} />
                   </View>
                   <View style={styles.settingContent}>
-                    <Text
-                      style={[
-                        styles.settingTitle,
-                        { color: colors.text.primary },
-                      ]}
-                    >
-                      Biometric Login
+                    <Text style={[styles.settingTitle, { color: colors.text.primary }]}>
+                      Biometric Unlock
                     </Text>
                     <Text
-                      style={[
-                        styles.settingSubtitle,
-                        { color: colors.text.secondary },
-                      ]}
+                      style={[styles.settingSubtitle, { color: colors.text.secondary }]}
                     >
-                      {hasBiometric
-                        ? "Use fingerprint or face ID"
-                        : "Not available on this device"}
+                      Use fingerprint or Face ID
                     </Text>
                   </View>
                 </View>
                 <Switch
-                  value={isBiometricEnabled && hasBiometric}
-                  onValueChange={handleBiometricToggle}
-                  disabled={!hasBiometric}
+                  value={isBiometricEnabled}
+                  onValueChange={(value) => {
+                    handleBiometricToggle(value).catch(console.error);
+                  }}
                   trackColor={{
                     false: colors.gray[200],
-                    true: colors.success[500],
+                    true: colors.success.main,
                   }}
-                  thumbColor={
-                    isBiometricEnabled && hasBiometric ? "white" : colors.gray[300]
-                  }
+                  thumbColor={isBiometricEnabled ? "white" : colors.gray[300]}
                 />
               </View>
             </View>
           </View>
         )}
 
-        {/* Password Management Section */}
-        {localSecurityEnabled && (
+        {/* PIN Management Section */}
+        {isSecurityEnabled && !needsPinSetup && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Password Management
+              PIN Management
             </Text>
             <View
               style={[
@@ -860,53 +373,34 @@ export default function SecurityScreen() {
                 shadows.sm,
               ]}
             >
-              <TouchableOpacity
-                style={styles.settingItem}
-                onPress={changePassword}
-              >
+              <TouchableOpacity style={styles.settingItem} onPress={changePassword}>
                 <View style={styles.settingLeft}>
                   <View
                     style={[
                       styles.settingIcon,
-                      { backgroundColor: colors.warning[100] },
+                      { backgroundColor: colors.primary.main[100] },
                     ]}
                   >
-                    <Ionicons
-                      name="key"
-                      size={20}
-                      color={colors.warning[500]}
-                    />
+                    <Ionicons name="key" size={20} color={colors.primary.main} />
                   </View>
                   <View style={styles.settingContent}>
-                    <Text
-                      style={[
-                        styles.settingTitle,
-                        { color: colors.text.primary },
-                      ]}
-                    >
+                    <Text style={[styles.settingTitle, { color: colors.text.primary }]}>
                       Change PIN
                     </Text>
                     <Text
-                      style={[
-                        styles.settingSubtitle,
-                        { color: colors.text.secondary },
-                      ]}
+                      style={[styles.settingSubtitle, { color: colors.text.secondary }]}
                     >
-                      Update your 5-digit PIN
+                      Update your PIN code
                     </Text>
                   </View>
                 </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={colors.gray[400]}
-                />
+                <Ionicons name="chevron-forward" size={20} color={colors.gray[300]} />
               </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {/* Trusted Devices Section */}
+        {/* Device Management Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
             Trusted Devices
@@ -920,7 +414,7 @@ export default function SecurityScreen() {
           >
             {loadingDevices ? (
               <View style={styles.loadingDevicesContainer}>
-                <ActivityIndicator size="small" color={colors.primary[500]} />
+                <ActivityIndicator size="small" color={colors.primary.main} />
                 <Text
                   style={[
                     styles.loadingDevicesText,
@@ -931,42 +425,22 @@ export default function SecurityScreen() {
                 </Text>
               </View>
             ) : devices.length === 0 ? (
-              <EmptyState type="devices" />
+              <View style={styles.emptyDevicesContainer}>
+                <Ionicons name="phone-portrait" size={40} color={colors.gray[300]} />
+                <Text
+                  style={[styles.emptyDevicesText, { color: colors.text.primary }]}
+                >
+                  No devices yet
+                </Text>
+                <Text
+                  style={[styles.emptyDevicesSubtext, { color: colors.text.secondary }]}
+                >
+                  Your trusted devices will appear here
+                </Text>
+              </View>
             ) : (
               devices.map((device, index) => {
                 const isCurrentDevice = device.deviceId === currentDeviceId;
-
-                // Enhanced device icon logic
-                const getDeviceIcon = () => {
-                  // iOS devices
-                  if (device.platform === "ios") {
-                    if (device.deviceType === "tablet")
-                      return "tablet-portrait";
-                    if (device.deviceType === "desktop") return "desktop";
-                    return "phone-portrait";
-                  }
-                  // Android devices
-                  if (device.platform === "android") {
-                    if (device.deviceType === "tablet")
-                      return "tablet-landscape";
-                    return "phone-portrait-outline";
-                  }
-                  // Other devices
-                  if (device.deviceType === "desktop") return "desktop-outline";
-                  if (device.deviceType === "tablet")
-                    return "tablet-landscape-outline";
-                  return "hardware-chip-outline";
-                };
-
-                // Trust level color
-                const getTrustColor = () => {
-                  if (isCurrentDevice) return colors.success;
-                  if (device.isTrusted) return colors.primary;
-                  return colors.gray;
-                };
-
-                const trustColors = getTrustColor();
-
                 return (
                   <View key={device.deviceId}>
                     <View style={styles.deviceItem}>
@@ -975,16 +449,18 @@ export default function SecurityScreen() {
                           style={[
                             styles.deviceIcon,
                             {
-                              backgroundColor: trustColors[100],
-                              borderWidth: 2,
-                              borderColor: trustColors[200],
+                              backgroundColor: isCurrentDevice
+                                ? colors.primary.main[100]
+                                : colors.gray[100],
                             },
                           ]}
                         >
                           <Ionicons
-                            name={getDeviceIcon() as any}
-                            size={22}
-                            color={trustColors[600]}
+                            name={getDeviceIcon(device) as any}
+                            size={20}
+                            color={
+                              isCurrentDevice ? colors.primary.main : colors.gray[400]
+                            }
                           />
                         </View>
                         <View style={styles.deviceContent}>
@@ -996,18 +472,17 @@ export default function SecurityScreen() {
                               ]}
                             >
                               {device.deviceName}
-                              {isCurrentDevice && (
-                                <Text
-                                  style={[
-                                    styles.currentDeviceBadge,
-                                    { color: colors.success[600] },
-                                  ]}
-                                >
-                                  {" "}
-                                  • This device
-                                </Text>
-                              )}
                             </Text>
+                            {isCurrentDevice && (
+                              <Text
+                                style={[
+                                  styles.currentDeviceBadge,
+                                  { color: colors.primary.main },
+                                ]}
+                              >
+                                This device
+                              </Text>
+                            )}
                             {device.isTrusted && (
                               <View
                                 style={[
@@ -1032,26 +507,23 @@ export default function SecurityScreen() {
                             )}
                           </View>
                           <Text
-                            style={[
-                              styles.deviceType,
-                              { color: colors.text.secondary },
-                            ]}
+                            style={[styles.deviceType, { color: colors.text.secondary }]}
                           >
                             {formatDeviceType(device)}
                           </Text>
                           <Text
                             style={[
                               styles.deviceLastSeen,
-                              { color: colors.gray[400] },
+                              { color: colors.text.secondary },
                             ]}
                           >
-                            Last seen: {formatLastSeen(device.lastSeen)}
+                            Last active: {formatLastSeen(device.lastSeen)}
                           </Text>
                           {device.location && (
                             <Text
                               style={[
                                 styles.deviceLocation,
-                                { color: colors.gray[400] },
+                                { color: colors.text.secondary },
                               ]}
                             >
                               📍 {device.location}
@@ -1064,13 +536,10 @@ export default function SecurityScreen() {
                           <TouchableOpacity
                             style={[
                               styles.deviceActionButton,
-                              { backgroundColor: colors.success[100] },
+                              { backgroundColor: colors.success[50] },
                             ]}
                             onPress={() =>
-                              handleTrustDevice(
-                                device.deviceId,
-                                device.deviceName
-                              )
+                              handleTrustDevice(device.deviceId, device.deviceName)
                             }
                           >
                             <Ionicons
@@ -1084,20 +553,13 @@ export default function SecurityScreen() {
                           <TouchableOpacity
                             style={[
                               styles.deviceActionButton,
-                              { backgroundColor: colors.error[100] },
+                              { backgroundColor: colors.error[50] },
                             ]}
                             onPress={() =>
-                              handleRevokeDevice(
-                                device.deviceId,
-                                device.deviceName
-                              )
+                              handleRevokeDevice(device.deviceId, device.deviceName)
                             }
                           >
-                            <Ionicons
-                              name="trash"
-                              size={16}
-                              color={colors.error[600]}
-                            />
+                            <Ionicons name="trash" size={16} color={colors.error[600]} />
                           </TouchableOpacity>
                         )}
                       </View>
@@ -1130,31 +592,19 @@ export default function SecurityScreen() {
             ]}
           >
             <View style={styles.infoItem}>
-              <Ionicons
-                name="shield-checkmark"
-                size={20}
-                color={colors.success[500]}
-              />
+              <Ionicons name="shield-checkmark" size={20} color={colors.success.main} />
               <Text style={[styles.infoText, { color: colors.text.secondary }]}>
                 Your financial data is encrypted and secure
               </Text>
             </View>
             <View style={styles.infoItem}>
-              <Ionicons
-                name="lock-closed"
-                size={20}
-                color={colors.primary[500]}
-              />
+              <Ionicons name="lock-closed" size={20} color={colors.primary.main} />
               <Text style={[styles.infoText, { color: colors.text.secondary }]}>
                 App locks automatically when backgrounded
               </Text>
             </View>
             <View style={styles.infoItem}>
-              <Ionicons
-                name="finger-print"
-                size={20}
-                color={colors.success[500]}
-              />
+              <Ionicons name="finger-print" size={20} color={colors.success.main} />
               <Text style={[styles.infoText, { color: colors.text.secondary }]}>
                 Biometric authentication available
               </Text>
@@ -1172,17 +622,15 @@ export default function SecurityScreen() {
             ]}
             onPress={resetSecurity}
           >
-            <Ionicons name="refresh" size={20} color={colors.error[500]} />
-            <Text
-              style={[styles.resetButtonText, { color: colors.error[500] }]}
-            >
+            <Ionicons name="refresh" size={20} color={colors.error.main} />
+            <Text style={[styles.resetButtonText, { color: colors.error.main }]}>
               Reset Security Settings
             </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* PIN Verification Screen */}
+      {/* PIN Verification Modal */}
       <Modal
         visible={showPinVerification}
         animationType="slide"
@@ -1214,10 +662,7 @@ export default function SecurityScreen() {
                 <Ionicons name="close" size={24} color={colors.text.primary} />
               </TouchableOpacity>
               <Text
-                style={[
-                  styles.verificationTitle,
-                  { color: colors.text.primary },
-                ]}
+                style={[styles.verificationTitle, { color: colors.text.primary }]}
               >
                 Verify Your PIN
               </Text>
@@ -1226,7 +671,6 @@ export default function SecurityScreen() {
 
             {/* Content */}
             <View style={styles.verificationContent}>
-              {/* Title Section */}
               <View style={styles.verificationTextSection}>
                 <Text
                   style={[
@@ -1246,39 +690,24 @@ export default function SecurityScreen() {
                 </Text>
               </View>
 
-              {/* PIN Input Section */}
               <View style={styles.verificationPinSection}>
                 <PinInput
                   pin={pinInput}
-                  onPinChange={(newPin) => {
-                    console.log("🔐 [Security] PIN input changed:", {
-                      oldLength: pinInput.length,
-                      newLength: newPin.length,
-                      isLoading,
-                    });
-
-                    setPinInput(newPin);
-
-                    // Auto-verification is handled by useEffect above
-                  }}
+                  onPinChange={setPinInput}
                   isLoading={isLoading}
                   maxLength={5}
                   showBiometric={false}
                 />
 
-                {/* Fixed Height Status Container */}
                 <View style={styles.statusContainer}>
                   {isLoading ? (
                     <View style={styles.loadingSection}>
-                      <ActivityIndicator
-                        size="small"
-                        color={colors.primary[500]}
-                      />
+                      <ActivityIndicator size="small" color={colors.primary.main} />
                       <Text
                         style={[
                           styles.statusText,
                           {
-                            color: colors.primary[500],
+                            color: colors.primary.main,
                             marginLeft: spacing.sm,
                           },
                         ]}
@@ -1291,29 +720,8 @@ export default function SecurityScreen() {
                   )}
                 </View>
 
-                {/* Spacer to maintain layout */}
                 <View style={{ height: 60 }} />
               </View>
-
-              {/* Emergency Manual Button (hidden unless needed) */}
-              {pinInput.length === 5 && !isLoading && false && (
-                <TouchableOpacity
-                  style={[
-                    styles.manualVerifyButton,
-                    { backgroundColor: colors.error[500] },
-                  ]}
-                  onPress={() => {
-                    console.log("🔐 [Security] Manual verify button pressed");
-                    verifyPinAndDisableSecurity();
-                  }}
-                >
-                  <Text
-                    style={[styles.manualVerifyButtonText, { color: "white" }]}
-                  >
-                    Disable Security
-                  </Text>
-                </TouchableOpacity>
-              )}
             </View>
 
             {/* Loading Overlay */}
@@ -1330,17 +738,12 @@ export default function SecurityScreen() {
                     { backgroundColor: colors.background.primary },
                   ]}
                 >
-                  <ActivityIndicator size="large" color={colors.primary[500]} />
-                  <Text
-                    style={[styles.loadingText, { color: colors.text.primary }]}
-                  >
+                  <ActivityIndicator size="large" color={colors.primary.main} />
+                  <Text style={[styles.loadingText, { color: colors.text.primary }]}>
                     Verifying PIN...
                   </Text>
                   <Text
-                    style={[
-                      styles.loadingSubtext,
-                      { color: colors.text.secondary },
-                    ]}
+                    style={[styles.loadingSubtext, { color: colors.text.secondary }]}
                   >
                     Please wait while we verify your PIN
                   </Text>
@@ -1353,348 +756,3 @@ export default function SecurityScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  backButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  headerRight: {
-    width: 40,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 24,
-  },
-  section: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  card: {
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  settingItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  settingLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  settingIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  settingContent: {
-    flex: 1,
-  },
-  settingTitle: {
-    fontSize: 15,
-    fontWeight: "500",
-    marginBottom: 4,
-  },
-  settingSubtitle: {
-    fontSize: 12,
-    opacity: 0.7,
-  },
-  infoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  infoText: {
-    fontSize: 12,
-    marginLeft: 12,
-    flex: 1,
-    opacity: 0.7,
-  },
-  resetButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  resetButtonText: {
-    fontSize: 15,
-    fontWeight: "500",
-    marginLeft: 8,
-  },
-  // PIN Verification Screen styles
-  verificationContainer: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  verificationHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing["2xl"],
-    paddingBottom: spacing.lg,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.xl,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.sm,
-  },
-  verificationTitle: {
-    fontSize: typography.fontSizes.xl,
-    fontWeight: "700",
-  },
-  verificationContent: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-  },
-  verificationTextSection: {
-    alignItems: "center",
-    paddingTop: spacing["3xl"],
-    paddingBottom: spacing.xl,
-  },
-  verificationMainText: {
-    fontSize: typography.fontSizes["2xl"],
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: spacing.md,
-  },
-  verificationSubText: {
-    fontSize: typography.fontSizes.base,
-    textAlign: "center",
-    lineHeight: 22,
-    paddingHorizontal: spacing.md,
-  },
-  verificationPinSection: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: spacing.xl,
-  },
-  statusContainer: {
-    marginTop: spacing["2xl"],
-    alignItems: "center",
-    minHeight: 60,
-    justifyContent: "center",
-  },
-  loadingSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statusText: {
-    fontSize: typography.fontSizes.base,
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  verifyButton: {
-    paddingHorizontal: spacing["2xl"],
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.xl,
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 200,
-    ...shadows.md,
-  },
-  verifyButtonText: {
-    fontSize: typography.fontSizes.lg,
-    fontWeight: "600",
-  },
-  manualVerifyButton: {
-    marginTop: spacing.xl,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 200,
-    ...shadows.sm,
-  },
-  manualVerifyButtonText: {
-    fontSize: typography.fontSizes.base,
-    fontWeight: "600",
-  },
-  loadingOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000,
-  },
-  loadingCard: {
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing["2xl"],
-    borderRadius: borderRadius["2xl"],
-    alignItems: "center",
-    minWidth: 200,
-    ...shadows.lg,
-  },
-  loadingText: {
-    fontSize: typography.fontSizes.lg,
-    marginTop: spacing.lg,
-    textAlign: "center",
-    fontWeight: "600",
-  },
-  loadingSubtext: {
-    fontSize: typography.fontSizes.sm,
-    marginTop: spacing.sm,
-    textAlign: "center",
-    lineHeight: 18,
-  },
-  // Legacy styles (keeping for compatibility)
-  loadingContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing["2xl"],
-  },
-  // Device Management Styles
-  loadingDevicesContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.xl,
-  },
-  loadingDevicesText: {
-    fontSize: typography.fontSizes.sm,
-    marginLeft: spacing.sm,
-  },
-  emptyDevicesContainer: {
-    alignItems: "center",
-    paddingVertical: spacing["2xl"],
-    paddingHorizontal: spacing.lg,
-  },
-  emptyDevicesText: {
-    fontSize: typography.fontSizes.base,
-    fontWeight: "600",
-    marginTop: spacing.md,
-    textAlign: "center",
-  },
-  emptyDevicesSubtext: {
-    fontSize: typography.fontSizes.sm,
-    marginTop: spacing.xs,
-    textAlign: "center",
-    lineHeight: 18,
-  },
-  deviceItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-  },
-  deviceLeft: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    flex: 1,
-  },
-  deviceIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.md,
-  },
-  deviceContent: {
-    flex: 1,
-  },
-  deviceHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.xs,
-  },
-  deviceName: {
-    fontSize: typography.fontSizes.base,
-    fontWeight: "600",
-    flex: 1,
-  },
-  currentDeviceBadge: {
-    fontSize: typography.fontSizes.sm,
-    fontWeight: "500",
-  },
-  trustedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-    marginLeft: spacing.sm,
-  },
-  trustedBadgeText: {
-    fontSize: typography.fontSizes.xs,
-    fontWeight: "600",
-    marginLeft: spacing.xs,
-  },
-  deviceType: {
-    fontSize: typography.fontSizes.sm,
-    marginBottom: spacing.xs,
-  },
-  deviceLastSeen: {
-    fontSize: typography.fontSizes.xs,
-    marginBottom: spacing.xs,
-  },
-  deviceLocation: {
-    fontSize: typography.fontSizes.xs,
-  },
-  deviceActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  deviceActionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.sm,
-  },
-  deviceSeparator: {
-    height: 1,
-    marginHorizontal: spacing.lg,
-  },
-});

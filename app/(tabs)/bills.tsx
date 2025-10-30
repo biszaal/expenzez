@@ -55,27 +55,27 @@ export default function BillsScreen() {
   const [billToExclude, setBillToExclude] = useState<DetectedBill | null>(null);
 
   const categories = [
-    { name: "All", icon: "apps-outline", color: colors.primary[500] },
+    { name: "All", icon: "apps-outline", color: colors.primary.main },
     {
       name: "Subscriptions",
       icon: "play-circle-outline",
-      color: colors.secondary?.[500] || colors.primary[500],
+      color: colors.secondary.main?.[500] || colors.primary.main,
     },
     {
       name: "Utilities",
       icon: "flash-outline",
-      color: colors.warning?.[500] || colors.primary[500],
+      color: colors.warning?.[500] || colors.primary.main,
     },
     {
       name: "Insurance",
       icon: "shield-checkmark-outline",
-      color: colors.success?.[500] || colors.primary[500],
+      color: colors.success?.[500] || colors.primary.main,
     },
-    { name: "Housing", icon: "home-outline", color: colors.primary[500] },
+    { name: "Housing", icon: "home-outline", color: colors.primary.main },
     {
       name: "Transportation",
       icon: "car-outline",
-      color: colors.secondary?.[500] || colors.primary[500],
+      color: colors.secondary.main?.[500] || colors.primary.main,
     },
     {
       name: "Inactive",
@@ -639,8 +639,8 @@ export default function BillsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[colors.primary[500]]}
-            tintColor={colors.primary[500]}
+            colors={[colors.primary.main]}
+            tintColor={colors.primary.main}
           />
         }
       >
@@ -833,14 +833,14 @@ export default function BillsScreen() {
             <TouchableOpacity
               style={[
                 excludeModalStyles.cancelButton,
-                { borderColor: colors.primary[500] },
+                { borderColor: colors.primary.main },
               ]}
               onPress={() => setExcludeModalVisible(false)}
             >
               <Text
                 style={[
                   excludeModalStyles.cancelText,
-                  { color: colors.primary[500] },
+                  { color: colors.primary.main },
                 ]}
               >
                 Keep Tracking This Bill

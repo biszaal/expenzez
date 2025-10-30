@@ -75,7 +75,7 @@ export const EnhancedTransactionsList: React.FC<
         <TouchableOpacity
           style={[
             styles.viewAllButton,
-            { backgroundColor: colors.primary[500] },
+            { backgroundColor: colors.primary.main },
           ]}
           onPress={() => router.push("/transactions")}
           activeOpacity={0.7}
@@ -189,7 +189,7 @@ export const EnhancedTransactionsList: React.FC<
             <TouchableOpacity
               style={[
                 styles.addButton,
-                { backgroundColor: colors.primary[500] },
+                { backgroundColor: colors.primary.main },
               ]}
               onPress={() => router.push("/add-transaction")}
             >

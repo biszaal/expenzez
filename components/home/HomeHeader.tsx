@@ -37,7 +37,7 @@ export const HomeHeader: React.FC = () => {
           <View
             style={[
               styles.professionalBrandDot,
-              { backgroundColor: colors.primary[500] },
+              { backgroundColor: colors.primary.main },
             ]}
           />
         </View>
@@ -53,13 +53,13 @@ export const HomeHeader: React.FC = () => {
             <Ionicons
               name="notifications-outline"
               size={22}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
             {unreadCount > 0 && (
               <View
                 style={[
                   styles.professionalNotificationBadge,
-                  { backgroundColor: colors.error[500] },
+                  { backgroundColor: colors.error.main },
                 ]}
               >
                 <Text

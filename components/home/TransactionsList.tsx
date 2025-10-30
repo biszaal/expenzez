@@ -41,7 +41,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
           <View
             style={[
               styles.premiumTransactionsIcon,
-              { backgroundColor: colors.primary[500] },
+              { backgroundColor: colors.primary.main },
             ]}
           >
             <Ionicons name="receipt" size={20} color="white" />
@@ -68,7 +68,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
         <TouchableOpacity
           style={[
             styles.premiumTransactionsRefresh,
-            { backgroundColor: colors.primary[500] },
+            { backgroundColor: colors.primary.main },
           ]}
           onPress={onRefreshTransactions}
           disabled={refreshingTransactions}
@@ -177,7 +177,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
       <TouchableOpacity
         style={[
           styles.premiumViewAllTransactions,
-          { backgroundColor: colors.primary[500] },
+          { backgroundColor: colors.primary.main },
         ]}
         onPress={() => router.push("/transactions")}
       >

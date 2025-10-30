@@ -62,7 +62,7 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.primary[500] }]}>
+    <View style={[styles.container, { backgroundColor: colors.primary.main }]}>
       {showIcon && (
         <Animated.View 
           style={[
@@ -74,7 +74,7 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
           ]}
         >
           <Animated.View style={{ transform: [{ rotate: spin }] }}>
-            <Ionicons name="wallet-outline" size={60} color={colors.primary[500]} />
+            <Ionicons name="wallet-outline" size={60} color={colors.primary.main} />
           </Animated.View>
         </Animated.View>
       )}

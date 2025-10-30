@@ -113,7 +113,7 @@ export default function Register() {
       // Convert from YYYY-MM-DD to MM/DD/YYYY format
       const [year, month, day] = dateOnly.split("-");
       const formattedDate = `${month}/${day}/${year}`;
-      
+
       submitValues.dob = formattedDate;
       console.log("✅ [Register] Birthdate converted to MM/DD/YYYY:", {
         original: dateOnly,
@@ -343,7 +343,7 @@ export default function Register() {
             styles.progressBar,
             {
               width: `${(step / 5) * 100}%`,
-              backgroundColor: colors.primary[500],
+              backgroundColor: colors.primary.main,
             },
           ]}
         />
@@ -373,7 +373,7 @@ export default function Register() {
           {/* Glass Form Container */}
           <View
             style={[
-              styles.glassCard,
+              styles.card,
               { backgroundColor: colors.background.secondary },
             ]}
           >
@@ -446,7 +446,7 @@ export default function Register() {
                     variant="body"
                     style={[
                       styles.loginLinkBold,
-                      { color: colors.primary[500] },
+                      { color: colors.primary.main },
                     ]}
                   >
                     Sign In
@@ -542,5 +542,18 @@ const styles = StyleSheet.create({
   loginLinkBold: {
     fontSize: 14,
     fontWeight: "700",
+  },
+  card: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });

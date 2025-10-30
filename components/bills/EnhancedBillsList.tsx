@@ -306,32 +306,32 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
     if (daysUntilDue < 0) {
       return {
         level: "overdue",
-        color: colors.error[500],
-        bgColor: colors.error[500] + "15",
+        color: colors.error.main,
+        bgColor: colors.error.main + "15",
         text: "Overdue",
         daysText: `${Math.abs(daysUntilDue)}d ago`,
       };
     } else if (daysUntilDue <= 3) {
       return {
         level: "urgent",
-        color: colors.error[500],
-        bgColor: colors.error[500] + "15",
+        color: colors.error.main,
+        bgColor: colors.error.main + "15",
         text: "Due Soon",
         daysText: daysUntilDue === 0 ? "Today" : `${daysUntilDue}d left`,
       };
     } else if (daysUntilDue <= 7) {
       return {
         level: "soon",
-        color: colors.warning[500],
-        bgColor: colors.warning[500] + "15",
+        color: colors.warning.main,
+        bgColor: colors.warning.main + "15",
         text: "This Week",
         daysText: `${daysUntilDue}d left`,
       };
     } else {
       return {
         level: "normal",
-        color: colors.success[500],
-        bgColor: colors.success[500] + "15",
+        color: colors.success.main,
+        bgColor: colors.success.main + "15",
         text: "Upcoming",
         daysText: `${daysUntilDue}d left`,
       };
@@ -402,7 +402,7 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
                 {
                   backgroundColor:
                     selectedCategory === category.name
-                      ? colors.primary[500]
+                      ? colors.primary.main
                       : colors.background.secondary,
                   borderWidth: selectedCategory === category.name ? 0 : 1,
                   borderColor: colors.border.light,
@@ -556,8 +556,8 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
                             styles.paidButton,
                             paidBills.has(bill.id)
                               ? {
-                                  backgroundColor: colors.success[500],
-                                  borderColor: colors.success[500],
+                                  backgroundColor: colors.success.main,
+                                  borderColor: colors.success.main,
                                 }
                               : {
                                   backgroundColor: "transparent",

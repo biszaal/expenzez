@@ -176,10 +176,10 @@ export default function EditTransactionModal({
             style={styles.saveButton}
           >
             {saving ? (
-              <ActivityIndicator size="small" color={colors.primary[500]} />
+              <ActivityIndicator size="small" color={colors.primary.main} />
             ) : (
               <Text
-                style={[styles.saveButtonText, { color: colors.primary[500] }]}
+                style={[styles.saveButtonText, { color: colors.primary.main }]}
               >
                 Save
               </Text>
@@ -225,7 +225,7 @@ export default function EditTransactionModal({
                   {
                     backgroundColor:
                       type === "debit"
-                        ? colors.error[500]
+                        ? colors.error.main
                         : colors.background.secondary,
                   },
                 ]}
@@ -249,7 +249,7 @@ export default function EditTransactionModal({
                   {
                     backgroundColor:
                       type === "credit"
-                        ? colors.success[500]
+                        ? colors.success.main
                         : colors.background.secondary,
                   },
                 ]}
@@ -331,7 +331,7 @@ export default function EditTransactionModal({
                     {
                       backgroundColor:
                         category === cat
-                          ? colors.primary[500]
+                          ? colors.primary.main
                           : colors.background.secondary,
                     },
                   ]}
@@ -378,21 +378,21 @@ export default function EditTransactionModal({
           <TouchableOpacity
             style={[
               styles.deleteButton,
-              { backgroundColor: colors.error[500] + "20" },
+              { backgroundColor: colors.error.main + "20" },
             ]}
             onPress={handleDelete}
             disabled={saving || deleting}
           >
             {deleting ? (
-              <ActivityIndicator size="small" color={colors.error[500]} />
+              <ActivityIndicator size="small" color={colors.error.main} />
             ) : (
               <>
                 <Ionicons
                   name="trash-outline"
                   size={20}
-                  color={colors.error[500]}
+                  color={colors.error.main}
                 />
-                <Text style={[styles.deleteButtonText, { color: colors.error[500] }]}>
+                <Text style={[styles.deleteButtonText, { color: colors.error.main }]}>
                   Delete Transaction
                 </Text>
               </>

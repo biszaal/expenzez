@@ -75,6 +75,7 @@ export const EnhancedBalanceCard: React.FC<EnhancedBalanceCardProps> = ({
       pulse.start();
       return () => pulse.stop();
     }
+    return undefined;
   }, [isRefreshing, pulseAnim]);
 
   return (

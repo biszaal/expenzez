@@ -1,11 +1,6 @@
 import dayjs from 'dayjs';
-import { transactionAPI, Transaction as APITransaction } from './api/transactionAPI';
+import { transactionAPI, Transaction } from './api/transactionAPI';
 import { budgetAPI } from './api';
-
-// Extended transaction interface for achievement calculations
-interface Transaction extends APITransaction {
-  type?: 'debit' | 'credit';
-}
 
 interface Achievement {
   userId: string;

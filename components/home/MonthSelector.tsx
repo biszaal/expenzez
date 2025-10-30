@@ -61,7 +61,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
       paddingVertical: 12,
       paddingHorizontal: 16,
       borderRadius: 12,
-      shadowColor: colors.primary[500],
+      shadowColor: colors.primary.main,
       shadowOpacity: 0.08,
       shadowRadius: 8,
       elevation: 2,

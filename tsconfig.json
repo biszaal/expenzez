@@ -5,12 +5,12 @@
     "noImplicitAny": false,
     "skipLibCheck": true,
     "noPropertyAccessFromIndexSignature": false,
-    "noImplicitReturns": false,
-    "noFallthroughCasesInSwitch": false,
-    "noUncheckedIndexedAccess": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": false,
-    "noImplicitOverride": false,
-    "noImplicitThis": false,
+    "noImplicitOverride": true,
+    "noImplicitThis": true,
     "paths": {
       "@/*": [
         "./*"

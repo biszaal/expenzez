@@ -84,14 +84,14 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
 
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
         {showHeader && (
           <View style={styles.header}>
             <View style={styles.headerLeft}>
-              <Text style={[styles.headerTitle, { color: colors.text }]}>
+              <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
                 📢 Proactive Alerts
               </Text>
-              <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              <Text style={[styles.headerSubtitle, { color: colors.secondary.main }]}>
                 Stay informed of important updates
               </Text>
             </View>
@@ -102,13 +102,13 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
               <Ionicons
                 name={isMinimized ? "chevron-down" : "chevron-up"}
                 size={20}
-                color={colors.primary}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
           </View>
         )}
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary.main} />
         </View>
       </View>
     );
@@ -119,14 +119,14 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
 
   if (alerts.length === 0) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
         {showHeader && (
           <View style={styles.header}>
             <View style={styles.headerLeft}>
-              <Text style={[styles.headerTitle, { color: colors.text }]}>
+              <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
                 📢 Proactive Alerts
               </Text>
-              <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              <Text style={[styles.headerSubtitle, { color: colors.secondary.main }]}>
                 Stay informed of important updates
               </Text>
             </View>
@@ -137,7 +137,7 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
               <Ionicons
                 name={isMinimized ? "chevron-down" : "chevron-up"}
                 size={20}
-                color={colors.primary}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
           </View>
@@ -145,10 +145,10 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
         {!isMinimized && (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>✅</Text>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
               All Caught Up!
             </Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+            <Text style={[styles.emptyText, { color: colors.secondary.main }]}>
               No pending alerts. We'll notify you of important financial events.
             </Text>
           </View>
@@ -158,21 +158,21 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       {showHeader && (
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={styles.headerTitleContainer}>
-              <Text style={[styles.headerTitle, { color: colors.text }]}>
+              <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
                 📢 Proactive Alerts
               </Text>
               {unacknowledgedCount > 0 && (
-                <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                <View style={[styles.badge, { backgroundColor: colors.primary.main }]}>
                   <Text style={styles.badgeText}>{unacknowledgedCount}</Text>
                 </View>
               )}
             </View>
-            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+            <Text style={[styles.headerSubtitle, { color: colors.secondary.main }]}>
               {alerts.length} alert{alerts.length !== 1 ? "s" : ""} • Stay informed
             </Text>
           </View>
@@ -183,7 +183,7 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
             <Ionicons
               name={isMinimized ? "chevron-down" : "chevron-up"}
               size={20}
-              color={colors.primary}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
         </View>
@@ -204,7 +204,7 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={colors.primary}
+              tintColor={colors.primary.main}
             />
           }
           contentContainerStyle={styles.listContent}
@@ -213,17 +213,17 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
           ListFooterComponent={
             hasMore ? (
               <TouchableOpacity
-                style={[styles.viewMoreButton, { backgroundColor: colors.card }]}
+                style={[styles.viewMoreButton, { backgroundColor: colors.card.background }]}
                 onPress={onViewAll}
               >
-                <Text style={[styles.viewMoreText, { color: colors.primary }]}>
+                <Text style={[styles.viewMoreText, { color: colors.primary.main }]}>
                   View {alerts.length - maxItems!} More Alert
                   {alerts.length - maxItems! !== 1 ? "s" : ""}
                 </Text>
                 <Ionicons
                   name="chevron-forward"
                   size={20}
-                  color={colors.primary}
+                  color={colors.primary.main}
                 />
               </TouchableOpacity>
             ) : null

@@ -55,7 +55,7 @@ export default function PinInput({
         styles.pinDot,
         {
           borderColor: colors.border.medium,
-          backgroundColor: filled ? colors.primary[500] : 'transparent',
+          backgroundColor: filled ? colors.primary.main : 'transparent',
         },
       ]}
     />
@@ -99,8 +99,8 @@ export default function PinInput({
       {/* Attempts Warning */}
       {showAttemptsWarning && attemptsRemaining !== undefined && (
         <View style={styles.attemptsWarningContainer}>
-          <Ionicons name="warning" size={16} color={colors.error[500]} />
-          <Text style={[styles.attemptsWarningText, { color: colors.error[500] }]}>
+          <Ionicons name="warning" size={16} color={colors.error.main} />
+          <Text style={[styles.attemptsWarningText, { color: colors.error.main }]}>
             {attemptsRemaining} {attemptsRemaining === 1 ? 'attempt' : 'attempts'} remaining
           </Text>
         </View>
@@ -142,7 +142,7 @@ export default function PinInput({
               <Ionicons
                 name="finger-print"
                 size={28}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
           ) : (
@@ -207,8 +207,8 @@ export default function PinInput({
             onPress={onPasswordPress}
             disabled={isLoading}
           >
-            <Ionicons name="key-outline" size={20} color={colors.primary[500]} />
-            <Text style={[styles.passwordButtonText, { color: colors.primary[500] }]}>
+            <Ionicons name="key-outline" size={20} color={colors.primary.main} />
+            <Text style={[styles.passwordButtonText, { color: colors.primary.main }]}>
               Use Password Instead
             </Text>
           </TouchableOpacity>

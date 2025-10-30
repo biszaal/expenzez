@@ -78,12 +78,12 @@ export default function TermsPrivacyScreen() {
               <Ionicons
                 name="chevron-back"
                 size={24}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Terms & Privacy</Text>
             <TouchableOpacity style={styles.legalButton} onPress={contactLegal}>
-              <Ionicons name="mail" size={20} color={colors.primary[500]} />
+              <Ionicons name="mail" size={20} color={colors.primary.main} />
             </TouchableOpacity>
           </View>
         </View>
@@ -136,7 +136,7 @@ export default function TermsPrivacyScreen() {
                 <Ionicons
                   name="download-outline"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </View>
               <View style={styles.actionContent}>
@@ -148,7 +148,7 @@ export default function TermsPrivacyScreen() {
               <Ionicons
                 name="chevron-forward"
                 size={20}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
 
@@ -157,7 +157,7 @@ export default function TermsPrivacyScreen() {
                 <Ionicons
                   name="globe-outline"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </View>
               <View style={styles.actionContent}>
@@ -167,7 +167,7 @@ export default function TermsPrivacyScreen() {
               <Ionicons
                 name="chevron-forward"
                 size={20}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
 
@@ -176,7 +176,7 @@ export default function TermsPrivacyScreen() {
                 <Ionicons
                   name="mail-outline"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </View>
               <View style={styles.actionContent}>
@@ -188,7 +188,7 @@ export default function TermsPrivacyScreen() {
               <Ionicons
                 name="chevron-forward"
                 size={20}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
           </View>
@@ -200,7 +200,7 @@ export default function TermsPrivacyScreen() {
             <Ionicons
               name="time-outline"
               size={20}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
             <Text style={styles.updateText}>
               Last updated: January 15, 2024
@@ -219,7 +219,7 @@ export default function TermsPrivacyScreen() {
                 <Ionicons
                   name="checkmark-circle"
                   size={16}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
                 <Text style={styles.acceptanceText}>Our Terms of Service</Text>
               </View>
@@ -227,7 +227,7 @@ export default function TermsPrivacyScreen() {
                 <Ionicons
                   name="checkmark-circle"
                   size={16}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
                 <Text style={styles.acceptanceText}>Our Privacy Policy</Text>
               </View>
@@ -235,7 +235,7 @@ export default function TermsPrivacyScreen() {
                 <Ionicons
                   name="checkmark-circle"
                   size={16}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
                 <Text style={styles.acceptanceText}>
                   Our Data Protection practices
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primary[100],
+    backgroundColor: colors.primary.main[100],
     ...shadows.sm,
   },
   section: {
@@ -316,8 +316,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border.light,
   },
   navButtonActive: {
-    backgroundColor: colors.primary[500],
-    borderColor: colors.primary[500],
+    backgroundColor: colors.primary.main,
+    borderColor: colors.primary.main,
   },
   navButtonText: {
     fontSize: typography.fontSizes.sm,
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.primary[100],
+    backgroundColor: colors.primary.main[100],
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,

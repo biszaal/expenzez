@@ -106,7 +106,7 @@ export default function ForgotUsernameScreen() {
                   <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
                 </TouchableOpacity>
 
-                <View style={StyleSheet.flatten([styles.logoContainer, { backgroundColor: colors.primary[500] }])}>
+                <View style={StyleSheet.flatten([styles.logoContainer, { backgroundColor: colors.primary.main }])}>
                   <Ionicons name="person-circle-outline" size={32} color="white" />
                 </View>
                 
@@ -151,7 +151,7 @@ export default function ForgotUsernameScreen() {
                   {/* Submit Button */}
                   <TouchableOpacity
                     style={StyleSheet.flatten([styles.submitButton, {
-                      backgroundColor: colors.primary[500],
+                      backgroundColor: colors.primary.main,
                       opacity: isLoading ? 0.7 : 1
                     }])}
                     onPress={handleSubmit}

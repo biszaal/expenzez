@@ -151,7 +151,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   levelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primary[50],
+    backgroundColor: colors.primary.main[50],
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderRadius: 20,
@@ -206,7 +206,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: colors.primary[100],
+    backgroundColor: colors.primary.main[100],
     opacity: 0.3
   },
   progressFill: {

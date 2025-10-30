@@ -91,10 +91,10 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                 gap: 12,
                 backgroundColor:
                   warningLevel === "critical"
-                    ? `${colors.error[500]}15`
+                    ? `${colors.error.main}15`
                     : warningLevel === "warning"
-                      ? `${colors.error[500]}10`
-                      : `${colors.warning[500]}10`,
+                      ? `${colors.error.main}10`
+                      : `${colors.warning.main}10`,
               },
             ]}
           >
@@ -103,8 +103,8 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
               size={24}
               color={
                 warningLevel === "critical" || warningLevel === "warning"
-                  ? colors.error[500]
-                  : colors.warning[500]
+                  ? colors.error.main
+                  : colors.warning.main
               }
             />
             <View style={{ flex: 1 }}>
@@ -114,8 +114,8 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                   fontWeight: "600",
                   color:
                     warningLevel === "critical" || warningLevel === "warning"
-                      ? colors.error[500]
-                      : colors.warning[500],
+                      ? colors.error.main
+                      : colors.warning.main,
                   marginBottom: 4,
                 }}
               >
@@ -196,8 +196,8 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                     fill="none"
                     stroke={
                       monthlyOverBudget
-                        ? colors.error[500]
-                        : colors.primary[500]
+                        ? colors.error.main
+                        : colors.primary.main
                     }
                     strokeWidth={24}
                     strokeLinecap="round"
@@ -216,7 +216,7 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                       cy={120}
                       r={100}
                       fill="none"
-                      stroke={colors.error[500]}
+                      stroke={colors.error.main}
                       strokeWidth={24}
                       strokeLinecap="round"
                       strokeDasharray={`${2 * Math.PI * 100}`}
@@ -255,8 +255,8 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                   styles.donutCenterPercentage,
                   {
                     color: monthlyOverBudget
-                      ? colors.error[500]
-                      : colors.primary[500],
+                      ? colors.error.main
+                      : colors.primary.main,
                     opacity: animatedProgress.interpolate({
                       inputRange: [0, 0.2, 1],
                       outputRange: [0.7, 1, 1],
@@ -286,7 +286,7 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                   {
                     color:
                       displayLeftToSpend < 0
-                        ? colors.error[500]
+                        ? colors.error.main
                         : colors.text.primary,
                     opacity: animatedProgress.interpolate({
                       inputRange: [0, 0.4, 1],
@@ -370,7 +370,7 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
               <Text
                 style={[
                   styles.budgetCardAmount,
-                  { color: colors.primary[500] },
+                  { color: colors.primary.main },
                 ]}
               >
                 {formatAmount(averageSpendPerDay, currency)}
@@ -401,9 +401,9 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
 
                       const percentage =
                         (predictedMonthlySpend / totalBudget) * 100;
-                      if (percentage > 100) return colors.error[500];
-                      if (percentage > 80) return colors.warning[500];
-                      return colors.success[500];
+                      if (percentage > 100) return colors.error.main;
+                      if (percentage > 80) return colors.warning.main;
+                      return colors.success.main;
                     })(),
                   },
                 ]}

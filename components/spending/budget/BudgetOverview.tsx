@@ -29,9 +29,9 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
     if (totalBudget === 0) return colors.text.primary;
     
     const percentage = (predictedMonthlySpend / totalBudget) * 100;
-    if (percentage > 100) return colors.error[500];    // Red: Over budget
-    if (percentage > 80) return colors.warning[500];   // Orange: Warning zone (80-100%)
-    return colors.success[500];                       // Green: Safe zone (<80%)
+    if (percentage > 100) return colors.error.main;    // Red: Over budget
+    if (percentage > 80) return colors.warning.main;   // Orange: Warning zone (80-100%)
+    return colors.success.main;                       // Green: Safe zone (<80%)
   };
 
   return (
@@ -60,7 +60,7 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
       {/* Bottom Row */}
       <View style={styles.budgetRow}>
         <View style={[styles.budgetCard, styles.budgetCardAccent]}>
-          <Text style={[styles.budgetCardAmount, { color: colors.primary[500] }]}>
+          <Text style={[styles.budgetCardAmount, { color: colors.primary.main }]}>
             {formatAmount(averageSpendPerDay, currency)}
           </Text>
           <Text style={[styles.budgetCardLabel, { color: colors.text.secondary }]}>

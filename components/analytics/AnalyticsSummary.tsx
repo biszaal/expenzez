@@ -41,7 +41,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background.secondary }]}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
+        <ActivityIndicator size="large" color={colors.primary.main} />
         <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
           Computing advanced analytics...
         </Text>
@@ -72,10 +72,10 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
               : 'Try again in a moment'}
           </Text>
           <TouchableOpacity
-            style={[styles.emptyRetryButton, { borderColor: colors.primary[500] }]}
+            style={[styles.emptyRetryButton, { borderColor: colors.primary.main }]}
             onPress={loadAnalytics}
           >
-            <Text style={[styles.emptyRetryButtonText, { color: colors.primary[500] }]}>
+            <Text style={[styles.emptyRetryButtonText, { color: colors.primary.main }]}>
               Retry
             </Text>
           </TouchableOpacity>
@@ -96,7 +96,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
       {analytics.forecast.length > 0 && (
         <View style={[styles.section, { backgroundColor: colors.background.secondary }]}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="trending-up" size={20} color={colors.primary[500]} />
+            <Ionicons name="trending-up" size={20} color={colors.primary.main} />
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
               Spending Forecast
             </Text>
@@ -116,13 +116,13 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
                     {forecast.month}
                   </Text>
                 </View>
-                <View style={[styles.confidenceTag, { backgroundColor: colors.primary[100] }]}>
-                  <Text style={[styles.confidenceText, { color: colors.primary[600] }]}>
+                <View style={[styles.confidenceTag, { backgroundColor: colors.primary.main[100] }]}>
+                  <Text style={[styles.confidenceText, { color: colors.primary.main[600] }]}>
                     {analyticsAPI.formatConfidence(forecast.confidence)}
                   </Text>
                 </View>
               </View>
-              <Text style={[styles.forecastAmount, { color: colors.primary[500] }]}>
+              <Text style={[styles.forecastAmount, { color: colors.primary.main }]}>
                 £{forecast.predicted.toFixed(2)}
               </Text>
               <View style={styles.rangeContainer}>
@@ -140,7 +140,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
       {analytics.categoryTrends.length > 0 && (
         <View style={[styles.section, { backgroundColor: colors.background.secondary }]}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="bar-chart" size={20} color={colors.primary[500]} />
+            <Ionicons name="bar-chart" size={20} color={colors.primary.main} />
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
               Category Trends
             </Text>
@@ -252,7 +252,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
             <Text style={[styles.metricLabel, { color: colors.text.secondary }]}>
               Savings Opportunity
             </Text>
-            <Text style={[styles.metricValue, { color: colors.primary[500] }]}>
+            <Text style={[styles.metricValue, { color: colors.primary.main }]}>
               £{analytics.savingsOpportunity.toFixed(2)}
             </Text>
           </View>

@@ -63,7 +63,7 @@ export const CompactBudgetStatus: React.FC<CompactBudgetStatusProps> = ({
           </Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={colors.primary[500]} />
+          <ActivityIndicator size="small" color={colors.primary.main} />
         </View>
       </View>
     );
@@ -91,14 +91,14 @@ export const CompactBudgetStatus: React.FC<CompactBudgetStatusProps> = ({
               activeOpacity={0.7}
             >
               <Text
-                style={[styles.viewAllText, { color: colors.primary[500] }]}
+                style={[styles.viewAllText, { color: colors.primary.main }]}
               >
                 View All
               </Text>
               <Ionicons
                 name="chevron-forward"
                 size={16}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
           )}
@@ -111,7 +111,7 @@ export const CompactBudgetStatus: React.FC<CompactBudgetStatusProps> = ({
           <TouchableOpacity
             style={[
               styles.createButton,
-              { backgroundColor: colors.primary[500] },
+              { backgroundColor: colors.primary.main },
             ]}
             onPress={() => router.push("/budgets/edit")}
             activeOpacity={0.8}
@@ -145,7 +145,7 @@ export const CompactBudgetStatus: React.FC<CompactBudgetStatusProps> = ({
             <Ionicons
               name={isMinimized ? "chevron-down" : "chevron-up"}
               size={20}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
           {onViewAll && (
@@ -157,7 +157,7 @@ export const CompactBudgetStatus: React.FC<CompactBudgetStatusProps> = ({
               <Ionicons
                 name="arrow-forward"
                 size={16}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
           )}

@@ -111,7 +111,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         style={[
           styles.iconBackground,
           {
-            backgroundColor: `${colors.primary[500]}15`,
+            backgroundColor: `${colors.primary.main}15`,
           },
         ]}
       >
@@ -119,14 +119,14 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           style={[
             styles.iconInnerCircle,
             {
-              backgroundColor: `${colors.primary[500]}10`,
+              backgroundColor: `${colors.primary.main}10`,
             },
           ]}
         >
           <Ionicons
             name={iconName}
             size={64}
-            color={colors.primary[500]}
+            color={colors.primary.main}
           />
         </View>
       </View>
@@ -162,7 +162,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
               style={[
                 styles.primaryButton,
                 {
-                  backgroundColor: colors.primary[500],
+                  backgroundColor: colors.primary.main,
                 },
               ]}
               onPress={onAction}
@@ -200,8 +200,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       </View>
 
       {/* Decorative Elements */}
-      <View style={[styles.decoration1, { backgroundColor: `${colors.primary[500]}08` }]} />
-      <View style={[styles.decoration2, { backgroundColor: `${colors.primary[500]}05` }]} />
+      <View style={[styles.decoration1, { backgroundColor: `${colors.primary.main}08` }]} />
+      <View style={[styles.decoration2, { backgroundColor: `${colors.primary.main}05` }]} />
     </View>
   );
 };

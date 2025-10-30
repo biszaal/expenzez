@@ -71,6 +71,7 @@ export const AchievementProvider: React.FC<AchievementProviderProps> = ({ childr
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [currentToast, toastQueue]);
 
   const showCelebration = useCallback((data: CelebrationData) => {

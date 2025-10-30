@@ -90,8 +90,8 @@ const MonthlyChart: React.FC<{
                 {
                   height: Math.max(barHeight, 4),
                   backgroundColor: isCurrentMonth
-                    ? colors.primary[500]
-                    : colors.primary[300],
+                    ? colors.primary.main
+                    : colors.primary.main[300],
                 },
               ]}
             />
@@ -107,7 +107,7 @@ const MonthlyChart: React.FC<{
   if (loading) {
     return (
       <View style={styles.chartLoading}>
-        <ActivityIndicator size="small" color={colors.primary[500]} />
+        <ActivityIndicator size="small" color={colors.primary.main} />
         <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
           Loading chart...
         </Text>
@@ -173,13 +173,13 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
-        return colors.success[500];
+        return colors.success.main;
       case "cancelled":
-        return colors.error[500];
+        return colors.error.main;
       case "irregular":
-        return colors.warning[500];
+        return colors.warning.main;
       default:
-        return colors.primary[500];
+        return colors.primary.main;
     }
   };
 
@@ -340,7 +340,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
                 <Ionicons
                   name="bar-chart"
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
                 <Text
                   style={[styles.sectionTitle, { color: colors.text.primary }]}
@@ -368,7 +368,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
               <MaterialCommunityIcons
                 name="history"
                 size={20}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
               <Text
                 style={[styles.sectionTitle, { color: colors.text.primary }]}
@@ -466,7 +466,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
               <Ionicons
                 name="analytics"
                 size={16}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
               <Text
                 style={[styles.trackingText, { color: colors.text.secondary }]}
@@ -488,7 +488,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
               <Ionicons
                 name="notifications"
                 size={20}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
               <Text
                 style={[styles.sectionTitle, { color: colors.text.primary }]}
@@ -521,11 +521,11 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
                 onValueChange={handleNotificationToggle}
                 trackColor={{
                   false: colors.background.primary,
-                  true: colors.primary[200],
+                  true: colors.primary.main[200],
                 }}
                 thumbColor={
                   notificationsEnabled
-                    ? colors.primary[500]
+                    ? colors.primary.main
                     : colors.text.tertiary
                 }
                 disabled={loadingNotification}
@@ -544,7 +544,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
           <TouchableOpacity
             style={[
               styles.actionButton,
-              { backgroundColor: colors.primary[500] },
+              { backgroundColor: colors.primary.main },
             ]}
             onPress={onViewTransactions}
           >

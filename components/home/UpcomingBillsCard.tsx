@@ -113,7 +113,7 @@ export const UpcomingBillsCard: React.FC = () => {
       <View style={[styles.container, { backgroundColor: colors.background.secondary }]}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <View style={[styles.iconContainer, { backgroundColor: colors.primary[500] }]}>
+            <View style={[styles.iconContainer, { backgroundColor: colors.primary.main }]}>
               <Ionicons name="calendar" size={16} color="white" />
             </View>
             <View>
@@ -138,7 +138,7 @@ export const UpcomingBillsCard: React.FC = () => {
     >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <View style={[styles.iconContainer, { backgroundColor: colors.primary[500] }]}>
+          <View style={[styles.iconContainer, { backgroundColor: colors.primary.main }]}>
             <Ionicons name="calendar" size={16} color="white" />
           </View>
           <View>
@@ -174,7 +174,7 @@ export const UpcomingBillsCard: React.FC = () => {
           </View>
 
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: colors.primary[500] }]}>
+            <Text style={[styles.footerText, { color: colors.primary.main }]}>
               View all upcoming bills →
             </Text>
           </View>
@@ -188,7 +188,7 @@ export const UpcomingBillsCard: React.FC = () => {
             Your next bills are coming up later
           </Text>
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: colors.primary[500] }]}>
+            <Text style={[styles.footerText, { color: colors.primary.main }]}>
               View all bills →
             </Text>
           </View>

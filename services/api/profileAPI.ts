@@ -82,7 +82,7 @@ export const profileAPI = {
         statusText: error.response?.statusText,
         data: error.response?.data,
         url: error.config?.url,
-        method: error.config?.method
+        method: error.config?.method,
       });
       throw error;
     }

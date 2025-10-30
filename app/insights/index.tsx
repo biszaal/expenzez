@@ -129,9 +129,9 @@ export default function InsightsScreen() {
       case "success":
         return "#10B981";
       case "info":
-        return colors.primary[500];
+        return colors.primary.main;
       default:
-        return colors.primary[500];
+        return colors.primary.main;
     }
   };
 
@@ -191,11 +191,11 @@ export default function InsightsScreen() {
               <View
                 style={[
                   styles.metricBadge,
-                  { backgroundColor: colors.primary[100] },
+                  { backgroundColor: colors.primary.main[100] },
                 ]}
               >
                 <Text
-                  style={[styles.metricText, { color: colors.primary[700] }]}
+                  style={[styles.metricText, { color: colors.primary.main[700] }]}
                 >
                   £{insight.amount.toFixed(0)}
                 </Text>
@@ -205,11 +205,11 @@ export default function InsightsScreen() {
               <View
                 style={[
                   styles.metricBadge,
-                  { backgroundColor: colors.primary[100] },
+                  { backgroundColor: colors.primary.main[100] },
                 ]}
               >
                 <Text
-                  style={[styles.metricText, { color: colors.primary[700] }]}
+                  style={[styles.metricText, { color: colors.primary.main[700] }]}
                 >
                   {insight.percentage.toFixed(0)}%
                 </Text>
@@ -242,7 +242,7 @@ export default function InsightsScreen() {
               onPress={() => handleInsightAction(insight)}
               style={[
                 styles.actionButton,
-                { backgroundColor: colors.primary[500] },
+                { backgroundColor: colors.primary.main },
               ]}
             >
               <Text style={styles.actionButtonText}>{insight.actionText}</Text>
@@ -306,7 +306,7 @@ export default function InsightsScreen() {
         ]}
       >
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
             Analyzing your spending patterns...
           </Text>
@@ -325,7 +325,7 @@ export default function InsightsScreen() {
             <Ionicons
               name="chevron-back"
               size={24}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
           <Text style={[styles.title, { color: colors.text.primary }]}>
@@ -341,7 +341,7 @@ export default function InsightsScreen() {
           style={[
             styles.tab,
             activeTab === "insights" && {
-              backgroundColor: colors.primary[100],
+              backgroundColor: colors.primary.main[100],
             },
           ]}
         >
@@ -351,7 +351,7 @@ export default function InsightsScreen() {
               {
                 color:
                   activeTab === "insights"
-                    ? colors.primary[700]
+                    ? colors.primary.main[700]
                     : colors.text.secondary,
                 fontWeight: activeTab === "insights" ? "600" : "400",
               },
@@ -365,7 +365,7 @@ export default function InsightsScreen() {
           onPress={() => setActiveTab("nudges")}
           style={[
             styles.tab,
-            activeTab === "nudges" && { backgroundColor: colors.primary[100] },
+            activeTab === "nudges" && { backgroundColor: colors.primary.main[100] },
           ]}
         >
           <Text
@@ -374,7 +374,7 @@ export default function InsightsScreen() {
               {
                 color:
                   activeTab === "nudges"
-                    ? colors.primary[700]
+                    ? colors.primary.main[700]
                     : colors.text.secondary,
                 fontWeight: activeTab === "nudges" ? "600" : "400",
               },
@@ -392,7 +392,7 @@ export default function InsightsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => loadData(true)}
-            tintColor={colors.primary[500]}
+            tintColor={colors.primary.main}
           />
         }
       >
@@ -469,7 +469,7 @@ export default function InsightsScreen() {
             <Ionicons
               name="trending-up"
               size={20}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
             <Text
               style={[styles.quickLinkText, { color: colors.text.primary }]}
@@ -490,7 +490,7 @@ export default function InsightsScreen() {
               { backgroundColor: colors.background.secondary },
             ]}
           >
-            <Ionicons name="pie-chart" size={20} color={colors.primary[500]} />
+            <Ionicons name="pie-chart" size={20} color={colors.primary.main} />
             <Text
               style={[styles.quickLinkText, { color: colors.text.primary }]}
             >

@@ -280,7 +280,7 @@ export default function BudgetsScreen() {
         ]}
       >
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <ActivityIndicator size="large" color={colors.primary.main} />
           <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
             Loading budgets...
           </Text>
@@ -308,7 +308,7 @@ export default function BudgetsScreen() {
             <Ionicons
               name="chevron-back"
               size={24}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
           <View>
@@ -325,7 +325,7 @@ export default function BudgetsScreen() {
 
         <TouchableOpacity
           onPress={handleAddBudget}
-          style={[styles.addButton, { backgroundColor: colors.primary[500] }]}
+          style={[styles.addButton, { backgroundColor: colors.primary.main }]}
         >
           <Ionicons name="add" size={20} color="#fff" />
         </TouchableOpacity>
@@ -345,7 +345,7 @@ export default function BudgetsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => loadBudgets(true)}
-            tintColor={colors.primary[500]}
+            tintColor={colors.primary.main}
           />
         }
       >
@@ -458,7 +458,7 @@ export default function BudgetsScreen() {
               onPress={handleAddBudget}
               style={[
                 styles.emptyButton,
-                { backgroundColor: colors.primary[500] },
+                { backgroundColor: colors.primary.main },
               ]}
             >
               <Text style={styles.emptyButtonText}>Create Budget</Text>
@@ -479,7 +479,7 @@ export default function BudgetsScreen() {
                 { backgroundColor: colors.background.secondary },
               ]}
             >
-              <Ionicons name="bulb" size={20} color={colors.primary[500]} />
+              <Ionicons name="bulb" size={20} color={colors.primary.main} />
               <Text
                 style={[styles.suggestionText, { color: colors.text.primary }]}
               >

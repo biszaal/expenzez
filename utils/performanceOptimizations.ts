@@ -38,24 +38,24 @@ export function useThrottledCallback<T extends (...args: any[]) => any>(
   delay: number,
   deps: React.DependencyList = []
 ): T {
-  const throttledCallback = useMemo(() => {
-    let timeoutId: NodeJS.Timeout | null = null;
-    let lastExecTime = 0;
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastExecTimeRef = useRef<number>(0);
 
+  const throttledCallback = useMemo(() => {
     return ((...args: any[]) => {
       const now = Date.now();
 
-      if (now - lastExecTime >= delay) {
-        lastExecTime = now;
+      if (now - lastExecTimeRef.current >= delay) {
+        lastExecTimeRef.current = now;
         return callback(...args);
       } else {
-        if (timeoutId) clearTimeout(timeoutId);
-        timeoutId = setTimeout(
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(
           () => {
-            lastExecTime = Date.now();
+            lastExecTimeRef.current = Date.now();
             callback(...args);
           },
-          delay - (now - lastExecTime)
+          delay - (now - lastExecTimeRef.current)
         );
       }
     }) as T;
@@ -63,9 +63,9 @@ export function useThrottledCallback<T extends (...args: any[]) => any>(
 
   useEffect(() => {
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [throttledCallback]);
+  }, []);
 
   return throttledCallback;
 }
@@ -151,7 +151,7 @@ export class ApiBatcher {
     reject: (error: any) => void;
   }> = [];
 
-  private static batchTimeout: NodeJS.Timeout | null = null;
+  private static batchTimeout: ReturnType<typeof setTimeout> | null = null;
 
   /**
    * Batch multiple API calls with the same key

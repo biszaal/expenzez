@@ -155,9 +155,9 @@ export default function NotificationSettingsHelpScreen() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'High': return colors.error[500];
-      case 'Medium': return colors.warning[500];
-      case 'Low': return colors.success[500];
+      case 'High': return colors.error.main;
+      case 'Medium': return colors.warning.main;
+      case 'Low': return colors.success.main;
       default: return colors.text.secondary;
     }
   };
@@ -193,7 +193,7 @@ export default function NotificationSettingsHelpScreen() {
               <Ionicons
                 name="chevron-back"
                 size={24}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
@@ -217,7 +217,7 @@ export default function NotificationSettingsHelpScreen() {
             <MaterialCommunityIcons
               name="information-outline"
               size={32}
-              color={colors.primary[500]}
+              color={colors.primary.main}
               style={styles.introIcon}
             />
             <Text style={[styles.introTitle, { color: colors.text.primary }]}>
@@ -250,13 +250,13 @@ export default function NotificationSettingsHelpScreen() {
                 <View
                   style={[
                     styles.typeIcon,
-                    { backgroundColor: colors.primary[100] },
+                    { backgroundColor: colors.primary.main[100] },
                   ]}
                 >
                   <MaterialCommunityIcons
                     name={type.icon as any}
                     size={28}
-                    color={colors.primary[500]}
+                    color={colors.primary.main}
                   />
                 </View>
                 <View style={styles.typeHeaderContent}>
@@ -313,7 +313,7 @@ export default function NotificationSettingsHelpScreen() {
                     <MaterialCommunityIcons
                       name="circle-small"
                       size={20}
-                      color={colors.primary[400]}
+                      color={colors.primary.main[400]}
                     />
                     <Text style={[styles.triggerText, { color: colors.text.secondary }]}>
                       {trigger}
@@ -363,13 +363,13 @@ export default function NotificationSettingsHelpScreen() {
               <View
                 style={[
                   styles.timingIcon,
-                  { backgroundColor: colors.primary[100] },
+                  { backgroundColor: colors.primary.main[100] },
                 ]}
               >
                 <MaterialCommunityIcons
                   name={setting.icon as any}
                   size={24}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </View>
               <View style={styles.timingContent}>
@@ -389,7 +389,7 @@ export default function NotificationSettingsHelpScreen() {
           <TouchableOpacity
             style={[
               styles.settingsButton,
-              { backgroundColor: colors.primary[500] },
+              { backgroundColor: colors.primary.main },
             ]}
             onPress={() => router.push('/notifications/preferences')}
           >

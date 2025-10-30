@@ -29,6 +29,10 @@ ios/build/
 
 # Environment variables
 .env
+.env.local
+.env.development
+.env.production
+.env.test
 .env*.local
 .env.development.local
 .env.test.local

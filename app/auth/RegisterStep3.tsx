@@ -159,7 +159,7 @@ export default function RegisterStep3({
                   <Ionicons
                     name="close-circle"
                     size={16}
-                    color={colors.error[500]}
+                    color={colors.error.main}
                   />
                   <Typography
                     variant="caption"
@@ -176,7 +176,7 @@ export default function RegisterStep3({
                   <Ionicons
                     name="checkmark-circle"
                     size={16}
-                    color={colors.success[500]}
+                    color={colors.success.main}
                   />
                   <Typography
                     variant="caption"

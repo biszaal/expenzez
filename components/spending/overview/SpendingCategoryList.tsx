@@ -110,7 +110,7 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
               styles.categoryCardPressable,
               {
                 transform: [{ scale: pressed ? 0.98 : 1 }],
-                shadowColor: colors.primary[500],
+                shadowColor: colors.primary.main,
                 shadowOpacity: pressed ? 0.15 : 0.08,
                 shadowRadius: 12,
                 elevation: pressed ? 4 : 2,
@@ -162,7 +162,7 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
                           styles.categoryCardAmount,
                           {
                             color: overBudget
-                              ? colors.error[500]
+                              ? colors.error.main
                               : colors.text.primary,
                           },
                         ]}
@@ -199,10 +199,10 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
                       styles.categoryCardPercentage,
                       {
                         color: overBudget
-                          ? colors.error[500]
+                          ? colors.error.main
                           : percent > 80
-                          ? colors.warning[500]
-                          : colors.success[500],
+                          ? colors.warning.main
+                          : colors.success.main,
                       },
                     ]}
                   >
@@ -225,10 +225,10 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
                       {
                         width: `${Math.min(percent, 100)}%`,
                         backgroundColor: overBudget
-                          ? colors.error[500]
+                          ? colors.error.main
                           : percent > 80
-                          ? colors.warning[500]
-                          : colors.primary[500],
+                          ? colors.warning.main
+                          : colors.primary.main,
                       },
                     ]}
                   />
@@ -251,8 +251,8 @@ export const SpendingCategoryList: React.FC<SpendingCategoryListProps> = ({
                       styles.categoryCardStatValue,
                       {
                         color: overBudget
-                          ? colors.error[500]
-                          : colors.success[500],
+                          ? colors.error.main
+                          : colors.success.main,
                       },
                     ]}
                   >

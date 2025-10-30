@@ -50,7 +50,7 @@ export default function PersonalInformationScreen() {
         year = isoYear;
         month = isoMonth;
         day = isoDay;
-      } 
+      }
       // Check if it's MM/DD/YYYY format
       else if (dateString.includes("/")) {
         const [monthPart, dayPart, yearPart] = dateString.split("/");
@@ -61,7 +61,7 @@ export default function PersonalInformationScreen() {
         console.warn("Unknown birthdate format:", dateString);
         return { year: "", month: "", day: "" };
       }
-      
+
       if (!year || !month || !day) {
         console.warn("Invalid birthdate format:", dateString);
         return { year: "", month: "", day: "" };
@@ -321,7 +321,7 @@ export default function PersonalInformationScreen() {
             data.date_of_birth ||
             data.birthDate ||
             "";
-          
+
           console.log("🔍 [PersonalInfo] Raw birthdate data:", {
             data_birthdate: data.birthdate,
             data_dateOfBirth: data.dateOfBirth,
@@ -329,7 +329,7 @@ export default function PersonalInformationScreen() {
             data_birthDate: data.birthDate,
             final_birthdate: birthdate,
           });
-          
+
           const dateComponents = parseBirthdate(birthdate);
 
           // Map the API response to form fields

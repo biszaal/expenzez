@@ -522,7 +522,7 @@ export default function TransactionsScreen() {
             <Ionicons
               name="chevron-back"
               size={24}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
           <View style={styles.headerContent}>
@@ -560,7 +560,7 @@ export default function TransactionsScreen() {
             <Ionicons
               name="chevron-back"
               size={24}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
           <View style={styles.headerContent}>
@@ -593,8 +593,8 @@ export default function TransactionsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[colors.primary[500]]}
-            tintColor={colors.primary[500]}
+            colors={[colors.primary.main]}
+            tintColor={colors.primary.main}
           />
         }
       >
@@ -610,7 +610,7 @@ export default function TransactionsScreen() {
             <Ionicons
               name="chevron-back"
               size={24}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
 
@@ -749,7 +749,7 @@ export default function TransactionsScreen() {
                           {
                             color:
                               transaction.type === "credit"
-                                ? colors.success[500]
+                                ? colors.success.main
                                 : colors.text.primary,
                           },
                         ]}
@@ -832,7 +832,7 @@ export default function TransactionsScreen() {
                           {
                             color:
                               transaction.type === "credit"
-                                ? colors.success[500]
+                                ? colors.success.main
                                 : colors.text.primary,
                           },
                         ]}
@@ -972,8 +972,8 @@ export default function TransactionsScreen() {
                             {
                               color:
                                 summary.netFlow >= 0
-                                  ? colors.success[500]
-                                  : colors.error[500],
+                                  ? colors.success.main
+                                  : colors.error.main,
                             },
                           ]}
                         >
@@ -1064,7 +1064,7 @@ export default function TransactionsScreen() {
                                   style={[
                                     styles.categoryBarFill,
                                     {
-                                      backgroundColor: colors.primary[500],
+                                      backgroundColor: colors.primary.main,
                                       width: `${(amount / summary.totalSpending) * 100}%`,
                                     },
                                   ]}

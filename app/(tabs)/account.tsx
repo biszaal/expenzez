@@ -204,7 +204,6 @@ export default function AccountScreen() {
     return new Date().getFullYear().toString();
   };
 
-
   // Handle support and export
   const openSupport = () => {
     setShowSupport(true);
@@ -277,7 +276,7 @@ export default function AccountScreen() {
         <Ionicons
           name="person-outline"
           size={24}
-          color={colors?.primary?.[500] || "#3B82F6"}
+          color={colors?.primary?.main || "#3B82F6"}
         />
       ),
       route: "/profile/personal",
@@ -289,7 +288,7 @@ export default function AccountScreen() {
         <Ionicons
           name="shield-outline"
           size={24}
-          color={colors?.primary?.[500] || "#3B82F6"}
+          color={colors?.primary?.main || "#3B82F6"}
         />
       ),
       route: "/security",
@@ -301,7 +300,7 @@ export default function AccountScreen() {
         <Ionicons
           name="notifications-outline"
           size={24}
-          color={colors?.primary?.[500] || "#3B82F6"}
+          color={colors?.primary?.main || "#3B82F6"}
         />
       ),
       route: "/notifications/preferences",
@@ -366,7 +365,7 @@ export default function AccountScreen() {
               <Ionicons
                 name="settings-outline"
                 size={20}
-                color={colors.primary[500]}
+                color={colors.primary.main}
               />
             </TouchableOpacity>
           </View>
@@ -385,7 +384,7 @@ export default function AccountScreen() {
                 <View
                   style={[
                     styles.avatar,
-                    { backgroundColor: colors.primary[500] },
+                    { backgroundColor: colors.primary.main },
                   ]}
                 >
                   <Text style={styles.avatarText}>{getUserInitials()}</Text>
@@ -420,13 +419,13 @@ export default function AccountScreen() {
             <TouchableOpacity
               style={[
                 styles.editButton,
-                { backgroundColor: colors.primary[100] },
+                { backgroundColor: colors.primary.main + '20' },
               ]}
               onPress={() => router.push("/profile/personal")}
             >
-              <Ionicons name="pencil" size={16} color={colors.primary[600]} />
+              <Ionicons name="pencil" size={16} color={colors.primary.main} />
               <Text
-                style={[styles.editButtonText, { color: colors.primary[600] }]}
+                style={[styles.editButtonText, { color: colors.primary.main }]}
               >
                 Edit
               </Text>
@@ -437,21 +436,21 @@ export default function AccountScreen() {
         {/* Savings Goals Stats */}
         <View style={styles.statsContainer}>
           <TouchableOpacity
-            style={styles.statCard}
+            style={[styles.statCard, { backgroundColor: colors.background.primary }]}
             onPress={openSavingsGoals}
             activeOpacity={0.8}
           >
             <LinearGradient
               colors={[
-                colors.primary[100] || "#DBEAFE",
-                colors.primary[50] || "#BFDBFE",
+                colors.primary.main + '20',
+                colors.primary.main + '10',
               ]}
               style={[styles.statGradient, shadows.md]}
             >
               <View
                 style={[
                   styles.statIcon,
-                  { backgroundColor: colors.primary[500] || "#3B82F6" },
+                  { backgroundColor: colors.primary.main || "#3B82F6" },
                 ]}
               >
                 <Ionicons name="trophy" size={20} color="white" />
@@ -482,17 +481,17 @@ export default function AccountScreen() {
           {/* Quick Action Cards */}
           <View style={styles.quickActionGrid}>
             <TouchableOpacity
-              style={styles.quickActionCard}
+              style={[styles.quickActionCard, { backgroundColor: colors.background.primary }]}
               onPress={() => router.push("/transactions")}
             >
               <LinearGradient
-                colors={[colors.primary[100], colors.primary[50]]}
+                colors={[colors.primary.main + '20', colors.primary.main + '10']}
                 style={[styles.quickActionGradient, shadows.sm]}
               >
                 <View
                   style={[
                     styles.quickActionIcon,
-                    { backgroundColor: colors.primary[500] },
+                    { backgroundColor: colors.primary.main },
                   ]}
                 >
                   <Ionicons name="receipt-outline" size={20} color="white" />
@@ -517,13 +516,13 @@ export default function AccountScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.quickActionCard}
+              style={[styles.quickActionCard, { backgroundColor: colors.background.primary }]}
               onPress={openExport}
             >
               <LinearGradient
                 colors={[
-                  colors.success?.[100] || colors.primary[100],
-                  colors.success?.[50] || colors.primary[50],
+                  colors.success.main + '20',
+                  colors.success.main + '10',
                 ]}
                 style={[styles.quickActionGradient, shadows.sm]}
               >
@@ -531,8 +530,7 @@ export default function AccountScreen() {
                   style={[
                     styles.quickActionIcon,
                     {
-                      backgroundColor:
-                        colors.success?.[500] || colors.primary[500],
+                      backgroundColor: colors.success.main,
                     },
                   ]}
                 >
@@ -558,13 +556,13 @@ export default function AccountScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.quickActionCard}
+              style={[styles.quickActionCard, { backgroundColor: colors.background.primary }]}
               onPress={openSupport}
             >
               <LinearGradient
                 colors={[
-                  colors.warning?.[100] || colors.primary[100],
-                  colors.warning?.[50] || colors.primary[50],
+                  colors.warning.main + '20',
+                  colors.warning.main + '10',
                 ]}
                 style={[styles.quickActionGradient, shadows.sm]}
               >
@@ -572,8 +570,7 @@ export default function AccountScreen() {
                   style={[
                     styles.quickActionIcon,
                     {
-                      backgroundColor:
-                        colors.warning?.[500] || colors.primary[500],
+                      backgroundColor: colors.warning.main,
                     },
                   ]}
                 >
@@ -603,13 +600,13 @@ export default function AccountScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.quickActionCard}
+              style={[styles.quickActionCard, { backgroundColor: colors.background.primary }]}
               onPress={() => router.push("/settings")}
             >
               <LinearGradient
                 colors={[
-                  colors.secondary?.[100] || colors.primary[100],
-                  colors.secondary?.[50] || colors.primary[50],
+                  colors.secondary.main + '20',
+                  colors.secondary.main + '10',
                 ]}
                 style={[styles.quickActionGradient, shadows.sm]}
               >
@@ -617,8 +614,7 @@ export default function AccountScreen() {
                   style={[
                     styles.quickActionIcon,
                     {
-                      backgroundColor:
-                        colors.secondary?.[500] || colors.primary[500],
+                      backgroundColor: colors.secondary.main,
                     },
                   ]}
                 >
@@ -638,7 +634,7 @@ export default function AccountScreen() {
                     { color: colors.text.secondary },
                   ]}
                 >
-                  Available
+                  Preferences & more
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -687,7 +683,7 @@ export default function AccountScreen() {
                             ? "rgba(245, 158, 11, 0.2)"
                             : "rgba(16, 185, 129, 0.2)",
                         }
-                      : { backgroundColor: colors.primary[100] },
+                      : { backgroundColor: colors.primary.main + '20' },
                   ]}
                 >
                   {option.icon}
@@ -719,7 +715,7 @@ export default function AccountScreen() {
                 <Ionicons
                   name="chevron-forward"
                   size={16}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </TouchableOpacity>
             ))}
@@ -729,7 +725,7 @@ export default function AccountScreen() {
         {/* Logout Error Display */}
         {logoutError && (
           <View style={styles.errorContainer}>
-            <Text style={[styles.errorText, { color: colors.error[500] }]}>
+            <Text style={[styles.errorText, { color: colors.error.main }]}>
               {logoutError}
             </Text>
           </View>
@@ -1024,7 +1020,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingTop: 20,
+    paddingBottom: 16,
   },
   headerContent: {
     flexDirection: "row",
@@ -1052,17 +1049,33 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   headerButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   profileCard: {
-    borderRadius: 12,
-    overflow: "hidden",
-    padding: 16,
+    borderRadius: 20,
+    padding: 20,
+    marginHorizontal: 4,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 12,
+    position: 'relative',
+    overflow: 'hidden',
     borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)'
   },
   profileGradient: {
     borderRadius: borderRadius["4xl"],
@@ -1127,12 +1140,20 @@ const styles = StyleSheet.create({
   },
   editButton: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   editButtonText: {
     color: "white",
@@ -1150,12 +1171,23 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
+    borderRadius: 20,
+    padding: 16,
     marginHorizontal: 4,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 12,
+    position: 'relative',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)'
   },
   statGradient: {
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     alignItems: "center",
   },
   statIconContainer: {
@@ -1189,40 +1221,52 @@ const styles = StyleSheet.create({
   },
   menuSection: {
     marginHorizontal: 20,
-    marginTop: 16,
+    marginTop: 24,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600" as const,
-    marginBottom: 12,
+    fontSize: 18,
+    fontWeight: "700" as const,
+    marginBottom: 16,
   },
   menuCard: {
-    borderRadius: 8,
+    borderRadius: 20,
+    marginHorizontal: 4,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 12,
+    position: 'relative',
+    overflow: 'hidden',
     borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)'
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
   },
   menuIconContainer: {
-    borderRadius: 8,
-    padding: 8,
-    marginRight: 12,
+    borderRadius: 10,
+    padding: 10,
+    marginRight: 16,
     alignItems: "center",
     justifyContent: "center",
+    width: 40,
+    height: 40,
   },
   menuContent: {
     flex: 1,
   },
   menuTitle: {
-    fontSize: 15,
-    fontWeight: "500" as const,
+    fontSize: 16,
+    fontWeight: "600" as const,
+    marginBottom: 2,
   },
   menuSubtitle: {
-    fontSize: 12,
-    opacity: 0.7,
+    fontSize: 13,
+    opacity: 0.8,
   },
   logoutSection: {
     marginHorizontal: 20,
@@ -1278,7 +1322,8 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     marginHorizontal: 20,
-    marginTop: 8,
+    marginTop: 12,
+    marginBottom: 8,
   },
   profileContent: {
     flexDirection: "row",
@@ -1446,34 +1491,49 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 8,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   quickActionCard: {
     width: "47%",
+    minHeight: 100,
+    borderRadius: 20,
+    marginHorizontal: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 12,
+    position: 'relative',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)'
   },
   quickActionGradient: {
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 20,
+    padding: 16,
     alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
   },
   quickActionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   quickActionTitle: {
-    fontSize: 13,
-    fontWeight: "500" as const,
+    fontSize: 14,
+    fontWeight: "600" as const,
     marginBottom: 4,
+    textAlign: "center",
   },
   quickActionSubtitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "400" as const,
-    opacity: 0.7,
+    opacity: 0.8,
+    textAlign: "center",
   },
   premiumMenuCard: {
     borderRadius: borderRadius["4xl"],

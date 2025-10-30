@@ -132,7 +132,7 @@ export default function RegisterStep4({
                 onPress={() => setUseManualEntry(true)}
                 style={styles.manualEntryButton}
               >
-                <Typography variant="caption" style={{ color: colors.primary[500] }}>
+                <Typography variant="caption" style={{ color: colors.primary.main }}>
                   Enter address manually instead
                 </Typography>
               </TouchableOpacity>
@@ -146,8 +146,8 @@ export default function RegisterStep4({
                 onPress={() => setUseManualEntry(false)}
                 style={styles.autoSearchButton}
               >
-                <Ionicons name="search" size={16} color={colors.primary[500]} />
-                <Typography variant="caption" style={{ color: colors.primary[500], marginLeft: spacing.xs }}>
+                <Ionicons name="search" size={16} color={colors.primary.main} />
+                <Typography variant="caption" style={{ color: colors.primary.main, marginLeft: spacing.xs }}>
                   Use address search instead
                 </Typography>
               </TouchableOpacity>
@@ -157,10 +157,10 @@ export default function RegisterStep4({
           {/* Error Message */}
           {addressError && (
             <View style={[styles.errorContainer, {
-              backgroundColor: colors.error[500] + '15',
-              borderColor: colors.error[500] + '30'
+              backgroundColor: colors.error.main + '15',
+              borderColor: colors.error.main + '30'
             }]}>
-              <Ionicons name="warning" size={20} color={colors.error[500]} />
+              <Ionicons name="warning" size={20} color={colors.error.main} />
               <Typography variant="body" style={[styles.errorText, { color: colors.text.primary }]}>
                 {addressError}
               </Typography>
@@ -288,13 +288,13 @@ export default function RegisterStep4({
         <Button
           title="Back"
           onPress={onBack}
-          style={[styles.backButton, { borderColor: colors.border.light }]}
+          style={StyleSheet.flatten([styles.backButton, { borderColor: colors.border.light }])}
           textStyle={{ color: colors.text.primary }}
         />
         <Button
           title="Continue"
           onPress={handleNext}
-          style={[styles.continueButton, { backgroundColor: colors.primary[500] }]}
+          style={StyleSheet.flatten([styles.continueButton, { backgroundColor: colors.primary.main }])}
           disabled={!values.address1?.trim() || !values.city?.trim() || !values.country}
         />
       </View>

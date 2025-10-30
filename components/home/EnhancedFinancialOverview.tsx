@@ -33,7 +33,7 @@ export const EnhancedFinancialOverview: React.FC<
         <TouchableOpacity
           style={[
             styles.viewAllButton,
-            { backgroundColor: colors.primary[500] },
+            { backgroundColor: colors.primary.main },
           ]}
           onPress={() => router.push("/spending")}
           activeOpacity={0.7}

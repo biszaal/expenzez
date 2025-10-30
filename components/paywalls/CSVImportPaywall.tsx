@@ -72,7 +72,7 @@ export const CSVImportPaywall: React.FC = () => {
             <Ionicons
               name="chevron-back"
               size={24}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </TouchableOpacity>
           <Text style={[styles.title, { color: colors.text.primary }]}>
@@ -86,13 +86,13 @@ export const CSVImportPaywall: React.FC = () => {
           <View
             style={[
               styles.iconBg,
-              { backgroundColor: colors.primary[100] },
+              { backgroundColor: colors.primary.main[100] },
             ]}
           >
             <Ionicons
               name="document-text"
               size={48}
-              color={colors.primary[500]}
+              color={colors.primary.main}
             />
           </View>
         </View>
@@ -126,13 +126,13 @@ export const CSVImportPaywall: React.FC = () => {
               <View
                 style={[
                   styles.featureIcon,
-                  { backgroundColor: colors.primary[100] },
+                  { backgroundColor: colors.primary.main[100] },
                 ]}
               >
                 <Ionicons
                   name={feature.icon as any}
                   size={20}
-                  color={colors.primary[500]}
+                  color={colors.primary.main}
                 />
               </View>
               <View style={styles.featureContent}>
@@ -166,7 +166,7 @@ export const CSVImportPaywall: React.FC = () => {
               styles.planCard,
               {
                 backgroundColor: colors.background.secondary,
-                borderColor: colors.primary[300],
+                borderColor: colors.primary.main[300],
               },
             ]}
             onPress={handleUpgrade}
@@ -175,7 +175,7 @@ export const CSVImportPaywall: React.FC = () => {
               <Text style={[styles.planName, { color: colors.text.primary }]}>
                 Monthly
               </Text>
-              <Text style={[styles.planPrice, { color: colors.primary[500] }]}>
+              <Text style={[styles.planPrice, { color: colors.primary.main }]}>
                 {monthlyPrice}
               </Text>
             </View>
@@ -203,8 +203,8 @@ export const CSVImportPaywall: React.FC = () => {
                 styles.planCard,
                 styles.annualPlan,
                 {
-                  backgroundColor: colors.primary[500],
-                  borderColor: colors.primary[600],
+                  backgroundColor: colors.primary.main,
+                  borderColor: colors.primary.main[600],
                 },
               ]}
               onPress={handleUpgrade}
@@ -228,16 +228,16 @@ export const CSVImportPaywall: React.FC = () => {
         <View
           style={[
             styles.trialInfo,
-            { backgroundColor: colors.primary[50] },
+            { backgroundColor: colors.primary.main[50] },
           ]}
         >
           <Ionicons
             name="information-circle"
             size={20}
-            color={colors.primary[500]}
+            color={colors.primary.main}
           />
           <Text
-            style={[styles.trialText, { color: colors.primary[700] }]}
+            style={[styles.trialText, { color: colors.primary.main[700] }]}
           >
             14-day free trial on all plans. Cancel anytime.
           </Text>
@@ -254,7 +254,7 @@ export const CSVImportPaywall: React.FC = () => {
         <TouchableOpacity
           style={[
             styles.upgradeButton,
-            { backgroundColor: colors.primary[500] },
+            { backgroundColor: colors.primary.main },
           ]}
           onPress={handleUpgrade}
         >
