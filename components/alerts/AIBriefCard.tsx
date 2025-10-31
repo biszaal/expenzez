@@ -31,10 +31,46 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
   const { colors } = useTheme();
   const router = useRouter();
   const { hasFeatureAccess } = useSubscription();
+
+  // All hooks must be declared before any conditional returns
   const [brief, setBrief] = useState<DailyBrief | null>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
+
+  const loadDailyBrief = async () => {
+    try {
+      setLoading(true);
+      const data = await briefsAPI.getDailyBrief();
+      setBrief(data);
+      setExpanded(false);
+
+      // Mark as viewed after a short delay
+      if (data?.briefId) {
+        setTimeout(() => {
+          briefsAPI.markBriefAsViewed(data.briefId);
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Error loading daily brief:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDailyBrief();
+  }, []);
+
+  useEffect(() => {
+    if (brief) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [brief]);
 
   const formattedGeneratedAt = brief?.generatedAt
     ? new Date(brief.generatedAt).toLocaleTimeString("en-GB", {
@@ -59,40 +95,6 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
       </View>
     );
   }
-
-  useEffect(() => {
-    loadDailyBrief();
-  }, []);
-
-  useEffect(() => {
-    if (brief) {
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [brief]);
-
-  const loadDailyBrief = async () => {
-    try {
-      setLoading(true);
-      const data = await briefsAPI.getDailyBrief();
-      setBrief(data);
-      setExpanded(false);
-
-      // Mark as viewed after a short delay
-      if (data?.briefId) {
-        setTimeout(() => {
-          briefsAPI.markBriefAsViewed(data.briefId);
-        }, 2000);
-      }
-    } catch (error) {
-      console.error("Error loading daily brief:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleRefresh = () => {
     loadDailyBrief();
@@ -286,7 +288,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
       {expanded && brief.insights && brief.insights.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-            💡 Today's Insights
+            💡 Today&apos;s Insights
           </Text>
           {brief.insights?.map((insight, index) => (
             <View

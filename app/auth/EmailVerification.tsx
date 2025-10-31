@@ -376,7 +376,7 @@ export default function EmailVerification() {
                       { color: colors.text.secondary },
                     ]}
                   >
-                    Didn't receive the code?
+                    Didn&apos;t receive the code?
                   </Typography>
 
                   <TouchableOpacity
@@ -428,7 +428,7 @@ export default function EmailVerification() {
                     variant="caption"
                     style={[styles.helpText, { color: colors.text.secondary }]}
                   >
-                    Check your spam folder if you don't see the email. The code
+                    Check your spam folder if you don&apos;t see the email. The code
                     expires in 24 hours.
                   </Typography>
                 </View>

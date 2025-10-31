@@ -11,7 +11,7 @@ interface CreateGoalFormProps {
   isLoading?: boolean;
 }
 
-const GOAL_TYPES: Array<{ type: FinancialGoal['type']; title: string; description: string }> = [
+const GOAL_TYPES: { type: FinancialGoal['type']; title: string; description: string }[] = [
   {
     type: 'emergency_fund',
     title: 'Emergency Fund',
@@ -44,7 +44,7 @@ const GOAL_TYPES: Array<{ type: FinancialGoal['type']; title: string; descriptio
   }
 ];
 
-const PRIORITIES: Array<{ priority: FinancialGoal['priority']; title: string }> = [
+const PRIORITIES: { priority: FinancialGoal['priority']; title: string }[] = [
   { priority: 'high', title: 'High Priority' },
   { priority: 'medium', title: 'Medium Priority' },
   { priority: 'low', title: 'Low Priority' }

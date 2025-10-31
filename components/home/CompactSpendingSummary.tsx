@@ -150,7 +150,7 @@ export const CompactSpendingSummary: React.FC<CompactSpendingSummaryProps> = ({
             ]}
           >
             <Text style={[styles.primaryLabel, { color: colors.text.secondary }]}>
-              This Month's Spending
+              This Month&apos;s Spending
             </Text>
             <Text style={[styles.primaryValue, { color: colors.primary.main }]}>
               {formatCurrency(spendingData.thisMonth)}

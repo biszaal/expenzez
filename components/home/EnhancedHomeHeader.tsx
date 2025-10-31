@@ -21,7 +21,7 @@ export const EnhancedHomeHeader: React.FC = () => {
             {user?.name ? `Hi, ${user.name.split(" ")[0]}` : 'Welcome back'}
           </Text>
           <Text style={[styles.subGreeting, { color: colors.text.secondary }]}>
-            Let's manage your finances
+            Let&apos;s manage your finances
           </Text>
         </View>
       </View>

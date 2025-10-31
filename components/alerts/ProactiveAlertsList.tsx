@@ -31,20 +31,13 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
   onViewAll,
 }) => {
   const { colors } = useTheme();
+
+  // All hooks must be declared before any conditional returns
   const [alerts, setAlerts] = useState<ProactiveAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unacknowledgedCount, setUnacknowledgedCount] = useState(0);
   const [isMinimized, setIsMinimized] = useState(false);
-
-  // Early return if colors is not available
-  if (!colors) {
-    return null;
-  }
-
-  useEffect(() => {
-    loadAlerts();
-  }, []);
 
   const loadAlerts = async () => {
     try {
@@ -58,6 +51,15 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
       setRefreshing(false);
     }
   };
+
+  useEffect(() => {
+    loadAlerts();
+  }, []);
+
+  // Early return if colors is not available
+  if (!colors) {
+    return null;
+  }
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -149,7 +151,7 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
               All Caught Up!
             </Text>
             <Text style={[styles.emptyText, { color: colors.secondary.main }]}>
-              No pending alerts. We'll notify you of important financial events.
+              No pending alerts. We&apos;ll notify you of important financial events.
             </Text>
           </View>
         )}

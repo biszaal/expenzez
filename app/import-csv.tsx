@@ -59,14 +59,7 @@ export default function CSVImportScreen() {
   const { colors } = useTheme();
   const { isPremium, hasFeatureAccess } = useSubscription();
 
-  // Check if user has access to CSV import feature
-  const featureAccess = hasFeatureAccess(PremiumFeature.CSV_IMPORT);
-
-  // Show paywall if user doesn't have access
-  if (!isPremium || !featureAccess.hasAccess) {
-    return <CSVImportPaywall />;
-  }
-
+  // All hooks must be declared before any conditional returns
   const [loading, setLoading] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(
     null
@@ -77,6 +70,14 @@ export default function CSVImportScreen() {
   const [previewTransactions, setPreviewTransactions] = useState<
     CSVTransactionPreview[]
   >([]);
+
+  // Check if user has access to CSV import feature
+  const featureAccess = hasFeatureAccess(PremiumFeature.CSV_IMPORT);
+
+  // Show paywall if user doesn't have access
+  if (!isPremium || !featureAccess.hasAccess) {
+    return <CSVImportPaywall />;
+  }
 
   const validateCSVFormat = (
     csvText: string

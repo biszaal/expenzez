@@ -267,7 +267,7 @@ export default function SubscriptionPlansScreen() {
                 { color: colors.text.primary },
               ]}
             >
-              You're Premium!
+              You&apos;re Premium!
             </Text>
             {subscriptionStatus.isInTrial && trialMessage && (
               <Text
@@ -608,7 +608,7 @@ export default function SubscriptionPlansScreen() {
                 </View>
               </View>
               <Text style={[styles.testimonialText, { color: colors.text.secondary }]}>
-                "{testimonial.text}"
+                &quot;{testimonial.text}&quot;
               </Text>
             </View>
           ))}
