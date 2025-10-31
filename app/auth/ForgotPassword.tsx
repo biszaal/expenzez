@@ -168,7 +168,7 @@ export default function ForgotPasswordScreen() {
                 Reset Password
               </Typography>
               <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
-                Enter your username and we'll send you a reset code
+                Enter your username and we&apos;ll send you a reset code
               </Typography>
             </View>
           </View>
