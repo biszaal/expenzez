@@ -1,5 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { ScrollView, RefreshControl, StyleSheet, View , Alert } from "react-native";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import {
+  ScrollView,
+  RefreshControl,
+  StyleSheet,
+  View,
+  Alert,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -10,6 +16,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useSecurity } from "../../contexts/SecurityContext";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { useAuth } from "../auth/AuthContext";
+import { useRevenueCat } from "../../contexts/RevenueCatContext";
 import { budgetAPI } from "../../services/api";
 import { transactionAPI } from "../../services/api/transactionAPI";
 import { balanceAPI } from "../../services/api/balanceAPI";
@@ -63,6 +70,11 @@ export default function HomeScreen() {
   // Subscription features removed - all users have free access
   const { unreadCount } = useNotifications();
   const { isLoggedIn, user } = useAuth();
+  const {
+    isPro,
+    isLoading: revenueCatLoading,
+    refreshCustomerInfo,
+  } = useRevenueCat();
 
   // Core data state
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -84,6 +96,9 @@ export default function HomeScreen() {
   // Security and user preferences
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [showPremiumCard, setShowPremiumCard] = useState(true);
+
+  // Prevent infinite loop - track if refresh is in progress
+  const isRefreshingRef = useRef(false);
 
   // Current month for calculations (no longer user-selectable)
   const currentMonth = (() => {
@@ -462,23 +477,37 @@ export default function HomeScreen() {
   };
 
   // Force refresh function for when transactions are updated
-  const forceRefresh = async () => {
-    console.log("🔄 [Home] Force refresh triggered - clearing all caches");
-
-    // Clear all possible caches
-    try {
-      await balanceAPI.invalidateCache();
-      await AsyncStorage.removeItem("transaction_cache");
-      await AsyncStorage.removeItem("balance_cache");
-      await AsyncStorage.removeItem("user_preferences");
-      console.log("🔄 [Home] All caches cleared");
-    } catch (error) {
-      console.warn("⚠️ [Home] Error clearing caches:", error);
+  const forceRefresh = useCallback(async () => {
+    // Prevent concurrent refreshes
+    if (isRefreshingRef.current) {
+      console.log("🔄 [Home] Refresh already in progress, skipping...");
+      return;
     }
 
-    // Force reload with no cache to get latest data from database
-    await loadData(true);
-  };
+    try {
+      isRefreshingRef.current = true;
+      console.log("🔄 [Home] Force refresh triggered - clearing all caches");
+
+      // Clear all possible caches
+      try {
+        await balanceAPI.invalidateCache();
+        await AsyncStorage.removeItem("transaction_cache");
+        await AsyncStorage.removeItem("balance_cache");
+        await AsyncStorage.removeItem("user_preferences");
+        console.log("🔄 [Home] All caches cleared");
+      } catch (error) {
+        console.warn("⚠️ [Home] Error clearing caches:", error);
+      }
+
+      // Force reload with no cache to get latest data from database
+      await loadData(true);
+    } finally {
+      // Reset the flag after a delay to prevent rapid re-triggers
+      setTimeout(() => {
+        isRefreshingRef.current = false;
+      }, 1000);
+    }
+  }, []);
 
   // Handle balance refresh (manual refresh button)
   const handleRefreshBalance = async () => {
@@ -525,23 +554,8 @@ export default function HomeScreen() {
     }
   }, [isLocked, isLoggedIn]);
 
-  // Refresh data when screen comes into focus (to catch new transactions)
-  useFocusEffect(
-    React.useCallback(() => {
-      if (isLoggedIn && !isLocked) {
-        console.log(
-          "🔄 [Home] Screen focused - checking for new transactions and refreshing data"
-        );
-        // First check for new transactions from AsyncStorage
-        checkForNewTransaction();
-        // Then use force refresh to clear all caches and get latest data
-        forceRefresh();
-      }
-    }, [isLoggedIn, isLocked])
-  );
-
   // Check for new transactions when screen comes into focus
-  const checkForNewTransaction = async () => {
+  const checkForNewTransaction = useCallback(async () => {
     try {
       console.log("💰 [Home] Refreshing data from database...");
       // Force refresh data from database to get latest transactions and balance
@@ -549,7 +563,36 @@ export default function HomeScreen() {
     } catch (error) {
       console.error("💰 [Home] Error refreshing data:", error);
     }
-  };
+  }, [forceRefresh]);
+
+  // Refresh data when screen comes into focus (to catch new transactions)
+  // Use a ref to track if we've already refreshed on this focus to prevent loops
+  const hasRefreshedOnFocusRef = useRef(false);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (isLoggedIn && !isLocked && !hasRefreshedOnFocusRef.current) {
+        hasRefreshedOnFocusRef.current = true;
+        console.log(
+          "🔄 [Home] Screen focused - checking for new transactions and refreshing data"
+        );
+        // Refresh RevenueCat customer info to check for subscription updates (non-blocking)
+        refreshCustomerInfo().catch((error) => {
+          console.warn(
+            "[Home] Failed to refresh RevenueCat customer info:",
+            error
+          );
+        });
+        // Check for new transactions and refresh data (this already calls forceRefresh)
+        checkForNewTransaction();
+
+        // Reset flag after a delay to allow refresh on next focus
+        setTimeout(() => {
+          hasRefreshedOnFocusRef.current = false;
+        }, 2000);
+      }
+    }, [isLoggedIn, isLocked, refreshCustomerInfo, checkForNewTransaction])
+  );
 
   // Helper functions for data transformations
   const getBankName = (institution: any) =>
@@ -681,12 +724,14 @@ export default function HomeScreen() {
           {/* Show notifications only if there are unread notifications */}
           {unreadCount > 0 && <NotificationCard />}
 
-          {/* Upgrade Banner - Subtle reminder for premium features */}
-          <UpgradeBanner
-            variant="subtle"
-            message="Upgrade to Premium for unlimited budgets & advanced features"
-            actionLabel="Upgrade"
-          />
+          {/* Upgrade Banner - Only show if user is not premium */}
+          {!revenueCatLoading && !isPro && (
+            <UpgradeBanner
+              variant="subtle"
+              message="Upgrade to Premium for unlimited budgets & advanced features"
+              actionLabel="Upgrade"
+            />
+          )}
         </View>
 
         {/* Spending Overview Section */}

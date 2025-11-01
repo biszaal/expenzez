@@ -15,16 +15,29 @@ import { useRouter } from "expo-router";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../auth/AuthContext";
 import { useSubscription } from "../../hooks/useSubscription";
+import { useRevenueCat } from "../../contexts/RevenueCatContext";
 import { PurchasesPackage } from "react-native-purchases";
 
 const PREMIUM_FEATURES = [
   { icon: "sparkles", label: "Unlimited AI queries & insights", free: false },
   { icon: "wallet-outline", label: "Unlimited budgets & goals", free: false },
   { icon: "analytics", label: "Advanced analytics & trends", free: false },
-  { icon: "notifications", label: "Proactive alerts & daily briefs", free: false },
-  { icon: "document-outline", label: "Bulk import transactions via CSV", free: false },
+  {
+    icon: "notifications",
+    label: "Proactive alerts & daily briefs",
+    free: false,
+  },
+  {
+    icon: "document-outline",
+    label: "Bulk import transactions via CSV",
+    free: false,
+  },
   { icon: "download-outline", label: "Export reports (CSV)", free: false },
-  { icon: "shield-checkmark-outline", label: "Advanced security features", free: false },
+  {
+    icon: "shield-checkmark-outline",
+    label: "Advanced security features",
+    free: false,
+  },
   { icon: "flash", label: "Priority support", free: false },
   { icon: "trending-up", label: "Custom spending insights", free: false },
 ];
@@ -75,6 +88,12 @@ export default function SubscriptionPlansScreen() {
     isTrialEligible,
     trialMessage,
   } = useSubscription();
+  const {
+    isPro: isPremiumFromRC,
+    subscriptionExpiryDate,
+    isInTrialPeriod,
+    customerInfo,
+  } = useRevenueCat();
 
   const [selectedPackage, setSelectedPackage] =
     useState<PurchasesPackage | null>(null);
@@ -95,7 +114,6 @@ export default function SubscriptionPlansScreen() {
 
     setPurchasing(true);
     try {
-
       // Check if we have actual packages from RevenueCat
       const actualPackage =
         selectedPackage.identifier === "monthly"
@@ -269,22 +287,80 @@ export default function SubscriptionPlansScreen() {
             >
               You&apos;re Premium!
             </Text>
-            {subscriptionStatus.isInTrial && trialMessage && (
-              <Text
-                style={[styles.trialMessage, { color: colors.warning.main }]}
-              >
-                {trialMessage}
-              </Text>
-            )}
-            {subscriptionStatus.expiryDate && (
-              <Text
-                style={[styles.expiryText, { color: colors.text.secondary }]}
-              >
-                {subscriptionStatus.isCancelled
-                  ? `Access until ${subscriptionStatus.expiryDate.toLocaleDateString()}`
-                  : `Renews on ${subscriptionStatus.expiryDate.toLocaleDateString()}`}
-              </Text>
-            )}
+            {(() => {
+              // Get expiry date from RevenueCat context (more reliable) or subscriptionStatus
+              const expiryDate =
+                subscriptionExpiryDate || subscriptionStatus.expiryDate;
+              // Get trial status from RevenueCat context or subscriptionStatus
+              const inTrial =
+                isInTrialPeriod !== undefined
+                  ? isInTrialPeriod
+                  : subscriptionStatus.isInTrial;
+              // Get cancellation status from customerInfo (willRenew = false means cancelled)
+              const premiumEntitlement =
+                customerInfo?.entitlements?.active?.["premium"] ||
+                customerInfo?.entitlements?.active?.["Premium"];
+              const willRenew = premiumEntitlement?.willRenew ?? true;
+              const isCancelled = !willRenew;
+
+              // Debug logging (outside JSX)
+              if (__DEV__) {
+                console.log("[Subscription Plans] Subscription info:", {
+                  expiryDateFromRC: subscriptionExpiryDate?.toISOString(),
+                  expiryDateFromStatus:
+                    subscriptionStatus.expiryDate?.toISOString(),
+                  finalExpiryDate: expiryDate?.toISOString(),
+                  inTrial,
+                  willRenew,
+                  isCancelled,
+                  hasCustomerInfo: !!customerInfo,
+                });
+              }
+
+              if (!expiryDate) {
+                return (
+                  <Text
+                    style={[
+                      styles.expiryText,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
+                    Active Premium Subscription
+                  </Text>
+                );
+              }
+
+              const formattedDate = expiryDate.toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              });
+
+              if (inTrial) {
+                return (
+                  <Text
+                    style={[
+                      styles.expiryText,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
+                    {isCancelled
+                      ? `Trial ends on ${formattedDate}`
+                      : `Trial renews on ${formattedDate}`}
+                  </Text>
+                );
+              }
+
+              return (
+                <Text
+                  style={[styles.expiryText, { color: colors.text.secondary }]}
+                >
+                  {isCancelled
+                    ? `Plan ends on ${formattedDate}`
+                    : `Auto renew on ${formattedDate}`}
+                </Text>
+              );
+            })()}
           </View>
 
           {/* Premium Features */}
@@ -366,7 +442,9 @@ export default function SubscriptionPlansScreen() {
             ]}
           >
             <Ionicons name="star" size={16} color={colors.success.main} />
-            <Text style={[styles.trialBadgeText, { color: colors.success.main }]}>
+            <Text
+              style={[styles.trialBadgeText, { color: colors.success.main }]}
+            >
               Start Your 14-Day Free Trial Now
             </Text>
           </View>
@@ -374,7 +452,8 @@ export default function SubscriptionPlansScreen() {
             Unlock Unlimited Potential
           </Text>
           <Text style={[styles.heroSubtitle, { color: colors.text.secondary }]}>
-            Unlimited budgets · 50+ AI chats daily · Advanced analytics · No limits
+            Unlimited budgets · 50+ AI chats daily · Advanced analytics · No
+            limits
           </Text>
         </View>
 
@@ -445,10 +524,7 @@ export default function SubscriptionPlansScreen() {
             </View>
             <View style={styles.savingsContainer}>
               <Text
-                style={[
-                  styles.originalPrice,
-                  { color: colors.text.tertiary },
-                ]}
+                style={[styles.originalPrice, { color: colors.text.tertiary }]}
               >
                 £59.88
               </Text>
@@ -460,14 +536,29 @@ export default function SubscriptionPlansScreen() {
         </View>
 
         {/* Shared Features List */}
-        <View style={[styles.sharedFeaturesSection, { backgroundColor: colors.background.primary }]}>
-          <Text style={[styles.featuresSectionTitle, { color: colors.text.primary }]}>
+        <View
+          style={[
+            styles.sharedFeaturesSection,
+            { backgroundColor: colors.background.primary },
+          ]}
+        >
+          <Text
+            style={[
+              styles.featuresSectionTitle,
+              { color: colors.text.primary },
+            ]}
+          >
             All Premium Features Included
           </Text>
           <View style={styles.featuresContainer}>
             {PREMIUM_FEATURES.map((feature, index) => (
               <View key={index} style={styles.featureItem}>
-                <View style={[styles.featureIcon, { backgroundColor: colors.primary.main + "20" }]}>
+                <View
+                  style={[
+                    styles.featureIcon,
+                    { backgroundColor: colors.primary.main + "20" },
+                  ]}
+                >
                   <Ionicons
                     name={feature.icon as any}
                     size={14}
@@ -475,10 +566,7 @@ export default function SubscriptionPlansScreen() {
                   />
                 </View>
                 <Text
-                  style={[
-                    styles.featureText,
-                    { color: colors.text.secondary },
-                  ]}
+                  style={[styles.featureText, { color: colors.text.secondary }]}
                 >
                   {feature.label}
                 </Text>
@@ -510,7 +598,8 @@ export default function SubscriptionPlansScreen() {
 
         {/* Trial Note */}
         <Text style={[styles.trialNote, { color: colors.text.tertiary }]}>
-          Your payment method will be charged £4.99/month after trial ends. Cancel anytime from App Store settings.
+          Your payment method will be charged £4.99/month after trial ends.
+          Cancel anytime from App Store settings.
         </Text>
 
         {/* Restore Purchases */}
@@ -528,28 +617,49 @@ export default function SubscriptionPlansScreen() {
         </TouchableOpacity>
 
         {/* Key Benefits - Compact */}
-        <View style={[styles.keyBenefitsSection, { backgroundColor: colors.background.primary + "80" }]}>
+        <View
+          style={[
+            styles.keyBenefitsSection,
+            { backgroundColor: colors.background.primary + "80" },
+          ]}
+        >
           <View style={styles.benefitRow}>
             <Ionicons name="sparkles" size={20} color={colors.primary.main} />
-            <Text style={[styles.benefitRowText, { color: colors.text.secondary }]}>
+            <Text
+              style={[styles.benefitRowText, { color: colors.text.secondary }]}
+            >
               50+ AI chats every single day
             </Text>
           </View>
           <View style={styles.benefitRow}>
-            <Ionicons name="wallet-outline" size={20} color={colors.primary.main} />
-            <Text style={[styles.benefitRowText, { color: colors.text.secondary }]}>
+            <Ionicons
+              name="wallet-outline"
+              size={20}
+              color={colors.primary.main}
+            />
+            <Text
+              style={[styles.benefitRowText, { color: colors.text.secondary }]}
+            >
               Unlimited budgets & goals
             </Text>
           </View>
           <View style={styles.benefitRow}>
             <Ionicons name="analytics" size={20} color={colors.primary.main} />
-            <Text style={[styles.benefitRowText, { color: colors.text.secondary }]}>
+            <Text
+              style={[styles.benefitRowText, { color: colors.text.secondary }]}
+            >
               Advanced analytics & reports
             </Text>
           </View>
           <View style={styles.benefitRow}>
-            <Ionicons name="shield-outline" size={20} color={colors.primary.main} />
-            <Text style={[styles.benefitRowText, { color: colors.text.secondary }]}>
+            <Ionicons
+              name="shield-outline"
+              size={20}
+              color={colors.primary.main}
+            />
+            <Text
+              style={[styles.benefitRowText, { color: colors.text.secondary }]}
+            >
               Secure & private always
             </Text>
           </View>
@@ -559,7 +669,10 @@ export default function SubscriptionPlansScreen() {
         <View
           style={[
             styles.guaranteeCard,
-            { borderColor: colors.success.main, backgroundColor: colors.success.main + "10" },
+            {
+              borderColor: colors.success.main,
+              backgroundColor: colors.success.main + "10",
+            },
           ]}
         >
           <View style={styles.guaranteeContent}>
@@ -569,10 +682,17 @@ export default function SubscriptionPlansScreen() {
               color={colors.success.main}
             />
             <View style={styles.guaranteeText}>
-              <Text style={[styles.guaranteeTitle, { color: colors.text.primary }]}>
+              <Text
+                style={[styles.guaranteeTitle, { color: colors.text.primary }]}
+              >
                 30-Day Money Back
               </Text>
-              <Text style={[styles.guaranteeDescription, { color: colors.text.secondary }]}>
+              <Text
+                style={[
+                  styles.guaranteeDescription,
+                  { color: colors.text.secondary },
+                ]}
+              >
                 Not satisfied? Get a full refund, no questions asked.
               </Text>
             </View>
@@ -594,10 +714,20 @@ export default function SubscriptionPlansScreen() {
             >
               <View style={styles.testimonialHeader}>
                 <View>
-                  <Text style={[styles.testimonialName, { color: colors.text.primary }]}>
+                  <Text
+                    style={[
+                      styles.testimonialName,
+                      { color: colors.text.primary },
+                    ]}
+                  >
                     {testimonial.name}
                   </Text>
-                  <Text style={[styles.testimonialRole, { color: colors.text.tertiary }]}>
+                  <Text
+                    style={[
+                      styles.testimonialRole,
+                      { color: colors.text.tertiary },
+                    ]}
+                  >
                     {testimonial.role}
                   </Text>
                 </View>
@@ -607,7 +737,12 @@ export default function SubscriptionPlansScreen() {
                   ))}
                 </View>
               </View>
-              <Text style={[styles.testimonialText, { color: colors.text.secondary }]}>
+              <Text
+                style={[
+                  styles.testimonialText,
+                  { color: colors.text.secondary },
+                ]}
+              >
                 &quot;{testimonial.text}&quot;
               </Text>
             </View>
