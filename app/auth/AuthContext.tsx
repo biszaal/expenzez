@@ -9,6 +9,7 @@ import { deviceManager } from "../../services/deviceManager";
 import { securityAPI } from "../../services/api/securityAPI";
 import { sessionManager } from "../../services/sessionManager";
 import { deviceAPI } from "../../services/api/deviceAPI";
+import { useRevenueCat } from "../../contexts/RevenueCatContext";
 
 interface User {
   id: string;
@@ -115,6 +116,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [hasLoadedAuthState, setHasLoadedAuthState] = useState(false);
   const [isDeviceTrusted, setIsDeviceTrusted] = useState(false);
   const [needsPinSetup, setNeedsPinSetup] = useState(false);
+
+  // RevenueCat integration for subscription management
+  const { loginUser: revenueCatLogin, logoutUser: revenueCatLogout } = useRevenueCat();
 
   // Helper function to check if user has PIN in database
   const checkUserHasPin = async (): Promise<boolean> => {
@@ -648,6 +652,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Initialize device state
         await initializeDeviceState();
 
+        // Link RevenueCat subscription to this user
+        // Use user.id or user.username as the unique identifier
+        const revenueCatUserId = responseData.user.id || responseData.user.username || responseData.user.sub;
+        if (revenueCatUserId) {
+          console.log("🎫 [AuthContext] Linking RevenueCat subscription to user:", revenueCatUserId);
+          await revenueCatLogin(revenueCatUserId);
+        }
+
         // Verify tokens were stored
         const storedAccessToken = await SecureStore.getItemAsync(
           "accessToken",
@@ -866,6 +878,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Initialize device state
         await initializeDeviceState();
 
+        // Link RevenueCat subscription to this user
+        const revenueCatUserId = response.user.id || response.user.username || response.user.sub;
+        if (revenueCatUserId) {
+          console.log("🎫 [AppleLogin] Linking RevenueCat subscription to user:", revenueCatUserId);
+          await revenueCatLogin(revenueCatUserId);
+        }
+
         // Check if profile completion is needed
         if (response.needsProfileCompletion) {
           return {
@@ -1037,6 +1056,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await deviceManager.clearPersistentSession();
       await deviceManager.untrustDevice();
       setIsDeviceTrusted(false);
+
+      // Logout from RevenueCat to clear subscription data
+      console.log("🎫 [AuthContext] Logging out from RevenueCat...");
+      await revenueCatLogout();
 
       // Clear secure subscription cache
       // Temporarily disabled until Lambda deployment completes

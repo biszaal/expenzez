@@ -33,6 +33,8 @@ interface RevenueCatContextType {
   isInTrialPeriod: boolean;
   subscriptionExpiryDate: Date | null;
   activeProductIdentifier: string | null;
+  loginUser: (userId: string) => Promise<void>;
+  logoutUser: () => Promise<void>;
 }
 
 const RevenueCatContext = createContext<RevenueCatContextType>({
@@ -48,6 +50,8 @@ const RevenueCatContext = createContext<RevenueCatContextType>({
   isInTrialPeriod: false,
   subscriptionExpiryDate: null,
   activeProductIdentifier: null,
+  loginUser: async () => {},
+  logoutUser: async () => {},
 });
 
 export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -82,20 +86,97 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("[RevenueCat] App ownership:", Constants.appOwnership);
       console.log("[RevenueCat] Execution environment:", Constants.executionEnvironment);
 
+      // Check if we're in Expo Go (which doesn't support native modules)
+      const isExpoGo = Constants.appOwnership === "expo" && Constants.executionEnvironment === "storeClient";
+      
+      if (isExpoGo) {
+        console.warn("[RevenueCat] ⚠️ Running in Expo Go - native modules are not available");
+        console.warn("[RevenueCat] RevenueCat requires a development build:");
+        console.warn("[RevenueCat]   1. Create a development build: npx expo run:ios or npx expo run:android");
+        console.warn("[RevenueCat]   2. Or use EAS Build: eas build --profile development --platform ios");
+        setIsLoading(false);
+        setIsPro(false);
+        return;
+      }
+
       // Import RevenueCat SDK
       if (!Purchases) {
         try {
-          const revenueCatModule = require("react-native-purchases");
-          Purchases = revenueCatModule.default;
-          CustomerInfo = revenueCatModule.CustomerInfo;
-          PurchasesPackage = revenueCatModule.PurchasesPackage;
-          PurchasesOfferings = revenueCatModule.PurchasesOfferings;
-          LOG_LEVEL = revenueCatModule.LOG_LEVEL;
-          console.log("[RevenueCat] ✅ SDK module loaded successfully");
-        } catch (importError) {
+          // Try ES6 import first (works better with Expo and native modules)
+          // Use dynamic import for better error handling
+          const revenueCatModule = await import("react-native-purchases");
+          
+          // Handle different export formats
+          // ES6 default export: export default Purchases
+          // Named exports: export { CustomerInfo, LOG_LEVEL, ... }
+          if (revenueCatModule) {
+            // Get the default export (ES6 module)
+            Purchases = revenueCatModule.default;
+            
+            // Get named exports
+            CustomerInfo = revenueCatModule.CustomerInfo;
+            PurchasesPackage = revenueCatModule.PurchasesPackage;
+            PurchasesOfferings = revenueCatModule.PurchasesOfferings;
+            LOG_LEVEL = revenueCatModule.LOG_LEVEL;
+            
+            // If default doesn't exist, try direct access (CommonJS fallback)
+            if (!Purchases && revenueCatModule) {
+              Purchases = revenueCatModule;
+            }
+            
+            // Verify Purchases is actually available and has required methods
+            if (!Purchases || typeof Purchases.configure !== 'function') {
+              throw new Error("Purchases module not properly exported or missing configure method");
+            }
+            
+            console.log("[RevenueCat] ✅ SDK module loaded successfully");
+            console.log("[RevenueCat] Module structure:", {
+              hasDefault: !!revenueCatModule.default,
+              hasConfigure: typeof Purchases?.configure === 'function',
+              hasCustomerInfo: !!CustomerInfo,
+              hasPackage: !!PurchasesPackage,
+            });
+          } else {
+            throw new Error("RevenueCat module is null or undefined");
+          }
+        } catch (importError: any) {
+          const errorMessage = importError?.message || String(importError);
+          const isNativeModuleError = 
+            errorMessage.includes("NativeEventEmitter") ||
+            errorMessage.includes("invariant") ||
+            errorMessage.includes("native module") ||
+            errorMessage.includes("RNPurchases");
+
           console.error("[RevenueCat] ❌ Failed to import SDK:", importError);
-          console.error("[RevenueCat] Make sure react-native-purchases is installed");
-          console.error("[RevenueCat] Run: npx expo install react-native-purchases");
+          console.error("[RevenueCat] Error message:", errorMessage);
+          
+          if (isNativeModuleError) {
+            console.error("[RevenueCat] ⚠️ Native module not linked - this requires a rebuild");
+            console.error("[RevenueCat] The native module bridge is not available.");
+            console.error("[RevenueCat] This can happen if:");
+            console.error("[RevenueCat]   1. You're using Expo Go (not supported)");
+            console.error("[RevenueCat]   2. The app hasn't been rebuilt after installing the module");
+            console.error("[RevenueCat] ");
+            console.error("[RevenueCat] Solution:");
+            console.error("[RevenueCat]   1. Create a development build:");
+            console.error("[RevenueCat]      cd expenzez-frontend");
+            console.error("[RevenueCat]      npx expo run:ios        # for iOS");
+            console.error("[RevenueCat]      npx expo run:android    # for Android");
+            console.error("[RevenueCat] ");
+            console.error("[RevenueCat]   2. Or use EAS Build:");
+            console.error("[RevenueCat]      eas build --profile development --platform ios");
+            console.error("[RevenueCat] ");
+            console.error("[RevenueCat] Note: RevenueCat will be disabled until the native module is linked.");
+          } else {
+            console.error("[RevenueCat] Error details:", {
+              message: importError?.message,
+              stack: importError?.stack,
+              code: importError?.code,
+            });
+            console.error("[RevenueCat] Make sure react-native-purchases is installed");
+            console.error("[RevenueCat] Run: npx expo install react-native-purchases");
+          }
+          
           setIsLoading(false);
           setIsPro(false);
           return;
@@ -135,11 +216,29 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("[RevenueCat] 📊 Log level set to:", __DEV__ ? "DEBUG" : "ERROR");
 
       // Set user ID if available
-      const userId = await AsyncStorage.getItem("user");
-      if (userId) {
-        const user = JSON.parse(userId);
-        await Purchases.logIn(user.userId);
-        console.log("[RevenueCat] Logged in user:", user.userId);
+      try {
+        const userId = await AsyncStorage.getItem("user");
+        if (userId) {
+          const user = JSON.parse(userId);
+          // Validate user ID is a non-empty string
+          const appUserId = user?.userId || user?.id || user?.username;
+          
+          if (appUserId && typeof appUserId === "string" && appUserId.trim().length > 0) {
+            await Purchases.logIn(appUserId.trim());
+            console.log("[RevenueCat] ✅ Logged in user:", appUserId);
+          } else {
+            console.warn("[RevenueCat] ⚠️ User ID not available or invalid:", {
+              hasUserId: !!user?.userId,
+              hasId: !!user?.id,
+              hasUsername: !!user?.username,
+              type: typeof appUserId,
+            });
+          }
+        }
+      } catch (loginError: any) {
+        // Log error but don't fail initialization - user can log in later
+        console.warn("[RevenueCat] ⚠️ Failed to log in user:", loginError?.message);
+        console.warn("[RevenueCat] User purchases will be tracked anonymously until login");
       }
 
       // Get initial customer info
@@ -257,7 +356,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       if (!Purchases) {
-        return { success: false, error: "RevenueCat not available" };
+        return { success: false, error: "Subscriptions are not available. Please rebuild the app with a development build." };
       }
 
       console.log("[RevenueCat] 🛒 Starting purchase for package:", pkg.identifier);
@@ -275,17 +374,95 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error: any) {
       setIsLoading(false);
 
-      // Handle user cancellation
-      if (error.userCancelled) {
-        console.log("[RevenueCat] ⚠️ Purchase cancelled by user");
+      // Handle user cancellation - this is not an error, just return gracefully
+      if (error.userCancelled || error.code === "PURCHASE_CANCELLED") {
+        console.log("[RevenueCat] ℹ️ Purchase cancelled by user");
         return { success: false, error: "Purchase cancelled" };
       }
 
-      console.error("[RevenueCat] ❌ Purchase failed:", error);
-      return {
-        success: false,
-        error: error.message || "Purchase failed. Please try again.",
-      };
+      // Extract error details
+      const errorMessage = error.message || "";
+      const errorCode = error.code || "";
+      const underlyingError = error.underlyingErrorMessage || "";
+
+      // Check for specific error types and provide user-friendly messages
+      
+      // Authentication errors (Apple ID/StoreKit issues)
+      if (
+        errorMessage.includes("Authentication") ||
+        errorMessage.includes("authentication failed") ||
+        errorMessage.includes("password reuse") ||
+        underlyingError.includes("Authentication Failed") ||
+        underlyingError.includes("password reuse")
+      ) {
+        const userFriendlyError = 
+          "There was an issue with your Apple ID authentication. " +
+          "Please check your Apple ID settings in Settings > [Your Name] > Media & Purchases, " +
+          "then try again.";
+        console.warn("[RevenueCat] ⚠️ Authentication error:", errorMessage);
+        return { success: false, error: userFriendlyError };
+      }
+
+      // Product unavailable
+      if (
+        errorMessage.includes("product") && 
+        (errorMessage.includes("not available") || errorMessage.includes("unavailable"))
+      ) {
+        const userFriendlyError = "This subscription is currently unavailable. Please try again later.";
+        console.warn("[RevenueCat] ⚠️ Product unavailable:", errorMessage);
+        return { success: false, error: userFriendlyError };
+      }
+
+      // Network errors
+      if (
+        errorMessage.includes("network") ||
+        errorMessage.includes("connection") ||
+        errorCode === "NETWORK_ERROR"
+      ) {
+        const userFriendlyError = "Unable to connect. Please check your internet connection and try again.";
+        console.warn("[RevenueCat] ⚠️ Network error:", errorMessage);
+        return { success: false, error: userFriendlyError };
+      }
+
+      // Payment/purchase errors
+      if (
+        errorMessage.includes("payment") ||
+        errorMessage.includes("Purchase") ||
+        errorCode === "PURCHASE_ERROR" ||
+        errorCode === "PAYMENT_PENDING"
+      ) {
+        const userFriendlyError = "There was an issue processing your payment. Please try again or contact support if the problem persists.";
+        console.warn("[RevenueCat] ⚠️ Payment error:", errorMessage);
+        return { success: false, error: userFriendlyError };
+      }
+
+      // StoreKit specific errors
+      if (
+        errorMessage.includes("StoreKit") ||
+        underlyingError.includes("StoreKit") ||
+        errorMessage.includes("ASDErrorDomain")
+      ) {
+        const userFriendlyError = 
+          "There was an issue with the App Store. " +
+          "Please try again in a moment. If the problem continues, " +
+          "please contact support.";
+        console.warn("[RevenueCat] ⚠️ StoreKit error:", errorMessage);
+        return { success: false, error: userFriendlyError };
+      }
+
+      // Generic error with improved message
+      const userFriendlyError = 
+        errorMessage && errorMessage.length < 100 
+          ? errorMessage 
+          : "Unable to complete purchase. Please try again or contact support if the problem persists.";
+      
+      console.error("[RevenueCat] ❌ Purchase failed:", {
+        message: errorMessage,
+        code: errorCode,
+        underlying: underlyingError,
+      });
+
+      return { success: false, error: userFriendlyError };
     }
   };
 
@@ -321,6 +498,72 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  /**
+   * Login user to RevenueCat
+   * Links subscriptions to this specific user ID
+   */
+  const loginUser = async (userId: string) => {
+    try {
+      if (!Purchases || !userId) {
+        console.log("[RevenueCat] Cannot login: Purchases not initialized or userId empty");
+        return;
+      }
+
+      console.log("[RevenueCat] 👤 Logging in user:", userId);
+
+      // Login to RevenueCat with user ID
+      const { customerInfo: info } = await Purchases.logIn(userId);
+
+      console.log("[RevenueCat] ✅ User logged in successfully");
+
+      // Update subscription status for this user
+      await processCustomerInfo(info);
+
+      // Refresh offerings for this user
+      await getOfferings();
+    } catch (error: any) {
+      console.error("[RevenueCat] ❌ Login failed:", error);
+      // Don't throw - allow app to continue even if RevenueCat login fails
+    }
+  };
+
+  /**
+   * Logout user from RevenueCat
+   * Clears subscription data and resets to anonymous user
+   */
+  const logoutUser = async () => {
+    try {
+      if (!Purchases) {
+        console.log("[RevenueCat] Cannot logout: Purchases not initialized");
+        return;
+      }
+
+      console.log("[RevenueCat] 👋 Logging out user");
+
+      // Logout from RevenueCat
+      const { customerInfo: info } = await Purchases.logOut();
+
+      console.log("[RevenueCat] ✅ User logged out successfully");
+
+      // Reset to anonymous user state
+      await processCustomerInfo(info);
+
+      // Clear offerings
+      setOfferings(null);
+    } catch (error: any) {
+      console.error("[RevenueCat] ❌ Logout failed:", error);
+
+      // Force reset subscription state even if logout fails
+      setIsPro(false);
+      setHasActiveSubscription(false);
+      setIsInTrialPeriod(false);
+      setSubscriptionExpiryDate(null);
+      setActiveProductIdentifier(null);
+      setCustomerInfo(null);
+      setOfferings(null);
+    }
+  };
+
   const value: RevenueCatContextType = {
     isPro,
     isLoading,
@@ -334,6 +577,8 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     isInTrialPeriod,
     subscriptionExpiryDate,
     activeProductIdentifier,
+    loginUser,
+    logoutUser,
   };
 
   return (
