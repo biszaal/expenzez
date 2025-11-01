@@ -88,7 +88,13 @@
       "expo-apple-authentication",
       "expo-secure-store",
       "expo-web-browser",
-      "expo-local-authentication"
+      "expo-local-authentication",
+      [
+        "react-native-purchases",
+        {
+          "iosAppStoreKey": "appl_your_key_here"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
