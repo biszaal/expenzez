@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
+import { useRevenueCat } from "../../contexts/RevenueCatContext";
 import { ProfileSkeleton } from "../../components/ui/SkeletonLoader";
 import {
   spacing,
@@ -41,7 +42,7 @@ export default function AccountScreen() {
   const { isLoggedIn, user, logout } = useAuth();
   const { colors, isDark } = useTheme();
   const { showError } = useAlert();
-  // Subscription features removed - all users have free access
+  const { isPro, isInTrialPeriod, subscriptionExpiryDate } = useRevenueCat();
 
   const [profile, setProfile] = useState<any>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
@@ -405,6 +406,33 @@ export default function AccountScreen() {
                   {getUserEmail()}
                 </Text>
                 <View style={styles.profileBadges}>
+                  {isPro && (
+                    <View
+                      style={[
+                        styles.premiumBadge,
+                        {
+                          backgroundColor: isDark ? "#92400E" : "#FEF3C7",
+                          borderColor: isDark ? "#D97706" : "#F59E0B",
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name="sparkles"
+                        size={12}
+                        color={isDark ? "#FCD34D" : "#92400E"}
+                      />
+                      <Text
+                        style={[
+                          styles.premiumBadgeText,
+                          {
+                            color: isDark ? "#FCD34D" : "#92400E",
+                          },
+                        ]}
+                      >
+                        {isInTrialPeriod ? "Premium Trial" : "Premium Member"}
+                      </Text>
+                    </View>
+                  )}
                   <Text
                     style={[
                       styles.memberText,
@@ -419,7 +447,7 @@ export default function AccountScreen() {
             <TouchableOpacity
               style={[
                 styles.editButton,
-                { backgroundColor: colors.primary.main + '20' },
+                { backgroundColor: colors.primary.main + "20" },
               ]}
               onPress={() => router.push("/profile/personal")}
             >
@@ -436,15 +464,15 @@ export default function AccountScreen() {
         {/* Savings Goals Stats */}
         <View style={styles.statsContainer}>
           <TouchableOpacity
-            style={[styles.statCard, { backgroundColor: colors.background.primary }]}
+            style={[
+              styles.statCard,
+              { backgroundColor: colors.background.primary },
+            ]}
             onPress={openSavingsGoals}
             activeOpacity={0.8}
           >
             <LinearGradient
-              colors={[
-                colors.primary.main + '20',
-                colors.primary.main + '10',
-              ]}
+              colors={[colors.primary.main + "20", colors.primary.main + "10"]}
               style={[styles.statGradient, shadows.md]}
             >
               <View
@@ -481,11 +509,17 @@ export default function AccountScreen() {
           {/* Quick Action Cards */}
           <View style={styles.quickActionGrid}>
             <TouchableOpacity
-              style={[styles.quickActionCard, { backgroundColor: colors.background.primary }]}
+              style={[
+                styles.quickActionCard,
+                { backgroundColor: colors.background.primary },
+              ]}
               onPress={() => router.push("/transactions")}
             >
               <LinearGradient
-                colors={[colors.primary.main + '20', colors.primary.main + '10']}
+                colors={[
+                  colors.primary.main + "20",
+                  colors.primary.main + "10",
+                ]}
                 style={[styles.quickActionGradient, shadows.sm]}
               >
                 <View
@@ -516,13 +550,16 @@ export default function AccountScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.quickActionCard, { backgroundColor: colors.background.primary }]}
+              style={[
+                styles.quickActionCard,
+                { backgroundColor: colors.background.primary },
+              ]}
               onPress={openExport}
             >
               <LinearGradient
                 colors={[
-                  colors.success.main + '20',
-                  colors.success.main + '10',
+                  colors.success.main + "20",
+                  colors.success.main + "10",
                 ]}
                 style={[styles.quickActionGradient, shadows.sm]}
               >
@@ -556,13 +593,16 @@ export default function AccountScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.quickActionCard, { backgroundColor: colors.background.primary }]}
+              style={[
+                styles.quickActionCard,
+                { backgroundColor: colors.background.primary },
+              ]}
               onPress={openSupport}
             >
               <LinearGradient
                 colors={[
-                  colors.warning.main + '20',
-                  colors.warning.main + '10',
+                  colors.warning.main + "20",
+                  colors.warning.main + "10",
                 ]}
                 style={[styles.quickActionGradient, shadows.sm]}
               >
@@ -600,13 +640,16 @@ export default function AccountScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.quickActionCard, { backgroundColor: colors.background.primary }]}
+              style={[
+                styles.quickActionCard,
+                { backgroundColor: colors.background.primary },
+              ]}
               onPress={() => router.push("/settings")}
             >
               <LinearGradient
                 colors={[
-                  colors.secondary.main + '20',
-                  colors.secondary.main + '10',
+                  colors.secondary.main + "20",
+                  colors.secondary.main + "10",
                 ]}
                 style={[styles.quickActionGradient, shadows.sm]}
               >
@@ -683,7 +726,7 @@ export default function AccountScreen() {
                             ? "rgba(245, 158, 11, 0.2)"
                             : "rgba(16, 185, 129, 0.2)",
                         }
-                      : { backgroundColor: colors.primary.main + '20' },
+                      : { backgroundColor: colors.primary.main + "20" },
                   ]}
                 >
                   {option.icon}
@@ -1067,15 +1110,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     marginHorizontal: 4,
-    shadowColor: '#000000',
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 12,
-    position: 'relative',
-    overflow: 'hidden',
+    position: "relative",
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.05)'
+    borderColor: "rgba(0, 0, 0, 0.05)",
   },
   profileGradient: {
     borderRadius: borderRadius["4xl"],
@@ -1120,7 +1163,23 @@ const styles = StyleSheet.create({
   profileBadges: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: spacing.sm,
+    gap: 8,
+    flexWrap: "wrap",
+    marginTop: 4,
+  },
+  premiumBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  premiumBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   premiumBadgeOld: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -1174,15 +1233,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     marginHorizontal: 4,
-    shadowColor: '#000000',
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 12,
-    position: 'relative',
-    overflow: 'hidden',
+    position: "relative",
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.05)'
+    borderColor: "rgba(0, 0, 0, 0.05)",
   },
   statGradient: {
     borderRadius: 20,
@@ -1231,15 +1290,15 @@ const styles = StyleSheet.create({
   menuCard: {
     borderRadius: 20,
     marginHorizontal: 4,
-    shadowColor: '#000000',
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 12,
-    position: 'relative',
-    overflow: 'hidden',
+    position: "relative",
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.05)'
+    borderColor: "rgba(0, 0, 0, 0.05)",
   },
   menuItem: {
     flexDirection: "row",
@@ -1390,20 +1449,6 @@ const styles = StyleSheet.create({
     fontWeight: "800" as const,
     color: "white",
   },
-  premiumBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.2)",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    gap: spacing.xs,
-  },
-  premiumBadgeText: {
-    fontSize: typography.fontSizes.xs,
-    fontWeight: "600" as const,
-    color: "white",
-  },
   premiumProfileDetails: {
     flex: 1,
   },
@@ -1498,15 +1543,15 @@ const styles = StyleSheet.create({
     minHeight: 100,
     borderRadius: 20,
     marginHorizontal: 2,
-    shadowColor: '#000000',
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 12,
-    position: 'relative',
-    overflow: 'hidden',
+    position: "relative",
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.05)'
+    borderColor: "rgba(0, 0, 0, 0.05)",
   },
   quickActionGradient: {
     borderRadius: 20,

@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, useColorScheme } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useRevenueCat } from "../../contexts/RevenueCatContext";
 
 interface UpgradeBannerProps {
   variant?: "subtle" | "prominent";
@@ -22,10 +23,16 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
 }) => {
   const router = useRouter();
   const isDark = useColorScheme() === "dark";
+  const { isPro, isLoading } = useRevenueCat();
 
   const handleUpgradePress = () => {
     router.push("/subscription/plans");
   };
+
+  // Don't show banner if user is premium or still loading
+  if (isLoading || isPro) {
+    return null;
+  }
 
   if (variant === "subtle") {
     const primaryPurple = "#8B5CF6";
