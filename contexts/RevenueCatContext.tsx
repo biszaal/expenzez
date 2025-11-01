@@ -202,43 +202,70 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       // Configure SDK with API key
+      // NOTE: In RevenueCat SDK v9+, configure() is SYNCHRONOUS (no Promise)
       console.log("[RevenueCat] 🔧 Configuring SDK with API key...");
-      if (Platform.OS === "ios") {
-        await Purchases.configure({ apiKey: REVENUECAT_IOS_KEY });
-      } else if (Platform.OS === "android") {
-        await Purchases.configure({ apiKey: REVENUECAT_ANDROID_KEY });
+      console.log("[RevenueCat] API Key present:", Platform.OS === "ios" ? !!REVENUECAT_IOS_KEY : !!REVENUECAT_ANDROID_KEY);
+      console.log("[RevenueCat] API Key (first 10 chars):", Platform.OS === "ios" ? REVENUECAT_IOS_KEY?.substring(0, 10) : REVENUECAT_ANDROID_KEY?.substring(0, 10));
+
+      try {
+        // v9 SDK: configure is synchronous, not async
+        Purchases.configure({
+          apiKey: Platform.OS === "ios" ? REVENUECAT_IOS_KEY : REVENUECAT_ANDROID_KEY
+        });
+        console.log("[RevenueCat] ✅ SDK configured successfully");
+      } catch (configError: any) {
+        console.error("[RevenueCat] ❌ Configuration failed:", configError);
+        console.error("[RevenueCat] Error message:", configError?.message);
+        throw configError;
       }
-      console.log("[RevenueCat] ✅ SDK configured successfully");
 
       // Set log level for debugging (use DEBUG for development, ERROR for production)
       const logLevel = __DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR;
       Purchases.setLogLevel(logLevel);
       console.log("[RevenueCat] 📊 Log level set to:", __DEV__ ? "DEBUG" : "ERROR");
 
-      // Set user ID if available
+      // Set user ID if available (try to login from AsyncStorage)
+      console.log("[RevenueCat] 🔍 Checking for existing user in AsyncStorage...");
       try {
         const userId = await AsyncStorage.getItem("user");
+        console.log("[RevenueCat] AsyncStorage user:", !!userId);
+
         if (userId) {
           const user = JSON.parse(userId);
+          console.log("[RevenueCat] Parsed user object:", {
+            hasUserId: !!user?.userId,
+            hasId: !!user?.id,
+            hasUsername: !!user?.username,
+            hasSub: !!user?.sub
+          });
+
           // Validate user ID is a non-empty string
           const appUserId = user?.userId || user?.id || user?.username;
-          
+
           if (appUserId && typeof appUserId === "string" && appUserId.trim().length > 0) {
-            await Purchases.logIn(appUserId.trim());
-            console.log("[RevenueCat] ✅ Logged in user:", appUserId);
+            console.log("[RevenueCat] 👤 Attempting login from AsyncStorage with user ID:", appUserId);
+            const { customerInfo, created } = await Purchases.logIn(appUserId.trim());
+            console.log("[RevenueCat] ✅ Login from AsyncStorage successful!");
+            console.log("[RevenueCat] Customer ID:", customerInfo.originalAppUserId);
+            console.log("[RevenueCat] Created new customer:", created);
           } else {
             console.warn("[RevenueCat] ⚠️ User ID not available or invalid:", {
               hasUserId: !!user?.userId,
               hasId: !!user?.id,
               hasUsername: !!user?.username,
               type: typeof appUserId,
+              value: appUserId
             });
           }
+        } else {
+          console.log("[RevenueCat] No user found in AsyncStorage - will remain anonymous until login");
         }
       } catch (loginError: any) {
         // Log error but don't fail initialization - user can log in later
-        console.warn("[RevenueCat] ⚠️ Failed to log in user:", loginError?.message);
-        console.warn("[RevenueCat] User purchases will be tracked anonymously until login");
+        console.error("[RevenueCat] ❌ Failed to log in user from AsyncStorage:", loginError);
+        console.error("[RevenueCat] Error message:", loginError?.message);
+        console.error("[RevenueCat] Error stack:", loginError?.stack);
+        console.warn("[RevenueCat] User purchases will be tracked anonymously until explicit login");
       }
 
       // Get initial customer info
