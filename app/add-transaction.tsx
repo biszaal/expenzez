@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderRadius: 12,
-    backgroundColor: "#F9FAFB",
+    // backgroundColor removed - applied dynamically for dark mode support
   },
   currencySymbol: {
     fontSize: 18,
