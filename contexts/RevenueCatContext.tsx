@@ -515,17 +515,25 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
    */
   const loginUser = async (userId: string) => {
     try {
-      if (!Purchases || !userId) {
-        console.log("[RevenueCat] Cannot login: Purchases not initialized or userId empty");
+      if (!Purchases) {
+        console.error("[RevenueCat] ❌❌❌ CRITICAL: Purchases not initialized! RevenueCat SDK failed to load.");
+        console.error("[RevenueCat] This means subscriptions will be tied to device, not user account!");
+        return;
+      }
+
+      if (!userId) {
+        console.error("[RevenueCat] ❌ Cannot login: userId is empty");
         return;
       }
 
       console.log("[RevenueCat] 👤 Logging in user:", userId);
+      console.log("[RevenueCat] Purchases SDK status:", !!Purchases);
 
       // Login to RevenueCat with user ID
       const { customerInfo: info } = await Purchases.logIn(userId);
 
       console.log("[RevenueCat] ✅ User logged in successfully");
+      console.log("[RevenueCat] Customer ID:", info.originalAppUserId);
 
       // Update subscription status for this user
       await processCustomerInfo(info);
@@ -534,6 +542,8 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       await getOfferings();
     } catch (error: any) {
       console.error("[RevenueCat] ❌ Login failed:", error);
+      console.error("[RevenueCat] Error message:", error?.message);
+      console.error("[RevenueCat] Error stack:", error?.stack);
       // Don't throw - allow app to continue even if RevenueCat login fails
     }
   };
