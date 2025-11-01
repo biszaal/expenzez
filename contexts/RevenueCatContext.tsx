@@ -77,7 +77,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const initializeRevenueCat = async () => {
     try {
-      console.log("[RevenueCat] Initializing SDK - Direct Implementation...");
+      console.log("[RevenueCat] 🚀 Initializing SDK...");
       console.log("[RevenueCat] Platform:", Platform.OS);
       console.log("[RevenueCat] App ownership:", Constants.appOwnership);
       console.log("[RevenueCat] Execution environment:", Constants.executionEnvironment);
@@ -94,7 +94,11 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
           console.log("[RevenueCat] ✅ SDK module loaded successfully");
         } catch (importError) {
           console.error("[RevenueCat] ❌ Failed to import SDK:", importError);
-          throw new Error("RevenueCat SDK not available");
+          console.error("[RevenueCat] Make sure react-native-purchases is installed");
+          console.error("[RevenueCat] Run: npx expo install react-native-purchases");
+          setIsLoading(false);
+          setIsPro(false);
+          return;
         }
       }
 
@@ -108,11 +112,16 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (!apiKey) {
         console.error("[RevenueCat] ❌ No API key found for platform:", Platform.OS);
-        throw new Error(`RevenueCat API key missing for ${Platform.OS}`);
+        console.error("[RevenueCat] Please set EXPO_PUBLIC_REVENUECAT_IOS_API_KEY or EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY");
+        console.error("[RevenueCat] For Expo Go: Create .env.local with your API keys");
+        console.error("[RevenueCat] For Production: Set EAS secrets with: eas secret:create");
+        setIsLoading(false);
+        setIsPro(false);
+        return;
       }
 
       // Configure SDK with API key
-      console.log("[RevenueCat] Configuring SDK with API key...");
+      console.log("[RevenueCat] 🔧 Configuring SDK with API key...");
       if (Platform.OS === "ios") {
         await Purchases.configure({ apiKey: REVENUECAT_IOS_KEY });
       } else if (Platform.OS === "android") {
@@ -120,8 +129,10 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       console.log("[RevenueCat] ✅ SDK configured successfully");
 
-      // Set log level for debugging (use DEBUG in TestFlight, ERROR in production)
-      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+      // Set log level for debugging (use DEBUG for development, ERROR for production)
+      const logLevel = __DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR;
+      Purchases.setLogLevel(logLevel);
+      console.log("[RevenueCat] 📊 Log level set to:", __DEV__ ? "DEBUG" : "ERROR");
 
       // Set user ID if available
       const userId = await AsyncStorage.getItem("user");
