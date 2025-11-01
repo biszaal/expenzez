@@ -290,6 +290,17 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   const processCustomerInfo = async (info: any) => {
     setCustomerInfo(info);
 
+    // Handle undefined/null customerInfo (happens during logout)
+    if (!info || !info.entitlements || !info.entitlements.active) {
+      console.log("[RevenueCat] ⚠️ No customer info or entitlements (logged out state)");
+      setIsPro(false);
+      setHasActiveSubscription(false);
+      setIsInTrialPeriod(false);
+      setSubscriptionExpiryDate(null);
+      setActiveProductIdentifier(null);
+      return;
+    }
+
     // Log all active entitlements for debugging
     console.log("[RevenueCat] Active entitlements:", Object.keys(info.entitlements.active));
     console.log("[RevenueCat] All entitlements:", info.entitlements);
