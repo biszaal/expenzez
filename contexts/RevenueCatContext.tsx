@@ -191,15 +191,24 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   const processCustomerInfo = async (info: any) => {
     setCustomerInfo(info);
 
-    // Check if user has active "premium" entitlement
-    const hasPremium = info.entitlements.active["premium"] !== undefined;
+    // Log all active entitlements for debugging
+    console.log("[RevenueCat] Active entitlements:", Object.keys(info.entitlements.active));
+    console.log("[RevenueCat] All entitlements:", info.entitlements);
+
+    // Check if user has active "premium" or "Premium" entitlement (case-insensitive check)
+    const premiumEntitlement =
+      info.entitlements.active["premium"] ||
+      info.entitlements.active["Premium"];
+
+    const hasPremium = premiumEntitlement !== undefined;
+
+    console.log("[RevenueCat] Has premium entitlement:", hasPremium);
+    console.log("[RevenueCat] Premium entitlement object:", premiumEntitlement);
 
     setIsPro(hasPremium);
     setHasActiveSubscription(hasPremium);
 
     if (hasPremium) {
-      const premiumEntitlement = info.entitlements.active["premium"];
-
       // Check if in trial period
       const inTrial =
         premiumEntitlement.willRenew &&
@@ -215,12 +224,15 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       // Get active product identifier
       setActiveProductIdentifier(premiumEntitlement.productIdentifier);
 
-      console.log("[RevenueCat] User has premium access", {
+      console.log("[RevenueCat] ✅ User has premium access", {
         inTrial,
         expiryDate: expiryDateString,
         productId: premiumEntitlement.productIdentifier,
+        willRenew: premiumEntitlement.willRenew,
+        periodType: premiumEntitlement.periodType,
       });
     } else {
+      console.log("[RevenueCat] ❌ User does NOT have premium access");
       setIsInTrialPeriod(false);
       setSubscriptionExpiryDate(null);
       setActiveProductIdentifier(null);
@@ -248,11 +260,15 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
         return { success: false, error: "RevenueCat not available" };
       }
 
+      console.log("[RevenueCat] 🛒 Starting purchase for package:", pkg.identifier);
       setIsLoading(true);
 
       const { customerInfo: info } = await Purchases.purchasePackage(pkg);
 
+      console.log("[RevenueCat] 💳 Purchase completed, processing customer info...");
       await processCustomerInfo(info);
+
+      console.log("[RevenueCat] ✅ Purchase successful, isPro should now be:", info.entitlements.active["Premium"] !== undefined || info.entitlements.active["premium"] !== undefined);
       setIsLoading(false);
 
       return { success: true };
@@ -261,8 +277,11 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Handle user cancellation
       if (error.userCancelled) {
+        console.log("[RevenueCat] ⚠️ Purchase cancelled by user");
         return { success: false, error: "Purchase cancelled" };
       }
+
+      console.error("[RevenueCat] ❌ Purchase failed:", error);
       return {
         success: false,
         error: error.message || "Purchase failed. Please try again.",
