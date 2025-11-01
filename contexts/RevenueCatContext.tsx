@@ -77,24 +77,12 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const initializeRevenueCat = async () => {
     try {
-      console.log("[RevenueCat] Initializing SDK...");
+      console.log("[RevenueCat] Initializing SDK - Direct Implementation...");
+      console.log("[RevenueCat] Platform:", Platform.OS);
       console.log("[RevenueCat] App ownership:", Constants.appOwnership);
       console.log("[RevenueCat] Execution environment:", Constants.executionEnvironment);
 
-      // FIXED: Proper Expo Go detection for TestFlight/Production builds
-      // Only disable in actual Expo Go (not TestFlight or production)
-      const isExpoGo = Constants.appOwnership === "expo";
-
-      if (isExpoGo) {
-        console.log("[RevenueCat] Running in Expo Go - subscriptions disabled");
-        setIsLoading(false);
-        setIsPro(false);
-        return;
-      }
-
-      console.log("[RevenueCat] Running in standalone/TestFlight/production build");
-
-      // Try to import RevenueCat for development builds
+      // Import RevenueCat SDK
       if (!Purchases) {
         try {
           const revenueCatModule = require("react-native-purchases");
@@ -103,41 +91,37 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
           PurchasesPackage = revenueCatModule.PurchasesPackage;
           PurchasesOfferings = revenueCatModule.PurchasesOfferings;
           LOG_LEVEL = revenueCatModule.LOG_LEVEL;
-          console.log("[RevenueCat] SDK module loaded successfully");
+          console.log("[RevenueCat] ✅ SDK module loaded successfully");
         } catch (importError) {
-          console.error("[RevenueCat] Failed to import SDK:", importError);
-          console.error("[RevenueCat] Make sure react-native-purchases is installed");
-          setIsLoading(false);
-          setIsPro(false);
-          return;
+          console.error("[RevenueCat] ❌ Failed to import SDK:", importError);
+          throw new Error("RevenueCat SDK not available");
         }
       }
 
-      // Check if API keys are configured
+      // Get API key for current platform
       const apiKey =
         Platform.OS === "ios" ? REVENUECAT_IOS_KEY : REVENUECAT_ANDROID_KEY;
 
-      console.log("[RevenueCat] Platform:", Platform.OS);
-      console.log("[RevenueCat] API key present:", !!apiKey);
+      console.log("[RevenueCat] iOS key present:", !!REVENUECAT_IOS_KEY);
+      console.log("[RevenueCat] Android key present:", !!REVENUECAT_ANDROID_KEY);
+      console.log("[RevenueCat] Selected API key present:", !!apiKey);
 
       if (!apiKey) {
-        console.error("[RevenueCat] No API key found for platform:", Platform.OS);
-        console.error("[RevenueCat] iOS key:", REVENUECAT_IOS_KEY ? "present" : "MISSING");
-        console.error("[RevenueCat] Android key:", REVENUECAT_ANDROID_KEY ? "present" : "MISSING");
-        setIsLoading(false);
-        setIsPro(false);
-        return;
+        console.error("[RevenueCat] ❌ No API key found for platform:", Platform.OS);
+        throw new Error(`RevenueCat API key missing for ${Platform.OS}`);
       }
 
-      // Configure SDK
+      // Configure SDK with API key
+      console.log("[RevenueCat] Configuring SDK with API key...");
       if (Platform.OS === "ios") {
         await Purchases.configure({ apiKey: REVENUECAT_IOS_KEY });
       } else if (Platform.OS === "android") {
         await Purchases.configure({ apiKey: REVENUECAT_ANDROID_KEY });
       }
+      console.log("[RevenueCat] ✅ SDK configured successfully");
 
-      // Set log level for production
-      Purchases.setLogLevel(LOG_LEVEL.ERROR);
+      // Set log level for debugging (use DEBUG in TestFlight, ERROR in production)
+      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
 
       // Set user ID if available
       const userId = await AsyncStorage.getItem("user");
