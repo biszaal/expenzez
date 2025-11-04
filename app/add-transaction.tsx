@@ -13,13 +13,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../contexts/ThemeContext";
 import { transactionAPI } from "../services/api";
 import { useXP } from "../hooks/useXP";
+import { useAuth } from "./auth/AuthContext";
 import {
   expenseKeywords,
   incomeKeywords,
 } from "../services/autoDetectionKeywords";
+import { StreakService } from "../services/streakService";
 import { MilestoneService } from "../services/milestoneService";
 
 interface Category {
@@ -70,6 +73,7 @@ const incomeCategories: Category[] = [
 
 export default function AddTransaction() {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const { awardXP } = useXP();
   const [transactionType, setTransactionType] = useState<"expense" | "income">(
     "expense"
@@ -201,15 +205,38 @@ export default function AddTransaction() {
 
       // Award XP for adding a transaction (for both expenses and income)
       if (result) {
-        console.log(
-          "✅ Transaction saved successfully with ID:",
-          result.transaction?.id
-        );
+        // Save transaction data to AsyncStorage for immediate display on home screen
+        const newTransaction = {
+          id: result.transaction?.id || `tx_${Date.now()}`,
+          amount: transactionAmount,
+          description: name.trim(),
+          category: selectedCategory.name,
+          type: transactionType === "expense" ? "debit" : "credit",
+          date: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
+          merchant: name.trim(),
+          accountId: "manual",
+          bankName: "Manual Entry",
+          originalAmount: Math.abs(transactionAmount),
+          accountType: "Manual Account",
+          isPending: false,
+        };
 
-        // Transaction saved successfully - balance will be updated by backend
-        console.log(
-          "💰 [AddTransaction] Transaction saved, balance will be updated by backend"
-        );
+        try {
+          await AsyncStorage.setItem(
+            "newTransaction",
+            JSON.stringify(newTransaction)
+          );
+          console.log(
+            "💰 [AddTransaction] Transaction saved to AsyncStorage for immediate display:",
+            newTransaction
+          );
+        } catch (error) {
+          console.error(
+            "💰 [AddTransaction] Error saving to AsyncStorage:",
+            error
+          );
+        }
 
         Alert.alert(
           "Success",
@@ -247,16 +274,16 @@ export default function AddTransaction() {
             // Award XP for adding expense
             await awardXP("add-expense");
 
-            // Track daily streak (if StreakService is available)
-            // try {
-            //   await StreakService.incrementStreak();
-            //   console.log("🔥 [AddTransaction] Daily streak recorded");
-            // } catch (streakError) {
-            //   console.error(
-            //     "[AddTransaction] Error recording streak:",
-            //     streakError
-            //   );
-            // }
+            // Track daily streak
+            try {
+              await StreakService.recordDailyActivity();
+              console.log("🔥 [AddTransaction] Daily streak recorded");
+            } catch (streakError) {
+              console.error(
+                "[AddTransaction] Error recording streak:",
+                streakError
+              );
+            }
           } else {
             // Award XP for adding income
             await awardXP("add-income");
@@ -294,11 +321,7 @@ export default function AddTransaction() {
               onPress={() => router.back()}
               style={styles.backButton}
             >
-              <Ionicons
-                name="arrow-back"
-                size={24}
-                color={colors.text.primary}
-              />
+              <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
               Add {transactionType === "expense" ? "Expense" : "Income"}
@@ -316,7 +339,7 @@ export default function AddTransaction() {
                   backgroundColor:
                     transactionType === "expense"
                       ? colors.primary.main
-                      : colors.background.primary,
+                      : colors.card.background,
                 },
               ]}
               onPress={() => {
@@ -329,9 +352,7 @@ export default function AddTransaction() {
                   styles.typeButtonText,
                   {
                     color:
-                      transactionType === "expense"
-                        ? "#FFFFFF"
-                        : colors.text.primary,
+                      transactionType === "expense" ? "#FFFFFF" : colors.text.primary,
                   },
                 ]}
               >
@@ -344,9 +365,7 @@ export default function AddTransaction() {
                 transactionType === "income" && styles.typeButtonActive,
                 {
                   backgroundColor:
-                    transactionType === "income"
-                      ? colors.primary.main
-                      : colors.background.primary,
+                    transactionType === "income" ? colors.primary.main : colors.card.background,
                 },
               ]}
               onPress={() => {
@@ -359,9 +378,7 @@ export default function AddTransaction() {
                   styles.typeButtonText,
                   {
                     color:
-                      transactionType === "income"
-                        ? "#FFFFFF"
-                        : colors.text.primary,
+                      transactionType === "income" ? "#FFFFFF" : colors.text.primary,
                   },
                 ]}
               >
@@ -374,20 +391,18 @@ export default function AddTransaction() {
           <View style={styles.form}>
             {/* Name Field */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text.primary }]}>
-                Name
-              </Text>
+              <Text style={[styles.label, { color: colors.text.primary }]}>Name</Text>
               <TextInput
                 style={[
                   styles.input,
                   {
-                    backgroundColor: colors.background.primary,
+                    backgroundColor: colors.card.background,
                     color: colors.text.primary,
-                    borderColor: colors.border.light,
+                    borderColor: colors.border.medium,
                   },
                 ]}
                 placeholder="Enter transaction name"
-                placeholderTextColor={colors.text.secondary}
+                placeholderTextColor={colors.secondary.main}
                 value={name}
                 onChangeText={handleNameChange}
                 autoFocus
@@ -396,29 +411,22 @@ export default function AddTransaction() {
 
             {/* Amount Field */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text.primary }]}>
-                Amount
-              </Text>
+              <Text style={[styles.label, { color: colors.text.primary }]}>Amount</Text>
               <View style={styles.amountContainer}>
-                <Text
-                  style={[
-                    styles.currencySymbol,
-                    { color: colors.text.primary },
-                  ]}
-                >
+                <Text style={[styles.currencySymbol, { color: colors.text.primary }]}>
                   £
                 </Text>
                 <TextInput
                   style={[
                     styles.amountInput,
                     {
-                      backgroundColor: colors.background.primary,
+                      backgroundColor: colors.card.background,
                       color: colors.text.primary,
-                      borderColor: colors.border.light,
+                      borderColor: colors.border.medium,
                     },
                   ]}
                   placeholder="0.00"
-                  placeholderTextColor={colors.text.secondary}
+                  placeholderTextColor={colors.secondary.main}
                   value={amount}
                   onChangeText={handleAmountChange}
                   keyboardType="numeric"
@@ -441,11 +449,11 @@ export default function AddTransaction() {
                         backgroundColor:
                           selectedCategory.id === category.id
                             ? category.color
-                            : colors.background.primary,
+                            : colors.card.background,
                         borderColor:
                           selectedCategory.id === category.id
                             ? category.color
-                            : colors.border.light,
+                            : colors.border.medium,
                       },
                     ]}
                     onPress={() => setSelectedCategory(category)}
