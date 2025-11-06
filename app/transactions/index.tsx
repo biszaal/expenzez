@@ -371,6 +371,11 @@ export default function TransactionsScreen() {
   // Generate available months from ALL loaded transactions (cache), not just filtered view
   const availableMonths = useMemo(() => {
     const monthsSet = new Set<string>();
+
+    // Always include current month
+    const currentMonth = dayjs().format("YYYY-MM");
+    monthsSet.add(currentMonth);
+
     // Use allLoadedTransactions to show all months that have been fetched
     allLoadedTransactions.forEach((tx) => {
       const month = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
@@ -541,45 +546,10 @@ export default function TransactionsScreen() {
     );
   }
 
-  if (transactions.length === 0 && !loading) {
-    return (
-      <SafeAreaView
-        style={[
-          styles.container,
-          { backgroundColor: colors.background.primary },
-        ]}
-      >
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={[
-              styles.backButton,
-              { backgroundColor: colors.background.secondary },
-            ]}
-            onPress={() => router.back()}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color={colors.primary.main}
-            />
-          </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-              ALL TRANSACTIONS
-            </Text>
-          </View>
-          <View style={styles.menuButton} />
-        </View>
-
-        <EmptyState
-          type="transactions"
-          onAction={() => router.push("/add-transaction")}
-          secondaryActionLabel="Import CSV"
-          onSecondaryAction={() => router.push("/import-csv")}
-        />
-      </SafeAreaView>
-    );
-  }
+  // Remove this block - we want to show the month picker even when there are no transactions
+  // if (transactions.length === 0 && !loading) {
+  //   return empty state
+  // }
 
   return (
     <SafeAreaView
@@ -857,10 +827,12 @@ export default function TransactionsScreen() {
               pendingTransactions.length === 0 && (
                 <EmptyState
                   type="transactions"
-                  title={searchQuery ? "No matches found" : "No transactions"}
+                  title={searchQuery ? "No matches found" : "No transactions yet"}
                   description={
                     searchQuery
                       ? "Try adjusting your search or filter criteria"
+                      : selectedMonth
+                      ? `No transactions for ${dayjs(selectedMonth).format("MMMM YYYY")}`
                       : "No transactions for this period"
                   }
                 />
