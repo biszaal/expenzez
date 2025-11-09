@@ -81,10 +81,6 @@ export default function HomeScreen() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [totalBalance, setTotalBalance] = useState(0);
 
-  // Enhanced balance tracking
-  const [manualBalance, setManualBalance] = useState<number | null>(null);
-  const [isManualBalance, setIsManualBalance] = useState(false);
-
   // UI state
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -119,90 +115,6 @@ export default function HomeScreen() {
     }
   };
 
-  // Load manual balance from database
-  const loadManualBalance = async () => {
-    try {
-      const response = await api.get("/profile");
-      const profile = response.data?.profile ?? response.data;
-
-      if (profile) {
-        // Only set manual balance and mode, don't override totalBalance
-        // The balance will be set from the API response in loadData()
-        if (
-          profile.manualBalance !== null &&
-          profile.manualBalance !== undefined
-        ) {
-          setManualBalance(profile.manualBalance);
-        }
-        if (profile.isManualBalance !== undefined) {
-          setIsManualBalance(Boolean(profile.isManualBalance));
-        }
-      }
-    } catch (error) {
-      console.error("Error loading manual balance:", error);
-    }
-  };
-
-  // Save manual balance to database
-  const saveManualBalance = async (balance: number) => {
-    try {
-      console.log("🔍 [saveManualBalance] Setting manual balance:", balance);
-      const response = await api.put("/profile", {
-        manualBalance: balance,
-        isManualBalance: true,
-      });
-
-      const profile = response.data?.profile ?? response.data;
-      console.log("🔍 [saveManualBalance] Profile response:", {
-        manualBalance: profile?.manualBalance,
-        isManualBalance: profile?.isManualBalance,
-        cachedBalance: profile?.cachedBalance,
-      });
-
-      setManualBalance(profile?.manualBalance ?? balance);
-      setIsManualBalance(profile?.isManualBalance ?? true);
-
-      await balanceAPI.invalidateCache().catch(() => {});
-      return true;
-    } catch (error) {
-      console.error("Error saving manual balance:", error);
-      return false;
-    }
-  };
-
-  // Clear manual balance (use calculated balance)
-  const clearManualBalance = async () => {
-    try {
-      const response = await api.put("/profile", {
-        isManualBalance: false,
-      });
-
-      const profile = response.data?.profile ?? response.data;
-      setManualBalance(profile?.manualBalance ?? null);
-      setIsManualBalance(Boolean(profile?.isManualBalance));
-
-      await balanceAPI.invalidateCache().catch(() => {});
-      return true;
-    } catch (error) {
-      console.error("Error clearing manual balance:", error);
-      return false;
-    }
-  };
-
-  // Get current display balance (manual or calculated)
-  const getDisplayBalance = () => {
-    const displayBalance =
-      isManualBalance && manualBalance !== null ? manualBalance : totalBalance;
-
-    console.log("🔍 [getDisplayBalance] Debug:", {
-      isManualBalance,
-      manualBalance,
-      totalBalance,
-      displayBalance,
-    });
-
-    return displayBalance;
-  };
 
   // Load data function
   const loadData = async (isRefresh = false) => {
@@ -332,26 +244,9 @@ export default function HomeScreen() {
         console.log(`✅ Balance from server summary: ${finalBalance}`);
       }
 
-      // Set the appropriate balance based on user's balance mode
-      if (isManualBalance) {
-        setManualBalance(finalBalance);
-        console.log(`✅ Manual balance updated: ${finalBalance}`);
-        console.log("🔍 [Balance Update] State values:", {
-          isManualBalance,
-          finalBalance,
-          currentManualBalance: manualBalance,
-          currentTotalBalance: totalBalance,
-        });
-      } else {
-        setTotalBalance(finalBalance);
-        console.log(`✅ Calculated balance updated: ${finalBalance}`);
-        console.log("🔍 [Balance Update] State values:", {
-          isManualBalance,
-          finalBalance,
-          currentManualBalance: manualBalance,
-          currentTotalBalance: totalBalance,
-        });
-      }
+      // Set calculated balance
+      setTotalBalance(finalBalance);
+      console.log(`✅ Balance updated: ${finalBalance}`);
 
       console.log("💰 [Home] Financial summary:", {
         totalBalance: finalBalance,
@@ -447,9 +342,8 @@ export default function HomeScreen() {
         balanceSummary: balanceSummary,
       });
 
-      // Load user's budget and manual balance
+      // Load user's budget
       await loadUserBudget();
-      await loadManualBalance();
 
       // Clear any existing warnings since we successfully loaded data
       if (allTransactions.length > 0) {
@@ -708,10 +602,7 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <HomeHeader />
           <BalanceCard
-            totalBalance={getDisplayBalance()}
-            isManualBalance={isManualBalance}
-            onEditBalance={saveManualBalance}
-            onClearManualBalance={clearManualBalance}
+            totalBalance={totalBalance}
             getTimeOfDay={getTimeOfDay}
             onRefresh={handleRefreshBalance}
             isRefreshing={balanceRefreshing}
