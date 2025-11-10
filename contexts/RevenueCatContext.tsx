@@ -272,9 +272,9 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       // Get initial customer info
       await updateCustomerInfo();
 
-      // Listen for purchase updates
+      // Listen for purchase updates and sync with backend
       Purchases.addCustomerInfoUpdateListener((info) => {
-        console.log("[RevenueCat] Customer info updated");
+        console.log("[RevenueCat] Customer info updated - syncing with backend");
         processCustomerInfo(info).catch(console.error);
       });
 
@@ -305,13 +305,16 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateCustomerInfo = async () => {
     try {
       if (!Purchases) {
-        setIsPro(false);
+        // Fallback to backend if SDK not available
+        await syncPremiumStatusFromBackend();
         return;
       }
       const info = await Purchases.getCustomerInfo();
       await processCustomerInfo(info);
     } catch (error) {
-      setIsPro(false);
+      console.error("[RevenueCat] Error updating customer info, falling back to backend");
+      // Fallback to backend on error
+      await syncPremiumStatusFromBackend();
     }
   };
 
@@ -375,9 +378,18 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     console.log("[RevenueCat] Has premium entitlement:", hasPremium);
     console.log("[RevenueCat] Premium entitlement object:", premiumEntitlement);
 
-    // Sync with backend to ensure database is up to date
-    await syncPremiumStatusFromBackend();
+    // Delay backend sync to give webhook time to process (webhook processes first)
+    // This ensures DynamoDB has the latest data before we read it
+    setTimeout(async () => {
+      try {
+        console.log("[RevenueCat] 🔄 Syncing with backend after webhook processing delay...");
+        await syncPremiumStatusFromBackend();
+      } catch (error) {
+        console.error("[RevenueCat] ❌ Failed to sync with backend after delay:", error);
+      }
+    }, 3000); // 3 second delay to allow webhook to process
 
+    // Set subscription state from RevenueCat SDK immediately
     setHasActiveSubscription(hasPremium);
 
     if (hasPremium) {
@@ -574,21 +586,26 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   /**
    * Login user to RevenueCat
    * Links subscriptions to this specific user ID
+   * ALWAYS syncs subscription status from backend regardless of RevenueCat SDK availability
    */
   const loginUser = async (userId: string) => {
     try {
-      if (!Purchases) {
-        console.error("[RevenueCat] ❌❌❌ CRITICAL: Purchases not initialized! RevenueCat SDK failed to load.");
-        console.error("[RevenueCat] This means subscriptions will be tied to device, not user account!");
-        return;
-      }
-
       if (!userId) {
         console.error("[RevenueCat] ❌ Cannot login: userId is empty");
         return;
       }
 
       console.log("[RevenueCat] 👤 Logging in user:", userId);
+
+      // ALWAYS sync from backend first - this is the source of truth
+      await syncPremiumStatusFromBackend();
+
+      // Only try RevenueCat SDK login if SDK is available
+      if (!Purchases) {
+        console.warn("[RevenueCat] ⚠️ RevenueCat SDK not initialized - using backend subscription status only");
+        return;
+      }
+
       console.log("[RevenueCat] Purchases SDK status:", !!Purchases);
 
       // Login to RevenueCat with user ID
@@ -606,7 +623,9 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("[RevenueCat] ❌ Login failed:", error);
       console.error("[RevenueCat] Error message:", error?.message);
       console.error("[RevenueCat] Error stack:", error?.stack);
-      // Don't throw - allow app to continue even if RevenueCat login fails
+
+      // Fallback: sync from backend even if RevenueCat fails
+      await syncPremiumStatusFromBackend();
     }
   };
 
