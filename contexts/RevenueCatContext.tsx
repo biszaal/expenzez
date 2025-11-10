@@ -7,6 +7,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
+import { api } from "../services/config/apiClient";
 
 // RevenueCat module variables - will be set during initialization
 let Purchases: any = null;
@@ -314,13 +315,45 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  /**
+   * Sync premium status from backend DynamoDB
+   * This ensures subscription status persists across logout/login
+   */
+  const syncPremiumStatusFromBackend = async () => {
+    try {
+      console.log("[RevenueCat] 🔄 Syncing premium status from backend...");
+      const response = await api.get("/profile");
+      const profile = response.data?.profile ?? response.data;
+
+      if (profile && profile.isPremium !== undefined) {
+        console.log("[RevenueCat] ✅ Backend isPremium:", profile.isPremium);
+        setIsPro(profile.isPremium);
+        setHasActiveSubscription(profile.isPremium);
+
+        console.log("[RevenueCat] 📊 Subscription details from backend:", {
+          isPremium: profile.isPremium,
+          subscriptionStatus: profile.subscriptionStatus,
+          subscriptionTier: profile.subscriptionTier,
+        });
+      } else {
+        console.log("[RevenueCat] ⚠️ No isPremium field in backend profile");
+      }
+    } catch (error: any) {
+      console.error("[RevenueCat] ❌ Failed to sync from backend:", error);
+      // Don't throw - allow RevenueCat SDK to be source of truth if backend fails
+    }
+  };
+
   const processCustomerInfo = async (info: any) => {
     setCustomerInfo(info);
 
     // Handle undefined/null customerInfo (happens during logout)
     if (!info || !info.entitlements || !info.entitlements.active) {
       console.log("[RevenueCat] ⚠️ No customer info or entitlements (logged out state)");
-      setIsPro(false);
+
+      // Sync with backend to get persistent subscription status
+      await syncPremiumStatusFromBackend();
+
       setHasActiveSubscription(false);
       setIsInTrialPeriod(false);
       setSubscriptionExpiryDate(null);
@@ -342,7 +375,9 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     console.log("[RevenueCat] Has premium entitlement:", hasPremium);
     console.log("[RevenueCat] Premium entitlement object:", premiumEntitlement);
 
-    setIsPro(hasPremium);
+    // Sync with backend to ensure database is up to date
+    await syncPremiumStatusFromBackend();
+
     setHasActiveSubscription(hasPremium);
 
     if (hasPremium) {
