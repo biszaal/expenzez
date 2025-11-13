@@ -340,6 +340,14 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
         setIsPro(isPremium);
         setHasActiveSubscription(isPremium);
 
+        // Set expiry date if available
+        if (expiresAt) {
+          setSubscriptionExpiryDate(new Date(expiresAt));
+          console.log("[RevenueCat] 📅 Subscription expires at:", new Date(expiresAt));
+        } else {
+          setSubscriptionExpiryDate(null);
+        }
+
         return true;
       }
     } catch (error: any) {
