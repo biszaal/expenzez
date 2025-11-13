@@ -36,6 +36,7 @@ interface RevenueCatContextType {
   activeProductIdentifier: string | null;
   loginUser: (userId: string) => Promise<void>;
   logoutUser: () => Promise<void>;
+  syncSubscription: (userId: string) => Promise<boolean>;
 }
 
 const RevenueCatContext = createContext<RevenueCatContextType>({
@@ -53,6 +54,7 @@ const RevenueCatContext = createContext<RevenueCatContextType>({
   activeProductIdentifier: null,
   loginUser: async () => {},
   logoutUser: async () => {},
+  syncSubscription: async () => false,
 });
 
 export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -316,6 +318,35 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       // Fallback to backend on error
       await syncPremiumStatusFromBackend();
     }
+  };
+
+  /**
+   * Sync subscription status directly from RevenueCat API
+   * This is the most authoritative source of truth
+   */
+  const syncFromRevenueCat = async (userId: string) => {
+    try {
+      console.log("[RevenueCat] 🔄 Syncing subscription from RevenueCat API...");
+      const response = await api.post("/subscription/sync", { userId });
+
+      if (response.data?.success) {
+        const { isPremium, tier, expiresAt } = response.data;
+        console.log("[RevenueCat] ✅ Synced from RevenueCat API:", {
+          isPremium,
+          tier,
+          expiresAt,
+        });
+
+        setIsPro(isPremium);
+        setHasActiveSubscription(isPremium);
+
+        return true;
+      }
+    } catch (error: any) {
+      console.error("[RevenueCat] ❌ Failed to sync from RevenueCat API:", error);
+      // Don't throw - will fallback to profile endpoint
+    }
+    return false;
   };
 
   /**
@@ -586,7 +617,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   /**
    * Login user to RevenueCat
    * Links subscriptions to this specific user ID
-   * ALWAYS syncs subscription status from backend regardless of RevenueCat SDK availability
+   * ALWAYS syncs subscription status from RevenueCat API first (most authoritative)
    */
   const loginUser = async (userId: string) => {
     try {
@@ -597,12 +628,18 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
 
       console.log("[RevenueCat] 👤 Logging in user:", userId);
 
-      // ALWAYS sync from backend first - this is the source of truth
-      await syncPremiumStatusFromBackend();
+      // PRIORITY 1: Sync directly from RevenueCat API (most authoritative source)
+      const apiSyncSuccess = await syncFromRevenueCat(userId);
+
+      // PRIORITY 2: Fallback to backend DynamoDB if API sync fails
+      if (!apiSyncSuccess) {
+        console.log("[RevenueCat] ⚠️ API sync failed, falling back to backend DynamoDB");
+        await syncPremiumStatusFromBackend();
+      }
 
       // Only try RevenueCat SDK login if SDK is available
       if (!Purchases) {
-        console.warn("[RevenueCat] ⚠️ RevenueCat SDK not initialized - using backend subscription status only");
+        console.warn("[RevenueCat] ⚠️ RevenueCat SDK not initialized - using synced subscription status");
         return;
       }
 
@@ -624,7 +661,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("[RevenueCat] Error message:", error?.message);
       console.error("[RevenueCat] Error stack:", error?.stack);
 
-      // Fallback: sync from backend even if RevenueCat fails
+      // Final fallback: sync from backend even if RevenueCat fails
       await syncPremiumStatusFromBackend();
     }
   };
@@ -681,6 +718,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     activeProductIdentifier,
     loginUser,
     logoutUser,
+    syncSubscription: syncFromRevenueCat,
   };
 
   return (
