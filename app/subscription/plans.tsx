@@ -93,11 +93,14 @@ export default function SubscriptionPlansScreen() {
     subscriptionExpiryDate,
     isInTrialPeriod,
     customerInfo,
+    syncSubscription,
   } = useRevenueCat();
+  const { user } = useAuth();
 
   const [selectedPackage, setSelectedPackage] =
     useState<PurchasesPackage | null>(null);
   const [purchasing, setPurchasing] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   // Auto-select annual package (most popular)
   useEffect(() => {
@@ -215,6 +218,37 @@ export default function SubscriptionPlansScreen() {
       );
     } finally {
       setPurchasing(false);
+    }
+  };
+
+  const handleSyncSubscription = async () => {
+    if (!user?.userId) {
+      Alert.alert("Error", "User ID not found. Please log in again.");
+      return;
+    }
+
+    setSyncing(true);
+    try {
+      const success = await syncSubscription(user.userId);
+
+      if (success) {
+        Alert.alert(
+          "Sync Complete",
+          "Your subscription status has been synced from RevenueCat successfully!"
+        );
+      } else {
+        Alert.alert(
+          "Sync Failed",
+          "Failed to sync subscription status. Please try again."
+        );
+      }
+    } catch (error: any) {
+      Alert.alert(
+        "Sync Error",
+        error.message || "Failed to sync subscription. Please try again."
+      );
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -363,6 +397,129 @@ export default function SubscriptionPlansScreen() {
             })()}
           </View>
 
+          {/* Subscription Details */}
+          <View style={[styles.detailsCard, { backgroundColor: colors.background.primary }]}>
+            <Text style={[styles.detailsTitle, { color: colors.text.primary }]}>
+              Subscription Details
+            </Text>
+
+            {(() => {
+              const premiumEntitlement =
+                customerInfo?.entitlements?.active?.["premium"] ||
+                customerInfo?.entitlements?.active?.["Premium"];
+              const productId = premiumEntitlement?.productIdentifier || "";
+              const willRenew = premiumEntitlement?.willRenew ?? true;
+              const expiryDate = subscriptionExpiryDate || subscriptionStatus.expiryDate;
+              const inTrial = isInTrialPeriod !== undefined ? isInTrialPeriod : subscriptionStatus.isInTrial;
+
+              // Determine tier and price
+              let tier = "Premium";
+              let price = "";
+              if (productId.includes("monthly")) {
+                tier = "Monthly Plan";
+                price = "£4.99/month";
+              } else if (productId.includes("annual") || productId.includes("yearly")) {
+                tier = "Annual Plan";
+                price = "£49.99/year";
+              }
+
+              return (
+                <>
+                  {/* Subscription Tier */}
+                  <View style={styles.detailRow}>
+                    <View style={styles.detailLabelContainer}>
+                      <Ionicons name="pricetag" size={16} color={colors.text.secondary} />
+                      <Text style={[styles.detailLabel, { color: colors.text.secondary }]}>
+                        Plan
+                      </Text>
+                    </View>
+                    <Text style={[styles.detailValue, { color: colors.text.primary }]}>
+                      {tier}
+                    </Text>
+                  </View>
+
+                  {/* Price */}
+                  {price && (
+                    <View style={styles.detailRow}>
+                      <View style={styles.detailLabelContainer}>
+                        <Ionicons name="card" size={16} color={colors.text.secondary} />
+                        <Text style={[styles.detailLabel, { color: colors.text.secondary }]}>
+                          Price
+                        </Text>
+                      </View>
+                      <Text style={[styles.detailValue, { color: colors.text.primary }]}>
+                        {price}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Status */}
+                  <View style={styles.detailRow}>
+                    <View style={styles.detailLabelContainer}>
+                      <Ionicons name="information-circle" size={16} color={colors.text.secondary} />
+                      <Text style={[styles.detailLabel, { color: colors.text.secondary }]}>
+                        Status
+                      </Text>
+                    </View>
+                    <View style={styles.statusBadge}>
+                      <View style={[
+                        styles.statusDot,
+                        { backgroundColor: inTrial ? colors.warning.main : colors.success.main }
+                      ]} />
+                      <Text style={[
+                        styles.detailValue,
+                        { color: inTrial ? colors.warning.main : colors.success.main }
+                      ]}>
+                        {inTrial ? "Free Trial" : "Active"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Renewal Status */}
+                  <View style={styles.detailRow}>
+                    <View style={styles.detailLabelContainer}>
+                      <Ionicons name="sync" size={16} color={colors.text.secondary} />
+                      <Text style={[styles.detailLabel, { color: colors.text.secondary }]}>
+                        Auto-Renewal
+                      </Text>
+                    </View>
+                    <View style={styles.statusBadge}>
+                      <View style={[
+                        styles.statusDot,
+                        { backgroundColor: willRenew ? colors.success.main : colors.error.main }
+                      ]} />
+                      <Text style={[
+                        styles.detailValue,
+                        { color: willRenew ? colors.success.main : colors.error.main }
+                      ]}>
+                        {willRenew ? "Enabled" : "Disabled"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Next Billing/End Date */}
+                  {expiryDate && (
+                    <View style={styles.detailRow}>
+                      <View style={styles.detailLabelContainer}>
+                        <Ionicons name="calendar" size={16} color={colors.text.secondary} />
+                        <Text style={[styles.detailLabel, { color: colors.text.secondary }]}>
+                          {willRenew ? "Next Billing" : "Ends On"}
+                        </Text>
+                      </View>
+                      <Text style={[styles.detailValue, { color: colors.text.primary }]}>
+                        {expiryDate.toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              );
+            })()}
+          </View>
+
           {/* Premium Features */}
           <View style={styles.featuresSection}>
             <Text
@@ -389,20 +546,52 @@ export default function SubscriptionPlansScreen() {
             ))}
           </View>
 
-          {/* Restore Purchases */}
-          <TouchableOpacity
-            style={styles.restoreButton}
-            onPress={handleRestorePurchases}
-            disabled={purchasing}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="refresh" size={16} color={colors.primary.main} />
-            <Text
-              style={[styles.restoreButtonText, { color: colors.primary.main }]}
+          {/* Action Buttons */}
+          <View style={styles.actionButtonsContainer}>
+            {/* Sync Subscription */}
+            <TouchableOpacity
+              style={[styles.syncButton, { borderColor: colors.primary.main }]}
+              onPress={handleSyncSubscription}
+              disabled={syncing}
+              activeOpacity={0.8}
             >
-              {purchasing ? "Restoring..." : "Restore Purchases"}
-            </Text>
-          </TouchableOpacity>
+              <Ionicons
+                name={syncing ? "sync" : "cloud-download"}
+                size={16}
+                color={colors.primary.main}
+              />
+              <Text style={[styles.syncButtonText, { color: colors.primary.main }]}>
+                {syncing ? "Syncing..." : "Sync Subscription"}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Manage Subscription */}
+            <TouchableOpacity
+              style={[styles.manageButton, { backgroundColor: colors.primary.main }]}
+              onPress={() => Linking.openURL('https://apps.apple.com/account/subscriptions')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.manageButtonText}>
+                Manage Subscription
+              </Text>
+              <Ionicons name="open-outline" size={16} color="white" />
+            </TouchableOpacity>
+
+            {/* Restore Purchases */}
+            <TouchableOpacity
+              style={styles.restoreButton}
+              onPress={handleRestorePurchases}
+              disabled={purchasing}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="refresh" size={16} color={colors.primary.main} />
+              <Text
+                style={[styles.restoreButtonText, { color: colors.primary.main }]}
+              >
+                {purchasing ? "Restoring..." : "Restore Purchases"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </SafeAreaView>
     );
@@ -1052,6 +1241,86 @@ const styles = StyleSheet.create({
   restoreButtonText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  detailsCard: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 20,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  detailsTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 20,
+    letterSpacing: 0.2,
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
+  },
+  detailLabelContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  actionButtonsContainer: {
+    marginHorizontal: 20,
+    marginBottom: 24,
+    gap: 12,
+  },
+  syncButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+  },
+  syncButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  manageButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
+  },
+  manageButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "white",
   },
   legalSection: {
     marginHorizontal: 20,
