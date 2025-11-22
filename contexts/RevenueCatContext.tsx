@@ -8,6 +8,7 @@ import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { api } from "../services/config/apiClient";
+import { ENV_CONFIG } from "../config/environment";
 
 // RevenueCat module variables - will be set during initialization
 let Purchases: any = null;
@@ -60,11 +61,27 @@ const RevenueCatContext = createContext<RevenueCatContextType>({
 export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [isPro, setIsPro] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // 🔓 FORCE DEV MODE: Check multiple ways to detect development
+  // 1. __DEV__ flag (React Native development mode)
+  // 2. ENV_CONFIG.isDevelopment (from environment.ts)
+  // 3. API URL check (dev API endpoint = dev mode)
+  const isDevMode = __DEV__ ||
+                    ENV_CONFIG.isDevelopment ||
+                    ENV_CONFIG.apiBaseURL.includes('noat6k04ik'); // Dev API Gateway
+
+  console.log("[RevenueCat] ========================================");
+  console.log("[RevenueCat] 🔧 DEV MODE DETECTION");
+  console.log("[RevenueCat] 🔧 __DEV__ FLAG:", __DEV__);
+  console.log("[RevenueCat] 🔧 ENV_CONFIG.isDevelopment:", ENV_CONFIG.isDevelopment);
+  console.log("[RevenueCat] 🔧 API URL:", ENV_CONFIG.apiBaseURL);
+  console.log("[RevenueCat] 🔧 FINAL isDevMode:", isDevMode);
+  console.log("[RevenueCat] ========================================");
+
+  const [isPro, setIsPro] = useState(isDevMode);
+  const [isLoading, setIsLoading] = useState(!isDevMode);
   const [customerInfo, setCustomerInfo] = useState<any | null>(null);
   const [offerings, setOfferings] = useState<any | null>(null);
-  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(isDevMode);
   const [isInTrialPeriod, setIsInTrialPeriod] = useState(false);
   const [subscriptionExpiryDate, setSubscriptionExpiryDate] =
     useState<Date | null>(null);
@@ -72,9 +89,32 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     string | null
   >(null);
 
+  // Check if we're in dev mode (memoized to prevent recalculation)
+  const isDevModeRef = React.useRef(
+    __DEV__ ||
+    ENV_CONFIG.isDevelopment ||
+    ENV_CONFIG.apiBaseURL.includes('noat6k04ik')
+  );
+
   // Log isPro changes for debugging
   useEffect(() => {
-    console.log("[RevenueCat] isPro changed to:", isPro);
+    console.log("[RevenueCat] ========================================");
+    console.log("[RevenueCat] 🔍 PREMIUM STATUS CHECK");
+    console.log("[RevenueCat] 🔍 __DEV__ flag:", __DEV__);
+    console.log("[RevenueCat] 🔍 isDevMode (from ref):", isDevModeRef.current);
+    console.log("[RevenueCat] 🔍 isPro state:", isPro);
+    console.log("[RevenueCat] 🔍 isLoading:", isLoading);
+    console.log("[RevenueCat] 🔍 hasActiveSubscription:", hasActiveSubscription);
+    console.log("[RevenueCat] ========================================");
+
+    // CRITICAL FIX: REMOVED DANGEROUS DEV MODE GUARD
+    // This was forcing isPro = true even for expired subscriptions
+    // Dev mode testing should be done with actual test subscriptions, not backdoors
+    // if (isDevModeRef.current && !isPro) {
+    //   console.log("[RevenueCat] 🚨 DEV MODE: isPro was false, forcing back to true");
+    //   setIsPro(true);
+    //   setHasActiveSubscription(true);
+    // }
   }, [isPro]);
 
   // Initialize RevenueCat SDK
@@ -88,10 +128,32 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("[RevenueCat] Platform:", Platform.OS);
       console.log("[RevenueCat] App ownership:", Constants.appOwnership);
       console.log("[RevenueCat] Execution environment:", Constants.executionEnvironment);
+      console.log("[RevenueCat] __DEV__ flag:", __DEV__);
+      console.log("[RevenueCat] ENV_CONFIG:", JSON.stringify(ENV_CONFIG));
+
+      // 🔓 DEV MODE: Bypass premium checks in development
+      // Check multiple ways to detect dev mode for maximum reliability
+      const isDevMode = __DEV__ ||
+                        ENV_CONFIG.isDevelopment ||
+                        ENV_CONFIG.apiBaseURL.includes('noat6k04ik'); // Dev API = Dev mode
+
+      if (isDevMode) {
+        console.log("[RevenueCat] ========================================");
+        console.log("[RevenueCat] 🔓 DEVELOPMENT MODE ACTIVATED");
+        console.log("[RevenueCat] ✅ All premium features unlocked");
+        console.log("[RevenueCat] ✅ Setting isPro = true");
+        console.log("[RevenueCat] ✅ Setting hasActiveSubscription = true");
+        console.log("[RevenueCat] ✅ Setting isLoading = false");
+        console.log("[RevenueCat] ========================================");
+        setIsPro(true);
+        setHasActiveSubscription(true);
+        setIsLoading(false);
+        return;
+      }
 
       // Check if we're in Expo Go (which doesn't support native modules)
       const isExpoGo = Constants.appOwnership === "expo" && Constants.executionEnvironment === "storeClient";
-      
+
       if (isExpoGo) {
         console.warn("[RevenueCat] ⚠️ Running in Expo Go - native modules are not available");
         console.warn("[RevenueCat] RevenueCat requires a development build:");
@@ -283,6 +345,11 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       // Fetch available offerings
       await getOfferings();
 
+      // CRITICAL: Sync with backend immediately to validate subscription expiration
+      // This ensures expired trials/subscriptions are caught on app launch
+      console.log("[RevenueCat] 🔄 Syncing with backend to validate subscription status...");
+      await syncPremiumStatusFromBackend();
+
       setIsLoading(false);
       console.log("[RevenueCat] Initialization complete");
     } catch (error: any) {
@@ -305,6 +372,12 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const updateCustomerInfo = async () => {
+    // GUARD: Never update customer info in dev mode - keep premium access
+    if (isDevModeRef.current) {
+      console.log("[RevenueCat] 🔓 DEV MODE: Skipping updateCustomerInfo, keeping premium access");
+      return;
+    }
+
     try {
       if (!Purchases) {
         // Fallback to backend if SDK not available
@@ -362,6 +435,12 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
    * This ensures subscription status persists across logout/login
    */
   const syncPremiumStatusFromBackend = async () => {
+    // GUARD: Never sync from backend in dev mode - keep premium access
+    if (isDevModeRef.current) {
+      console.log("[RevenueCat] 🔓 DEV MODE: Skipping backend sync, keeping premium access");
+      return;
+    }
+
     try {
       console.log("[RevenueCat] 🔄 Syncing premium status from backend...");
       const response = await api.get("/profile");
@@ -387,6 +466,12 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const processCustomerInfo = async (info: any) => {
+    // GUARD: Never process customer info in dev mode - keep premium access
+    if (isDevModeRef.current) {
+      console.log("[RevenueCat] 🔓 DEV MODE: Skipping processCustomerInfo, keeping premium access");
+      return;
+    }
+
     setCustomerInfo(info);
 
     // Handle undefined/null customerInfo (happens during logout)
@@ -412,9 +497,27 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       info.entitlements.active["premium"] ||
       info.entitlements.active["Premium"];
 
-    const hasPremium = premiumEntitlement !== undefined;
+    // CRITICAL FIX: Validate expiration date before granting premium access
+    let hasPremium = premiumEntitlement !== undefined;
+    let isExpired = false;
+
+    if (hasPremium && premiumEntitlement.expirationDate) {
+      const expiryDate = new Date(premiumEntitlement.expirationDate);
+      const now = new Date();
+      isExpired = expiryDate < now;
+
+      if (isExpired) {
+        console.log("[RevenueCat] 🚨 SUBSCRIPTION EXPIRED!", {
+          expiryDate: expiryDate.toISOString(),
+          now: now.toISOString(),
+          daysSinceExpiry: Math.floor((now.getTime() - expiryDate.getTime()) / (1000 * 60 * 60 * 24))
+        });
+        hasPremium = false; // Override - subscription is expired
+      }
+    }
 
     console.log("[RevenueCat] Has premium entitlement:", hasPremium);
+    console.log("[RevenueCat] Is expired:", isExpired);
     console.log("[RevenueCat] Premium entitlement object:", premiumEntitlement);
 
     // Delay backend sync to give webhook time to process (webhook processes first)
@@ -429,9 +532,10 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     }, 3000); // 3 second delay to allow webhook to process
 
     // Set subscription state from RevenueCat SDK immediately
-    setHasActiveSubscription(hasPremium);
+    // CRITICAL: Only set to true if not expired
+    setHasActiveSubscription(hasPremium && !isExpired);
 
-    if (hasPremium) {
+    if (hasPremium && !isExpired) {
       // Check if in trial period
       const inTrial =
         premiumEntitlement.willRenew &&
@@ -455,7 +559,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
         periodType: premiumEntitlement.periodType,
       });
     } else {
-      console.log("[RevenueCat] ❌ User does NOT have premium access");
+      console.log("[RevenueCat] ❌ User does NOT have premium access", { expired: isExpired });
       setIsInTrialPeriod(false);
       setSubscriptionExpiryDate(null);
       setActiveProductIdentifier(null);
@@ -628,6 +732,13 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
    * ALWAYS syncs subscription status from RevenueCat API first (most authoritative)
    */
   const loginUser = async (userId: string) => {
+    // GUARD: In dev mode, just log and keep premium access
+    if (isDevModeRef.current) {
+      console.log("[RevenueCat] 🔓 DEV MODE: Skipping loginUser, keeping premium access");
+      console.log("[RevenueCat] 👤 User ID:", userId);
+      return;
+    }
+
     try {
       if (!userId) {
         console.error("[RevenueCat] ❌ Cannot login: userId is empty");
