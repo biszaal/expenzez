@@ -109,7 +109,7 @@ const USER_FRIENDLY_MESSAGES: Record<string, string> = {
   AUTH_TOKEN_EXPIRED: "Your authentication has expired. Please log in again.",
   AUTH_REFRESH_FAILED: "Unable to refresh your session. Please log in again.",
   [FrontendErrorCodes.NETWORK_UNAVAILABLE]:
-    "No internet connection. Please check your network and try again.",
+    "No internet connection",
   [FrontendErrorCodes.REQUEST_TIMEOUT]: "Request timed out. Please try again.",
   [FrontendErrorCodes.SERVER_UNAVAILABLE]:
     "Our servers are temporarily unavailable. Please try again later.",
@@ -268,7 +268,7 @@ class ErrorHandlerService {
     ) {
       return new ExpenzezFrontendError(
         FrontendErrorCodes.NETWORK_UNAVAILABLE,
-        "Network connection unavailable",
+        "No internet connection",
         0,
         { originalError: error.message },
         context,
@@ -661,6 +661,14 @@ class ErrorHandlerService {
       context?.endpoint?.includes("/briefs/daily") ||
       context?.endpoint?.includes("/alerts/pending");
 
+    // Check for device management endpoints (not yet implemented on backend)
+    const isDeviceManagementEndpoint =
+      context?.endpoint?.includes("/devices/register") ||
+      context?.endpoint?.includes("/devices/list") ||
+      context?.endpoint?.includes("/devices/revoke") ||
+      context?.endpoint?.includes("/devices/") && context?.endpoint?.includes("/trust") ||
+      context?.endpoint?.includes("/devices/update-last-used");
+
     const isDevelopmentEndpoint =
       isSecurityEndpoint ||
       isNotificationEndpoint ||
@@ -679,6 +687,11 @@ class ErrorHandlerService {
     // Skip logging optional AI endpoint 404s (they have fallback mechanisms)
     if (isOptionalAIEndpoint && error.statusCode === 404) {
       return; // Completely silent for optional endpoints with fallbacks
+    }
+
+    // Skip logging device management 404s (feature not yet implemented on backend)
+    if (isDeviceManagementEndpoint && error.statusCode === 404) {
+      return; // Completely silent for unimplemented device management endpoints
     }
 
     const logLevel = isExpectedBehavior ? "INFO" : "ERROR";
@@ -780,7 +793,7 @@ export const createSessionExpiredError = (context?: ErrorContext) =>
 export const createNetworkError = (context?: ErrorContext) =>
   new ExpenzezFrontendError(
     FrontendErrorCodes.NETWORK_UNAVAILABLE,
-    "Network connection unavailable",
+    "No internet connection",
     0,
     undefined,
     context,

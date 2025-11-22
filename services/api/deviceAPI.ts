@@ -60,7 +60,12 @@ export const deviceAPI = {
       console.log('🔐 [DeviceAPI] Device registration response:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('🔐 [DeviceAPI] Device registration failed:', error);
+      // If endpoint doesn't exist (404), log as info instead of error (feature not yet implemented)
+      if (error.response?.status === 404 || error.statusCode === 404) {
+        console.log('ℹ️ [DeviceAPI] Device registration endpoint not available (feature not implemented)');
+      } else {
+        console.error('🔐 [DeviceAPI] Device registration failed:', error);
+      }
 
       // Don't throw - device registration failure shouldn't block login
       return {
