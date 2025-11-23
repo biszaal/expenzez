@@ -1386,6 +1386,64 @@ export default function SpendingPage() {
               onPointSelect={handlePointSelect}
             />
 
+            {/* Ask AI Button */}
+            {(monthlyData?.monthlyTransactions?.length || 0) > 0 && (
+              <TouchableOpacity
+                style={[
+                  styles.askAIButton,
+                  {
+                    backgroundColor: colors.primary.main,
+                    borderColor: colors.primary.light,
+                  },
+                ]}
+                onPress={() => {
+                  // Navigate to AI chat with spending context
+                  const totalSpent = monthlyData?.monthlyTotalSpent || 0;
+                  const topCategories = sortedCategoryData
+                    .filter(cat => (cat.monthlySpent || 0) > 0)
+                    .slice(0, 3)
+                    .map(cat => `${cat.name}: ${formatAmount(cat.monthlySpent || 0)}`)
+                    .join(', ');
+
+                  const spendingContext = `I spent ${formatAmount(totalSpent)} in ${dayjs(selectedMonth).format('MMMM YYYY')}. Top categories: ${topCategories}. ${monthlyOverBudget ? 'I went over budget.' : 'I stayed within budget.'}`;
+
+                  router.push({
+                    pathname: '/ai-assistant',
+                    params: {
+                      context: spendingContext,
+                      promptSuggestion: `Can you analyze my spending for ${dayjs(selectedMonth).format('MMMM YYYY')} and give me insights?`
+                    }
+                  });
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={styles.askAIButtonContent}>
+                  <View style={styles.askAIButtonLeft}>
+                    <View style={[styles.askAIIconContainer, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                      <Ionicons
+                        name="sparkles"
+                        size={24}
+                        color="white"
+                      />
+                    </View>
+                    <View style={styles.askAITextContainer}>
+                      <Text style={styles.askAIButtonTitle}>
+                        Ask AI About My Spending
+                      </Text>
+                      <Text style={styles.askAIButtonSubtitle}>
+                        Get personalized insights and recommendations
+                      </Text>
+                    </View>
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={24}
+                    color="white"
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
+
             {/* Category/Merchant Switch */}
             <CategoryMerchantSwitch
               spendingTab={spendingTab}
@@ -1609,5 +1667,55 @@ const styles = StyleSheet.create({
   viewAllBudgetsText: {
     fontSize: 16,
     fontWeight: "600",
+  },
+
+  // Ask AI Button Styles
+  askAIButton: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: 16,
+    padding: spacing.lg,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+  },
+  askAIButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  askAIButtonLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    gap: spacing.md,
+  },
+  askAIIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  askAITextContainer: {
+    flex: 1,
+    paddingRight: spacing.sm,
+  },
+  askAIButtonTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "white",
+    marginBottom: 4,
+    lineHeight: 22,
+  },
+  askAIButtonSubtitle: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.85)",
+    lineHeight: 18,
   },
 });
