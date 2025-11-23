@@ -88,6 +88,11 @@ export default function SpendingPage() {
   // Ref to track last processed data to prevent unnecessary updates
   const lastProcessedDataRef = useRef<string>("");
 
+  // Refs for auto-scroll functionality
+  const scrollViewRef = useRef<ScrollView>(null);
+  const budgetInsightRef = useRef<View>(null);
+  const chartInsightRef = useRef<View>(null);
+
   // Info button handler
   const handleInfoPress = () => {
     // Show spending insights modal
@@ -1002,6 +1007,17 @@ export default function SpendingPage() {
 
       setAiInsight(insight);
       console.log('[Spending] ✅ AI insight generated:', insight);
+
+      // Auto-scroll to insight after a short delay (to allow render)
+      setTimeout(() => {
+        chartInsightRef.current?.measureLayout(
+          scrollViewRef.current as any,
+          (x, y) => {
+            scrollViewRef.current?.scrollTo({ y: y - 20, animated: true });
+          },
+          () => console.log('[Spending] Failed to measure chart insight position')
+        );
+      }, 300);
     } catch (error) {
       console.error('[Spending] ❌ Failed to generate AI insight:', error);
       // Don't show error to user - insight is optional
@@ -1041,6 +1057,17 @@ export default function SpendingPage() {
 
       setBudgetAiInsight(insight);
       console.log('[Spending] ✅ Budget AI insight generated:', insight);
+
+      // Auto-scroll to insight after a short delay (to allow render)
+      setTimeout(() => {
+        budgetInsightRef.current?.measureLayout(
+          scrollViewRef.current as any,
+          (x, y) => {
+            scrollViewRef.current?.scrollTo({ y: y - 20, animated: true });
+          },
+          () => console.log('[Spending] Failed to measure budget insight position')
+        );
+      }, 300);
     } catch (error) {
       console.error('[Spending] ❌ Failed to generate budget AI insight:', error);
       // Don't show error to user - insight is optional
@@ -1270,6 +1297,7 @@ export default function SpendingPage() {
       ]}
     >
       <ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -1441,26 +1469,28 @@ export default function SpendingPage() {
         {/* Budget Summary Card */}
         {selectedTab === "summary" && (
           <>
-            <BudgetSummaryCard
-              selectedMonth={selectedMonth}
-              monthlyTotalSpent={monthlyData?.monthlyTotalSpent || 0}
-              totalBudget={totalBudget}
-              averageSpendPerDay={averageSpendPerDay}
-              predictedMonthlySpend={predictedMonthlySpend}
-              displayLeftToSpend={displayLeftToSpend}
-              monthlySpentPercentage={monthlySpentPercentage}
-              monthlyOverBudget={monthlyOverBudget}
-              currentMonth={currentMonth}
-              formatAmount={formatAmount}
-              currency="GBP"
-              animatedScale={animatedScale}
-              animatedProgress={animatedProgress}
-              isPro={isPro}
-              aiInsight={budgetAiInsight}
-              aiInsightLoading={budgetAiInsightLoading}
-              onRequestAIInsight={handleRequestBudgetAIInsight}
-              canRequestInsight={true}
-            />
+            <View ref={budgetInsightRef} collapsable={false}>
+              <BudgetSummaryCard
+                selectedMonth={selectedMonth}
+                monthlyTotalSpent={monthlyData?.monthlyTotalSpent || 0}
+                totalBudget={totalBudget}
+                averageSpendPerDay={averageSpendPerDay}
+                predictedMonthlySpend={predictedMonthlySpend}
+                displayLeftToSpend={displayLeftToSpend}
+                monthlySpentPercentage={monthlySpentPercentage}
+                monthlyOverBudget={monthlyOverBudget}
+                currentMonth={currentMonth}
+                formatAmount={formatAmount}
+                currency="GBP"
+                animatedScale={animatedScale}
+                animatedProgress={animatedProgress}
+                isPro={isPro}
+                aiInsight={budgetAiInsight}
+                aiInsightLoading={budgetAiInsightLoading}
+                onRequestAIInsight={handleRequestBudgetAIInsight}
+                canRequestInsight={true}
+              />
+            </View>
 
             {/* Advanced Analytics Button */}
             <TouchableOpacity
@@ -1499,21 +1529,23 @@ export default function SpendingPage() {
         {selectedTab === "categories" && (
           <>
             {/* All users have free access to analytics */}
-            <SpendingAnalyticsSection
-              selectedMonth={selectedMonth}
-              chartData={chartData}
-              hasTransactions={
-                (monthlyData?.monthlyTransactions?.length || 0) > 0
-              }
-              monthlyOverBudget={monthlyOverBudget}
-              dailySpendingData={dailySpendingData}
-              onPointSelect={handlePointSelect}
-              isPro={isPro}
-              aiInsight={aiInsight}
-              aiInsightLoading={aiInsightLoading}
-              onRequestAIInsight={handleRequestAIInsight}
-              canRequestInsight={true}
-            />
+            <View ref={chartInsightRef} collapsable={false}>
+              <SpendingAnalyticsSection
+                selectedMonth={selectedMonth}
+                chartData={chartData}
+                hasTransactions={
+                  (monthlyData?.monthlyTransactions?.length || 0) > 0
+                }
+                monthlyOverBudget={monthlyOverBudget}
+                dailySpendingData={dailySpendingData}
+                onPointSelect={handlePointSelect}
+                isPro={isPro}
+                aiInsight={aiInsight}
+                aiInsightLoading={aiInsightLoading}
+                onRequestAIInsight={handleRequestAIInsight}
+                canRequestInsight={true}
+              />
+            </View>
 
             {/* Category/Merchant Switch */}
             <CategoryMerchantSwitch
