@@ -631,6 +631,18 @@ export default function BillsScreen() {
         { backgroundColor: colors.background.secondary },
       ]}
     >
+      {/* Back Button Header */}
+      <View style={[styles.backButtonHeader, { backgroundColor: colors.background.secondary }]}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitleText, { color: colors.text.primary }]}>Bills</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -856,6 +868,29 @@ export default function BillsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  backButtonHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitleText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  headerSpacer: {
+    width: 40,
   },
   scrollView: {
     flex: 1,

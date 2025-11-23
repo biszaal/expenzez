@@ -17,6 +17,9 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
     overflow: "hidden",
   },
   premiumSpendingHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
@@ -24,6 +27,7 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
   premiumSpendingHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
   },
   premiumAnalyticsIcon: {
     width: 44,
@@ -193,5 +197,12 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
   premiumEmptyChartSubtitle: {
     fontSize: 14,
     textAlign: "center",
+  },
+
+  // AI Insight Separate Container - Outside Chart
+  aiInsightSeparateContainer: {
+    marginTop: spacing.xl,  // More space above AI insight
+    marginBottom: spacing.md,
+    paddingHorizontal: 0,  // AIInsightCard has its own horizontal margins
   },
 });

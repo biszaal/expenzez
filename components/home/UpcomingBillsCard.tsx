@@ -133,7 +133,7 @@ export const UpcomingBillsCard: React.FC = () => {
   return (
     <TouchableOpacity
       style={[styles.container, { backgroundColor: colors.background.secondary }]}
-      onPress={() => router.push('/upcoming-bills')}
+      onPress={() => router.push('/bills')}
       activeOpacity={0.7}
     >
       <View style={styles.header}>

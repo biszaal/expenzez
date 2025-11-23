@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useAuth } from "../auth/AuthContext";
 import { useSubscription } from "../../hooks/useSubscription";
 import { PremiumFeature } from "../../services/subscriptionService";
 import { budgetService, BudgetProgress } from "../../services/budgetService";
@@ -21,15 +22,30 @@ import { spacing, borderRadius, typography } from "../../constants/theme";
 import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
 import { LimitReachedPrompt } from "../../components/premium/LimitReachedPrompt";
 import { FeatureShowcase } from "../../components/premium/FeatureShowcase";
+import { AIInsightCard } from "../../components/ai/AIInsightCard";
+import { AIButton } from "../../components/ai/AIButton";
+import { getBudgetInsight, ChartInsightResponse } from "../../services/api/chartInsightsAPI";
+import { aiInsightPersistence } from "../../services/aiInsightPersistence";
 
 export default function BudgetsScreen() {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const { isPremium, hasFeatureAccess } = useSubscription();
   const [budgetProgress, setBudgetProgress] = useState<BudgetProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showLimitPrompt, setShowLimitPrompt] = useState(false);
   const [budgetLimit, setBudgetLimit] = useState(3); // Free tier: 3 budgets max
+
+  // AI insights state - one insight per budget
+  const [budgetInsights, setBudgetInsights] = useState<Record<string, ChartInsightResponse>>({});
+  const [insightLoading, setInsightLoading] = useState<Record<string, boolean>>({});
+  const [showAIInsight, setShowAIInsight] = useState<Record<string, boolean>>({});
+  const [canRequestInsight, setCanRequestInsight] = useState<Record<string, boolean>>({});
+
+  // Refs for auto-scroll
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  const budgetCardRefs = React.useRef<Record<string, View | null>>({});
 
   // Handle adding a new budget with subscription check
   const handleAddBudget = () => {
@@ -49,6 +65,75 @@ export default function BudgetsScreen() {
     loadBudgets();
   }, []);
 
+  // Load cached AI insights for all budgets on mount
+  useEffect(() => {
+    const loadCachedInsights = async () => {
+      const userId = user?.id;
+      if (!userId || !isPremium || budgetProgress.length === 0) {
+        return;
+      }
+
+      try {
+        const cachedInsights: Record<string, ChartInsightResponse> = {};
+        const canRequest: Record<string, boolean> = {};
+        const shouldShow: Record<string, boolean> = {};
+
+        for (const progress of budgetProgress) {
+          const budgetId = progress.budget.id;
+          const cached = await aiInsightPersistence.getInsight(userId, `budget_${budgetId}`);
+
+          if (cached) {
+            console.log(`[Budgets] 📦 Loaded cached insight for budget: ${progress.budget.name}`);
+            cachedInsights[budgetId] = cached.data;
+            canRequest[budgetId] = false;
+            shouldShow[budgetId] = true;
+          } else {
+            canRequest[budgetId] = true;
+            shouldShow[budgetId] = false;
+          }
+        }
+
+        setBudgetInsights(prev => ({ ...prev, ...cachedInsights }));
+        setCanRequestInsight(prev => ({ ...prev, ...canRequest }));
+        setShowAIInsight(prev => ({ ...prev, ...shouldShow }));
+      } catch (error) {
+        console.error('[Budgets] Error loading cached insights:', error);
+      }
+    };
+
+    loadCachedInsights();
+  }, [user?.id, isPremium, budgetProgress.length]);
+
+  // Auto-scroll to budget when its AI insight appears
+  React.useEffect(() => {
+    // Find the most recently shown insight
+    const shownBudgetIds = Object.entries(showAIInsight)
+      .filter(([_, isShown]) => isShown)
+      .map(([budgetId]) => budgetId);
+
+    if (shownBudgetIds.length > 0 && scrollViewRef.current) {
+      const latestBudgetId = shownBudgetIds[shownBudgetIds.length - 1];
+      const budgetCardRef = budgetCardRefs.current[latestBudgetId];
+
+      if (budgetCardRef) {
+        setTimeout(() => {
+          budgetCardRef?.measureLayout(
+            scrollViewRef.current as any,
+            (x, y) => {
+              scrollViewRef.current?.scrollTo({
+                y: y - 20,
+                animated: true,
+              });
+            },
+            () => {
+              console.log('[Budgets] Failed to measure budget card position');
+            }
+          );
+        }, 400);
+      }
+    }
+  }, [showAIInsight]);
+
   const loadBudgets = async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
@@ -63,6 +148,70 @@ export default function BudgetsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  // Fetch AI insight for a specific budget
+  const fetchBudgetAIInsight = useCallback(async (progress: BudgetProgress) => {
+    if (!isPremium) {
+      return;
+    }
+
+    try {
+      setInsightLoading(prev => ({ ...prev, [progress.budget.id]: true }));
+
+      console.log(`[Budgets] Fetching AI insight for budget: ${progress.budget.name}`, {
+        spent: progress.spent,
+        limit: progress.budget.amount,
+        daysLeft: progress.daysLeft,
+        percentage: progress.percentage,
+      });
+
+      const insight = await getBudgetInsight(
+        progress.budget.name,
+        progress.spent,
+        progress.budget.amount,
+        progress.daysLeft
+      );
+
+      setBudgetInsights(prev => ({ ...prev, [progress.budget.id]: insight }));
+
+      // Save to cache with 24h expiration
+      const userId = user?.id;
+      if (userId) {
+        await aiInsightPersistence.saveInsight(userId, `budget_${progress.budget.id}`, insight);
+        setCanRequestInsight(prev => ({ ...prev, [progress.budget.id]: false }));
+        console.log(`[Budgets] ✅ AI insight loaded and cached for ${progress.budget.name}`);
+      }
+    } catch (error) {
+      console.warn(`[Budgets] ⚠️ AI insights unavailable for ${progress.budget.name}`);
+    } finally {
+      setInsightLoading(prev => ({ ...prev, [progress.budget.id]: false }));
+    }
+  }, [isPremium, user?.id]);
+
+  // Handler for AI button press for a specific budget
+  const handleAIButtonPress = (progress: BudgetProgress) => {
+    const budgetId = progress.budget.id;
+    const isCurrentlyShown = showAIInsight[budgetId];
+    const canRequest = canRequestInsight[budgetId] !== false; // Default to true if undefined
+
+    // Check if user can request a new insight
+    if (!canRequest) {
+      Alert.alert(
+        "AI Limit Reached",
+        "You've reached your daily AI insight limit. Your insights will be available again in 24 hours.\n\nUpgrade to Premium for unlimited AI insights!",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    if (!isCurrentlyShown && !budgetInsights[budgetId]) {
+      // First time opening and allowed - fetch the insight
+      fetchBudgetAIInsight(progress);
+    }
+
+    // Toggle show state
+    setShowAIInsight(prev => ({ ...prev, [budgetId]: !isCurrentlyShown }));
   };
 
   const handleDeleteBudget = (budgetId: string, budgetName: string) => {
@@ -130,6 +279,9 @@ export default function BudgetsScreen() {
     return (
       <View
         key={progress.budget.id}
+        ref={(ref) => {
+          budgetCardRefs.current[progress.budget.id] = ref;
+        }}
         style={[
           styles.budgetCard,
           { backgroundColor: colors.background.secondary },
@@ -267,6 +419,35 @@ export default function BudgetsScreen() {
             </Text>
           </View>
         </View>
+
+        {/* AI Budget Insight - Premium Feature */}
+        {isPremium && (
+          <View style={{ marginTop: spacing.md }}>
+            {/* AI Button - Hidden when insight is active */}
+            {!showAIInsight[progress.budget.id] && (
+              <View style={{ alignItems: "flex-end", marginBottom: spacing.sm }}>
+                <AIButton
+                  onPress={() => handleAIButtonPress(progress)}
+                  loading={insightLoading[progress.budget.id]}
+                  active={false}
+                  label="Ask AI"
+                />
+              </View>
+            )}
+
+            {/* AI Insight Card */}
+            {showAIInsight[progress.budget.id] && budgetInsights[progress.budget.id] && (
+              <AIInsightCard
+                insight={budgetInsights[progress.budget.id].insight}
+                expandedInsight={budgetInsights[progress.budget.id].expandedInsight}
+                priority={budgetInsights[progress.budget.id].priority}
+                actionable={budgetInsights[progress.budget.id].actionable}
+                loading={insightLoading[progress.budget.id]}
+                collapsedByDefault={true}
+              />
+            )}
+          </View>
+        )}
       </View>
     );
   };
@@ -339,6 +520,7 @@ export default function BudgetsScreen() {
       />
 
       <ScrollView
+        ref={scrollViewRef}
         style={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={

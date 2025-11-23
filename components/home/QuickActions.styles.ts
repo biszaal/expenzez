@@ -21,6 +21,9 @@ export const styles = StyleSheet.create({
   professionalQuickActionCard: {
     width: cardWidth,
   },
+  professionalQuickActionCardWide: {
+    width: '100%',
+  },
   professionalQuickActionGradient: {
     borderRadius: 16,
     padding: SPACING.lg,
