@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Text,
+  Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -16,7 +17,6 @@ import {
   Section,
   ListItem,
   EmptyState,
-  ThemeToggle,
 } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
 import {
@@ -42,7 +42,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { isLoggedIn } = useAuthGuard();
   const { showConfirmation } = useAlert();
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, toggleTheme } = useTheme();
 
   // Handle logout with confirmation
   const handleLogout = () => {
@@ -161,7 +161,14 @@ export default function ProfileScreen() {
             }}
             title="Theme"
             subtitle="Choose your preferred theme"
-            rightElement={<ThemeToggle variant="button" size="small" />}
+            rightElement={
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: colors.border, true: colors.primary.main }}
+                thumbColor={isDark ? colors.background.primary : colors.background.secondary}
+              />
+            }
           />
         </Section>
 
