@@ -452,6 +452,14 @@ api.interceptors.response.use(
       return Promise.reject(error); // Pass through raw error without error handler
     }
 
+    // Suppress errors for AI endpoints (they're optional features that may not be configured)
+    const isAIEndpoint = originalRequest.url?.includes('/ai/');
+    if (isAIEndpoint && error.response?.status === 500) {
+      console.warn(`[API] ⚠️ AI feature unavailable: ${originalRequest.url} (OpenAI may not be configured)`);
+      // Return a minimal error without triggering error handler
+      return Promise.reject(new Error('AI feature unavailable'));
+    }
+
     // Don't spam console with errors if user is already logged out
     const isLoggedIn = await checkIsLoggedIn();
     if (!isLoggedIn) {

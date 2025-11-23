@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,23 +6,88 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../auth/AuthContext';
 import { insightsEngine, CategoryInsights } from '../../services/insightsEngine';
 import { EXPENSE_CATEGORIES } from '../../services/expenseStorage';
 import { spacing, borderRadius } from '../../constants/theme';
+import { useSubscription } from '../../hooks/useSubscription';
+import { AIInsightCard } from '../../components/ai/AIInsightCard';
+import { AIButton } from '../../components/ai/AIButton';
+import { getCategoryInsight, ChartInsightResponse } from '../../services/api/chartInsightsAPI';
+import { aiInsightPersistence } from '../../services/aiInsightPersistence';
 
 export default function CategoriesAnalysisScreen() {
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const { isPremium } = useSubscription();
   const [categoryInsights, setCategoryInsights] = useState<CategoryInsights[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // AI insights state
+  const [categoryAIInsight, setCategoryAIInsight] = useState<ChartInsightResponse | null>(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [showAIInsight, setShowAIInsight] = useState(false);
+  const [canRequestInsight, setCanRequestInsight] = useState(true);
+
+  // Refs for auto-scroll
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  const aiInsightRef = React.useRef<View>(null);
 
   useEffect(() => {
     loadCategoryAnalysis();
   }, []);
+
+  // Load cached AI insight on mount
+  useEffect(() => {
+    const loadCachedInsight = async () => {
+      const userId = user?.id;
+      if (!userId || !isPremium) {
+        return;
+      }
+
+      try {
+        const cached = await aiInsightPersistence.getInsight(userId, 'categories');
+        if (cached) {
+          console.log('[Categories] 📦 Loaded cached category insight');
+          setCategoryAIInsight(cached.data);
+          setShowAIInsight(true);
+          setCanRequestInsight(false);
+        } else {
+          setCanRequestInsight(true);
+        }
+      } catch (error) {
+        console.error('[Categories] Error loading cached insight:', error);
+      }
+    };
+
+    loadCachedInsight();
+  }, [user?.id, isPremium]);
+
+  // Auto-scroll to AI insight when it appears
+  useEffect(() => {
+    if (showAIInsight && aiInsightRef.current && scrollViewRef.current) {
+      setTimeout(() => {
+        aiInsightRef.current?.measureLayout(
+          scrollViewRef.current as any,
+          (x, y) => {
+            scrollViewRef.current?.scrollTo({
+              y: y - 20,
+              animated: true,
+            });
+          },
+          () => {
+            console.log('[Categories] Failed to measure AI insight position');
+          }
+        );
+      }, 300);
+    }
+  }, [showAIInsight]);
 
   const loadCategoryAnalysis = async () => {
     try {
@@ -44,6 +109,69 @@ export default function CategoriesAnalysisScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fetch AI insight for category distribution
+  const fetchCategoryAIInsight = useCallback(async () => {
+    if (!isPremium || categoryInsights.length === 0) {
+      return;
+    }
+
+    try {
+      setInsightLoading(true);
+
+      // Prepare category data for AI insight
+      const categories = categoryInsights.map((insight) => {
+        const categoryInfo = EXPENSE_CATEGORIES.find(cat => cat.id === insight.category);
+        return {
+          name: categoryInfo?.name || insight.category,
+          amount: insight.totalSpent,
+        };
+      });
+
+      const totalSpending = categories.reduce((sum, cat) => sum + cat.amount, 0);
+
+      console.log('[Categories] Fetching AI insight...', {
+        categoriesCount: categories.length,
+        totalSpending,
+        topCategory: categories[0],
+      });
+
+      const insight = await getCategoryInsight(categories, totalSpending);
+
+      setCategoryAIInsight(insight);
+
+      // Save to cache with 24h expiration
+      const userId = user?.id;
+      if (userId) {
+        await aiInsightPersistence.saveInsight(userId, 'categories', insight);
+        setCanRequestInsight(false);
+        console.log('[Categories] ✅ AI insight loaded and cached for 24h');
+      }
+    } catch (error) {
+      console.warn('[Categories] ⚠️ AI insights unavailable');
+      setCategoryAIInsight(null);
+    } finally {
+      setInsightLoading(false);
+    }
+  }, [isPremium, categoryInsights, user?.id]);
+
+  // Handler for AI button press
+  const handleAIButtonPress = () => {
+    // Check if user can request a new insight
+    if (!canRequestInsight) {
+      Alert.alert(
+        "AI Limit Reached",
+        "You've reached your daily AI insight limit. Your insights will be available again in 24 hours.\n\nUpgrade to Premium for unlimited AI insights!",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    if (!showAIInsight) {
+      fetchCategoryAIInsight();
+    }
+    setShowAIInsight(!showAIInsight);
   };
 
   const getTrendIcon = (trend: 'increasing' | 'decreasing' | 'stable') => {
@@ -88,9 +216,19 @@ export default function CategoriesAnalysisScreen() {
             Category Analysis
           </Text>
         </View>
+
+        {/* AI Button in Header - Hidden when insight is active */}
+        {isPremium && categoryInsights.length > 0 && !showAIInsight && (
+          <AIButton
+            onPress={handleAIButtonPress}
+            loading={insightLoading}
+            active={false}
+            label="Ask AI"
+          />
+        )}
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollViewRef} style={styles.content} showsVerticalScrollIndicator={false}>
         {categoryInsights.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>📊</Text>
@@ -102,8 +240,23 @@ export default function CategoriesAnalysisScreen() {
             </Text>
           </View>
         ) : (
-          <View style={styles.categoriesList}>
-            {categoryInsights.map((insight) => {
+          <>
+            {/* AI Category Insight - Premium Feature */}
+            {isPremium && showAIInsight && categoryAIInsight && (
+              <View ref={aiInsightRef} style={{ marginBottom: 16 }}>
+                <AIInsightCard
+                  insight={categoryAIInsight.insight}
+                  expandedInsight={categoryAIInsight.expandedInsight}
+                  priority={categoryAIInsight.priority}
+                  actionable={categoryAIInsight.actionable}
+                  loading={insightLoading}
+                  collapsedByDefault={true}
+                />
+              </View>
+            )}
+
+            <View style={styles.categoriesList}>
+              {categoryInsights.map((insight) => {
               const trendIcon = getTrendIcon(insight.trend);
 
               return (
@@ -179,7 +332,8 @@ export default function CategoriesAnalysisScreen() {
                 </TouchableOpacity>
               );
             })}
-          </View>
+            </View>
+          </>
         )}
 
         {/* Summary Stats */}

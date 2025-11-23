@@ -1,11 +1,14 @@
-import React from "react";
-import { View, Text, Dimensions } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Dimensions, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import dayjs from "dayjs";
 import { LineChart, ChartData } from "../../charts";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { spendingAnalyticsSectionStyles } from "./SpendingAnalyticsSection.styles";
+import { AIInsightCard } from "../../ai/AIInsightCard";
+import { AIButton } from "../../ai/AIButton";
+import { ChartInsightResponse } from "../../../services/api/chartInsightsAPI";
 
 interface SpendingAnalyticsSectionProps {
   selectedMonth: string;
@@ -18,6 +21,12 @@ interface SpendingAnalyticsSectionProps {
     prevMonthData: number[];
   };
   onPointSelect?: (point: any) => void;
+  // AI insight props
+  isPro?: boolean;
+  aiInsight?: ChartInsightResponse | null;
+  aiInsightLoading?: boolean;
+  onRequestAIInsight?: () => void;
+  canRequestInsight?: boolean;
 }
 
 export const SpendingAnalyticsSection: React.FC<
@@ -29,10 +38,40 @@ export const SpendingAnalyticsSection: React.FC<
   monthlyOverBudget,
   dailySpendingData,
   onPointSelect,
+  isPro,
+  aiInsight,
+  aiInsightLoading,
+  onRequestAIInsight,
+  canRequestInsight = true,
 }) => {
   const { colors } = useTheme();
   const styles = spendingAnalyticsSectionStyles;
   const { width } = Dimensions.get("window");
+  const [showAIInsight, setShowAIInsight] = useState(false);
+
+  // Auto-show insight if it exists (from cache)
+  React.useEffect(() => {
+    if (aiInsight && !showAIInsight) {
+      setShowAIInsight(true);
+    }
+  }, [aiInsight]);
+
+  const handleAIButtonPress = () => {
+    // Check if user can request a new insight
+    if (!canRequestInsight) {
+      Alert.alert(
+        "AI Limit Reached",
+        "You've reached your daily AI insight limit. Your insights will be available again in 24 hours.\n\nUpgrade to Premium for unlimited AI insights!",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    if (!showAIInsight && onRequestAIInsight) {
+      onRequestAIInsight();
+    }
+    setShowAIInsight(!showAIInsight);
+  };
 
   return (
     <View style={styles.premiumSpendingCardWrapper}>
@@ -72,6 +111,16 @@ export const SpendingAnalyticsSection: React.FC<
               </Text>
             </View>
           </View>
+
+          {/* AI Insight Button - Hidden when insight is active */}
+          {isPro && hasTransactions && !showAIInsight && (
+            <AIButton
+              onPress={handleAIButtonPress}
+              loading={aiInsightLoading}
+              active={false}
+              label="Ask AI"
+            />
+          )}
         </View>
 
         {/* Premium Custom Chart Section */}
@@ -429,6 +478,20 @@ export const SpendingAnalyticsSection: React.FC<
           </View>
         </View>
       </View>
+
+      {/* AI Spending Insight - Separate Container */}
+      {isPro && showAIInsight && aiInsight && (
+        <View style={styles.aiInsightSeparateContainer}>
+          <AIInsightCard
+            insight={aiInsight.insight}
+            expandedInsight={aiInsight.expandedInsight}
+            priority={aiInsight.priority}
+            actionable={aiInsight.actionable}
+            loading={aiInsightLoading}
+            collapsedByDefault={true}
+          />
+        </View>
+      )}
     </View>
   );
 };

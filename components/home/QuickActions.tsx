@@ -130,6 +130,34 @@ export const QuickActions: React.FC = () => {
             </View>
           </View>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.professionalQuickActionCardWide}
+          disabled={true}
+          activeOpacity={1}
+        >
+          <View
+            style={[
+              styles.professionalQuickActionGradient,
+              SHADOWS.lg,
+              { backgroundColor: "#6B7280", opacity: 0.7, alignItems: "center", justifyContent: "center" },
+            ]}
+          >
+            <View style={[styles.professionalQuickActionIconContainer, { alignItems: "center" }]}>
+              <View style={styles.professionalQuickActionIcon}>
+                <Ionicons name="link-outline" size={24} color="white" />
+              </View>
+            </View>
+            <View style={[styles.professionalQuickActionText, { alignItems: "center" }]}>
+              <Text style={styles.professionalQuickActionTitle}>
+                Connect Bank
+              </Text>
+              <Text style={styles.professionalQuickActionSubtitle}>
+                Coming soon
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity>
       </View>
     </View>
   );

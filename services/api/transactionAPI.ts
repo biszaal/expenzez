@@ -8,6 +8,7 @@ export interface Transaction {
   description: string;
   date: string;
   type: "debit" | "credit";
+  currency?: string;
 }
 
 export interface TransactionCreateData {

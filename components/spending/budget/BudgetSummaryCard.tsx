@@ -1,10 +1,13 @@
-import React from "react";
-import { View, Text, Animated, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Animated, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Circle } from "react-native-svg";
 import dayjs from "dayjs";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { budgetSummaryCardStyles } from "./BudgetSummaryCard.styles";
+import { AIInsightCard } from "../../ai/AIInsightCard";
+import { AIButton } from "../../ai/AIButton";
+import { ChartInsightResponse } from "../../../services/api/chartInsightsAPI";
 
 interface BudgetSummaryCardProps {
   selectedMonth: string;
@@ -20,6 +23,12 @@ interface BudgetSummaryCardProps {
   currency: string;
   animatedScale: Animated.Value;
   animatedProgress: Animated.Value;
+  // AI insight props
+  isPro?: boolean;
+  aiInsight?: ChartInsightResponse | null;
+  aiInsightLoading?: boolean;
+  onRequestAIInsight?: () => void;
+  canRequestInsight?: boolean;
 }
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -38,9 +47,39 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
   currency,
   animatedScale,
   animatedProgress,
+  isPro,
+  aiInsight,
+  aiInsightLoading,
+  onRequestAIInsight,
+  canRequestInsight = true,
 }) => {
   const { colors } = useTheme();
   const styles = budgetSummaryCardStyles;
+  const [showAIInsight, setShowAIInsight] = useState(false);
+
+  // Auto-show insight if it exists (from cache)
+  React.useEffect(() => {
+    if (aiInsight && !showAIInsight) {
+      setShowAIInsight(true);
+    }
+  }, [aiInsight]);
+
+  const handleAIButtonPress = () => {
+    // Check if user can request a new insight
+    if (!canRequestInsight) {
+      Alert.alert(
+        "AI Limit Reached",
+        "You've reached your daily AI insight limit. Your insights will be available again in 24 hours.\n\nUpgrade to Premium for unlimited AI insights!",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    if (!showAIInsight && onRequestAIInsight) {
+      onRequestAIInsight();
+    }
+    setShowAIInsight(!showAIInsight);
+  };
 
   // Calculate warning level
   const getWarningLevel = () => {
@@ -138,11 +177,24 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
           </View>
         )}
 
-        <Text
-          style={[styles.simpleBudgetTitle, { color: colors.text.primary }]}
-        >
-          {dayjs(selectedMonth).format("MMMM YYYY")} Budget
-        </Text>
+        {/* Header with AI Button */}
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <Text
+            style={[styles.simpleBudgetTitle, { color: colors.text.primary, marginBottom: 0 }]}
+          >
+            {dayjs(selectedMonth).format("MMMM YYYY")} Budget
+          </Text>
+
+          {/* AI Insight Button - Premium Feature - Hidden when insight is active */}
+          {isPro && totalBudget > 0 && !showAIInsight && (
+            <AIButton
+              onPress={handleAIButtonPress}
+              loading={aiInsightLoading}
+              active={false}
+              label="Ask AI"
+            />
+          )}
+        </View>
 
         {/* Animated SVG Donut Chart - MOVED ABOVE METRICS */}
         <Animated.View
@@ -420,6 +472,20 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
               </Text>
             </View>
           </View>
+
+          {/* AI Budget Insight - Premium Feature */}
+          {isPro && showAIInsight && aiInsight && totalBudget > 0 && (
+            <View style={{ marginTop: 16 }}>
+              <AIInsightCard
+                insight={aiInsight.insight}
+                expandedInsight={aiInsight.expandedInsight}
+                priority={aiInsight.priority}
+                actionable={aiInsight.actionable}
+                loading={aiInsightLoading}
+                collapsedByDefault={true}
+              />
+            </View>
+          )}
         </View>
       </View>
     </View>

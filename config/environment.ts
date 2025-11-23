@@ -62,8 +62,12 @@ export const ENV_CONFIG: EnvironmentConfig = {
   isDevelopment: environment === "development",
   environment,
 
-  // API Configuration - ALWAYS use production AWS API Gateway
-  apiBaseURL: "https://zwin017u7e.execute-api.eu-west-2.amazonaws.com", // Production AWS API Gateway (expenzez-backend-prod)
+  // API Configuration - Use environment variable or fallback to defaults
+  apiBaseURL:
+    process.env.EXPO_PUBLIC_API_BASE_URL ||
+    (environment === "development"
+      ? "https://noat6k04ik.execute-api.eu-west-2.amazonaws.com" // Dev AWS API Gateway (expenzez-backend-dev)
+      : "https://zwin017u7e.execute-api.eu-west-2.amazonaws.com"), // Production AWS API Gateway (expenzez-backend-prod)
 
   // Website URLs
   websiteURL:

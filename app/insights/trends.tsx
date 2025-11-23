@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,33 +7,96 @@ import {
   StyleSheet,
   ActivityIndicator,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../auth/AuthContext';
 import { insightsEngine, MonthlySpendingTrend } from '../../services/insightsEngine';
 import { spacing, borderRadius } from '../../constants/theme';
 import { PremiumFeature } from '../../services/subscriptionService';
 import { useSubscription } from '../../hooks/useSubscription';
 import { PremiumGate } from '../../components/PremiumGate';
 import { AnalyticsSummary } from '../../components/analytics/AnalyticsSummary';
+import { AIInsightCard } from '../../components/ai/AIInsightCard';
+import { AIButton } from '../../components/ai/AIButton';
+import { getSpendingInsight, ChartInsightResponse } from '../../services/api/chartInsightsAPI';
+import { aiInsightPersistence } from '../../services/aiInsightPersistence';
 
 const { width } = Dimensions.get('window');
 
 export default function TrendsAnalysisScreen() {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const { isPremium } = useSubscription();
   const [trends, setTrends] = useState<MonthlySpendingTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<3 | 6 | 12>(6);
   const [activeTab, setActiveTab] = useState<'trends' | 'analytics'>('trends');
 
+  // AI insights state
+  const [trendInsight, setTrendInsight] = useState<ChartInsightResponse | null>(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [showAIInsight, setShowAIInsight] = useState(false);
+  const [canRequestInsight, setCanRequestInsight] = useState(true);
+
+  // Refs for auto-scroll
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  const aiInsightRef = React.useRef<View>(null);
+
   console.log("[TrendsAnalysisScreen] isPremium:", isPremium);
 
   useEffect(() => {
     loadTrends();
   }, [selectedPeriod]);
+
+  // Load cached AI insight on mount
+  useEffect(() => {
+    const loadCachedInsight = async () => {
+      const userId = user?.id;
+      if (!userId || !isPremium) {
+        return;
+      }
+
+      try {
+        const cached = await aiInsightPersistence.getInsight(userId, 'trends');
+        if (cached) {
+          console.log('[Trends] 📦 Loaded cached trend insight');
+          setTrendInsight(cached.data);
+          setShowAIInsight(true);
+          setCanRequestInsight(false);
+        } else {
+          setCanRequestInsight(true);
+        }
+      } catch (error) {
+        console.error('[Trends] Error loading cached insight:', error);
+      }
+    };
+
+    loadCachedInsight();
+  }, [user?.id, isPremium]);
+
+  // Auto-scroll to AI insight when it appears
+  useEffect(() => {
+    if (showAIInsight && aiInsightRef.current && scrollViewRef.current) {
+      setTimeout(() => {
+        aiInsightRef.current?.measureLayout(
+          scrollViewRef.current as any,
+          (x, y) => {
+            scrollViewRef.current?.scrollTo({
+              y: y - 20,
+              animated: true,
+            });
+          },
+          () => {
+            console.log('[Trends] Failed to measure AI insight position');
+          }
+        );
+      }, 300);
+    }
+  }, [showAIInsight]);
 
   const loadTrends = async () => {
     try {
@@ -45,6 +108,87 @@ export default function TrendsAnalysisScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fetch AI insight for trends
+  const fetchTrendInsight = useCallback(async () => {
+    if (!isPremium || trends.length < 2) {
+      return;
+    }
+
+    try {
+      setInsightLoading(true);
+
+      // Get most recent two months for comparison
+      const currentMonth = trends[trends.length - 1];
+      const previousMonth = trends[trends.length - 2];
+
+      // Calculate average spending
+      const averageSpending = trends.reduce((sum, t) => sum + t.totalSpent, 0) / trends.length;
+
+      // Find peak month
+      const peakMonth = trends.reduce((max, t) => t.totalSpent > max.totalSpent ? t : max);
+
+      // Determine trend
+      let trend: "up" | "down" | "stable" = "stable";
+      const percentChange = currentMonth.comparedToPrevious;
+      if (Math.abs(percentChange) < 5) {
+        trend = "stable";
+      } else if (percentChange > 0) {
+        trend = "up";
+      } else {
+        trend = "down";
+      }
+
+      console.log('[Trends] Fetching AI insight...', {
+        currentSpending: currentMonth.totalSpent,
+        previousSpending: previousMonth.totalSpent,
+        averageSpending,
+        trend,
+      });
+
+      const insight = await getSpendingInsight(
+        currentMonth.totalSpent,
+        previousMonth.totalSpent,
+        peakMonth.month,
+        peakMonth.totalSpent,
+        averageSpending / 30, // Daily average
+        trend
+      );
+
+      setTrendInsight(insight);
+
+      // Save to cache with 24h expiration
+      const userId = user?.id;
+      if (userId) {
+        await aiInsightPersistence.saveInsight(userId, 'trends', insight);
+        setCanRequestInsight(false);
+        console.log('[Trends] ✅ AI insight loaded and cached for 24h');
+      }
+    } catch (error) {
+      console.warn('[Trends] ⚠️ AI insights unavailable');
+      setTrendInsight(null);
+    } finally {
+      setInsightLoading(false);
+    }
+  }, [isPremium, trends, user?.id]);
+
+  // Handler for AI button press
+  const handleAIButtonPress = () => {
+    // Check if user can request a new insight
+    if (!canRequestInsight) {
+      Alert.alert(
+        "AI Limit Reached",
+        "You've reached your daily AI insight limit. Your insights will be available again in 24 hours.\n\nUpgrade to Premium for unlimited AI insights!",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    if (!showAIInsight) {
+      fetchTrendInsight();
+    }
+    setShowAIInsight(!showAIInsight);
   };
 
   const formatMonth = (monthStr: string) => {
@@ -176,6 +320,16 @@ export default function TrendsAnalysisScreen() {
             Spending Trends
           </Text>
         </View>
+
+        {/* AI Button in Header - Hidden when insight is active */}
+        {isPremium && trends.length >= 2 && !showAIInsight && (
+          <AIButton
+            onPress={handleAIButtonPress}
+            loading={insightLoading}
+            active={false}
+            label="Ask AI"
+          />
+        )}
       </View>
 
       {/* Unified Controls */}
@@ -260,7 +414,7 @@ export default function TrendsAnalysisScreen() {
       </View>
 
       {activeTab === 'trends' ? (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView ref={scrollViewRef} style={styles.content} showsVerticalScrollIndicator={false}>
           {trends.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>📈</Text>
@@ -277,6 +431,20 @@ export default function TrendsAnalysisScreen() {
               <View style={[styles.chartCard, { backgroundColor: colors.background.secondary }]}>
                 {renderSimpleChart()}
               </View>
+
+              {/* AI Trend Insight - Premium Feature */}
+              {isPremium && showAIInsight && trendInsight && (
+                <View ref={aiInsightRef} style={{ marginBottom: 16 }}>
+                  <AIInsightCard
+                    insight={trendInsight.insight}
+                    expandedInsight={trendInsight.expandedInsight}
+                    priority={trendInsight.priority}
+                    actionable={trendInsight.actionable}
+                    loading={insightLoading}
+                    collapsedByDefault={true}
+                  />
+                </View>
+              )}
 
               {/* Monthly Details */}
               <View style={styles.monthlyDetails}>

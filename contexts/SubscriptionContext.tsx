@@ -20,6 +20,7 @@ interface SubscriptionContextType {
   isTrialActive: boolean;
   daysUntilTrialExpires: number | null;
   isLoading: boolean;
+  isPro: boolean; // Added for compatibility
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType>({
@@ -27,6 +28,7 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   isTrialActive: false,
   daysUntilTrialExpires: null,
   isLoading: false,
+  isPro: false,
 });
 
 /**
@@ -46,6 +48,13 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       ? Math.ceil((subscriptionExpiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
       : null;
 
+    console.log('[SubscriptionContext] ========================================');
+    console.log('[SubscriptionContext] 🔍 Received from RevenueCat:');
+    console.log('[SubscriptionContext] 🔍 isPro:', isPro);
+    console.log('[SubscriptionContext] 🔍 isLoading:', isLoading);
+    console.log('[SubscriptionContext] 🔍 isInTrialPeriod:', isInTrialPeriod);
+    console.log('[SubscriptionContext] ========================================');
+
     return {
       subscription: {
         tier: isPro ? ('premium' as const) : ('free' as const),
@@ -54,6 +63,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       isTrialActive: isInTrialPeriod,
       daysUntilTrialExpires,
       isLoading,
+      isPro, // Pass through isPro for compatibility
     };
   }, [isPro, isLoading, isInTrialPeriod, subscriptionExpiryDate]);
 
