@@ -20,7 +20,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
-// import { useSubscription } from "../../contexts/SubscriptionContext"; // Removed unused import
+import { useSubscription } from "../../contexts/SubscriptionContext";
 import { SpendingSkeleton } from "../../components/ui/SkeletonLoader";
 import { spacing } from "../../constants/theme";
 import { balanceAPI } from "../../services/api/balanceAPI";
@@ -43,12 +43,14 @@ import {
   SpendingMerchantList,
 } from "../../components/spending";
 import { useRouter } from "expo-router";
+import { getSpendingInsight, ChartInsightResponse } from "../../services/api/chartInsightsAPI";
 
 export default function SpendingPage() {
   const { isLoggedIn, hasBank, checkingBank } = useAuthGuard(undefined, true);
   const { colors } = useTheme();
   const { awardXPSilently } = useXP();
   const router = useRouter();
+  const { isPro } = useSubscription();
 
   // State Management
   const [loading, setLoading] = useState(true);
@@ -61,6 +63,10 @@ export default function SpendingPage() {
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [availableMonths, setAvailableMonths] = useState<string[]>([]);
+
+  // AI Insight State
+  const [aiInsight, setAiInsight] = useState<ChartInsightResponse | null>(null);
+  const [aiInsightLoading, setAiInsightLoading] = useState(false);
 
   // Animation values
   const animatedProgress = useMemo(() => new Animated.Value(0), []);
@@ -936,6 +942,76 @@ export default function SpendingPage() {
     console.log("Selected point:", point);
   }, []);
 
+  // AI Insight Request Handler
+  const handleRequestAIInsight = useCallback(async () => {
+    if (aiInsightLoading) return;
+
+    try {
+      setAiInsightLoading(true);
+      console.log('[Spending] Requesting AI chart insight...');
+
+      // Calculate spending metrics for AI
+      const currentSpending = monthlyData?.monthlyTotalSpent || 0;
+      const prevMonth = dayjs(selectedMonth).subtract(1, 'month').format('YYYY-MM');
+      const prevMonthTransactions = transactions.filter((tx) => {
+        if (!tx.date) return false;
+        const txDate = dayjs(tx.date);
+        return txDate.format('YYYY-MM') === prevMonth;
+      });
+
+      // Calculate previous month spending
+      let previousSpending = 0;
+      prevMonthTransactions.forEach((tx) => {
+        const expenseDetection = processTransactionExpense(tx, 0, false);
+        if (expenseDetection.isExpense) {
+          previousSpending += Math.abs(tx.amount);
+        }
+      });
+
+      // Find peak day
+      const dailyData = dailySpendingData?.data || [];
+      const peakAmount = Math.max(...dailyData);
+      const peakDayIndex = dailyData.indexOf(peakAmount);
+      const peakDay = peakDayIndex >= 0 ? dayjs(selectedMonth).add(peakDayIndex, 'day').format('MMM D') : undefined;
+
+      // Calculate daily average
+      const dailyAverage = dailyData.length > 0
+        ? dailyData.reduce((a, b) => a + b, 0) / dailyData.filter(v => v > 0).length
+        : 0;
+
+      // Determine trend
+      let trend: "up" | "down" | "stable" = "stable";
+      if (currentSpending > previousSpending * 1.1) {
+        trend = "up";
+      } else if (currentSpending < previousSpending * 0.9) {
+        trend = "down";
+      }
+
+      const insight = await getSpendingInsight(
+        currentSpending,
+        previousSpending,
+        peakDay,
+        peakAmount,
+        dailyAverage,
+        trend
+      );
+
+      setAiInsight(insight);
+      console.log('[Spending] ✅ AI insight generated:', insight);
+    } catch (error) {
+      console.error('[Spending] ❌ Failed to generate AI insight:', error);
+      // Don't show error to user - insight is optional
+    } finally {
+      setAiInsightLoading(false);
+    }
+  }, [
+    aiInsightLoading,
+    monthlyData?.monthlyTotalSpent,
+    selectedMonth,
+    transactions,
+    dailySpendingData?.data,
+  ]);
+
   // Animation effects - with proper reset on month change
   useEffect(() => {
     // Only animate if we have a valid percentage
@@ -1384,65 +1460,12 @@ export default function SpendingPage() {
               monthlyOverBudget={monthlyOverBudget}
               dailySpendingData={dailySpendingData}
               onPointSelect={handlePointSelect}
+              isPro={isPro}
+              aiInsight={aiInsight}
+              aiInsightLoading={aiInsightLoading}
+              onRequestAIInsight={handleRequestAIInsight}
+              canRequestInsight={true}
             />
-
-            {/* Ask AI Button */}
-            {(monthlyData?.monthlyTransactions?.length || 0) > 0 && (
-              <TouchableOpacity
-                style={[
-                  styles.askAIButton,
-                  {
-                    backgroundColor: colors.primary.main,
-                    borderColor: colors.primary.light,
-                  },
-                ]}
-                onPress={() => {
-                  // Navigate to AI chat with spending context
-                  const totalSpent = monthlyData?.monthlyTotalSpent || 0;
-                  const topCategories = sortedCategoryData
-                    .filter(cat => (cat.monthlySpent || 0) > 0)
-                    .slice(0, 3)
-                    .map(cat => `${cat.name}: ${formatAmount(cat.monthlySpent || 0)}`)
-                    .join(', ');
-
-                  const spendingContext = `I spent ${formatAmount(totalSpent)} in ${dayjs(selectedMonth).format('MMMM YYYY')}. Top categories: ${topCategories}. ${monthlyOverBudget ? 'I went over budget.' : 'I stayed within budget.'}`;
-
-                  router.push({
-                    pathname: '/ai-assistant',
-                    params: {
-                      context: spendingContext,
-                      promptSuggestion: `Can you analyze my spending for ${dayjs(selectedMonth).format('MMMM YYYY')} and give me insights?`
-                    }
-                  });
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={styles.askAIButtonContent}>
-                  <View style={styles.askAIButtonLeft}>
-                    <View style={[styles.askAIIconContainer, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                      <Ionicons
-                        name="sparkles"
-                        size={24}
-                        color="white"
-                      />
-                    </View>
-                    <View style={styles.askAITextContainer}>
-                      <Text style={styles.askAIButtonTitle}>
-                        Ask AI About My Spending
-                      </Text>
-                      <Text style={styles.askAIButtonSubtitle}>
-                        Get personalized insights and recommendations
-                      </Text>
-                    </View>
-                  </View>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={24}
-                    color="white"
-                  />
-                </View>
-              </TouchableOpacity>
-            )}
 
             {/* Category/Merchant Switch */}
             <CategoryMerchantSwitch
@@ -1667,55 +1690,5 @@ const styles = StyleSheet.create({
   viewAllBudgetsText: {
     fontSize: 16,
     fontWeight: "600",
-  },
-
-  // Ask AI Button Styles
-  askAIButton: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
-    borderRadius: 16,
-    padding: spacing.lg,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-  },
-  askAIButtonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  askAIButtonLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    gap: spacing.md,
-  },
-  askAIIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  askAITextContainer: {
-    flex: 1,
-    paddingRight: spacing.sm,
-  },
-  askAIButtonTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "white",
-    marginBottom: 4,
-    lineHeight: 22,
-  },
-  askAIButtonSubtitle: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "rgba(255,255,255,0.85)",
-    lineHeight: 18,
   },
 });
