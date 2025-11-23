@@ -43,7 +43,7 @@ import {
   SpendingMerchantList,
 } from "../../components/spending";
 import { useRouter } from "expo-router";
-import { getSpendingInsight, ChartInsightResponse } from "../../services/api/chartInsightsAPI";
+import { getSpendingInsight, getBudgetInsight, ChartInsightResponse } from "../../services/api/chartInsightsAPI";
 
 export default function SpendingPage() {
   const { isLoggedIn, hasBank, checkingBank } = useAuthGuard(undefined, true);
@@ -64,9 +64,13 @@ export default function SpendingPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [availableMonths, setAvailableMonths] = useState<string[]>([]);
 
-  // AI Insight State
+  // AI Insight State (for spending chart)
   const [aiInsight, setAiInsight] = useState<ChartInsightResponse | null>(null);
   const [aiInsightLoading, setAiInsightLoading] = useState(false);
+
+  // AI Insight State (for budget donut chart)
+  const [budgetAiInsight, setBudgetAiInsight] = useState<ChartInsightResponse | null>(null);
+  const [budgetAiInsightLoading, setBudgetAiInsightLoading] = useState(false);
 
   // Animation values
   const animatedProgress = useMemo(() => new Animated.Value(0), []);
@@ -1012,6 +1016,45 @@ export default function SpendingPage() {
     dailySpendingData?.data,
   ]);
 
+  // Budget AI Insight Request Handler
+  const handleRequestBudgetAIInsight = useCallback(async () => {
+    if (budgetAiInsightLoading) return;
+
+    try {
+      setBudgetAiInsightLoading(true);
+      console.log('[Spending] Requesting AI budget insight...');
+
+      const spent = monthlyData?.monthlyTotalSpent || 0;
+      const limit = totalBudget;
+
+      // Calculate days remaining in month
+      const now = dayjs();
+      const monthEnd = dayjs(selectedMonth).endOf('month');
+      const daysRemaining = currentMonth ? Math.max(monthEnd.diff(now, 'day'), 0) : 0;
+
+      const insight = await getBudgetInsight(
+        dayjs(selectedMonth).format('MMMM YYYY'),
+        spent,
+        limit,
+        daysRemaining
+      );
+
+      setBudgetAiInsight(insight);
+      console.log('[Spending] ✅ Budget AI insight generated:', insight);
+    } catch (error) {
+      console.error('[Spending] ❌ Failed to generate budget AI insight:', error);
+      // Don't show error to user - insight is optional
+    } finally {
+      setBudgetAiInsightLoading(false);
+    }
+  }, [
+    budgetAiInsightLoading,
+    monthlyData?.monthlyTotalSpent,
+    totalBudget,
+    selectedMonth,
+    currentMonth,
+  ]);
+
   // Animation effects - with proper reset on month change
   useEffect(() => {
     // Only animate if we have a valid percentage
@@ -1412,6 +1455,11 @@ export default function SpendingPage() {
               currency="GBP"
               animatedScale={animatedScale}
               animatedProgress={animatedProgress}
+              isPro={isPro}
+              aiInsight={budgetAiInsight}
+              aiInsightLoading={budgetAiInsightLoading}
+              onRequestAIInsight={handleRequestBudgetAIInsight}
+              canRequestInsight={true}
             />
 
             {/* Advanced Analytics Button */}
