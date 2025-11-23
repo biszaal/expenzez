@@ -12,7 +12,6 @@ export { SpendingHeader } from './overview/SpendingHeader';
 export { SpendingTabSwitch } from './overview/SpendingTabSwitch';
 export { SpendingMonthPicker } from './overview/SpendingMonthPicker';
 export { CategoryMerchantSwitch } from './overview/CategoryMerchantSwitch';
-export { SpendingCategoryList } from './overview/SpendingCategoryList';
 export { SpendingCategoryListClean } from './overview/SpendingCategoryListClean';
 export { SpendingMerchantList } from './overview/SpendingMerchantList';
 
