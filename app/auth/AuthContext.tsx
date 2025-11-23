@@ -484,12 +484,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
       } catch (error) {
-        // Ignore errors during auth state check
+        // Log errors during auth state check for debugging
+        console.error('[AuthContext] Error checking auth state:', error);
       }
     };
 
-    // Check auth state periodically
-    const interval = setInterval(checkAuthState, 1000); // Check every second
+    // Check auth state periodically (reduced from 1s to 5s to save battery)
+    const interval = setInterval(checkAuthState, 5000); // Check every 5 seconds
 
     // Also check when app becomes active
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -1056,6 +1057,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await deviceManager.clearPersistentSession();
       await deviceManager.untrustDevice();
       setIsDeviceTrusted(false);
+
+      // Stop session monitoring and clean up intervals
+      sessionManager.destroy();
 
       // Logout from RevenueCat to clear subscription data
       console.log("🎫 [AuthContext] Logging out from RevenueCat...");
