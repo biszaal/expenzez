@@ -44,6 +44,8 @@ import {
 } from "../../components/spending";
 import { useRouter } from "expo-router";
 import { getSpendingInsight, getBudgetInsight, ChartInsightResponse } from "../../services/api/chartInsightsAPI";
+import { aiInsightPersistence } from "../../services/aiInsightPersistence";
+import { useAuth } from "../auth/AuthContext";
 
 export default function SpendingPage() {
   const { isLoggedIn, hasBank, checkingBank } = useAuthGuard(undefined, true);
@@ -51,6 +53,7 @@ export default function SpendingPage() {
   const { awardXPSilently } = useXP();
   const router = useRouter();
   const { isPro } = useSubscription();
+  const { user } = useAuth();
 
   // State Management
   const [loading, setLoading] = useState(true);
@@ -67,10 +70,12 @@ export default function SpendingPage() {
   // AI Insight State (for spending chart)
   const [aiInsight, setAiInsight] = useState<ChartInsightResponse | null>(null);
   const [aiInsightLoading, setAiInsightLoading] = useState(false);
+  const [canRequestChartInsight, setCanRequestChartInsight] = useState(true);
 
   // AI Insight State (for budget donut chart)
   const [budgetAiInsight, setBudgetAiInsight] = useState<ChartInsightResponse | null>(null);
   const [budgetAiInsightLoading, setBudgetAiInsightLoading] = useState(false);
+  const [canRequestBudgetInsight, setCanRequestBudgetInsight] = useState(true);
 
   // Animation values
   const animatedProgress = useMemo(() => new Animated.Value(0), []);
@@ -92,6 +97,46 @@ export default function SpendingPage() {
   const scrollViewRef = useRef<ScrollView>(null);
   const budgetInsightRef = useRef<View>(null);
   const chartInsightRef = useRef<View>(null);
+
+  // Load cached AI insights on mount
+  useEffect(() => {
+    const loadCachedInsights = async () => {
+      const userId = user?.id;
+      if (!userId || !isPro) {
+        return;
+      }
+
+      try {
+        // Load spending chart insight (specific to selected month)
+        const chartCacheKey = `spending_chart_${selectedMonth}`;
+        const cachedChart = await aiInsightPersistence.getInsight(userId, chartCacheKey as any);
+
+        if (cachedChart) {
+          console.log('[Spending] 📦 Loaded cached chart insight');
+          setAiInsight(cachedChart.data);
+          setCanRequestChartInsight(false);
+        } else {
+          setCanRequestChartInsight(true);
+        }
+
+        // Load budget insight (specific to selected month)
+        const budgetCacheKey = `spending_budget_${selectedMonth}`;
+        const cachedBudget = await aiInsightPersistence.getInsight(userId, budgetCacheKey as any);
+
+        if (cachedBudget) {
+          console.log('[Spending] 📦 Loaded cached budget insight');
+          setBudgetAiInsight(cachedBudget.data);
+          setCanRequestBudgetInsight(false);
+        } else {
+          setCanRequestBudgetInsight(true);
+        }
+      } catch (error) {
+        console.error('[Spending] Error loading cached insights:', error);
+      }
+    };
+
+    loadCachedInsights();
+  }, [user?.id, isPro, selectedMonth]);
 
   // Info button handler
   const handleInfoPress = () => {
@@ -955,6 +1000,12 @@ export default function SpendingPage() {
   const handleRequestAIInsight = useCallback(async () => {
     if (aiInsightLoading) return;
 
+    const userId = user?.id;
+    if (!userId) {
+      console.warn('[Spending] No userId available');
+      return;
+    }
+
     try {
       setAiInsightLoading(true);
       console.log('[Spending] Requesting AI chart insight...');
@@ -1006,7 +1057,13 @@ export default function SpendingPage() {
       );
 
       setAiInsight(insight);
-      console.log('[Spending] ✅ AI insight generated:', insight);
+
+      // Save to cache with 24h expiration (month-specific)
+      const chartCacheKey = `spending_chart_${selectedMonth}`;
+      await aiInsightPersistence.saveInsight(userId, chartCacheKey as any, insight);
+      setCanRequestChartInsight(false);
+
+      console.log('[Spending] ✅ AI insight generated and cached for 24h');
 
       // Auto-scroll to insight after a short delay (to allow render)
       setTimeout(() => {
@@ -1026,6 +1083,7 @@ export default function SpendingPage() {
     }
   }, [
     aiInsightLoading,
+    user?.id,
     monthlyData?.monthlyTotalSpent,
     selectedMonth,
     transactions,
@@ -1035,6 +1093,12 @@ export default function SpendingPage() {
   // Budget AI Insight Request Handler
   const handleRequestBudgetAIInsight = useCallback(async () => {
     if (budgetAiInsightLoading) return;
+
+    const userId = user?.id;
+    if (!userId) {
+      console.warn('[Spending] No userId available');
+      return;
+    }
 
     try {
       setBudgetAiInsightLoading(true);
@@ -1056,7 +1120,13 @@ export default function SpendingPage() {
       );
 
       setBudgetAiInsight(insight);
-      console.log('[Spending] ✅ Budget AI insight generated:', insight);
+
+      // Save to cache with 24h expiration (month-specific)
+      const budgetCacheKey = `spending_budget_${selectedMonth}`;
+      await aiInsightPersistence.saveInsight(userId, budgetCacheKey as any, insight);
+      setCanRequestBudgetInsight(false);
+
+      console.log('[Spending] ✅ Budget AI insight generated and cached for 24h');
 
       // Auto-scroll to insight after a short delay (to allow render)
       setTimeout(() => {
@@ -1076,6 +1146,7 @@ export default function SpendingPage() {
     }
   }, [
     budgetAiInsightLoading,
+    user?.id,
     monthlyData?.monthlyTotalSpent,
     totalBudget,
     selectedMonth,
@@ -1488,7 +1559,7 @@ export default function SpendingPage() {
                 aiInsight={budgetAiInsight}
                 aiInsightLoading={budgetAiInsightLoading}
                 onRequestAIInsight={handleRequestBudgetAIInsight}
-                canRequestInsight={true}
+                canRequestInsight={canRequestBudgetInsight}
               />
             </View>
 
@@ -1543,7 +1614,7 @@ export default function SpendingPage() {
                 aiInsight={aiInsight}
                 aiInsightLoading={aiInsightLoading}
                 onRequestAIInsight={handleRequestAIInsight}
-                canRequestInsight={true}
+                canRequestInsight={canRequestChartInsight}
               />
             </View>
 
