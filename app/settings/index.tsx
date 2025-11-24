@@ -154,6 +154,81 @@ export default function SettingsPage() {
     );
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "This will permanently delete your account and ALL associated data:\n\n• Profile and credentials\n• All transactions\n• Budgets and preferences\n• AI chat history\n• Notification data\n\nThis action CANNOT be undone and you will be logged out immediately.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete Account",
+          style: "destructive",
+          onPress: async () => {
+            // Second confirmation
+            Alert.alert(
+              "Final Confirmation",
+              "Are you absolutely sure? This will permanently delete your account and all data. You cannot recover your account after this.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Yes, Delete My Account",
+                  style: "destructive",
+                  onPress: deleteAccountConfirmed,
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
+  };
+
+  const deleteAccountConfirmed = async () => {
+    try {
+      console.log("Deleting account...");
+
+      // Import API client and auth
+      const { apiClient } = await import("../services/config/apiClient");
+      const { logout } = useAuth();
+
+      // Call backend delete-account endpoint
+      const response = await apiClient.delete("/auth/delete-account");
+
+      if (response.status === 200) {
+        console.log("Account deletion successful");
+
+        Alert.alert(
+          "Account Deleted",
+          "Your account and all associated data have been permanently deleted.\n\nThank you for using Expenzez.",
+          [
+            {
+              text: "OK",
+              onPress: async () => {
+                // Logout and clear all local data
+                await logout();
+                router.replace("/auth/Login");
+              },
+            },
+          ]
+        );
+      } else {
+        throw new Error("Unexpected response from server");
+      }
+    } catch (error: any) {
+      console.error("Error deleting account:", error);
+
+      let errorMessage = "Failed to delete account. Please try again later.";
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert("Error", errorMessage);
+    }
+  };
+
   const handleContactSupport = () => {
     Alert.alert("Contact Support", "How would you like to get in touch?", [
       { text: "Cancel", style: "cancel" },
@@ -657,6 +732,39 @@ export default function SettingsPage() {
                 ]}
               >
                 Delete All Data
+              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.text.tertiary}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: isDark ? "#7F1D1D" : "#FEF2F2",
+                  borderColor: isDark ? "#991B1B" : "#FECACA",
+                  marginTop: 10,
+                },
+                shadows.sm,
+              ]}
+              onPress={handleDeleteAccount}
+            >
+              <Ionicons
+                name="close-circle-outline"
+                size={22}
+                color={isDark ? "#FCA5A5" : "#DC2626"}
+                style={{ marginRight: 14 }}
+              />
+              <Text
+                style={[
+                  styles.settingText,
+                  { color: isDark ? "#FCA5A5" : "#DC2626" },
+                ]}
+              >
+                Delete Account
               </Text>
               <Ionicons
                 name="chevron-forward"
