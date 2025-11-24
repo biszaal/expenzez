@@ -21,6 +21,7 @@ import {
   AppleSignInButton,
   useAppleSignIn,
 } from "../../components/auth/AppleSignInButton";
+import { GoogleSignInButton } from "../../components/auth/GoogleSignInButton";
 import { RememberMeCheckbox } from "../../components/RememberMeCheckbox";
 
 export default function Login() {
@@ -208,6 +209,57 @@ export default function Login() {
     }
   };
 
+  const handleGoogleLogin = async (idToken: string, user: any) => {
+    try {
+      setIsLoading(true);
+      console.log('🔍 [Login] Google Sign-In initiated:', user.email);
+
+      // Import API client
+      const { apiClient } = await import("../../services/config/apiClient");
+
+      // Call backend Google login endpoint
+      const response = await apiClient.post("/auth/google-login", {
+        idToken,
+        user,
+      });
+
+      if (response.data && response.data.tokens) {
+        console.log('✅ [Login] Google Sign-In successful');
+
+        // Import token manager
+        const { tokenManager } = await import("../../services/tokenManager");
+
+        // Save tokens
+        await tokenManager.saveTokens({
+          idToken: response.data.tokens.idToken,
+          accessToken: response.data.tokens.accessToken,
+          refreshToken: response.data.tokens.refreshToken,
+        }, rememberMe);
+
+        // Navigate to main app
+        setIsNavigating(true);
+        router.replace("/(tabs)");
+        return;
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } catch (error: any) {
+      console.error('❌ [Login] Google Sign-In failed:', error);
+
+      let errorMessage = "Google Sign In failed. Please try again.";
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      showError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (isNavigating) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
@@ -328,9 +380,16 @@ export default function Login() {
               <View style={[styles.dividerLine, { backgroundColor: colors.border.light }]} />
             </View>
 
-            {/* Apple Sign In */}
+            {/* Apple Sign In (iOS only) */}
             <AppleSignInButton
               onPress={handleAppleLogin}
+              type="sign-in"
+              disabled={isLoading}
+            />
+
+            {/* Google Sign In (Android only) */}
+            <GoogleSignInButton
+              onPress={handleGoogleLogin}
               type="sign-in"
               disabled={isLoading}
             />
