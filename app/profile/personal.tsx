@@ -625,29 +625,45 @@ export default function PersonalInformationScreen() {
     try {
       console.log("Submitting data deletion request...");
 
-      // TODO: Implement API call to submit data deletion request
-      // For now, we'll show a success message with instructions
+      // Import API client and logout function
+      const { apiClient } = await import("../../services/config/apiClient");
+      const { logout } = useAuth();
 
-      Alert.alert(
-        "Data Deletion Request Submitted",
-        "Your request has been successfully submitted.\n\nReference ID: DDR-" +
-          Date.now() +
-          "\n\nYou will receive an email confirmation shortly. Your data will be deleted within 30 days as required by data protection regulations.\n\nIf you need to contact us about this request, please reference the ID above.",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              // Optionally navigate back or perform other actions
-              console.log("Data deletion request acknowledged by user");
+      // Call backend delete-account endpoint
+      const response = await apiClient.delete("/auth/delete-account");
+
+      if (response.status === 200) {
+        console.log("Account deletion successful");
+
+        Alert.alert(
+          "Account Deleted",
+          "Your account and all associated data have been permanently deleted.\n\nThank you for using Expenzez. We're sorry to see you go.",
+          [
+            {
+              text: "OK",
+              onPress: async () => {
+                // Logout and clear all local data
+                await logout();
+                router.replace("/auth/Login");
+              },
             },
-          },
-        ]
-      );
-    } catch (error) {
+          ]
+        );
+      } else {
+        throw new Error("Unexpected response from server");
+      }
+    } catch (error: any) {
       console.error("Error submitting data deletion request:", error);
-      showError(
-        "Failed to submit data deletion request. Please try again later."
-      );
+
+      let errorMessage = "Failed to delete account. Please try again later.";
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      showError(errorMessage);
     }
   };
 
