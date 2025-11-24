@@ -21,6 +21,7 @@ import {
   incomeKeywords,
 } from "../services/autoDetectionKeywords";
 import { MilestoneService } from "../services/milestoneService";
+import { reviewPromptService } from "../services/reviewPromptService";
 
 interface Category {
   id: string;
@@ -240,6 +241,25 @@ export default function AddTransaction() {
               `🎯 [AddTransaction] Milestone achieved: ${milestoneAction}`
             );
             await awardXP(milestoneAction);
+          }
+
+          // Check if review prompt should be shown after milestone achievement
+          if (achievedMilestones.length > 0) {
+            try {
+              const milestoneData = await MilestoneService.getMilestones();
+              const shouldShow = await reviewPromptService.shouldShowReviewPrompt(
+                milestoneData.totalTransactions
+              );
+
+              if (shouldShow) {
+                // Show review prompt after a slight delay to let success alert dismiss
+                setTimeout(() => {
+                  reviewPromptService.showReviewPrompt();
+                }, 1500);
+              }
+            } catch (reviewError) {
+              console.error('[AddTransaction] Error checking review prompt:', reviewError);
+            }
           }
 
           // For expenses only: award daily XP and track streaks
