@@ -3,7 +3,12 @@ import { Alert, Linking, Platform } from 'react-native';
 import * as StoreReview from 'expo-store-review';
 
 const STORAGE_KEY = '@expenzez_review_prompt_state';
-const APP_STORE_URL = 'https://apps.apple.com/app/id6739113889'; // Replace with actual App Store ID
+
+// Platform-specific store URLs
+const APP_STORE_URL = 'https://apps.apple.com/app/id6739113889';
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.biszaal.expenzez';
+
+const STORE_URL = Platform.OS === 'ios' ? APP_STORE_URL : PLAY_STORE_URL;
 
 interface ReviewPromptState {
   dismissedCount: number;
@@ -187,9 +192,10 @@ class ReviewPromptService {
     await this.saveState(updatedState);
 
     // Show native alert
+    const storeText = Platform.OS === 'ios' ? 'App Store' : 'Play Store';
     Alert.alert(
       'Enjoying Expenzez?',
-      'If you love using Expenzez, would you mind taking a moment to rate it? It helps us improve!',
+      `If you love using Expenzez, would you mind taking a moment to rate it on the ${storeText}? It helps us improve!`,
       [
         {
           text: 'Not Now',
@@ -235,18 +241,18 @@ class ReviewPromptService {
         if (url) {
           await Linking.openURL(url);
         } else {
-          // Final fallback to hardcoded URL
-          await Linking.openURL(APP_STORE_URL);
+          // Final fallback to platform-specific store URL
+          await Linking.openURL(STORE_URL);
         }
       }
     } catch (error) {
       console.error('[ReviewPrompt] Error opening review:', error);
 
-      // Fallback: try to open App Store directly
+      // Fallback: try to open store directly
       try {
-        await Linking.openURL(APP_STORE_URL);
+        await Linking.openURL(STORE_URL);
       } catch (fallbackError) {
-        console.error('[ReviewPrompt] Fallback URL also failed:', fallbackError);
+        console.error('[ReviewPrompt] Fallback store URL also failed:', fallbackError);
       }
     }
   }

@@ -62,10 +62,13 @@
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
         "android.permission.USE_FINGERPRINT",
         "android.permission.USE_BIOMETRIC",
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
       ],
       "package": "com.biszaal.expenzez"
     },
@@ -86,6 +89,13 @@
         }
       ],
       "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosClientId": "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com",
+          "androidClientId": "YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com"
+        }
+      ],
       "expo-secure-store",
       "expo-web-browser",
       "expo-local-authentication"
