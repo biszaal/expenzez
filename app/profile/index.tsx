@@ -48,7 +48,7 @@ export default function ProfileScreen() {
   const handleLogout = () => {
     showConfirmation("Logout", "Are you sure you want to logout?", () => {
       // TODO: Implement logout logic
-      router.replace("/auth/Login");
+      router.replace("/auth/login");
     });
   };
 
@@ -59,7 +59,7 @@ export default function ProfileScreen() {
       "This action cannot be undone. All your data will be permanently deleted.",
       () => {
         // TODO: Implement account deletion logic
-        router.replace("/auth/Login");
+        router.replace("/auth/login");
       },
       undefined,
       "Delete",

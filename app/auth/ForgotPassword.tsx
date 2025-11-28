@@ -302,7 +302,7 @@ export default function ForgotPasswordScreen() {
 
                   <TouchableOpacity
                     style={styles.linkButton}
-                    onPress={() => router.push("/auth/Login")}
+                    onPress={() => router.push("/auth/login")}
                   >
                     <Typography variant="body" style={[styles.linkTextSecondary, { color: colors.text.secondary }]}>
                       Back to{" "}

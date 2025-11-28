@@ -16,7 +16,7 @@ export default function TabLayout() {
 
   // Redirect to login if not authenticated
   if (!isLoggedIn) {
-    return <Redirect href="/auth/Login" />;
+    return <Redirect href="/auth/login" />;
   }
 
   return (

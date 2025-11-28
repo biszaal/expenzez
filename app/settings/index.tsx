@@ -206,7 +206,7 @@ export default function SettingsPage() {
               onPress: async () => {
                 // Logout and clear all local data
                 await logout();
-                router.replace("/auth/Login");
+                router.replace("/auth/login");
               },
             },
           ]
@@ -1050,7 +1050,7 @@ export default function SettingsPage() {
                     onPress: async () => {
                       try {
                         await logout();
-                        router.replace("/auth/Login");
+                        router.replace("/auth/login");
                       } catch (error) {
                         Alert.alert(
                           "Error",

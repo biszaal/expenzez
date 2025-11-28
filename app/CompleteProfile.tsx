@@ -60,7 +60,7 @@ export default function CompleteProfileScreen() {
   };
 
   if (!isLoggedIn) {
-    router.replace("/auth/Login");
+    router.replace("/auth/login");
     return null;
   }
 

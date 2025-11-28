@@ -597,7 +597,7 @@ class ErrorHandlerService {
   private redirectToLogin(): boolean {
     try {
       console.log("[ErrorHandler] Redirecting to login screen...");
-      router.replace("/auth/Login" as any);
+      router.replace("/auth/login" as any);
       console.log("[ErrorHandler] Successfully initiated redirect to login");
       return true;
     } catch (error) {

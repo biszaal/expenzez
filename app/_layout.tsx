@@ -542,7 +542,7 @@ function RootLayoutNav() {
     if (hasCompletedOnboarding) {
       // 🟡 RETURNING USER (not logged in, but has seen onboarding)
       userType = "RETURNING_USER";
-      initialRoute = "auth/Login"; // Go directly to login
+      initialRoute = "auth/login"; // Go directly to login
     } else {
       // 🔴 NEW USER (never used the app)
       userType = "NEW_USER";
@@ -664,7 +664,7 @@ function RootLayoutNav() {
       >
         <Stack.Screen name="SplashScreen" options={{ headerShown: false }} />
         <Stack.Screen name="WelcomeOnboarding" />
-        <Stack.Screen name="auth/Login" />
+        <Stack.Screen name="auth/login" />
         <Stack.Screen name="auth/Register" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="profile/index" />

@@ -132,7 +132,7 @@ export default function AccountScreen() {
 
     try {
       await logout();
-      router.replace("/auth/Login");
+      router.replace("/auth/login");
     } catch (error) {
       console.error("Logout failed:", error);
       setLogoutError("Failed to logout. Please try again.");

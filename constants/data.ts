@@ -24,7 +24,7 @@ export const API_CONFIG = {
 // Navigation constants - updated for manual input mode
 export const NAVIGATION = {
   auth: {
-    login: "/auth/Login",
+    login: "/auth/login",
     register: "/auth/Register",
     verifyEmail: "/auth/VerifyEmail",
   },

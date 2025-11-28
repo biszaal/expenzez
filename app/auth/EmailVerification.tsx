@@ -112,7 +112,7 @@ export default function EmailVerification() {
             showError("Auto-login failed. Please log in manually.");
             setTimeout(() => {
               router.replace({
-                pathname: "/auth/Login",
+                pathname: "/auth/login",
                 params: {
                   email: email,
                   message: "Email verified! Please log in to continue.",
@@ -125,7 +125,7 @@ export default function EmailVerification() {
           showError("Auto-login failed. Please log in manually.");
           setTimeout(() => {
             router.replace({
-              pathname: "/auth/Login",
+              pathname: "/auth/login",
               params: {
                 email: email,
                 message: "Email verified! Please log in to continue.",
@@ -138,7 +138,7 @@ export default function EmailVerification() {
         showSuccess("Email verified! You can now log in.");
         setTimeout(() => {
           router.replace({
-            pathname: "/auth/Login",
+            pathname: "/auth/login",
             params: {
               email: email,
               message:
@@ -180,7 +180,7 @@ export default function EmailVerification() {
           showSuccess("Email already verified! You can log in now.");
           setTimeout(() => {
             router.replace({
-              pathname: "/auth/Login",
+              pathname: "/auth/login",
               params: {
                 email: email,
                 message: "Email already verified! Please enter your password.",

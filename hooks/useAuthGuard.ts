@@ -8,7 +8,7 @@ import { getAllAccountIds } from "../services/dataSource";
  * Redirects to login if user is not authenticated
  * Optionally, require at least one connected bank (requireBank)
  *
- * @param redirectTo - Optional custom redirect path (defaults to /auth/Login)
+ * @param redirectTo - Optional custom redirect path (defaults to /auth/login)
  * @param requireBank - If true, also require at least one connected bank
  * @returns Object with authentication state and bank connection state
  */
@@ -24,7 +24,7 @@ export function useAuthGuard(redirectTo?: string, requireBank?: boolean) {
   useEffect(() => {
     // Only redirect if auth state is loaded and user is not logged in
     if (!loading && !isLoggedIn) {
-      router.replace((redirectTo || "/auth/Login") as any);
+      router.replace((redirectTo || "/auth/login") as any);
     }
   }, [isLoggedIn, loading, router, redirectTo]);
 

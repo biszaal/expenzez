@@ -89,7 +89,7 @@ export default function WelcomeOnboarding() {
         );
       }
 
-      router.push("/auth/Login");
+      router.push("/auth/login");
     }
   };
 
@@ -109,7 +109,7 @@ export default function WelcomeOnboarding() {
       );
     }
 
-    router.push("/auth/Login");
+    router.push("/auth/login");
   };
 
   const scrollViewRef = useRef<ScrollView>(null);
