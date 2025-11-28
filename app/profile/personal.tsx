@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { useAlert } from "../../hooks/useAlert";
 import { Header, Section, ListItem, Button } from "../../components/ui";
