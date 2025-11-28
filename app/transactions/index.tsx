@@ -285,7 +285,7 @@ export default function TransactionsScreen() {
   useEffect(() => {
     console.log("Transactions", transactions);
     if (!authLoggedIn) {
-      router.replace("/auth/Login");
+      router.replace("/auth/login");
     }
   }, [authLoggedIn, checkingBank]);
 

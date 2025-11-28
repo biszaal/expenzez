@@ -116,7 +116,7 @@ export default function VerifyEmail() {
 
       // Navigate to login after successful verification
       setTimeout(() => {
-        router.replace("/auth/Login");
+        router.replace("/auth/login");
       }, 2000);
     } catch (err: any) {
       console.error("Email verification error:", {
@@ -158,7 +158,7 @@ export default function VerifyEmail() {
         showError("Your account is already verified. You can log in now.");
         // Auto-redirect to login if already confirmed
         setTimeout(() => {
-          router.replace("/auth/Login");
+          router.replace("/auth/login");
         }, 2000);
       } else if (errorMessage.toLowerCase().includes("not found")) {
         showError("User not found. Please check your email address.");
@@ -222,7 +222,7 @@ export default function VerifyEmail() {
       ) {
         showError("Your account is already verified. You can log in now.");
         setTimeout(() => {
-          router.replace("/auth/Login");
+          router.replace("/auth/login");
         }, 2000);
       } else if (errorMessage.toLowerCase().includes("not found")) {
         showError("User not found. Please check your email address.");
@@ -386,7 +386,7 @@ export default function VerifyEmail() {
                     {/* Back to Login Link */}
                     <TouchableOpacity
                       style={styles.backToLoginLink}
-                      onPress={() => router.replace("/auth/Login")}
+                      onPress={() => router.replace("/auth/login")}
                     >
                       <Typography
                         variant="body"

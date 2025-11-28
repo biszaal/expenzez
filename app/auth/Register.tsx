@@ -311,7 +311,7 @@ export default function Register() {
       {/* Header Section */}
       <View style={[styles.header, { borderBottomColor: colors.border.light }]}>
         <TouchableOpacity
-          onPress={() => router.replace("/auth/Login")}
+          onPress={() => router.replace("/auth/login")}
           style={styles.backButton}
           accessibilityLabel="Back to Login"
         >
@@ -441,7 +441,7 @@ export default function Register() {
                 >
                   Already have an account?{" "}
                 </Typography>
-                <TouchableOpacity onPress={() => router.replace("/auth/Login")}>
+                <TouchableOpacity onPress={() => router.replace("/auth/login")}>
                   <Typography
                     variant="body"
                     style={[

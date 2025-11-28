@@ -227,7 +227,7 @@ export default function BillsScreen() {
 
   useEffect(() => {
     if (!authLoggedIn) {
-      router.replace("/auth/Login");
+      router.replace("/auth/login");
     }
   }, [authLoggedIn, router]);
 

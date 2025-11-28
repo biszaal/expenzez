@@ -644,7 +644,7 @@ export default function PersonalInformationScreen() {
               onPress: async () => {
                 // Logout and clear all local data
                 await logout();
-                router.replace("/auth/Login");
+                router.replace("/auth/login");
               },
             },
           ]

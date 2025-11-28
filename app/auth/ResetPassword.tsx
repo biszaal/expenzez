@@ -63,7 +63,7 @@ export default function ResetPasswordScreen() {
       showSuccess("Password reset successfully!");
       
       // Navigate back to login
-      router.replace("/auth/Login");
+      router.replace("/auth/login");
     } catch (error: any) {
       console.error("Reset password error:", error);
 
@@ -247,7 +247,7 @@ export default function ResetPasswordScreen() {
 
                     <TouchableOpacity
                       style={styles.backToLoginLink}
-                      onPress={() => router.push("/auth/Login")}
+                      onPress={() => router.push("/auth/login")}
                     >
                       <Typography variant="body" style={{ color: colors.text.secondary }} align="center">
                         Remember your password?{" "}

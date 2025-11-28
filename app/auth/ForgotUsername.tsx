@@ -75,7 +75,7 @@ export default function ForgotUsernameScreen() {
       
       // Navigate back to login after a delay
       setTimeout(() => {
-        router.replace("/auth/Login");
+        router.replace("/auth/login");
       }, 5000);
     }
   };
@@ -179,7 +179,7 @@ export default function ForgotUsernameScreen() {
 
                     <TouchableOpacity
                       style={styles.backToLoginLink}
-                      onPress={() => router.push("/auth/Login")}
+                      onPress={() => router.push("/auth/login")}
                     >
                       <Typography variant="body" color="secondary" align="center">
                         Remember your credentials?{" "}

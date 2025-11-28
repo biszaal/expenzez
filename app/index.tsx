@@ -51,7 +51,7 @@ export default function Index() {
           router.replace("/(tabs)");
         } else if (hasCompletedOnboarding) {
           console.log("🔑 [Index] Returning user, navigating to login");
-          router.replace("/auth/Login");
+          router.replace("/auth/login");
         } else {
           console.log("🆕 [Index] New user, navigating to onboarding");
           router.replace("/WelcomeOnboarding");
