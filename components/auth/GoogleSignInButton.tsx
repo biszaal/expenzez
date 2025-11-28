@@ -6,14 +6,22 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../app/auth/AuthContext';
 import { spacing, borderRadius } from '../../constants/theme';
 
-// Conditional import - only load on Android
+// Conditional import - only load on Android in production builds
 let GoogleSignin: any;
 let statusCodes: any;
+let isGoogleSignInAvailable = false;
 
 if (Platform.OS === 'android') {
-  const googleModule = require('@react-native-google-signin/google-signin');
-  GoogleSignin = googleModule.GoogleSignin;
-  statusCodes = googleModule.statusCodes;
+  try {
+    const googleModule = require('@react-native-google-signin/google-signin');
+    GoogleSignin = googleModule.GoogleSignin;
+    statusCodes = googleModule.statusCodes;
+    isGoogleSignInAvailable = true;
+  } catch (error) {
+    // Google Sign-In not available (Expo Go)
+    console.log('⚠️ Google Sign-In package not available. Use development build or production build.');
+    isGoogleSignInAvailable = false;
+  }
 }
 
 interface GoogleSignInButtonProps {
@@ -27,8 +35,8 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   type = 'sign-in',
   disabled = false
 }) => {
-  // Only show on Android devices
-  if (Platform.OS !== 'android') {
+  // Only show on Android devices with Google Sign-In available
+  if (Platform.OS !== 'android' || !isGoogleSignInAvailable) {
     return null;
   }
 

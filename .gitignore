@@ -100,3 +100,4 @@ app-example
 
 # Development logs
 *.log
+google-services.json
