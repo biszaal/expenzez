@@ -1,11 +1,20 @@
 import React from 'react';
 import { Platform, StyleSheet, TouchableOpacity, View, Alert } from 'react-native';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { Ionicons } from '@expo/vector-icons';
 import { Typography } from '../ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../app/auth/AuthContext';
 import { spacing, borderRadius } from '../../constants/theme';
+
+// Conditional import - only load on Android
+let GoogleSignin: any;
+let statusCodes: any;
+
+if (Platform.OS === 'android') {
+  const googleModule = require('@react-native-google-signin/google-signin');
+  GoogleSignin = googleModule.GoogleSignin;
+  statusCodes = googleModule.statusCodes;
+}
 
 interface GoogleSignInButtonProps {
   onPress: (idToken: string, user: any) => Promise<void>;
@@ -18,6 +27,11 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   type = 'sign-in',
   disabled = false
 }) => {
+  // Only show on Android devices
+  if (Platform.OS !== 'android') {
+    return null;
+  }
+
   const { colors } = useTheme();
   const { isLoggedIn } = useAuth();
   const [isChecking, setIsChecking] = React.useState(true);
@@ -30,20 +44,12 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       return;
     }
 
-    // Only configure on Android devices
-    if (Platform.OS !== 'android') {
-      setIsChecking(false);
-      return;
-    }
-
     const configureGoogleSignIn = async () => {
       try {
-        // Web client ID from Google Cloud Console
-        // This needs to be configured via app.json plugin
+        // Web client ID from Google Cloud Console (for backend token verification)
         GoogleSignin.configure({
-          // webClientId will be injected via app.json plugin
-          // offlineAccess: true,
-          // forceCodeForRefreshToken: true,
+          webClientId: '904573665938-8nll766e8aghsactrfrd5ucu6n4f1haa.apps.googleusercontent.com',
+          offlineAccess: true,
         });
 
         console.log('🔍 [GoogleButton] Google Sign-In configured');
@@ -60,11 +66,6 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   // 🚨 SECURITY: Hide Google Sign-In if user is already authenticated
   if (isLoggedIn) {
     console.log('🚨 [SECURITY] Google Sign-In hidden - user already authenticated');
-    return null;
-  }
-
-  // Only show on Android devices
-  if (Platform.OS !== 'android') {
     return null;
   }
 
