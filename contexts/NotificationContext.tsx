@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -7,16 +6,29 @@ import { useAuth } from "../app/auth/AuthContext";
 import { useSecurity } from "./SecurityContext";
 import { notificationAPI } from "../services/api";
 
-// Configure notification behavior
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Conditional import - only load when available (not in Expo Go SDK 53+)
+let Notifications: any;
+let isNotificationsAvailable = false;
+
+try {
+  Notifications = require("expo-notifications");
+  isNotificationsAvailable = true;
+
+  // Configure notification behavior
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+} catch (error) {
+  // Notifications not available (Expo Go SDK 53+)
+  console.log('⚠️ expo-notifications not available. Use development build or production build.');
+  isNotificationsAvailable = false;
+}
 
 export interface NotificationPreferences {
   // Core settings - reduced from 42 to 8 essential settings
@@ -127,8 +139,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Set up notification listeners
   useEffect(() => {
-    let notificationListener: Notifications.Subscription;
-    let responseListener: Notifications.Subscription;
+    if (!isNotificationsAvailable) {
+      console.log('⚠️ [NotificationContext] Notifications not available, skipping listeners');
+      return;
+    }
+
+    let notificationListener: any;
+    let responseListener: any;
 
     if (isLoggedIn) {
       // Listen for notifications received while app is foregrounded
@@ -206,6 +223,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log(
         "[NotificationContext] 🔔 Starting push notification registration..."
       );
+
+      if (!isNotificationsAvailable) {
+        console.log(
+          "[NotificationContext] ⚠️ Notifications not available (Expo Go SDK 53+), skipping registration"
+        );
+        return false;
+      }
 
       if (!Device.isDevice) {
         console.log(
@@ -535,7 +559,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const handleNotificationReceived = (
-    notification: Notifications.Notification
+    notification: any
   ) => {
     // Add to local notifications list
     const newNotification: NotificationHistoryItem = {
@@ -552,7 +576,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const handleNotificationResponse = (
-    response: Notifications.NotificationResponse
+    response: any
   ) => {
     // Handle navigation based on notification type
     const notificationData = response.notification.request.content.data;
