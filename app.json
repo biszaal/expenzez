@@ -71,7 +71,7 @@
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "package": "com.biszaal.expenzez",
+      "package": "com.biszaaltech.expenzez",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
