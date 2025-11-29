@@ -9,7 +9,7 @@ import { styles } from "./TransactionsList.styles";
 interface Transaction {
   id: string;
   amount: number;
-  currency: string;
+  currency?: string; // Optional to match API response
   description: string;
   date: string;
   category?: string;
@@ -17,8 +17,10 @@ interface Transaction {
 
 interface TransactionsListProps {
   transactions: Transaction[];
-  refreshingTransactions: boolean;
-  onRefreshTransactions: () => void;
+  refreshingTransactions?: boolean;
+  onRefreshTransactions?: () => void;
+  onViewAll?: () => void;
+  isLoading?: boolean;
 }
 
 export const TransactionsList: React.FC<TransactionsListProps> = ({

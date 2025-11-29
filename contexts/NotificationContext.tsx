@@ -141,7 +141,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (!isNotificationsAvailable) {
       console.log('⚠️ [NotificationContext] Notifications not available, skipping listeners');
-      return;
+      return () => {}; // Return empty cleanup function
     }
 
     let notificationListener: any;

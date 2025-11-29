@@ -627,11 +627,11 @@ export default function PersonalInformationScreen() {
       console.log("Submitting data deletion request...");
 
       // Import API client and logout function
-      const { apiClient } = await import("../../services/config/apiClient");
+      const { api } = await import("../../services/config/apiClient");
       const { logout } = useAuth();
 
       // Call backend delete-account endpoint
-      const response = await apiClient.delete("/auth/delete-account");
+      const response = await api.delete("/auth/delete-account");
 
       if (response.status === 200) {
         console.log("Account deletion successful");
