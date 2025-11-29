@@ -13,6 +13,7 @@ import { useRevenueCat } from "../../contexts/RevenueCatContext";
 
 interface User {
   id: string;
+  userId?: string; // Cognito user ID
   name?: string;
   username?: string;
   email: string;

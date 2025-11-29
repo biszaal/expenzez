@@ -178,10 +178,10 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
             // Get the default export (ES6 module)
             Purchases = revenueCatModule.default;
             
-            // Get named exports
-            CustomerInfo = revenueCatModule.CustomerInfo;
-            PurchasesPackage = revenueCatModule.PurchasesPackage;
-            PurchasesOfferings = revenueCatModule.PurchasesOfferings;
+            // Get named exports (may not exist in all versions)
+            CustomerInfo = (revenueCatModule as any).CustomerInfo;
+            PurchasesPackage = (revenueCatModule as any).PurchasesPackage;
+            PurchasesOfferings = (revenueCatModule as any).PurchasesOfferings;
             LOG_LEVEL = revenueCatModule.LOG_LEVEL;
             
             // If default doesn't exist, try direct access (CommonJS fallback)

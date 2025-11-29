@@ -28,6 +28,7 @@ interface CreditScoreEntry {
 interface BureauHistory {
   bureau: CreditBureau;
   scores: CreditScoreEntry[];
+  latestScore?: CreditScoreEntry; // Optional for backward compatibility
 }
 
 interface CreditScoreHistory {

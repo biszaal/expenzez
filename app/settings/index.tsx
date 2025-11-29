@@ -188,11 +188,11 @@ export default function SettingsPage() {
       console.log("Deleting account...");
 
       // Import API client and auth
-      const { apiClient } = await import("../services/config/apiClient");
+      const { api } = await import("../../services/config/apiClient");
       const { logout } = useAuth();
 
       // Call backend delete-account endpoint
-      const response = await apiClient.delete("/auth/delete-account");
+      const response = await api.delete("/auth/delete-account");
 
       if (response.status === 200) {
         console.log("Account deletion successful");

@@ -215,10 +215,10 @@ export default function Login() {
       console.log('🔍 [Login] Google Sign-In initiated:', user.email);
 
       // Import API client
-      const { apiClient } = await import("../../services/config/apiClient");
+      const { api } = await import("../../services/config/apiClient");
 
       // Call backend Google login endpoint
-      const response = await apiClient.post("/auth/google-login", {
+      const response = await api.post("/auth/google-login", {
         idToken,
         user,
       });
@@ -230,11 +230,11 @@ export default function Login() {
         const { tokenManager } = await import("../../services/tokenManager");
 
         // Save tokens
-        await tokenManager.saveTokens({
+        await tokenManager.storeTokens({
           idToken: response.data.tokens.idToken,
           accessToken: response.data.tokens.accessToken,
           refreshToken: response.data.tokens.refreshToken,
-        }, rememberMe);
+        });
 
         // Navigate to main app
         setIsNavigating(true);
