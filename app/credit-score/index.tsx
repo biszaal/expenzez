@@ -9,6 +9,8 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -1054,16 +1056,20 @@ export default function CreditScoreScreen() {
         onRequestClose={() => setModalVisible(false)}
         presentationStyle="overFullScreen"
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setModalVisible(false)}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
         >
           <TouchableOpacity
-            style={[styles.modalContent, { backgroundColor: colors.background.primary }]}
+            style={styles.modalOverlay}
             activeOpacity={1}
-            onPress={(e) => e.stopPropagation()}
+            onPress={() => setModalVisible(false)}
           >
+            <TouchableOpacity
+              style={[styles.modalContent, { backgroundColor: colors.background.primary }]}
+              activeOpacity={1}
+              onPress={(e) => e.stopPropagation()}
+            >
             {/* Modal Handle */}
             <View style={styles.modalHandle}>
               <View style={[styles.modalHandleLine, { backgroundColor: colors.text.tertiary }]} />
@@ -1195,6 +1201,7 @@ export default function CreditScoreScreen() {
             </View>
           </TouchableOpacity>
         </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
