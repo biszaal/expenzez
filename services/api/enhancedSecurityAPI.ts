@@ -316,61 +316,6 @@ export const enhancedSecurityAPI = {
   /**
    * Sync PIN from server to local device (for cross-device PIN sync)
    */
-  syncPinFromServer: async (): Promise<{
-    success: boolean;
-    error?: string;
-  }> => {
-    try {
-      console.log(
-        "🔄 [Enhanced Security] Syncing PIN from server to local device"
-      );
-
-      // Get device ID
-      const deviceId = await deviceManager.getDeviceId();
-
-      // Call server to get all PINs for this user
-      const response = await api.get("/security/user-pins");
-
-      if (
-        response.data.success &&
-        response.data.pins &&
-        response.data.pins.length > 0
-      ) {
-        // Find the most recent PIN (or any PIN for cross-device sync)
-        const mostRecentPin = response.data.pins.sort(
-          (a: any, b: any) =>
-            (b.lastUpdated || b.createdAt) - (a.lastUpdated || a.createdAt)
-        )[0];
-
-        if (mostRecentPin && mostRecentPin.encryptedPin) {
-          // Store the PIN securely in SecureStore
-          await secureStorage.storePinHash(mostRecentPin.encryptedPin);
-
-          console.log(
-            "✅ [Enhanced Security] PIN synced from server successfully to SecureStore"
-          );
-          return { success: true };
-        } else {
-          console.log(
-            "⚠️ [Enhanced Security] No valid PIN found in server response"
-          );
-          return { success: false, error: "No valid PIN found on server" };
-        }
-      } else {
-        console.log(
-          "⚠️ [Enhanced Security] No PINs available on server for this user"
-        );
-        return { success: false, error: "No PINs available on server" };
-      }
-    } catch (error: any) {
-      console.error(
-        "❌ [Enhanced Security] Error syncing PIN from server:",
-        error
-      );
-      return { success: false, error: error.message || "Sync failed" };
-    }
-  },
-
   /**
    * Validate PIN across all devices (cross-device PIN validation)
    */

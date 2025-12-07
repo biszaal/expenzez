@@ -127,7 +127,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("🔐 [AuthContext] Checking if user has PIN in database...");
       const deviceId = await deviceManager.getDeviceId();
       const securitySettings = await securityAPI.getSecuritySettings(deviceId);
-      const hasPin = !!securitySettings && !!securitySettings.encryptedPin;
+      const hasPin = !!securitySettings;
       console.log("🔐 [AuthContext] PIN check result:", { hasPin });
       return hasPin;
     } catch (error) {
@@ -282,25 +282,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         idToken !== "null"
       ) {
         if (accessToken.trim() !== "" && idToken.trim() !== "") {
-          // Skip aggressive token validation on startup - let API calls handle refresh
-
-          // Always attempt optimistic login if we have stored credentials
-          // Let the API interceptors handle token refresh when needed
-          setIsLoggedIn(true);
-          setUser(JSON.parse(storedUser));
-
-          // Initialize secure subscription service for cross-device sync
-          // Temporarily disabled until Lambda deployment completes
+          let hasValidStoredSession = false;
           try {
-            // await SecureSubscriptionService.initialize();
-            console.log(
-              "🔒 [AuthContext] Secure subscription service initialization skipped (Lambda deployment pending)"
-            );
-          } catch (error) {
+            const { tokenManager } = await import("../../services/tokenManager");
+            const validToken = await tokenManager.getValidAccessToken();
+
+            if (!validToken) {
+              throw new Error("Stored tokens expired");
+            }
+            hasValidStoredSession = true;
+          } catch (tokenError) {
             console.warn(
-              "🔒 [AuthContext] Failed to initialize secure subscription service:",
-              error
+              "🔐 [AuthContext] Stored credentials invalid, clearing auth state:",
+              tokenError
             );
+            await Promise.all([
+              AsyncStorage.removeItem("isLoggedIn"),
+              SecureStore.deleteItemAsync("accessToken", {
+                keychainService: "expenzez-tokens",
+              }).catch(() => {}),
+              SecureStore.deleteItemAsync("idToken", {
+                keychainService: "expenzez-tokens",
+              }).catch(() => {}),
+              SecureStore.deleteItemAsync("refreshToken", {
+                keychainService: "expenzez-tokens",
+              }).catch(() => {}),
+              AsyncStorage.removeItem("user"),
+            ]);
+            await deviceManager.untrustDevice();
+          }
+
+          if (hasValidStoredSession) {
+            setIsLoggedIn(true);
+            setUser(JSON.parse(storedUser));
+
+            try {
+              console.log(
+                "🔒 [AuthContext] Secure subscription service initialization skipped (Lambda deployment pending)"
+              );
+            } catch (error) {
+              console.warn(
+                "🔒 [AuthContext] Failed to initialize secure subscription service:",
+                error
+              );
+            }
           }
         } else {
           await Promise.all([

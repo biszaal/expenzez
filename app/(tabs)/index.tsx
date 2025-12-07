@@ -94,7 +94,7 @@ export default function HomeScreen() {
   useEffect(() => {
     const loadCachedInsight = async () => {
       const userId = user?.id;
-      if (!userId || !isPro || transactions.length === 0) {
+      if (!userId || !isPro) {
         return;
       }
 
@@ -102,7 +102,7 @@ export default function HomeScreen() {
         const cached = await aiInsightPersistence.getInsight(userId, 'home_balance');
 
         if (cached) {
-          console.log('[Home] 📦 Loaded cached balance insight');
+          console.log('[Home] 📦 Loaded cached balance insight (valid for 24h)');
           setBalanceInsight(cached.data);
           setShowAIInsight(true);
           setCanRequestInsight(false);
@@ -115,7 +115,7 @@ export default function HomeScreen() {
     };
 
     loadCachedInsight();
-  }, [user?.id, isPro, transactions.length]);
+  }, [user?.id, isPro]);
 
   // Fetch AI balance insight
   const fetchBalanceInsight = async () => {

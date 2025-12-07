@@ -38,7 +38,7 @@ export const useDashboardData = () => {
   const isRefreshingRef = useRef(false);
 
   // Load data function
-  const loadData = async (isRefresh = false) => {
+  const loadData = useCallback(async (isRefresh = false) => {
     try {
       if (isRefresh) {
         setRefreshing(true);
@@ -228,7 +228,7 @@ export const useDashboardData = () => {
       setFetchingData(false);
       setIsFirstLoad(false);
     }
-  };
+  }, []);
 
   // Refresh data function
   const refreshData = async () => {
@@ -267,7 +267,7 @@ export const useDashboardData = () => {
         isRefreshingRef.current = false;
       }, 1000);
     }
-  }, []);
+  }, [loadData]);
 
   // Handle balance refresh (manual refresh button)
   const handleRefreshBalance = async () => {

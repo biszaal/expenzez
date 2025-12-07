@@ -124,7 +124,7 @@ export const notificationAPI = {
   // Clear all notifications
   clearAll: async () => {
     try {
-      const response = await api.delete('/notifications/clear');
+      const response = await api.delete('/notifications');
       return response.data;
     } catch (error: any) {
       console.error('Error clearing notifications:', error);

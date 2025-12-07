@@ -1,4 +1,4 @@
-// Production-ready logging utility
+// Production-ready logging utility with sensitive data sanitization
 interface LogLevel {
   ERROR: 'error';
   WARN: 'warn';
@@ -13,22 +13,75 @@ const LOG_LEVELS: LogLevel = {
   DEBUG: 'debug'
 };
 
+// Patterns for sensitive data that should be redacted
+const SENSITIVE_PATTERNS: { pattern: RegExp; replacement: string }[] = [
+  // Tokens and secrets
+  { pattern: /Bearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+/gi, replacement: 'Bearer [REDACTED_TOKEN]' },
+  { pattern: /"(access_?[Tt]oken|refresh_?[Tt]oken|id_?[Tt]oken|token)"\s*:\s*"[^"]+"/gi, replacement: '"$1": "[REDACTED]"' },
+  { pattern: /(access_?[Tt]oken|refresh_?[Tt]oken|id_?[Tt]oken)=([^&\s]+)/gi, replacement: '$1=[REDACTED]' },
+
+  // Passwords and PINs
+  { pattern: /"(password|pin|secret|apiKey|api_key)"\s*:\s*"[^"]+"/gi, replacement: '"$1": "[REDACTED]"' },
+
+  // Personal identifiable information
+  { pattern: /"(email)"\s*:\s*"([^@]+)@([^"]+)"/gi, replacement: '"$1": "[REDACTED]@$3"' },
+  { pattern: /"(phone|phone_number|phoneNumber)"\s*:\s*"[^"]+"/gi, replacement: '"$1": "[REDACTED]"' },
+  { pattern: /"(ssn|social_security|nationalId)"\s*:\s*"[^"]+"/gi, replacement: '"$1": "[REDACTED]"' },
+
+  // Financial data
+  { pattern: /"(card_number|cardNumber|account_number|accountNumber|routing_number|routingNumber)"\s*:\s*"[^"]+"/gi, replacement: '"$1": "[REDACTED]"' },
+  { pattern: /"(cvv|cvc|security_code)"\s*:\s*"[^"]+"/gi, replacement: '"$1": "[REDACTED]"' },
+
+  // AWS credentials
+  { pattern: /AKIA[0-9A-Z]{16}/g, replacement: '[REDACTED_AWS_KEY]' },
+  { pattern: /"(aws_secret_access_key|secretAccessKey)"\s*:\s*"[^"]+"/gi, replacement: '"$1": "[REDACTED]"' },
+];
+
 class Logger {
   private isDevelopment: boolean;
-  
+
   constructor() {
     this.isDevelopment = __DEV__ || process.env.NODE_ENV === 'development';
   }
 
+  /**
+   * Sanitize sensitive data from log messages and data objects
+   */
+  private sanitize(input: string): string {
+    let sanitized = input;
+    for (const { pattern, replacement } of SENSITIVE_PATTERNS) {
+      sanitized = sanitized.replace(pattern, replacement);
+    }
+    return sanitized;
+  }
+
+  /**
+   * Deep sanitize an object by converting to string and back
+   */
+  private sanitizeData(data: any): any {
+    if (data === null || data === undefined) return data;
+
+    try {
+      const stringified = JSON.stringify(data);
+      const sanitized = this.sanitize(stringified);
+      return JSON.parse(sanitized);
+    } catch {
+      // If serialization fails, return a safe placeholder
+      return '[UNSERIALIZABLE_DATA]';
+    }
+  }
+
   private formatMessage(level: string, message: string, data?: any): string {
     const timestamp = new Date().toISOString();
-    const logData = data ? ` | Data: ${JSON.stringify(data)}` : '';
-    return `[${timestamp}] [${level.toUpperCase()}] ${message}${logData}`;
+    const sanitizedMessage = this.sanitize(message);
+    const sanitizedData = data ? this.sanitizeData(data) : null;
+    const logData = sanitizedData ? ` | Data: ${JSON.stringify(sanitizedData)}` : '';
+    return `[${timestamp}] [${level.toUpperCase()}] ${sanitizedMessage}${logData}`;
   }
 
   private shouldLog(level: string): boolean {
     if (this.isDevelopment) return true;
-    
+
     // In production, only log errors and warnings
     return level === LOG_LEVELS.ERROR || level === LOG_LEVELS.WARN;
   }
@@ -37,12 +90,15 @@ class Logger {
     // In production, send to monitoring service (Sentry, AWS CloudWatch, etc.)
     if (!this.isDevelopment && (level === LOG_LEVELS.ERROR || level === LOG_LEVELS.WARN)) {
       try {
+        // Sanitize before sending to monitoring
+        const sanitizedMessage = this.sanitize(message);
+        const sanitizedData = data ? this.sanitizeData(data) : undefined;
+
         // Example: Send to monitoring service
-        // await crashlytics().recordError(new Error(message));
-        // await analytics().logEvent('app_error', { level, message, data });
-      } catch (error) {
+        // await Sentry.captureMessage(sanitizedMessage, { extra: sanitizedData });
+      } catch {
         // Fallback - don't let logging errors crash the app
-        console.error('Failed to send log to monitoring:', error);
+        // Silent fail in production
       }
     }
   }

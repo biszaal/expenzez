@@ -124,7 +124,8 @@ export const logEnvironmentInfo = (): void => {
   }
 };
 
-// Force log environment on every import for debugging API connection issues
-console.log("🔧 [DEBUG] Current API Base URL:", ENV_CONFIG.apiBaseURL);
-console.log("🔧 [DEBUG] Environment detected as:", ENV_CONFIG.environment);
-console.log("🔧 [DEBUG] __DEV__ flag:", __DEV__);
+if (__DEV__) {
+  console.log("🔧 [DEBUG] Current API Base URL:", ENV_CONFIG.apiBaseURL);
+  console.log("🔧 [DEBUG] Environment detected as:", ENV_CONFIG.environment);
+  console.log("🔧 [DEBUG] __DEV__ flag:", __DEV__);
+}

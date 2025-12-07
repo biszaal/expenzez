@@ -3,7 +3,7 @@
  * Manages subscription state and purchase flow across the app
  */
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
@@ -371,7 +371,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const updateCustomerInfo = async () => {
+  const updateCustomerInfo = useCallback(async () => {
     // GUARD: Never update customer info in dev mode - keep premium access
     if (isDevModeRef.current) {
       console.log("[RevenueCat] 🔓 DEV MODE: Skipping updateCustomerInfo, keeping premium access");
@@ -391,7 +391,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       // Fallback to backend on error
       await syncPremiumStatusFromBackend();
     }
-  };
+  }, [processCustomerInfo, syncPremiumStatusFromBackend]);
 
   /**
    * Sync subscription status directly from RevenueCat API
@@ -434,7 +434,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
    * Sync premium status from backend DynamoDB
    * This ensures subscription status persists across logout/login
    */
-  const syncPremiumStatusFromBackend = async () => {
+  const syncPremiumStatusFromBackend = useCallback(async () => {
     // GUARD: Never sync from backend in dev mode - keep premium access
     if (isDevModeRef.current) {
       console.log("[RevenueCat] 🔓 DEV MODE: Skipping backend sync, keeping premium access");
@@ -463,9 +463,9 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("[RevenueCat] ❌ Failed to sync from backend:", error);
       // Don't throw - allow RevenueCat SDK to be source of truth if backend fails
     }
-  };
+  }, []);
 
-  const processCustomerInfo = async (info: any) => {
+  const processCustomerInfo = useCallback(async (info: any) => {
     // GUARD: Never process customer info in dev mode - keep premium access
     if (isDevModeRef.current) {
       console.log("[RevenueCat] 🔓 DEV MODE: Skipping processCustomerInfo, keeping premium access");
@@ -564,7 +564,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       setSubscriptionExpiryDate(null);
       setActiveProductIdentifier(null);
     }
-  };
+  }, [syncPremiumStatusFromBackend]);
 
   const getOfferings = async () => {
     try {
