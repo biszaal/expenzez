@@ -511,13 +511,11 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
             const deviceId = await deviceManager.getDeviceId();
             const securitySettings =
               await nativeSecurityAPI.getSecuritySettings(deviceId);
-            hasPinOnServer =
-              !!securitySettings && !!securitySettings.encryptedPin;
+            hasPinOnServer = !!securitySettings;
 
             console.log("🔐 [SecurityContext] Device-specific PIN check:", {
               hasPinOnServer,
               hasSettings: !!securitySettings,
-              hasEncryptedPin: !!securitySettings?.encryptedPin,
             });
           }
 
@@ -619,37 +617,10 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
           // IMPROVED CROSS-DEVICE PIN SYNC: If server has PIN but local doesn't, sync it
           if (hasPinOnServer && !hasLocalPin) {
             console.log(
-              "🔄 [SecurityContext] Server has PIN but local doesn't - syncing PIN from server using new endpoint"
+              "🔄 [SecurityContext] Server has a PIN but this device does not - prompting user to enter existing PIN"
             );
-            try {
-              // Use the new cross-device PIN sync endpoint
-              const syncResult = await enhancedSecurityAPI.syncPinFromServer();
-
-              if (syncResult.success) {
-                console.log(
-                  "✅ [SecurityContext] PIN synced from server successfully using new endpoint"
-                );
-                // Update hasLocalPin for the rest of the logic
-                hasLocalPin = await AsyncStorage.getItem("@expenzez_app_password");
-              } else {
-                console.log(
-                  "⚠️ [SecurityContext] PIN sync failed:",
-                  syncResult.error
-                );
-                // Don't require PIN setup if server doesn't have PIN - just disable security
-                setIsSecurityEnabled(false);
-                setIsLocked(false);
-                setNeedsPinSetup(false);
-                return;
-              }
-            } catch (error) {
-              console.error(
-                "❌ [SecurityContext] Error syncing PIN from server:",
-                error
-              );
-              // If sync fails, still allow PIN setup on this device
-              setNeedsPinSetup(true);
-            }
+            setHasServerPin(true);
+            setNeedsPinSetup(true);
           }
 
           // Use session-based locking: if no recent unlock session, require PIN

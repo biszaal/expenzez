@@ -1,11 +1,9 @@
 import { api } from "../config/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import CryptoJS from "crypto-js";
 import { secureStorage } from "../secureStorage";
 
 export interface SecuritySettings {
   userId: string;
-  encryptedPin: string;
   biometricEnabled: boolean;
   deviceId: string;
   lastUpdated: number;
@@ -29,73 +27,6 @@ export interface SecurityValidationResponse {
   error?: string;
 }
 
-// Generate a device-specific encryption key
-const getEncryptionKey = async (): Promise<string> => {
-  try {
-    const deviceId = await AsyncStorage.getItem("device_id");
-    const userId = await AsyncStorage.getItem("user");
-    let userInfo = "";
-
-    try {
-      if (userId) {
-        const user = JSON.parse(userId);
-        userInfo = user.username || user.id || "";
-      }
-    } catch (_error) {
-      // Fallback to stored user ID
-    }
-
-    // Create a unique key combining device ID and user info
-    return CryptoJS.SHA256(
-      `${deviceId}_${userInfo}_expenzez_security`
-    ).toString();
-  } catch (_error) {
-    console.warn("Error generating encryption key, using fallback:", _error);
-    // Fallback to a simpler key for Expo Go
-    return "expenzez_fallback_key_12345";
-  }
-};
-
-// Encrypt PIN for secure storage
-const encryptPin = async (pin: string): Promise<string> => {
-  try {
-    const key = await getEncryptionKey();
-    return CryptoJS.AES.encrypt(pin, key).toString();
-  } catch (_error) {
-    // Silently fallback for Expo Go - this is expected behavior
-    const key = await getEncryptionKey();
-    const combined = `${pin}_${key.substring(0, 10)}`;
-    return btoa(combined);
-  }
-};
-
-// Decrypt PIN for validation
-const _decryptPin = async (encryptedPin: string): Promise<string> => {
-  try {
-    const key = await getEncryptionKey();
-    const bytes = CryptoJS.AES.decrypt(encryptedPin, key);
-    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
-
-    if (decrypted) {
-      return decrypted;
-    } else {
-      throw new Error("Decryption produced empty result");
-    }
-  } catch (_error) {
-    // Silently try fallback for Expo Go
-    try {
-      const decoded = atob(encryptedPin);
-      const [pin] = decoded.split("_");
-      if (pin && /^\d{5}$/.test(pin)) {
-        return pin;
-      }
-    } catch (_fallbackError) {
-      // Silent fallback failure
-    }
-    throw new Error("Failed to decrypt PIN");
-  }
-};
-
 export const securityAPI = {
   /**
    * Set up a new 5-digit PIN for the user
@@ -109,11 +40,8 @@ export const securityAPI = {
         return { success: false, error: "PIN must be exactly 5 digits" };
       }
 
-      // Encrypt the PIN
-      const encryptedPin = await encryptPin(request.pin);
-
       const payload = {
-        encryptedPin,
+        pin: request.pin,
         deviceId: request.deviceId,
         biometricEnabled: request.biometricEnabled || false,
       };
@@ -251,9 +179,8 @@ export const securityAPI = {
         console.log("🔒 [SecurityAPI] Local validation successful (SecureStore)");
         // Try to sync with server, but don't fail if server is down
         try {
-          const encryptedPin = await encryptPin(request.pin);
           await api.post("/security/validate-pin", {
-            encryptedPin,
+            pin: request.pin,
             deviceId: request.deviceId,
           });
           console.log(
@@ -279,9 +206,8 @@ export const securityAPI = {
       console.log(
         "🔒 [SecurityAPI] Local validation failed, trying server validation"
       );
-      const encryptedPin = await encryptPin(request.pin);
       const response = await api.post("/security/validate-pin", {
-        encryptedPin,
+        pin: request.pin,
         deviceId: request.deviceId,
       });
 
@@ -343,11 +269,21 @@ export const securityAPI = {
       const response = await api.get(`/security/settings/${deviceId}`);
 
       if (response.status === 200) {
-        console.log("🔒 [SecurityAPI] ✅ Server security settings found:", {
-          hasEncryptedPin: !!response.data?.encryptedPin,
-          biometricEnabled: response.data?.biometricEnabled,
-        });
-        return response.data;
+        const payload = response.data?.settings || response.data;
+
+        if (payload) {
+          console.log("🔒 [SecurityAPI] ✅ Server security settings found:", {
+            hasServerRecord: !!payload.deviceId,
+            biometricEnabled: payload.biometricEnabled,
+          });
+          return {
+            userId: payload.userId,
+            biometricEnabled: !!payload.biometricEnabled,
+            deviceId: payload.deviceId,
+            lastUpdated: payload.lastUpdated || Date.now(),
+            createdAt: payload.createdAt || Date.now(),
+          };
+        }
       }
       console.log(
         "🔒 [SecurityAPI] Server returned non-200 status:",
@@ -379,13 +315,8 @@ export const securityAPI = {
       if (hasLocalPin && user) {
         try {
           const userObj = JSON.parse(user);
-          // For fallback, create a dummy encrypted PIN value
-          // The actual PIN hash is securely stored in SecureStore
-          const encryptedPin = "secure-pin-hash-stored-in-keychain";
-
           const localSettings = {
             userId: userObj.username || userObj.id,
-            encryptedPin,
             biometricEnabled: biometricEnabled === "true",
             deviceId,
             lastUpdated: Date.now(),
@@ -466,13 +397,10 @@ export const securityAPI = {
         return { success: false, error: "New PIN must be exactly 5 digits" };
       }
 
-      // Encrypt the new PIN
-      const encryptedPin = await encryptPin(newPin);
-
       const response = await api.patch("/security/change-pin", {
         deviceId,
-        oldEncryptedPin: await encryptPin(oldPin),
-        newEncryptedPin: encryptedPin,
+        oldPin,
+        newPin,
       });
 
       if (response.status === 200) {

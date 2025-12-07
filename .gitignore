@@ -104,3 +104,6 @@ app-example
 # Sensitive credentials - DO NOT COMMIT
 android-service-account.json
 *service-account*.json
+google-services.json
+ios/GoogleService-Info.plist
+secrets/

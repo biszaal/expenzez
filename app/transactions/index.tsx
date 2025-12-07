@@ -19,7 +19,6 @@ import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { TransactionSkeleton } from "../../components/ui/SkeletonLoader";
 import { transactionAPI } from "../../services/api/transactionAPI";
-import { getMerchantInfo } from "../../services/merchantService";
 import MonthFilter from "../../components/ui/MonthFilter";
 import EditTransactionModal from "../../components/EditTransactionModal";
 import dayjs from "dayjs";
@@ -391,7 +390,7 @@ export default function TransactionsScreen() {
     const months = Array.from(monthsSet).sort().reverse();
     return months.map((month) => ({
       key: month,
-      label: dayjs(month).format("MMM YY"),
+      label: dayjs(month).format("MMMM"), // Full month name for clarity
       isActive: true,
     }));
   }, [allLoadedTransactions]);
@@ -491,16 +490,54 @@ export default function TransactionsScreen() {
     return dayjs(date).format("ddd DD MMM");
   };
 
-  const getMerchantLogo = (description: string) => {
-    const merchantInfo = getMerchantInfo(description);
-    return merchantInfo.logo;
+  // Get category icon using Ionicons
+  const getCategoryIcon = (category: string): string => {
+    const categoryIcons: Record<string, string> = {
+      'food': 'restaurant',
+      'food & drink': 'restaurant',
+      'dining': 'restaurant',
+      'groceries': 'cart',
+      'shopping': 'bag',
+      'transport': 'car',
+      'transportation': 'car',
+      'fuel': 'flash',
+      'entertainment': 'game-controller',
+      'bills': 'receipt',
+      'utilities': 'flash',
+      'health': 'fitness',
+      'finance': 'card',
+      'transfer': 'swap-horizontal',
+      'income': 'trending-up',
+      'salary': 'cash',
+      'general': 'ellipse',
+      'other': 'ellipse',
+    };
+    return categoryIcons[category?.toLowerCase()] || 'ellipse';
   };
 
-  const getBankIcon = (accountType: string) => {
-    if (accountType?.toLowerCase().includes("credit")) {
-      return "💳";
-    }
-    return "🏦";
+  // Get category color
+  const getCategoryColor = (category: string): string => {
+    const categoryColors: Record<string, string> = {
+      'food': '#FF6B6B',
+      'food & drink': '#FF6B6B',
+      'dining': '#FF6B6B',
+      'groceries': '#4ECDC4',
+      'shopping': '#A78BFA',
+      'transport': '#60A5FA',
+      'transportation': '#60A5FA',
+      'fuel': '#F59E0B',
+      'entertainment': '#EC4899',
+      'bills': '#EF4444',
+      'utilities': '#F97316',
+      'health': '#10B981',
+      'finance': '#6366F1',
+      'transfer': '#8B5CF6',
+      'income': '#22C55E',
+      'salary': '#22C55E',
+      'general': '#9CA3AF',
+      'other': '#9CA3AF',
+    };
+    return categoryColors[category?.toLowerCase()] || '#9CA3AF';
   };
 
   if (!authLoggedIn || checkingBank) {
@@ -682,10 +719,17 @@ export default function TransactionsScreen() {
                     ]}
                     onPress={() => handleEditTransaction(transaction)}
                   >
-                    <View style={styles.merchantLogo}>
-                      <Text style={styles.logoText}>
-                        {getMerchantLogo(transaction.merchant)}
-                      </Text>
+                    <View
+                      style={[
+                        styles.categoryIconContainer,
+                        { backgroundColor: getCategoryColor(transaction.category || 'other') + '20' }
+                      ]}
+                    >
+                      <Ionicons
+                        name={getCategoryIcon(transaction.category || 'other') as any}
+                        size={20}
+                        color={getCategoryColor(transaction.category || 'other')}
+                      />
                     </View>
 
                     <View style={styles.transactionDetails}>
@@ -697,19 +741,14 @@ export default function TransactionsScreen() {
                       >
                         {transaction.merchant}
                       </Text>
-                      <View style={styles.accountInfo}>
-                        <Text
-                          style={[
-                            styles.accountType,
-                            { color: colors.text.secondary },
-                          ]}
-                        >
-                          {transaction.accountType}
-                        </Text>
-                        <Text style={styles.bankIcon}>
-                          {getBankIcon(transaction.accountType || "")}
-                        </Text>
-                      </View>
+                      <Text
+                        style={[
+                          styles.categoryLabel,
+                          { color: colors.text.tertiary },
+                        ]}
+                      >
+                        {transaction.category || 'General'}
+                      </Text>
                     </View>
 
                     <View style={styles.amountContainer}>
@@ -720,16 +759,16 @@ export default function TransactionsScreen() {
                             color:
                               transaction.type === "credit"
                                 ? colors.success.main
-                                : colors.text.primary,
+                                : colors.error.main,
                           },
                         ]}
                       >
-                        {transaction.type === "credit" ? "+" : ""}£
+                        {transaction.type === "credit" ? "+" : "-"}£
                         {Math.abs(transaction.originalAmount).toFixed(2)}
                       </Text>
                       <Ionicons
                         name="chevron-forward"
-                        size={20}
+                        size={18}
                         color={colors.text.tertiary}
                         style={styles.chevronIcon}
                       />
@@ -742,19 +781,21 @@ export default function TransactionsScreen() {
             {/* Grouped Transactions */}
             {groupedTransactions.map((group) => (
               <View key={group.date} style={styles.dateGroup}>
-                <Text
-                  style={[styles.dateHeader, { color: colors.text.secondary }]}
-                >
-                  {formatDateHeader(group.date)}
-                </Text>
-                <Text
-                  style={[styles.dateAmount, { color: colors.text.secondary }]}
-                >
-                  £
-                  {group.transactions
-                    .reduce((sum, tx) => sum + Math.abs(tx.originalAmount), 0)
-                    .toFixed(2)}
-                </Text>
+                <View style={styles.dateHeaderContainer}>
+                  <Text
+                    style={[styles.dateHeader, { color: colors.text.secondary }]}
+                  >
+                    {formatDateHeader(group.date)}
+                  </Text>
+                  <Text
+                    style={[styles.dateAmount, { color: colors.text.secondary }]}
+                  >
+                    £
+                    {group.transactions
+                      .reduce((sum, tx) => sum + Math.abs(tx.originalAmount), 0)
+                      .toFixed(2)}
+                  </Text>
+                </View>
 
                 {group.transactions.map((transaction) => (
                   <TouchableOpacity
@@ -765,10 +806,17 @@ export default function TransactionsScreen() {
                     ]}
                     onPress={() => handleEditTransaction(transaction)}
                   >
-                    <View style={styles.merchantLogo}>
-                      <Text style={styles.logoText}>
-                        {getMerchantLogo(transaction.merchant)}
-                      </Text>
+                    <View
+                      style={[
+                        styles.categoryIconContainer,
+                        { backgroundColor: getCategoryColor(transaction.category || 'other') + '20' }
+                      ]}
+                    >
+                      <Ionicons
+                        name={getCategoryIcon(transaction.category || 'other') as any}
+                        size={20}
+                        color={getCategoryColor(transaction.category || 'other')}
+                      />
                     </View>
 
                     <View style={styles.transactionDetails}>
@@ -780,19 +828,14 @@ export default function TransactionsScreen() {
                       >
                         {transaction.merchant}
                       </Text>
-                      <View style={styles.accountInfo}>
-                        <Text
-                          style={[
-                            styles.accountType,
-                            { color: colors.text.secondary },
-                          ]}
-                        >
-                          {transaction.accountType}
-                        </Text>
-                        <Text style={styles.bankIcon}>
-                          {getBankIcon(transaction.accountType || "")}
-                        </Text>
-                      </View>
+                      <Text
+                        style={[
+                          styles.categoryLabel,
+                          { color: colors.text.tertiary },
+                        ]}
+                      >
+                        {transaction.category || 'General'}
+                      </Text>
                     </View>
 
                     <View style={styles.amountContainer}>
@@ -803,16 +846,16 @@ export default function TransactionsScreen() {
                             color:
                               transaction.type === "credit"
                                 ? colors.success.main
-                                : colors.text.primary,
+                                : colors.error.main,
                           },
                         ]}
                       >
-                        {transaction.type === "credit" ? "+" : ""}£
+                        {transaction.type === "credit" ? "+" : "-"}£
                         {Math.abs(transaction.originalAmount).toFixed(2)}
                       </Text>
                       <Ionicons
                         name="chevron-forward"
-                        size={20}
+                        size={18}
                         color={colors.text.tertiary}
                         style={styles.chevronIcon}
                       />
@@ -1160,21 +1203,24 @@ const styles = StyleSheet.create({
 
   // Date Groups
   dateGroup: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  dateHeaderContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xs,
   },
   dateHeader: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   dateAmount: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    textAlign: "right",
-    marginTop: -22,
+    fontSize: 13,
+    fontWeight: "600",
   },
 
   // Transaction Cards
@@ -1187,16 +1233,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     ...shadows.sm,
   },
-  merchantLogo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  categoryIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
   },
-  logoText: {
-    fontSize: 20,
+  categoryLabel: {
+    fontSize: 13,
+    marginTop: 2,
   },
   transactionDetails: {
     flex: 1,
@@ -1205,17 +1252,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 2,
-  },
-  accountInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  accountType: {
-    fontSize: 14,
-  },
-  bankIcon: {
-    fontSize: 14,
   },
   amountContainer: {
     alignItems: "flex-end",

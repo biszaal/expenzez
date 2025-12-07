@@ -35,19 +35,15 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   type = 'sign-in',
   disabled = false
 }) => {
-  // Only show on Android devices with Google Sign-In available
-  if (Platform.OS !== 'android' || !isGoogleSignInAvailable) {
-    return null;
-  }
-
+  // Hooks must be called before any conditional returns (React Rules of Hooks)
   const { colors } = useTheme();
   const { isLoggedIn } = useAuth();
   const [isChecking, setIsChecking] = React.useState(true);
   const [isSigningIn, setIsSigningIn] = React.useState(false);
 
   React.useEffect(() => {
-    // Skip initialization if user is already logged in
-    if (isLoggedIn) {
+    // Skip initialization if user is already logged in or Google Sign-In not available
+    if (isLoggedIn || Platform.OS !== 'android' || !isGoogleSignInAvailable) {
       setIsChecking(false);
       return;
     }
@@ -71,9 +67,13 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
     configureGoogleSignIn();
   }, [isLoggedIn]);
 
+  // Only show on Android devices with Google Sign-In available
+  if (Platform.OS !== 'android' || !isGoogleSignInAvailable) {
+    return null;
+  }
+
   // 🚨 SECURITY: Hide Google Sign-In if user is already authenticated
   if (isLoggedIn) {
-    console.log('🚨 [SECURITY] Google Sign-In hidden - user already authenticated');
     return null;
   }
 

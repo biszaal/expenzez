@@ -187,9 +187,8 @@ export default function SettingsPage() {
     try {
       console.log("Deleting account...");
 
-      // Import API client and auth
+      // Import API client
       const { api } = await import("../../services/config/apiClient");
-      const { logout } = useAuth();
 
       // Call backend delete-account endpoint
       const response = await api.delete("/auth/delete-account");

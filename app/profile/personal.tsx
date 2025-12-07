@@ -31,7 +31,7 @@ export default function PersonalInformationScreen() {
   const { isLoggedIn } = useAuthGuard();
   const { showSuccess, showError } = useAlert();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   // Form state
   const [isEditing, setIsEditing] = useState(false);
@@ -626,9 +626,8 @@ export default function PersonalInformationScreen() {
     try {
       console.log("Submitting data deletion request...");
 
-      // Import API client and logout function
+      // Import API client
       const { api } = await import("../../services/config/apiClient");
-      const { logout } = useAuth();
 
       // Call backend delete-account endpoint
       const response = await api.delete("/auth/delete-account");

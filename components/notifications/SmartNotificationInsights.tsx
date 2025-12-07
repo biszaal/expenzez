@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../app/auth/AuthContext';
@@ -19,7 +20,11 @@ interface SmartInsight {
   priority: 'high' | 'medium' | 'low';
   icon: string;
   color: string;
+  dismissed?: boolean;
 }
+
+const DISMISSED_INSIGHTS_KEY = '@dismissed_smart_insights';
+const INSIGHT_EXPIRY_HOURS = 24; // Dismissed insights expire after 24 hours
 
 export const SmartNotificationInsights: React.FC = () => {
   const { colors } = useTheme();
@@ -27,11 +32,53 @@ export const SmartNotificationInsights: React.FC = () => {
   const { preferences } = useNotifications();
   const router = useRouter();
   const [insights, setInsights] = useState<SmartInsight[]>([]);
+  const [dismissedIds, setDismissedIds] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+
+  // Load dismissed insights from storage
+  useEffect(() => {
+    loadDismissedInsights();
+  }, []);
 
   useEffect(() => {
     generateSmartInsights();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const loadDismissedInsights = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(DISMISSED_INSIGHTS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const now = Date.now();
+        // Filter out expired dismissals
+        const valid: Record<string, number> = {};
+        Object.entries(parsed).forEach(([id, timestamp]) => {
+          if (now - (timestamp as number) < INSIGHT_EXPIRY_HOURS * 60 * 60 * 1000) {
+            valid[id] = timestamp as number;
+          }
+        });
+        setDismissedIds(valid);
+        // Save cleaned up list
+        if (Object.keys(valid).length !== Object.keys(parsed).length) {
+          await AsyncStorage.setItem(DISMISSED_INSIGHTS_KEY, JSON.stringify(valid));
+        }
+      }
+    } catch (error) {
+      console.log('Error loading dismissed insights:', error);
+    }
+  };
+
+  const dismissInsight = useCallback(async (insightId: string) => {
+    const newDismissed = { ...dismissedIds, [insightId]: Date.now() };
+    setDismissedIds(newDismissed);
+    setInsights(prev => prev.filter(i => i.id !== insightId));
+    try {
+      await AsyncStorage.setItem(DISMISSED_INSIGHTS_KEY, JSON.stringify(newDismissed));
+    } catch (error) {
+      console.log('Error saving dismissed insight:', error);
+    }
+  }, [dismissedIds]);
 
   const generateSmartInsights = async () => {
     try {
@@ -161,8 +208,9 @@ export const SmartNotificationInsights: React.FC = () => {
         });
       }
 
-      // Sort by priority and limit to top 3
+      // Filter out dismissed insights, sort by priority and limit to top 3
       const sortedInsights = insights
+        .filter(insight => !dismissedIds[insight.id])
         .sort((a, b) => {
           const priorityOrder = { high: 3, medium: 2, low: 1 };
           return priorityOrder[b.priority] - priorityOrder[a.priority];
@@ -197,40 +245,48 @@ export const SmartNotificationInsights: React.FC = () => {
       </View>
 
       {insights.map((insight, index) => (
-        <TouchableOpacity
-          key={insight.id}
-          style={[styles.insightCard, { borderLeftColor: insight.color }]}
-          onPress={() => handleInsightPress(insight)}
-          activeOpacity={0.8}
-        >
-          <View style={styles.insightContent}>
-            <View style={[styles.insightIcon, { backgroundColor: insight.color + '15' }]}>
-              <Ionicons name={insight.icon as any} size={20} color={insight.color} />
-            </View>
+        <View key={insight.id} style={[styles.insightCard, { borderLeftColor: insight.color }]}>
+          <TouchableOpacity
+            style={styles.insightTouchable}
+            onPress={() => handleInsightPress(insight)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.insightContent}>
+              <View style={[styles.insightIcon, { backgroundColor: insight.color + '15' }]}>
+                <Ionicons name={insight.icon as any} size={20} color={insight.color} />
+              </View>
 
-            <View style={styles.insightText}>
-              <Text style={styles.insightTitle}>{insight.title}</Text>
-              <Text style={styles.insightMessage} numberOfLines={2}>
-                {insight.message}
-              </Text>
-              {insight.actionText && (
-                <Text style={[styles.actionText, { color: insight.color }]}>
-                  {insight.actionText} →
+              <View style={styles.insightText}>
+                <Text style={styles.insightTitle}>{insight.title}</Text>
+                <Text style={styles.insightMessage} numberOfLines={2}>
+                  {insight.message}
                 </Text>
-              )}
-            </View>
+                {insight.actionText && (
+                  <Text style={[styles.actionText, { color: insight.color }]}>
+                    {insight.actionText} →
+                  </Text>
+                )}
+              </View>
 
-            <View style={styles.priorityIndicator}>
-              <View style={[
-                styles.priorityDot,
-                {
-                  backgroundColor: insight.priority === 'high' ? colors.error.main :
-                    insight.priority === 'medium' ? colors.warning.main : colors.success.main
-                }
-              ]} />
+              <View style={styles.rightSection}>
+                <View style={[
+                  styles.priorityDot,
+                  {
+                    backgroundColor: insight.priority === 'high' ? colors.error.main :
+                      insight.priority === 'medium' ? colors.warning.main : colors.success.main
+                  }
+                ]} />
+              </View>
             </View>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dismissButton}
+            onPress={() => dismissInsight(insight.id)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="close" size={16} color={colors.text.tertiary} />
+          </TouchableOpacity>
+        </View>
       ))}
     </View>
   );
@@ -259,12 +315,17 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
     marginBottom: SPACING.sm,
     borderLeftWidth: 4,
+    position: 'relative',
     ...SHADOWS.sm
+  },
+  insightTouchable: {
+    flex: 1,
   },
   insightContent: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     padding: SPACING.md,
+    paddingRight: SPACING.xl + 8, // Extra space for dismiss button
     gap: SPACING.md
   },
   insightIcon: {
@@ -294,12 +355,22 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '600'
   },
-  priorityIndicator: {
+  rightSection: {
+    alignItems: 'center',
+    justifyContent: 'flex-start',
     marginTop: 4
   },
   priorityDot: {
     width: 8,
     height: 8,
     borderRadius: 4
+  },
+  dismissButton: {
+    position: 'absolute',
+    top: SPACING.sm,
+    right: SPACING.sm,
+    padding: SPACING.xs,
+    borderRadius: BORDER_RADIUS.sm,
+    backgroundColor: colors.background.secondary,
   }
 });

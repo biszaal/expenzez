@@ -179,14 +179,14 @@ class TokenManager {
     const now = Date.now();
     const timeExpired = now - tokenInfo.expiresAt;
     
-    // For trusted devices, extend the grace period significantly
+    // For trusted devices, extend the grace period slightly
     const isTrustedDevice = await deviceManager.isDeviceTrusted();
     const persistentSession = await deviceManager.getPersistentSession();
-    
-    // Secure grace periods - maximum 24 hours for security
+
+    // Secure grace periods - maximum 15 minutes for security (prevents token reuse attacks)
     const maxExpiredTime = isTrustedDevice && persistentSession ?
-      (24 * 60 * 60 * 1000) : // 24 hours for trusted devices (reduced from 30 days for security)
-      (2 * 60 * 60 * 1000); // 2 hours for non-trusted devices (reduced from 7 days for security)
+      (15 * 60 * 1000) : // 15 minutes for trusted devices
+      (5 * 60 * 1000); // 5 minutes for non-trusted devices
     
     if (tokenInfo.isExpired && timeExpired > maxExpiredTime) {
       // Try to restore from persistent session before clearing tokens
@@ -570,7 +570,7 @@ class TokenManager {
       // If token is expired, check if it's been expired for too long
       const now = Date.now();
       const timeExpired = now - tokenInfo.expiresAt;
-      const isWithinGracePeriod = timeExpired <= 7 * 24 * 60 * 60 * 1000; // Allow up to 7 days of expiry (increased from 2 hours)
+      const isWithinGracePeriod = timeExpired <= 15 * 60 * 1000; // Allow up to 15 minutes of expiry (security hardening)
       return isWithinGracePeriod;
     } catch (_error) {
       return false;

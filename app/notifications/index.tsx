@@ -49,82 +49,55 @@ export default function NotificationsScreen() {
   const handleNotificationPress = (notification: any) => {
     console.log("[NotificationsScreen] Notification pressed:", notification);
 
-    // Mark as read
+    // Mark as read first
     if (!notification.read) {
       markAsRead(notification.id);
     }
 
-    try {
-      // Navigate based on notification type with robust error handling
-      switch (notification.type) {
-        case "transaction":
-          console.log("[NotificationsScreen] Navigating to spending tab");
-          // Use replace to avoid navigation stack issues
-          router.replace("/(tabs)/spending");
-          break;
-        case "budget":
-          console.log(
-            "[NotificationsScreen] Navigating to spending tab for budget"
-          );
-          router.replace("/(tabs)/spending");
-          break;
-        case "account":
-          console.log("[NotificationsScreen] Navigating to account tab");
-          router.replace("/(tabs)/account");
-          break;
-        case "insight":
-          console.log("[NotificationsScreen] Navigating to AI assistant");
-          // First navigate to home, then to AI assistant to ensure proper stack
-          router.replace("/(tabs)");
-          setTimeout(() => {
-            router.push("/ai-assistant");
-          }, 100);
-          break;
-        case "security":
-          console.log("[NotificationsScreen] Navigating to security settings");
-          // First navigate to account tab, then to security
-          router.replace("/(tabs)/account");
-          setTimeout(() => {
-            router.push("/security");
-          }, 100);
-          break;
-        default:
-          console.log(
-            "[NotificationsScreen] Unknown notification type, showing alert"
-          );
-          // Show details in alert for now
-          Alert.alert(notification.title, notification.message, [
-            { text: "OK" },
-          ]);
-          break;
+    // Safe navigation function
+    const safeNavigate = (route: string, isReplace = false) => {
+      try {
+        if (isReplace) {
+          router.replace(route as any);
+        } else {
+          router.push(route as any);
+        }
+      } catch (navError) {
+        console.error("[NotificationsScreen] Navigation failed:", navError);
+        // Show notification details as fallback
+        Alert.alert(notification.title, notification.message, [{ text: "OK" }]);
       }
-    } catch (error: any) {
-      console.error("[NotificationsScreen] Navigation error:", error);
-      Alert.alert(
-        "Navigation Error",
-        `Unable to navigate to ${notification.type} section. Please try again.`,
-        [
-          {
-            text: "Show Details",
-            onPress: () =>
-              Alert.alert(notification.title, notification.message),
-          },
-          {
-            text: "Go to Home",
-            onPress: () => {
-              try {
-                router.replace("/(tabs)");
-              } catch (err) {
-                console.error(
-                  "[NotificationsScreen] Failed to navigate to home:",
-                  err
-                );
-              }
-            },
-          },
-          { text: "OK" },
-        ]
-      );
+    };
+
+    // Navigate based on notification type
+    switch (notification.type) {
+      case "transaction":
+        safeNavigate("/(tabs)/spending", true);
+        break;
+      case "budget":
+        safeNavigate("/(tabs)/spending", true);
+        break;
+      case "account":
+        safeNavigate("/(tabs)/account", true);
+        break;
+      case "insight":
+        // Navigate to AI assistant
+        router.back();
+        setTimeout(() => {
+          safeNavigate("/ai-assistant");
+        }, 150);
+        break;
+      case "security":
+        // Navigate to security settings
+        router.back();
+        setTimeout(() => {
+          safeNavigate("/security");
+        }, 150);
+        break;
+      default:
+        // For unknown types, just show the notification details
+        Alert.alert(notification.title, notification.message, [{ text: "OK" }]);
+        break;
     }
   };
 
@@ -133,36 +106,37 @@ export default function NotificationsScreen() {
     return notification.type === selectedCategory;
   });
 
+  // Show unread count in badges for better UX
   const categories = [
     {
       id: "all",
       title: "All",
       icon: "list-outline",
-      count: notifications.length,
+      count: unreadCount, // Show unread count instead of total
     },
     {
       id: "transaction",
       title: "Transactions",
       icon: "swap-horizontal-outline",
-      count: notifications.filter((n) => n.type === "transaction").length,
+      count: notifications.filter((n) => n.type === "transaction" && !n.read).length,
     },
     {
       id: "budget",
       title: "Budget",
       icon: "pie-chart-outline",
-      count: notifications.filter((n) => n.type === "budget").length,
+      count: notifications.filter((n) => n.type === "budget" && !n.read).length,
     },
     {
       id: "insight",
       title: "Insights",
       icon: "bulb-outline",
-      count: notifications.filter((n) => n.type === "insight").length,
+      count: notifications.filter((n) => n.type === "insight" && !n.read).length,
     },
     {
       id: "security",
       title: "Security",
       icon: "shield-checkmark-outline",
-      count: notifications.filter((n) => n.type === "security").length,
+      count: notifications.filter((n) => n.type === "security" && !n.read).length,
     },
   ];
 

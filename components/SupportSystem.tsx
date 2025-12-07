@@ -6,30 +6,18 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
-  TextInput,
   Modal,
-  ActivityIndicator,
   Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../contexts/ThemeContext";
-import { spacing, borderRadius, typography } from "../constants/theme";
+import { spacing, borderRadius } from "../constants/theme";
 
 interface FAQ {
   id: string;
   question: string;
   answer: string;
   category: "general" | "transactions" | "budgets" | "technical";
-}
-
-interface SupportOption {
-  id: string;
-  title: string;
-  subtitle: string;
-  icon: string;
-  action: () => void;
-  color: string;
 }
 
 interface SupportSystemProps {
@@ -43,13 +31,6 @@ export const SupportSystem: React.FC<SupportSystemProps> = ({
 }) => {
   const { colors } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [showContactForm, setShowContactForm] = useState(false);
-  const [contactFormData, setContactFormData] = useState({
-    subject: "",
-    message: "",
-    urgency: "normal",
-  });
-  const [submitting, setSubmitting] = useState(false);
 
   const faqData: FAQ[] = [
     {
@@ -167,113 +148,7 @@ Thank you!`;
     }
   };
 
-  const handlePhoneSupport = () => {
-    Alert.alert(
-      "Phone Support",
-      "Our support team is available Monday-Friday, 9 AM - 5 PM GMT",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Call Now",
-          onPress: () => Linking.openURL("tel:+441234567890"),
-        },
-      ]
-    );
-  };
 
-  const handleLiveChat = () => {
-    Alert.alert(
-      "Live Chat",
-      "Live chat is available Monday-Friday, 9 AM - 5 PM GMT. Would you like to start a chat session?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Start Chat",
-          onPress: () => {
-            // In a real app, this would open a chat widget
-            Alert.alert(
-              "Live Chat",
-              "Live chat feature coming soon! Please use email support for now."
-            );
-          },
-        },
-      ]
-    );
-  };
-
-  const handleSubmitContactForm = async () => {
-    if (!contactFormData.subject.trim() || !contactFormData.message.trim()) {
-      Alert.alert("Error", "Please fill in all fields");
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      // In a real app, this would submit to your support API
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate API call
-
-      Alert.alert(
-        "Success",
-        "Your support request has been submitted. We'll get back to you within 24 hours.",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              setShowContactForm(false);
-              setContactFormData({
-                subject: "",
-                message: "",
-                urgency: "normal",
-              });
-            },
-          },
-        ]
-      );
-    } catch (error) {
-      Alert.alert(
-        "Error",
-        "Failed to submit support request. Please try again."
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const supportOptions: SupportOption[] = [
-    {
-      id: "email",
-      title: "Email Support",
-      subtitle: "Get help via email",
-      icon: "mail",
-      action: handleEmailSupport,
-      color: colors.primary.main,
-    },
-    {
-      id: "phone",
-      title: "Phone Support",
-      subtitle: "Call our support team",
-      icon: "call",
-      action: handlePhoneSupport,
-      color: colors.success.main,
-    },
-    {
-      id: "chat",
-      title: "Live Chat",
-      subtitle: "Chat with our team",
-      icon: "chatbubbles",
-      action: handleLiveChat,
-      color: colors.accent[500],
-    },
-    {
-      id: "contact",
-      title: "Contact Form",
-      subtitle: "Send us a message",
-      icon: "document-text",
-      action: () => setShowContactForm(true),
-      color: colors.warning.main,
-    },
-  ];
 
   return (
     <Modal
@@ -305,52 +180,62 @@ Thank you!`;
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Support Options */}
+          {/* Contact Support */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Get Support
+              Contact Us
             </Text>
-            <View style={styles.supportOptionsGrid}>
-              {supportOptions.map((option) => (
-                <TouchableOpacity
-                  key={option.id}
+            <TouchableOpacity
+              style={[
+                styles.emailSupportCard,
+                { backgroundColor: colors.background.primary },
+              ]}
+              onPress={handleEmailSupport}
+            >
+              <View
+                style={[
+                  styles.emailIconContainer,
+                  { backgroundColor: `${colors.primary.main}15` },
+                ]}
+              >
+                <Ionicons
+                  name="mail"
+                  size={28}
+                  color={colors.primary.main}
+                />
+              </View>
+              <View style={styles.emailTextContainer}>
+                <Text
                   style={[
-                    styles.supportOptionCard,
-                    { backgroundColor: colors.background.primary },
+                    styles.emailTitle,
+                    { color: colors.text.primary },
                   ]}
-                  onPress={option.action}
                 >
-                  <View
-                    style={[
-                      styles.supportOptionIcon,
-                      { backgroundColor: `${option.color}20` },
-                    ]}
-                  >
-                    <Ionicons
-                      name={option.icon as any}
-                      size={24}
-                      color={option.color}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.supportOptionTitle,
-                      { color: colors.text.primary },
-                    ]}
-                  >
-                    {option.title}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.supportOptionSubtitle,
-                      { color: colors.text.secondary },
-                    ]}
-                  >
-                    {option.subtitle}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                  Email Support
+                </Text>
+                <Text
+                  style={[
+                    styles.emailAddress,
+                    { color: colors.primary.main },
+                  ]}
+                >
+                  support@expenzez.com
+                </Text>
+                <Text
+                  style={[
+                    styles.emailDescription,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  We typically respond within 24 hours
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.text.tertiary}
+              />
+            </TouchableOpacity>
           </View>
 
           {/* FAQ Section */}
@@ -490,141 +375,6 @@ Thank you!`;
             </View>
           </View>
         </ScrollView>
-
-        {/* Contact Form Modal */}
-        <Modal
-          visible={showContactForm}
-          animationType="slide"
-          presentationStyle="pageSheet"
-        >
-          <View
-            style={[
-              styles.container,
-              { backgroundColor: colors.background.secondary },
-            ]}
-          >
-            <View style={styles.header}>
-              <Text
-                style={[styles.headerTitle, { color: colors.text.primary }]}
-              >
-                Contact Support
-              </Text>
-              <TouchableOpacity onPress={() => setShowContactForm(false)}>
-                <Ionicons name="close" size={24} color={colors.text.primary} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.content}>
-              <View style={styles.formSection}>
-                <Text
-                  style={[styles.formLabel, { color: colors.text.primary }]}
-                >
-                  Subject *
-                </Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {
-                      backgroundColor: colors.background.primary,
-                      color: colors.text.primary,
-                      borderColor: colors.border.light,
-                    },
-                  ]}
-                  value={contactFormData.subject}
-                  onChangeText={(text) =>
-                    setContactFormData((prev) => ({ ...prev, subject: text }))
-                  }
-                  placeholder="Brief description of your issue"
-                />
-
-                <Text
-                  style={[styles.formLabel, { color: colors.text.primary }]}
-                >
-                  Priority
-                </Text>
-                <View style={styles.priorityButtons}>
-                  {["low", "normal", "high"].map((priority) => (
-                    <TouchableOpacity
-                      key={priority}
-                      onPress={() =>
-                        setContactFormData((prev) => ({
-                          ...prev,
-                          urgency: priority,
-                        }))
-                      }
-                      style={[
-                        styles.priorityButton,
-                        {
-                          backgroundColor:
-                            contactFormData.urgency === priority
-                              ? colors.primary.main
-                              : colors.background.primary,
-                          borderColor: colors.border.light,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={{
-                          color:
-                            contactFormData.urgency === priority
-                              ? "#fff"
-                              : colors.text.primary,
-                          fontWeight: "500",
-                        }}
-                      >
-                        {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                <Text
-                  style={[styles.formLabel, { color: colors.text.primary }]}
-                >
-                  Message *
-                </Text>
-                <TextInput
-                  style={[
-                    styles.formTextArea,
-                    {
-                      backgroundColor: colors.background.primary,
-                      color: colors.text.primary,
-                      borderColor: colors.border.light,
-                    },
-                  ]}
-                  value={contactFormData.message}
-                  onChangeText={(text) =>
-                    setContactFormData((prev) => ({ ...prev, message: text }))
-                  }
-                  placeholder="Please provide details about your issue..."
-                  multiline
-                  numberOfLines={6}
-                  textAlignVertical="top"
-                />
-
-                <TouchableOpacity
-                  style={[
-                    styles.submitButton,
-                    {
-                      backgroundColor: submitting
-                        ? colors.gray[400]
-                        : colors.primary.main,
-                      opacity: submitting ? 0.7 : 1,
-                    },
-                  ]}
-                  onPress={handleSubmitContactForm}
-                  disabled={submitting}
-                >
-                  {submitting ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.submitButtonText}>Submit Request</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </View>
-        </Modal>
       </View>
     </Modal>
   );
@@ -698,39 +448,40 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: spacing.md,
   },
-  supportOptionsGrid: {
+  emailSupportCard: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.md,
-  },
-  supportOptionCard: {
-    width: "47%",
+    alignItems: "center",
     padding: spacing.lg,
     borderRadius: borderRadius.lg,
-    alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  supportOptionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  emailIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: spacing.sm,
+    marginRight: spacing.md,
   },
-  supportOptionTitle: {
-    fontSize: 16,
+  emailTextContainer: {
+    flex: 1,
+  },
+  emailTitle: {
+    fontSize: 18,
     fontWeight: "600",
-    marginBottom: 4,
-    textAlign: "center",
+    marginBottom: 2,
   },
-  supportOptionSubtitle: {
-    fontSize: 12,
-    textAlign: "center",
+  emailAddress: {
+    fontSize: 15,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  emailDescription: {
+    fontSize: 13,
   },
   categoryFilter: {
     marginBottom: spacing.lg,
@@ -794,52 +545,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     marginLeft: spacing.sm,
-  },
-  formSection: {
-    padding: spacing.lg,
-  },
-  formLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: spacing.xs,
-    marginTop: spacing.md,
-  },
-  formInput: {
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    fontSize: 16,
-  },
-  formTextArea: {
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    fontSize: 16,
-    minHeight: 120,
-  },
-  priorityButtons: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  priorityButton: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    alignItems: "center",
-  },
-  submitButton: {
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    marginTop: spacing.xl,
-  },
-  submitButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
   },
 });
 

@@ -1176,7 +1176,7 @@ export default function CreditScoreScreen() {
               <View style={[styles.modalInfo, { backgroundColor: `${colors.primary.main}15` }]}>
                 <Ionicons name="information-circle-outline" size={20} color={colors.primary.main} />
                 <Text style={[styles.modalInfoText, { color: colors.text.secondary }]}>
-                  You can find your credit score on {selectedBureau}'s website or through credit
+                  You can find your credit score on {selectedBureau}&apos;s website or through credit
                   monitoring services.
                 </Text>
               </View>

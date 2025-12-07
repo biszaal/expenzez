@@ -610,7 +610,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       )
     );
 
-    // Persist to backend database
+    // Persist locally first (ensures state survives app restart)
+    await persistReadState(id, true);
+
+    // Then persist to backend database
     try {
       const { notificationAPI } = await import("../services/api");
       await notificationAPI.markAsRead(id);
@@ -622,8 +625,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         "[NotificationContext] Error marking notification as read in backend:",
         error
       );
-      // Still persist locally as fallback
-      await persistReadState(id, true);
+      // Local persistence already done above as fallback
     }
   };
 
