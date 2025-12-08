@@ -19,7 +19,7 @@
     "description": "Smart expense tracking with AI insights and comprehensive financial management for users.",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "1",
+      "buildNumber": "3",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -36,13 +36,21 @@
               "NSExceptionAllowsInsecureHTTPLoads": false,
               "NSExceptionMinimumTLSVersion": "1.2",
               "NSExceptionRequiresForwardSecrecy": true
+            },
+            "logo.clearbit.com": {
+              "NSExceptionAllowsInsecureHTTPLoads": false,
+              "NSExceptionMinimumTLSVersion": "1.2",
+              "NSExceptionRequiresForwardSecrecy": true,
+              "NSIncludesSubdomains": true
             }
           }
         },
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "expenzez-redirect",
-            "CFBundleURLSchemes": ["expenzez"]
+            "CFBundleURLSchemes": [
+              "expenzez"
+            ]
           }
         ],
         "NSCameraUsageDescription": "This app uses the camera to scan receipts for expense tracking.",
