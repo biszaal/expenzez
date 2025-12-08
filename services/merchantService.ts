@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export interface MerchantInfo {
   name: string;
   logo: string;
+  domain?: string;
   category?: string;
   color?: string;
 }
@@ -14,24 +15,28 @@ const MERCHANT_LOGOS: Record<string, MerchantInfo> = {
   'three': {
     name: 'Three',
     logo: '📱',
+    domain: 'three.co.uk',
     category: 'telecoms',
     color: '#333333'
   },
   'o2': {
     name: 'O2',
     logo: '📱',
-    category: 'telecoms', 
+    domain: 'o2.co.uk',
+    category: 'telecoms',
     color: '#0019A5'
   },
   'ee': {
     name: 'EE',
     logo: '📱',
+    domain: 'ee.co.uk',
     category: 'telecoms',
     color: '#FFB900'
   },
   'vodafone': {
     name: 'Vodafone',
     logo: '📱',
+    domain: 'vodafone.co.uk',
     category: 'telecoms',
     color: '#E60000'
   },
@@ -40,54 +45,63 @@ const MERCHANT_LOGOS: Record<string, MerchantInfo> = {
   'aliexpress': {
     name: 'AliExpress',
     logo: '🛒',
+    domain: 'aliexpress.com',
     category: 'shopping',
     color: '#FF6A00'
   },
   'ali express': {
-    name: 'AliExpress', 
+    name: 'AliExpress',
     logo: '🛒',
+    domain: 'aliexpress.com',
     category: 'shopping',
     color: '#FF6A00'
   },
   'ebay': {
     name: 'eBay',
     logo: '🏪',
+    domain: 'ebay.co.uk',
     category: 'shopping',
     color: '#0064D2'
   },
   'amazon': {
     name: 'Amazon',
     logo: '📦',
+    domain: 'amazon.co.uk',
     category: 'shopping',
     color: '#FF9900'
   },
   'home bargains': {
     name: 'Home Bargains',
     logo: '🏠',
+    domain: 'homebargains.co.uk',
     category: 'shopping',
     color: '#E31837'
   },
   'tesco': {
     name: 'Tesco',
     logo: '🛒',
+    domain: 'tesco.com',
     category: 'shopping',
     color: '#00539F'
   },
   'asda': {
     name: 'ASDA',
     logo: '🛒',
+    domain: 'asda.com',
     category: 'shopping',
     color: '#63B74C'
   },
   'sainsburys': {
     name: "Sainsbury's",
     logo: '🛒',
+    domain: 'sainsburys.co.uk',
     category: 'shopping',
     color: '#EC8500'
   },
   'morrisons': {
     name: 'Morrisons',
     logo: '🛒',
+    domain: 'morrisons.com',
     category: 'shopping',
     color: '#0B6838'
   },
@@ -96,48 +110,56 @@ const MERCHANT_LOGOS: Record<string, MerchantInfo> = {
   'greggs': {
     name: 'Greggs',
     logo: '🥖',
+    domain: 'greggs.co.uk',
     category: 'food',
     color: '#00A0E4'
   },
   'mcdonalds': {
     name: "McDonald's",
     logo: '🍟',
+    domain: 'mcdonalds.com',
     category: 'food',
     color: '#FFC72C'
   },
   'kfc': {
     name: 'KFC',
     logo: '🍗',
+    domain: 'kfc.co.uk',
     category: 'food',
     color: '#F40027'
   },
   'subway': {
     name: 'Subway',
     logo: '🥪',
+    domain: 'subway.com',
     category: 'food',
     color: '#009639'
   },
   'dominos': {
     name: "Domino's",
     logo: '🍕',
+    domain: 'dominos.co.uk',
     category: 'food',
     color: '#E31837'
   },
   'pizza hut': {
     name: 'Pizza Hut',
     logo: '🍕',
+    domain: 'pizzahut.co.uk',
     category: 'food',
     color: '#FF0000'
   },
   'costa': {
     name: 'Costa Coffee',
     logo: '☕',
+    domain: 'costa.co.uk',
     category: 'food',
     color: '#8B2635'
   },
   'starbucks': {
     name: 'Starbucks',
     logo: '☕',
+    domain: 'starbucks.com',
     category: 'food',
     color: '#00704A'
   },
@@ -146,48 +168,56 @@ const MERCHANT_LOGOS: Record<string, MerchantInfo> = {
   'revolut': {
     name: 'Revolut',
     logo: '💳',
+    domain: 'revolut.com',
     category: 'finance',
     color: '#0075EB'
   },
   'monzo': {
     name: 'Monzo',
     logo: '💳',
-    category: 'finance', 
+    domain: 'monzo.com',
+    category: 'finance',
     color: '#FF6B83'
   },
   'starling': {
     name: 'Starling Bank',
     logo: '💳',
+    domain: 'starlingbank.com',
     category: 'finance',
     color: '#6C2C91'
   },
   'natwest': {
     name: 'NatWest',
     logo: '🏦',
+    domain: 'natwest.com',
     category: 'finance',
     color: '#5A287A'
   },
   'barclays': {
     name: 'Barclays',
     logo: '🏦',
+    domain: 'barclays.co.uk',
     category: 'finance',
     color: '#00AEEF'
   },
   'lloyds': {
     name: 'Lloyds',
     logo: '🏦',
+    domain: 'lloydsbank.com',
     category: 'finance',
     color: '#006837'
   },
   'halifax': {
     name: 'Halifax',
     logo: '🏦',
+    domain: 'halifax.co.uk',
     category: 'finance',
     color: '#0F4C81'
   },
   'santander': {
     name: 'Santander',
     logo: '🏦',
+    domain: 'santander.co.uk',
     category: 'finance',
     color: '#EC0000'
   },
@@ -196,18 +226,21 @@ const MERCHANT_LOGOS: Record<string, MerchantInfo> = {
   'uber': {
     name: 'Uber',
     logo: '🚗',
+    domain: 'uber.com',
     category: 'transport',
     color: '#000000'
   },
   'tfl': {
     name: 'TfL',
     logo: '🚇',
+    domain: 'tfl.gov.uk',
     category: 'transport',
     color: '#003688'
   },
   'national rail': {
     name: 'National Rail',
     logo: '🚂',
+    domain: 'nationalrail.co.uk',
     category: 'transport',
     color: '#004225'
   },
@@ -216,18 +249,21 @@ const MERCHANT_LOGOS: Record<string, MerchantInfo> = {
   'british gas': {
     name: 'British Gas',
     logo: '🔥',
+    domain: 'britishgas.co.uk',
     category: 'utilities',
     color: '#003087'
   },
   'eon': {
     name: 'E.ON',
     logo: '⚡',
+    domain: 'eonenergy.com',
     category: 'utilities',
     color: '#E20613'
   },
   'edf': {
     name: 'EDF Energy',
     logo: '⚡',
+    domain: 'edfenergy.com',
     category: 'utilities',
     color: '#FF6600'
   },
@@ -236,11 +272,12 @@ const MERCHANT_LOGOS: Record<string, MerchantInfo> = {
   'trading 212': {
     name: 'Trading 212',
     logo: '📊',
+    domain: 'trading212.com',
     category: 'finance',
     color: '#55acee'
   },
 
-  // Food & Services  
+  // Food & Services
   'my ithaas limited': {
     name: 'MY Ithaas Limited',
     logo: '🍽️',
@@ -256,14 +293,60 @@ const MERCHANT_LOGOS: Record<string, MerchantInfo> = {
   'tesco petrol': {
     name: 'Tesco Petrol',
     logo: '⛽',
-    category: 'transport', 
+    domain: 'tesco.com',
+    category: 'transport',
     color: '#00539F'
+  },
+  'shell': {
+    name: 'Shell',
+    logo: '⛽',
+    domain: 'shell.co.uk',
+    category: 'transport',
+    color: '#FFD500'
+  },
+  'bp': {
+    name: 'BP',
+    logo: '⛽',
+    domain: 'bp.com',
+    category: 'transport',
+    color: '#009900'
+  },
+
+  // Entertainment/Streaming
+  'netflix': {
+    name: 'Netflix',
+    logo: '📺',
+    domain: 'netflix.com',
+    category: 'entertainment',
+    color: '#E50914'
+  },
+  'spotify': {
+    name: 'Spotify',
+    logo: '🎵',
+    domain: 'spotify.com',
+    category: 'entertainment',
+    color: '#1DB954'
+  },
+  'apple': {
+    name: 'Apple',
+    logo: '🍎',
+    domain: 'apple.com',
+    category: 'shopping',
+    color: '#000000'
+  },
+  'sky': {
+    name: 'Sky',
+    logo: '📺',
+    domain: 'sky.com',
+    category: 'entertainment',
+    color: '#0072C9'
   },
 
   // Miscellaneous
   'paypal': {
     name: 'PayPal',
     logo: '💸',
+    domain: 'paypal.com',
     category: 'finance',
     color: '#003087'
   },

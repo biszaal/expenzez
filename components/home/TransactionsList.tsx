@@ -5,14 +5,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import { APP_STRINGS } from "../../constants/strings";
 import { styles } from "./TransactionsList.styles";
+import { MerchantLogo } from "../ui/MerchantLogo";
 
 interface Transaction {
   id: string;
   amount: number;
-  currency?: string; // Optional to match API response
+  currency?: string;
   description: string;
   date: string;
   category?: string;
+  merchant?: string;
 }
 
 interface TransactionsListProps {
@@ -95,21 +97,13 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
               },
             ]}
           >
-            <View
-              style={[
-                styles.premiumTransactionIcon,
-                {
-                  backgroundColor:
-                    tx.amount >= 0 ? colors.success[100] : colors.error[100],
-                },
-              ]}
-            >
-              <Ionicons
-                name={tx.amount >= 0 ? "arrow-up-circle" : "arrow-down-circle"}
-                size={24}
-                color={tx.amount >= 0 ? colors.success[600] : colors.error[600]}
-              />
-            </View>
+            <MerchantLogo
+              merchant={tx.merchant || tx.description}
+              description={tx.description}
+              category={tx.category}
+              size={48}
+              style={{ marginRight: 12 }}
+            />
             <View style={styles.premiumTransactionContent}>
               <Text
                 style={[
@@ -118,7 +112,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                 ]}
                 numberOfLines={1}
               >
-                {tx.description}
+                {tx.merchant || tx.description}
               </Text>
               <Text
                 style={[
@@ -135,7 +129,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                   styles.premiumTransactionAmount,
                   {
                     color:
-                      tx.amount >= 0 ? colors.success[600] : colors.error[600],
+                      tx.amount >= 0 ? colors.success.main : colors.error.main,
                   },
                 ]}
               >

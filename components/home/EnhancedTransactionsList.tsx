@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { MerchantLogo } from "../ui/MerchantLogo";
 
 interface Transaction {
   id: string;
@@ -12,6 +13,7 @@ interface Transaction {
   date: string;
   category?: string;
   type?: "debit" | "credit";
+  merchant?: string;
 }
 
 interface EnhancedTransactionsListProps {
@@ -29,42 +31,6 @@ export const EnhancedTransactionsList: React.FC<
   if (!colors) {
     return null;
   }
-
-  const getTransactionIcon = (amount: number, category?: string) => {
-    if (amount >= 0) {
-      return "arrow-up-circle";
-    }
-
-    // Category-based icons for expenses
-    switch (category?.toLowerCase()) {
-      case "food":
-      case "dining":
-        return "restaurant";
-      case "transport":
-      case "travel":
-        return "car";
-      case "shopping":
-        return "bag";
-      case "entertainment":
-        return "game-controller";
-      case "bills":
-      case "utilities":
-        return "receipt";
-      case "health":
-      case "medical":
-        return "medical";
-      default:
-        return "arrow-down-circle";
-    }
-  };
-
-  const getTransactionColor = (amount: number) => {
-    return amount >= 0 ? colors.success[600] : colors.error[600];
-  };
-
-  const getTransactionBgColor = (amount: number) => {
-    return amount >= 0 ? colors.success[100] : colors.error[100];
-  };
 
   return (
     <View style={styles.container}>
@@ -103,18 +69,13 @@ export const EnhancedTransactionsList: React.FC<
                 },
               ]}
             >
-              <View
-                style={[
-                  styles.transactionIcon,
-                  { backgroundColor: getTransactionBgColor(tx.amount) },
-                ]}
-              >
-                <Ionicons
-                  name={getTransactionIcon(tx.amount, tx.category) as any}
-                  size={20}
-                  color={getTransactionColor(tx.amount)}
-                />
-              </View>
+              <MerchantLogo
+                merchant={tx.merchant || tx.description}
+                description={tx.description}
+                category={tx.category}
+                size={44}
+                style={{ marginRight: 12 }}
+              />
 
               <View style={styles.transactionContent}>
                 <Text
@@ -124,7 +85,7 @@ export const EnhancedTransactionsList: React.FC<
                   ]}
                   numberOfLines={1}
                 >
-                  {tx.description}
+                  {tx.merchant || tx.description}
                 </Text>
                 <View style={styles.transactionMeta}>
                   <Text
@@ -156,7 +117,12 @@ export const EnhancedTransactionsList: React.FC<
                 <Text
                   style={[
                     styles.amountText,
-                    { color: getTransactionColor(tx.amount) },
+                    {
+                      color:
+                        tx.amount >= 0
+                          ? colors.success.main
+                          : colors.error.main,
+                    },
                   ]}
                 >
                   {tx.amount >= 0 ? "+" : ""}£{Math.abs(tx.amount).toFixed(2)}
@@ -244,14 +210,6 @@ const styles = {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     paddingVertical: 12,
-  },
-  transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
-    marginRight: 12,
   },
   transactionContent: {
     flex: 1,

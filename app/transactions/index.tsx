@@ -20,6 +20,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { TransactionSkeleton } from "../../components/ui/SkeletonLoader";
 import { transactionAPI } from "../../services/api/transactionAPI";
 import MonthFilter from "../../components/ui/MonthFilter";
+import { MerchantLogo } from "../../components/ui/MerchantLogo";
 import EditTransactionModal from "../../components/EditTransactionModal";
 import dayjs from "dayjs";
 
@@ -490,56 +491,6 @@ export default function TransactionsScreen() {
     return dayjs(date).format("ddd DD MMM");
   };
 
-  // Get category icon using Ionicons
-  const getCategoryIcon = (category: string): string => {
-    const categoryIcons: Record<string, string> = {
-      'food': 'restaurant',
-      'food & drink': 'restaurant',
-      'dining': 'restaurant',
-      'groceries': 'cart',
-      'shopping': 'bag',
-      'transport': 'car',
-      'transportation': 'car',
-      'fuel': 'flash',
-      'entertainment': 'game-controller',
-      'bills': 'receipt',
-      'utilities': 'flash',
-      'health': 'fitness',
-      'finance': 'card',
-      'transfer': 'swap-horizontal',
-      'income': 'trending-up',
-      'salary': 'cash',
-      'general': 'ellipse',
-      'other': 'ellipse',
-    };
-    return categoryIcons[category?.toLowerCase()] || 'ellipse';
-  };
-
-  // Get category color
-  const getCategoryColor = (category: string): string => {
-    const categoryColors: Record<string, string> = {
-      'food': '#FF6B6B',
-      'food & drink': '#FF6B6B',
-      'dining': '#FF6B6B',
-      'groceries': '#4ECDC4',
-      'shopping': '#A78BFA',
-      'transport': '#60A5FA',
-      'transportation': '#60A5FA',
-      'fuel': '#F59E0B',
-      'entertainment': '#EC4899',
-      'bills': '#EF4444',
-      'utilities': '#F97316',
-      'health': '#10B981',
-      'finance': '#6366F1',
-      'transfer': '#8B5CF6',
-      'income': '#22C55E',
-      'salary': '#22C55E',
-      'general': '#9CA3AF',
-      'other': '#9CA3AF',
-    };
-    return categoryColors[category?.toLowerCase()] || '#9CA3AF';
-  };
-
   if (!authLoggedIn || checkingBank) {
     return null;
   }
@@ -719,18 +670,13 @@ export default function TransactionsScreen() {
                     ]}
                     onPress={() => handleEditTransaction(transaction)}
                   >
-                    <View
-                      style={[
-                        styles.categoryIconContainer,
-                        { backgroundColor: getCategoryColor(transaction.category || 'other') + '20' }
-                      ]}
-                    >
-                      <Ionicons
-                        name={getCategoryIcon(transaction.category || 'other') as any}
-                        size={20}
-                        color={getCategoryColor(transaction.category || 'other')}
-                      />
-                    </View>
+                    <MerchantLogo
+                      merchant={transaction.merchant}
+                      description={transaction.description}
+                      category={transaction.category}
+                      size={52}
+                      style={{ marginRight: spacing.md }}
+                    />
 
                     <View style={styles.transactionDetails}>
                       <Text
@@ -806,18 +752,13 @@ export default function TransactionsScreen() {
                     ]}
                     onPress={() => handleEditTransaction(transaction)}
                   >
-                    <View
-                      style={[
-                        styles.categoryIconContainer,
-                        { backgroundColor: getCategoryColor(transaction.category || 'other') + '20' }
-                      ]}
-                    >
-                      <Ionicons
-                        name={getCategoryIcon(transaction.category || 'other') as any}
-                        size={20}
-                        color={getCategoryColor(transaction.category || 'other')}
-                      />
-                    </View>
+                    <MerchantLogo
+                      merchant={transaction.merchant}
+                      description={transaction.description}
+                      category={transaction.category}
+                      size={52}
+                      style={{ marginRight: spacing.md }}
+                    />
 
                     <View style={styles.transactionDetails}>
                       <Text
@@ -1232,14 +1173,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     marginBottom: spacing.sm,
     ...shadows.sm,
-  },
-  categoryIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.md,
   },
   categoryLabel: {
     fontSize: 13,
