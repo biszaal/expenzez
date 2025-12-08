@@ -37,7 +37,7 @@
               "NSExceptionMinimumTLSVersion": "1.2",
               "NSExceptionRequiresForwardSecrecy": true
             },
-            "logo.clearbit.com": {
+            "icons.duckduckgo.com": {
               "NSExceptionAllowsInsecureHTTPLoads": false,
               "NSExceptionMinimumTLSVersion": "1.2",
               "NSExceptionRequiresForwardSecrecy": true,

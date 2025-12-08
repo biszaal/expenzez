@@ -101,7 +101,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 /**
  * MerchantLogo component with 3-tier fallback:
- * 1. Clearbit logo (if domain exists)
+ * 1. DuckDuckGo icon (if domain exists) - free, no API key required
  * 2. Category icon via Ionicons
  * 3. First letter avatar with brand color
  */
@@ -119,13 +119,13 @@ export const MerchantLogo: React.FC<MerchantLogoProps> = ({
   const effectiveCategory = (merchantInfo.category || category || 'other').toLowerCase();
   const brandColor = merchantInfo.color || CATEGORY_COLORS[effectiveCategory] || CATEGORY_COLORS.other;
 
-  // Generate Clearbit URL if domain exists
-  const clearbitUrl = merchantInfo.domain
-    ? `https://logo.clearbit.com/${merchantInfo.domain}`
+  // Generate DuckDuckGo icon URL if domain exists (free, no API key required)
+  const logoUrl = merchantInfo.domain
+    ? `https://icons.duckduckgo.com/ip3/${merchantInfo.domain}.ico`
     : null;
 
-  // Tier 1: Try Clearbit logo - colored background with logo
-  if (clearbitUrl && !imageError) {
+  // Tier 1: Try DuckDuckGo icon - colored background with logo
+  if (logoUrl && !imageError) {
     return (
       <View
         style={[
@@ -140,11 +140,11 @@ export const MerchantLogo: React.FC<MerchantLogoProps> = ({
         ]}
       >
         <Image
-          source={{ uri: clearbitUrl }}
+          source={{ uri: logoUrl }}
           style={{
-            width: size * 0.7,
-            height: size * 0.7,
-            borderRadius: (size * 0.7) / 2,
+            width: size * 0.6,
+            height: size * 0.6,
+            borderRadius: 4,
           }}
           onError={() => setImageError(true)}
           resizeMode="contain"
