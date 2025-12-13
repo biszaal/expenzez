@@ -447,8 +447,8 @@ export default function ProgressScreen() {
 
               <View style={styles.xpActivityItem}>
                 <View style={styles.xpActivityLeft}>
-                  <View style={[styles.xpActivityIcon, { backgroundColor: '#8B5CF620' }]}>
-                    <Ionicons name="pie-chart" size={20} color="#8B5CF6" />
+                  <View style={[styles.xpActivityIcon, { backgroundColor: '#7B2D8E20' }]}>
+                    <Ionicons name="pie-chart" size={20} color="#7B2D8E" />
                   </View>
                   <View style={styles.xpActivityContent}>
                     <Text style={styles.xpActivityTitle}>Budget Review</Text>

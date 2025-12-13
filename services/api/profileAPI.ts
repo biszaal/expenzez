@@ -266,4 +266,47 @@ export const profileAPI = {
     clearCachedData(`user_goals_${userId}`);
     return response.data;
   },
+
+  // Get user progress/XP from backend
+  getUserProgress: async () => {
+    try {
+      console.log("[ProfileAPI] Fetching user progress from server...");
+      const response = await api.get("/profile/progress");
+      console.log("[ProfileAPI] User progress retrieved:", response.data);
+      return response.data.userProgress;
+    } catch (error: any) {
+      console.warn("[ProfileAPI] Failed to fetch user progress:", error.message);
+      // Return default progress if API fails
+      return {
+        totalXP: 0,
+        level: 1,
+        lastActions: {},
+        dailyXP: 0,
+        weeklyXP: 0,
+        monthlyXP: 0,
+        lastResetDate: new Date().toISOString().split("T")[0],
+      };
+    }
+  },
+
+  // Update user progress/XP on backend
+  updateUserProgress: async (progressData: {
+    totalXP: number;
+    level: number;
+    lastActions?: Record<string, string>;
+    dailyXP?: number;
+    weeklyXP?: number;
+    monthlyXP?: number;
+    lastResetDate?: string;
+  }) => {
+    try {
+      console.log("[ProfileAPI] Saving user progress to server:", progressData);
+      const response = await api.put("/profile/progress", progressData);
+      console.log("[ProfileAPI] User progress saved:", response.data);
+      return response.data.userProgress;
+    } catch (error: any) {
+      console.error("[ProfileAPI] Failed to save user progress:", error.message);
+      throw error;
+    }
+  },
 };

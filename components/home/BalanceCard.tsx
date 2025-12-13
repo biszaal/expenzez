@@ -73,7 +73,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
         style={[
           styles.professionalBalanceCard,
           SHADOWS.xl,
-          { backgroundColor: "#6366F1" },
+          { backgroundColor: "#7B2D8E" },
         ]}
       >
         <View style={styles.professionalBalanceHeader}>

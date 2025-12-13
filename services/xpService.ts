@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import { AchievementCalculator } from "./achievementCalculator";
+import { profileAPI } from "./api/profileAPI";
 
 export interface XPAction {
   id: string;
@@ -20,6 +21,9 @@ export interface UserXPData {
   monthlyXP: number;
   lastResetDate: string;
 }
+
+// Flag to track if we've synced from server on this session
+let hasInitializedFromServer = false;
 
 export class XPService {
   private static readonly XP_STORAGE_KEY = "@user_xp_data";
@@ -115,7 +119,7 @@ export class XPService {
   ];
 
   /**
-   * Initialize user XP data
+   * Initialize user XP data - loads from server first, falls back to local storage
    */
   static async initializeUserXP(): Promise<UserXPData> {
     const defaultData: UserXPData = {
@@ -129,6 +133,31 @@ export class XPService {
     };
 
     try {
+      // On first load of session, try to get data from server
+      if (!hasInitializedFromServer) {
+        try {
+          console.log("[XPService] Fetching progress from server...");
+          const serverData = await profileAPI.getUserProgress();
+
+          if (serverData && serverData.totalXP !== undefined) {
+            console.log("[XPService] Got progress from server:", {
+              totalXP: serverData.totalXP,
+              level: serverData.level,
+            });
+
+            // Save to local storage for offline access
+            await this.saveUserXPLocal(serverData);
+            hasInitializedFromServer = true;
+
+            // Reset daily/weekly counters if needed
+            return this.resetCountersIfNeeded(serverData);
+          }
+        } catch (serverError) {
+          console.warn("[XPService] Failed to fetch from server, using local:", serverError);
+        }
+      }
+
+      // Fall back to local storage
       const stored = await AsyncStorage.getItem(this.XP_STORAGE_KEY);
       if (stored) {
         const userData = JSON.parse(stored) as UserXPData;
@@ -139,7 +168,7 @@ export class XPService {
       console.error("[XPService] Error loading XP data:", error);
     }
 
-    await this.saveUserXP(defaultData);
+    await this.saveUserXPLocal(defaultData);
     return defaultData;
   }
 
@@ -272,13 +301,75 @@ export class XPService {
   }
 
   /**
-   * Save user XP data
+   * Save user XP data to local storage only
    */
-  private static async saveUserXP(userData: UserXPData): Promise<void> {
+  private static async saveUserXPLocal(userData: UserXPData): Promise<void> {
     try {
       await AsyncStorage.setItem(this.XP_STORAGE_KEY, JSON.stringify(userData));
     } catch (error) {
+      console.error("[XPService] Error saving XP data locally:", error);
+    }
+  }
+
+  /**
+   * Save user XP data to both local storage and server
+   */
+  private static async saveUserXP(userData: UserXPData): Promise<void> {
+    try {
+      // Always save locally first for immediate access
+      await this.saveUserXPLocal(userData);
+
+      // Then sync to server (don't await to avoid blocking)
+      this.syncToServer(userData).catch((err) => {
+        console.warn("[XPService] Background sync to server failed:", err);
+      });
+    } catch (error) {
       console.error("[XPService] Error saving XP data:", error);
+    }
+  }
+
+  /**
+   * Sync XP data to server
+   */
+  private static async syncToServer(userData: UserXPData): Promise<void> {
+    try {
+      console.log("[XPService] Syncing progress to server:", {
+        totalXP: userData.totalXP,
+        level: userData.level,
+      });
+      await profileAPI.updateUserProgress(userData);
+      console.log("[XPService] Progress synced to server successfully");
+    } catch (error) {
+      console.error("[XPService] Failed to sync to server:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Force sync current data to server (call when user explicitly wants to sync)
+   */
+  static async forceSyncToServer(): Promise<void> {
+    const userData = await this.initializeUserXP();
+    await this.syncToServer(userData);
+  }
+
+  /**
+   * Reset the session initialization flag (call when user logs out)
+   */
+  static resetSession(): void {
+    hasInitializedFromServer = false;
+  }
+
+  /**
+   * Clear all local XP data (call when user logs out)
+   */
+  static async clearLocalData(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(this.XP_STORAGE_KEY);
+      hasInitializedFromServer = false;
+      console.log("[XPService] Local XP data cleared");
+    } catch (error) {
+      console.error("[XPService] Error clearing local XP data:", error);
     }
   }
 

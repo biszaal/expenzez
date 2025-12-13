@@ -35,10 +35,10 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
   }
 
   if (variant === "subtle") {
-    const primaryPurple = "#8B5CF6";
-    const lightPurple = isDark ? "#7C3AED" : "#F3E8FF";
-    const textPrimary = isDark ? "#F3E8FF" : "#4C1D95";
-    const textSecondary = isDark ? "#E9D5FF" : "#6B21A8";
+    const primaryPurple = "#7B2D8E";
+    const lightPurple = isDark ? "#5B2468" : "#FAE8FF";
+    const textPrimary = isDark ? "#FAE8FF" : "#4A1D54";
+    const textSecondary = isDark ? "#F5D0FE" : "#5B2468";
 
     return (
       <View
@@ -126,7 +126,7 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
     <View
       style={[
         {
-          backgroundColor: isDark ? "#7C3AED" : "#8B5CF6",
+          backgroundColor: isDark ? "#5B2468" : "#7B2D8E",
           paddingHorizontal: 16,
           paddingVertical: 16,
         },
@@ -175,7 +175,7 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
           >
             <Text
               style={{
-                color: "#7C3AED",
+                color: "#7B2D8E",
                 fontSize: 13,
                 fontWeight: "700",
               }}

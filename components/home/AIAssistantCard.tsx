@@ -38,7 +38,7 @@ export const AIAssistantCard: React.FC = () => {
   return (
     <View style={styles.premiumAIWrapper}>
       <LinearGradient
-        colors={['#8B5CF6', '#A855F7', '#C084FC']}
+        colors={['#7B2D8E', '#9B3DAE', '#B84DCE']}
         style={[styles.premiumAICard, SHADOWS.xl]}
       >
         <View style={styles.premiumAIContent}>
