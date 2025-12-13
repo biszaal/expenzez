@@ -107,18 +107,12 @@ export const useDashboardData = () => {
       }
 
       // Fetch transactions (always needed for display and fallback calculation)
-      // Force fresh data - fetch more recent transactions first
-      // Note: Backend sorts by transactionId (UUID), not date, so we need a higher limit
-      // to ensure we capture the newest transactions by date
+      // Use same fetch params as All Transactions page to ensure consistency
+      // Backend sorts by transactionId (UUID), not date, so we need high limit
       console.log("🔄 [Home] Fetching fresh transactions from server...");
       const transactionResponse = await transactionAPI
         .getTransactions({
-          startDate: dayjs()
-            .subtract(3, "months")
-            .startOf("month")
-            .format("YYYY-MM-DD"),
-          endDate: dayjs().endOf("day").format("YYYY-MM-DD"),
-          limit: 500, // Higher limit to ensure newest transactions by date are included
+          limit: 1800, // Same as All Transactions page (6 months × 300)
         })
         .catch((error) => {
           console.error("❌ Error loading transactions:", error);
