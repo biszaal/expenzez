@@ -2,7 +2,7 @@
   "expo": {
     "name": "Expenzez",
     "slug": "expenzez",
-    "version": "1.2.4",
+    "version": "1.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "expenzez",
@@ -19,7 +19,7 @@
     "description": "Smart expense tracking with AI insights and comprehensive financial management for users.",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "6",
+      "buildNumber": "7",
       "config": {
         "usesNonExemptEncryption": false
       },
