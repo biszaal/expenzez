@@ -26,6 +26,7 @@ import { CategorizeTransaction } from "../services/categorizeTransaction";
 import { BankSelector } from "../components/import/BankSelector";
 import { ExportGuide } from "../components/import/ExportGuide";
 import { BankFormat } from "../services/ukBankFormats";
+import { analyticsService } from "../services/analytics";
 
 // Bank logo component with fallback
 const BankLogo: React.FC<{ bank: BankFormat; size?: number }> = ({ bank, size = 48 }) => {
@@ -857,6 +858,9 @@ export default function CSVImportScreen() {
         keywordCategorized: 0,
         aiCategorized: 0,
       };
+
+      // Track CSV import in analytics
+      analyticsService.logCsvImport(summary.imported);
 
       const expenseCount = previewTransactions.filter(
         (t) => t.amount < 0

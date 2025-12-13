@@ -23,6 +23,7 @@ import {
 } from "../../components/auth/AppleSignInButton";
 import { GoogleSignInButton } from "../../components/auth/GoogleSignInButton";
 import { RememberMeCheckbox } from "../../components/RememberMeCheckbox";
+import { analyticsService } from "../../services/analytics";
 
 export default function Login() {
   const router = useRouter();
@@ -62,6 +63,7 @@ export default function Login() {
     try {
       const result = await login(identifier.trim(), password, rememberMe);
       if (result.success) {
+        analyticsService.logLogin("email");
         const idToken = await SecureStore.getItemAsync("idToken", {
           keychainService: "expenzez-tokens",
         });

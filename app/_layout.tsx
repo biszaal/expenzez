@@ -26,6 +26,8 @@ import SplashScreen from "./SplashScreen";
 import PinInput from "../components/PinInput";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MigrationService } from "../services/migrationService";
+import { useScreenTracking } from "../hooks/useAnalytics";
+import { analyticsService } from "../services/analytics";
 
 // Global error handlers to catch crashes
 if (typeof global !== "undefined" && (global as any).ErrorUtils) {
@@ -108,6 +110,9 @@ class ErrorBoundary extends React.Component<
 }
 
 function RootLayoutNav() {
+  // Track screen views automatically
+  useScreenTracking();
+
   const auth = useAuth();
   const isLoggedIn = auth?.isLoggedIn ?? false;
   const loading = auth?.loading ?? true;
@@ -155,6 +160,20 @@ function RootLayoutNav() {
 
     quickSessionCheck();
   }, []);
+
+  // Track app open on startup
+  useEffect(() => {
+    analyticsService.logAppOpen();
+  }, []);
+
+  // Set user ID when logged in
+  useEffect(() => {
+    if (isLoggedIn && auth?.user?.userId) {
+      analyticsService.setUserId(auth.user.userId);
+    } else if (!isLoggedIn) {
+      analyticsService.setUserId(null);
+    }
+  }, [isLoggedIn, auth?.user?.userId]);
 
   // Run data migrations on app startup
   useEffect(() => {
