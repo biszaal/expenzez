@@ -19,7 +19,7 @@
     "description": "Smart expense tracking with AI insights and comprehensive financial management for users.",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "7",
+      "buildNumber": "8",
       "config": {
         "usesNonExemptEncryption": false
       },
