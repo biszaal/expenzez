@@ -228,7 +228,7 @@ export const styles = StyleSheet.create({
     color: "#374151",
   },
   modalSaveButton: {
-    backgroundColor: "#6366F1",
+    backgroundColor: "#7B2D8E",
   },
   modalSaveButtonText: {
     fontSize: 16,

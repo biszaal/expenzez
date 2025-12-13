@@ -1,18 +1,18 @@
-// Clean Blue-focused Professional Theme
+// Clean Purple-focused Professional Theme - Matching EX Logo
 export const lightColors = {
-  // Primary colors - Professional purple palette
+  // Primary colors - Deep purple palette matching logo (#6B2D7B)
   primary: {
-    50: "#FAF5FF",
-    100: "#F3E8FF",
-    200: "#E9D5FF",
-    300: "#D8B4FE",
-    400: "#C084FC",
-    500: "#8B5CF6", // Main purple primary
-    600: "#7C3AED",
-    700: "#6D28D9",
-    800: "#5B21B6",
-    900: "#4C1D95",
-    main: "#8B5CF6", // Alias for 500
+    50: "#FDF4FF",
+    100: "#FAE8FF",
+    200: "#F5D0FE",
+    300: "#E879F9",
+    400: "#A855F7",
+    500: "#7B2D8E", // Main purple primary - matches logo
+    600: "#6B2D7B", // Slightly darker
+    700: "#5B2468",
+    800: "#4A1D54",
+    900: "#3A1541",
+    main: "#7B2D8E", // Alias for 500 - logo color
   },
 
   // Secondary color - Green for financial success/positive actions
@@ -92,7 +92,7 @@ export const lightColors = {
     primary: "#FFFFFF", // Pure white
     secondary: "#FAFAFA", // Very subtle gray tint
     tertiary: "#F4F4F5", // Light gray background
-    overlay: "rgba(139, 92, 246, 0.02)", // Subtle purple overlay
+    overlay: "rgba(123, 45, 142, 0.02)", // Subtle purple overlay matching logo
   },
 
   // Minimal text hierarchy
@@ -108,12 +108,12 @@ export const lightColors = {
   // Divider colors
   divider: "#E4E4E7", // Light gray divider
 
-  // Simple border system
+  // Simple border system - matching logo purple
   border: {
-    light: "#F3E8FF", // Very subtle purple tint
-    medium: "#E9D5FF", // Standard borders with purple tint
-    dark: "#D8B4FE", // Pronounced borders
-    focus: "#8B5CF6", // Purple focus state
+    light: "#FAE8FF", // Very subtle purple tint
+    medium: "#F5D0FE", // Standard borders with purple tint
+    dark: "#E879F9", // Pronounced borders
+    focus: "#7B2D8E", // Purple focus state matching logo
   },
 
   // Minimal shadow system
@@ -124,10 +124,10 @@ export const lightColors = {
     strong: "rgba(0, 0, 0, 0.12)", // Modal/overlay
   },
 
-  // Card colors
+  // Card colors - matching logo purple
   card: {
     background: "#FFFFFF",
-    border: "#F3E8FF",
+    border: "#FAE8FF",
     shadow: "rgba(0, 0, 0, 0.02)",
   },
 
@@ -199,19 +199,19 @@ export const lightColors = {
 };
 
 export const darkColors = {
-  // Primary colors - Purple palette for dark mode
+  // Primary colors - Purple palette for dark mode matching logo
   primary: {
-    50: "#4C1D95",
-    100: "#5B21B6",
-    200: "#6D28D9",
-    300: "#7C3AED",
-    400: "#8B5CF6",
-    500: "#C084FC", // Lighter purple for dark mode
-    600: "#D8B4FE",
-    700: "#E9D5FF",
-    800: "#F3E8FF",
-    900: "#FAF5FF",
-    main: "#C084FC", // Alias for 500
+    50: "#FDF4FF",
+    100: "#FAE8FF",
+    200: "#F5D0FE",
+    300: "#E879F9",
+    400: "#A855F7",
+    500: "#7B2D8E", // Same as light mode for consistency
+    600: "#6B2D7B",
+    700: "#5B2468",
+    800: "#4A1D54",
+    900: "#3A1541",
+    main: "#7B2D8E", // Same as light mode
   },
 
   // Secondary color - Green for financial success/positive actions (dark mode)
@@ -286,12 +286,12 @@ export const darkColors = {
     main: "#F59E0B", // Alias for 500
   },
 
-  // Clean background system for dark mode with purple tints
+  // Clean background system for dark mode with logo purple tints
   background: {
-    primary: "#0F0F11", // Deep black with purple hint
-    secondary: "#1A1625", // Dark purple tint
-    tertiary: "#2A1F3D", // Card backgrounds with purple
-    overlay: "rgba(139, 92, 246, 0.05)", // Purple overlay
+    primary: "#0F0B12", // Deep black with purple hint
+    secondary: "#1A1222", // Dark purple tint matching logo
+    tertiary: "#2A1B35", // Card backgrounds with logo purple
+    overlay: "rgba(123, 45, 142, 0.05)", // Purple overlay matching logo
   },
 
   // Minimal text hierarchy for dark mode
@@ -307,12 +307,12 @@ export const darkColors = {
   // Divider colors for dark mode
   divider: "#3F3F46", // Dark gray divider
 
-  // Simple border system for dark mode with purple tints
+  // Simple border system for dark mode with logo purple tints
   border: {
-    light: "#2A1F3D", // Very subtle purple tint
-    medium: "#3D2A5C", // Standard borders with purple
+    light: "#2A1B35", // Very subtle purple tint
+    medium: "#3D2550", // Standard borders with logo purple
     dark: "#52525B", // Pronounced borders
-    focus: "#C084FC", // Purple focus state for dark mode
+    focus: "#A855F7", // Purple focus state for dark mode
   },
 
   // Minimal shadow system for dark mode
@@ -323,10 +323,10 @@ export const darkColors = {
     strong: "rgba(0, 0, 0, 0.8)", // Modal/overlay
   },
 
-  // Card colors for dark mode
+  // Card colors for dark mode - matching logo purple
   card: {
-    background: "#1A1625",
-    border: "#2A1F3D",
+    background: "#1A1222",
+    border: "#2A1B35",
     shadow: "rgba(0, 0, 0, 0.5)",
   },
 

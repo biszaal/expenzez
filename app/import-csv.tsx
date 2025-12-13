@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -22,6 +23,27 @@ import { ExpenseCategory, ImportPreview } from "../types/expense";
 import type { CSVTransaction } from "../services/api/transactionAPI";
 import { CSVDetector, ParsedCSVRow } from "../services/csvDetector";
 import { CategorizeTransaction } from "../services/categorizeTransaction";
+import { BankSelector } from "../components/import/BankSelector";
+import { ExportGuide } from "../components/import/ExportGuide";
+import { BankFormat } from "../services/ukBankFormats";
+
+// Bank logo component with fallback
+const BankLogo: React.FC<{ bank: BankFormat; size?: number }> = ({ bank, size = 48 }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (!bank.logoUrl || hasError) {
+    return <Text style={{ fontSize: size * 0.7 }}>{bank.logo}</Text>;
+  }
+
+  return (
+    <Image
+      source={{ uri: bank.logoUrl }}
+      style={{ width: size, height: size, borderRadius: size / 4 }}
+      onError={() => setHasError(true)}
+      resizeMode="contain"
+    />
+  );
+};
 
 interface CSVTransactionPreview {
   id: string;
@@ -71,6 +93,11 @@ export default function CSVImportScreen() {
     CSVTransactionPreview[]
   >([]);
 
+  // Bank selection state
+  const [selectedBank, setSelectedBank] = useState<BankFormat | null>(null);
+  const [showExportGuide, setShowExportGuide] = useState(false);
+  const [showBankSelector, setShowBankSelector] = useState(true);
+
   // Check if user has access to CSV import feature
   const featureAccess = hasFeatureAccess(PremiumFeature.CSV_IMPORT);
 
@@ -78,6 +105,28 @@ export default function CSVImportScreen() {
   if (!isPremium || !featureAccess.hasAccess) {
     return <CSVImportPaywall />;
   }
+
+  const handleBankSelect = (bank: BankFormat | null) => {
+    setSelectedBank(bank);
+    if (bank) {
+      // Show export guide for selected bank
+      setShowExportGuide(true);
+    } else {
+      // "Other Bank" selected - skip to file picker
+      setShowBankSelector(false);
+    }
+  };
+
+  const handleExportGuideContinue = () => {
+    setShowExportGuide(false);
+    setShowBankSelector(false);
+  };
+
+  const handleBackToBankSelector = () => {
+    setShowBankSelector(true);
+    setSelectedBank(null);
+    setSelectedFile(null);
+  };
 
   const validateCSVFormat = (
     csvText: string
@@ -735,8 +784,8 @@ export default function CSVImportScreen() {
       const response = await fetch(file.uri);
       const csvText = await response.text();
 
-      // Use new smart CSV detector
-      const parseResult = CSVDetector.parseCSV(csvText);
+      // Use new smart CSV detector with bank format if selected
+      const parseResult = CSVDetector.parseCSV(csvText, selectedBank);
 
       if (parseResult.rows.length === 0) {
         Alert.alert(
@@ -904,10 +953,20 @@ export default function CSVImportScreen() {
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
+      {/* Export Guide Modal */}
+      {selectedBank && (
+        <ExportGuide
+          visible={showExportGuide}
+          bank={selectedBank}
+          onClose={() => setShowExportGuide(false)}
+          onContinue={handleExportGuideContinue}
+        />
+      )}
+
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={showBankSelector ? () => router.back() : handleBackToBankSelector}>
             <Ionicons
               name="chevron-back"
               size={24}
@@ -915,106 +974,114 @@ export default function CSVImportScreen() {
             />
           </TouchableOpacity>
           <Text style={[styles.title, { color: colors.text.primary }]}>
-            Import CSV
+            {showBankSelector ? "Import Transactions" : "Select CSV File"}
           </Text>
           <View style={{ width: 24 }} />
         </View>
 
-        {/* Instructions */}
-        <View
-          style={[
-            styles.section,
-            { backgroundColor: colors.background.secondary },
-          ]}
-        >
-          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-            Smart CSV Import
-          </Text>
-          <Text style={[styles.instructions, { color: colors.text.secondary }]}>
-            Upload a CSV file from your bank, credit card, or payment app. Our smart import engine automatically detects the format, intelligently categorizes each transaction, identifies recurring bills, and learns from your spending patterns.
-          </Text>
+        {/* Bank Selector View */}
+        {showBankSelector ? (
+          <View style={styles.bankSelectorContainer}>
+            <BankSelector
+              onSelectBank={handleBankSelect}
+              selectedBankId={selectedBank?.id}
+            />
+          </View>
+        ) : (
+          <>
+            {/* Selected Bank Info */}
+            {selectedBank && (
+              <View
+                style={[
+                  styles.selectedBankCard,
+                  { backgroundColor: colors.background.secondary },
+                ]}
+              >
+                <View style={styles.selectedBankLogoContainer}>
+                  <BankLogo bank={selectedBank} size={48} />
+                </View>
+                <View style={styles.selectedBankInfo}>
+                  <Text style={[styles.selectedBankName, { color: colors.text.primary }]}>
+                    {selectedBank.name}
+                  </Text>
+                  <Text style={[styles.selectedBankHint, { color: colors.text.secondary }]}>
+                    Format auto-detected
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => setShowExportGuide(true)}>
+                  <Ionicons name="help-circle-outline" size={24} color={colors.text.secondary} />
+                </TouchableOpacity>
+              </View>
+            )}
 
-          <View style={styles.formatInfo}>
-            <Text style={[styles.formatTitle, { color: colors.text.primary }]}>
-              Supported formats:
-            </Text>
-            <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Minimum: Date, Amount, Description
-            </Text>
-            <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Full: Date, Description, Amount, Category, Type, Merchant
-            </Text>
-            <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Works with most banks and payment apps
-            </Text>
-            <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Amounts: Positive or negative values supported
-            </Text>
-
-            <Text
+            {/* File Selection */}
+            <View
               style={[
-                styles.formatTitle,
-                { color: colors.text.primary, marginTop: 12 },
+                styles.section,
+                { backgroundColor: colors.background.secondary },
               ]}
             >
-              Requirements:
-            </Text>
-            <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • File size: Maximum 5MB
-            </Text>
-            <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Valid dates (YYYY-MM-DD, DD/MM/YYYY, or MM/DD/YYYY)
-            </Text>
-            <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Non-empty descriptions
-            </Text>
-            <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
-              • Amounts under £50,000
-            </Text>
-          </View>
-        </View>
+              <TouchableOpacity
+                style={[
+                  styles.selectButton,
+                  {
+                    backgroundColor: colors.primary.main[100],
+                    borderColor: colors.primary.main[300],
+                  },
+                ]}
+                onPress={handleFileSelect}
+                disabled={loading}
+              >
+                <Ionicons
+                  name="document-text"
+                  size={24}
+                  color={colors.primary.main[600]}
+                />
+                <Text
+                  style={[styles.selectButtonText, { color: colors.primary.main[600] }]}
+                >
+                  {loading ? "Reading file..." : "Select CSV File"}
+                </Text>
+                {loading && (
+                  <ActivityIndicator size="small" color={colors.primary.main[600]} />
+                )}
+              </TouchableOpacity>
 
-        {/* File Selection */}
-        <View
-          style={[
-            styles.section,
-            { backgroundColor: colors.background.secondary },
-          ]}
-        >
-          <TouchableOpacity
-            style={[
-              styles.selectButton,
-              {
-                backgroundColor: colors.primary.main[100],
-                borderColor: colors.primary.main[300],
-              },
-            ]}
-            onPress={handleFileSelect}
-            disabled={loading}
-          >
-            <Ionicons
-              name="document-text"
-              size={24}
-              color={colors.primary.main[600]}
-            />
-            <Text
-              style={[styles.selectButtonText, { color: colors.primary.main[600] }]}
-            >
-              {loading ? "Reading file..." : "Select CSV File"}
-            </Text>
-            {loading && (
-              <ActivityIndicator size="small" color={colors.primary.main[600]} />
+              {selectedFile && (
+                <Text
+                  style={[styles.selectedFile, { color: colors.text.secondary }]}
+                >
+                  Selected: {selectedFile}
+                </Text>
+              )}
+            </View>
+
+            {/* Format Info (only show when no bank selected) */}
+            {!selectedBank && (
+              <View
+                style={[
+                  styles.section,
+                  { backgroundColor: colors.background.secondary },
+                ]}
+              >
+                <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+                  Supported Formats
+                </Text>
+                <View style={styles.formatInfo}>
+                  <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
+                    • Minimum: Date, Amount, Description
+                  </Text>
+                  <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
+                    • UK dates (DD/MM/YYYY) supported
+                  </Text>
+                  <Text style={[styles.formatItem, { color: colors.text.secondary }]}>
+                    • Signed or split debit/credit columns
+                  </Text>
+                </View>
+              </View>
             )}
-          </TouchableOpacity>
-
-          {selectedFile && (
-            <Text
-              style={[styles.selectedFile, { color: colors.text.secondary }]}
-            >
-              Selected: {selectedFile}
-            </Text>
-          )}
-        </View>
+          </>
+        )}
 
         {/* Import Preview */}
         {importPreview && (
@@ -1179,6 +1246,34 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "600",
+  },
+  bankSelectorContainer: {
+    flex: 1,
+  },
+  selectedBankCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  selectedBankLogoContainer: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  selectedBankInfo: {
+    flex: 1,
+  },
+  selectedBankName: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  selectedBankHint: {
+    fontSize: 12,
+    marginTop: 2,
   },
   section: {
     padding: 16,

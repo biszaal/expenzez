@@ -2,16 +2,16 @@
   "expo": {
     "name": "Expenzez",
     "slug": "expenzez",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "expenzez",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#6B2D7B"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -19,7 +19,7 @@
     "description": "Smart expense tracking with AI insights and comprehensive financial management for users.",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "5",
+      "buildNumber": "6",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -62,8 +62,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#6B2D7B"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
@@ -89,10 +89,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/icon.png",
           "imageWidth": 300,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#6B2D7B"
         }
       ],
       "expo-apple-authentication",

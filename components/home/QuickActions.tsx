@@ -28,7 +28,7 @@ export const QuickActions: React.FC = () => {
             style={[
               styles.professionalQuickActionGradient,
               SHADOWS.lg,
-              { backgroundColor: "#8B5CF6" },
+              { backgroundColor: "#7B2D8E" },
             ]}
           >
             <View style={styles.professionalQuickActionIconContainer}>
@@ -56,7 +56,7 @@ export const QuickActions: React.FC = () => {
             style={[
               styles.professionalQuickActionGradient,
               SHADOWS.lg,
-              { backgroundColor: "#3B82F6" },
+              { backgroundColor: "#22C55E" },
             ]}
           >
             <View style={styles.professionalQuickActionIconContainer}>
@@ -82,7 +82,7 @@ export const QuickActions: React.FC = () => {
             style={[
               styles.professionalQuickActionGradient,
               SHADOWS.lg,
-              { backgroundColor: "#0EA5E9" },
+              { backgroundColor: "#6366F1" },
             ]}
           >
             <View style={styles.professionalQuickActionIconContainer}>
@@ -108,7 +108,7 @@ export const QuickActions: React.FC = () => {
             style={[
               styles.professionalQuickActionGradient,
               SHADOWS.lg,
-              { backgroundColor: "#F59E0B" },
+              { backgroundColor: "#EC4899" },
             ]}
           >
             <View style={styles.professionalQuickActionIconContainer}>

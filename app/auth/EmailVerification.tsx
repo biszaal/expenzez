@@ -270,7 +270,7 @@ export default function EmailVerification() {
 
               <View style={styles.headerContent}>
                 <Image
-                  source={require("../../assets/images/transparent-logo.png")}
+                  source={require("../../assets/images/icon.png")}
                   style={styles.appLogo}
                   resizeMode="contain"
                 />

@@ -165,7 +165,7 @@ export default function ProfileScreen() {
               <Switch
                 value={isDark}
                 onValueChange={toggleTheme}
-                trackColor={{ false: '#E5E7EB', true: '#8B5CF6' }}
+                trackColor={{ false: '#E5E7EB', true: '#7B2D8E' }}
                 thumbColor={isDark ? colors.background.primary : colors.background.secondary}
               />
             }

@@ -44,22 +44,24 @@ export const useDashboardData = () => {
         setRefreshing(true);
         setError(null);
         setWarning(null);
-
-        // Invalidate all caches when refreshing
-        try {
-          await balanceAPI.invalidateCache();
-          console.log("🔄 [Home] Balance cache invalidated");
-
-          // Also clear any local storage caches
-          await AsyncStorage.removeItem("transaction_cache");
-          await AsyncStorage.removeItem("balance_cache");
-          console.log("🔄 [Home] Local caches cleared");
-        } catch (error) {
-          console.warn("⚠️ [Home] Failed to invalidate caches:", error);
-        }
       } else {
         setLoading(true);
         setFetchingData(true);
+      }
+
+      // Always invalidate caches to ensure fresh data
+      try {
+        await balanceAPI.invalidateCache();
+        console.log("🔄 [Home] Balance cache invalidated");
+
+        // Clear all local storage caches that might hold stale data
+        await AsyncStorage.removeItem("transaction_cache");
+        await AsyncStorage.removeItem("balance_cache");
+        await AsyncStorage.removeItem("@expenzez_api_cache_balance_summary");
+        await AsyncStorage.removeItem("manual_transactions");
+        console.log("🔄 [Home] All local caches cleared");
+      } catch (error) {
+        console.warn("⚠️ [Home] Failed to invalidate caches:", error);
       }
 
       // Check authentication first
@@ -105,16 +107,16 @@ export const useDashboardData = () => {
       }
 
       // Fetch transactions (always needed for display and fallback calculation)
-      // Force fresh data by adding timestamp to bypass any caching
-      console.log("🔄 [Home] Fetching transactions with force refresh...");
+      // Force fresh data - fetch more recent transactions first
+      console.log("🔄 [Home] Fetching fresh transactions from server...");
       const transactionResponse = await transactionAPI
         .getTransactions({
           startDate: dayjs()
-            .subtract(6, "months")
+            .subtract(3, "months") // Reduced to 3 months for faster load
             .startOf("month")
             .format("YYYY-MM-DD"),
-          endDate: dayjs().endOf("month").format("YYYY-MM-DD"),
-          limit: 50, // Reduced from 1000 for better performance
+          endDate: dayjs().endOf("day").format("YYYY-MM-DD"),
+          limit: 100, // Fetch more to ensure we have recent transactions
         })
         .catch((error) => {
           console.error("❌ Error loading transactions:", error);
@@ -131,7 +133,10 @@ export const useDashboardData = () => {
 
       console.log(
         "✅ Transactions loaded:",
-        transactionResponse.transactions?.length || 0
+        transactionResponse.transactions?.length || 0,
+        "Most recent:",
+        transactionResponse.transactions?.[0]?.date || "N/A",
+        transactionResponse.transactions?.[0]?.description?.substring(0, 20) || "N/A"
       );
 
       // Create empty accounts array for manual mode
@@ -208,6 +213,16 @@ export const useDashboardData = () => {
         const dateB = new Date(b.date || 0).getTime();
         return dateB - dateA;
       });
+
+      // Log sorted transactions for debugging
+      if (allTransactions.length > 0) {
+        console.log("📊 [Home] After sorting, first 5 transactions:",
+          allTransactions.slice(0, 5).map(t => ({
+            date: t.date,
+            desc: t.description?.substring(0, 15)
+          }))
+        );
+      }
 
       setTransactions(allTransactions);
       

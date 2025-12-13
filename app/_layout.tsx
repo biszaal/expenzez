@@ -633,7 +633,7 @@ function RootLayoutNav() {
               <View style={pinSyncStyles.loadingContainer}>
                 <ActivityIndicator
                   size="small"
-                  color={isDark ? "#8B5CF6" : "#6F76C8"}
+                  color={isDark ? "#A855F7" : "#7B2D8E"}
                 />
                 <Text
                   style={[
