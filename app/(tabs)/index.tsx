@@ -373,6 +373,8 @@ export default function HomeScreen() {
           <TransactionsList
             transactions={transactions.slice(0, 5)}
             onViewAll={() => router.push("/transactions")}
+            onRefreshTransactions={forceRefresh}
+            refreshingTransactions={refreshing}
             isLoading={loading}
           />
         </View>
