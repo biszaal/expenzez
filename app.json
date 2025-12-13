@@ -87,7 +87,6 @@
     },
     "plugins": [
       "@react-native-firebase/app",
-      "@react-native-firebase/analytics",
       "expo-router",
       [
         "expo-splash-screen",
