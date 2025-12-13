@@ -22,6 +22,7 @@ import {
 } from "../services/autoDetectionKeywords";
 import { MilestoneService } from "../services/milestoneService";
 import { reviewPromptService } from "../services/reviewPromptService";
+import { analyticsService } from "../services/analytics";
 
 interface Category {
   id: string;
@@ -206,6 +207,13 @@ export default function AddTransaction() {
           "✅ Transaction saved successfully with ID:",
           result.transaction?.id
         );
+
+        // Track transaction in analytics
+        analyticsService.logAddTransaction({
+          amount: numericAmount,
+          category: category?.name || "General",
+          type: transactionType === "expense" ? "debit" : "credit",
+        });
 
         // Transaction saved successfully - balance will be updated by backend
         console.log(
