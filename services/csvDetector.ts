@@ -166,12 +166,17 @@ export class CSVDetector {
     // Track which indices are already used
     const usedIndices = new Set([result.dateIndex, result.amountIndex, result.descriptionIndex].filter(i => i !== null));
 
-    // If no date found, look for first column with "date" anywhere or first column that looks like it could be a date
+    // Extended keyword lists for aggressive matching
+    const dateKeywords = ['date', 'time', 'when', 'posted', 'created', 'completed', 'trans', 'effective', 'value', 'payment'];
+    const amountKeywords = ['amount', 'value', 'sum', 'total', 'gbp', 'usd', 'eur', 'debit', 'credit', 'money', 'paid', 'price', 'cost', 'payment', 'withdrawal', 'deposit', 'out', 'in'];
+    const descKeywords = ['desc', 'detail', 'narrative', 'memo', 'reference', 'name', 'payee', 'merchant', 'vendor', 'transaction', 'particular', 'remark', 'note', 'to', 'from', 'party', 'beneficiary'];
+
+    // If no date found, look for first column with date-like keywords
     if (result.dateIndex === null) {
       for (let i = 0; i < headers.length; i++) {
         if (usedIndices.has(i)) continue;
         const h = headers[i].toLowerCase();
-        if (h.includes('date') || h.includes('time') || h.includes('when') || h.includes('posted')) {
+        if (dateKeywords.some(k => h.includes(k))) {
           result.dateIndex = i;
           usedIndices.add(i);
           console.log(`[CSVDetector] Fallback: Found date at index ${i}: "${headers[i]}"`);
@@ -188,7 +193,6 @@ export class CSVDetector {
 
     // If no amount found, look for numeric-sounding columns
     if (result.amountIndex === null) {
-      const amountKeywords = ['amount', 'value', 'sum', 'total', 'gbp', 'usd', 'eur', 'debit', 'credit', 'money', 'paid', 'price', 'cost'];
       for (let i = 0; i < headers.length; i++) {
         if (usedIndices.has(i)) continue;
         const h = headers[i].toLowerCase();
@@ -199,13 +203,13 @@ export class CSVDetector {
           break;
         }
       }
-      // If still no amount, look for columns after date
+      // If still no amount, look for columns after date, skip balance/id columns
       if (result.amountIndex === null) {
         for (let i = 0; i < headers.length; i++) {
           if (usedIndices.has(i)) continue;
           const h = headers[i].toLowerCase();
           // Skip common non-amount columns
-          if (h.includes('balance') || h.includes('reference') || h.includes('id')) continue;
+          if (h.includes('balance') || h.includes('reference') || h.includes('id') || h.includes('account') || h.includes('card') || h.includes('sort') || h.includes('number')) continue;
           result.amountIndex = i;
           usedIndices.add(i);
           console.log(`[CSVDetector] Fallback: Guessing amount at index ${i}: "${headers[i]}"`);
@@ -216,7 +220,6 @@ export class CSVDetector {
 
     // If no description found, find the most descriptive remaining column
     if (result.descriptionIndex === null) {
-      const descKeywords = ['desc', 'detail', 'narrative', 'memo', 'reference', 'name', 'payee', 'merchant', 'vendor', 'transaction', 'particular', 'remark'];
       for (let i = 0; i < headers.length; i++) {
         if (usedIndices.has(i)) continue;
         const h = headers[i].toLowerCase();
@@ -227,10 +230,13 @@ export class CSVDetector {
           break;
         }
       }
-      // If still no description, use any remaining text column
+      // If still no description, use any remaining column that's not date or amount
       if (result.descriptionIndex === null) {
         for (let i = 0; i < headers.length; i++) {
           if (usedIndices.has(i)) continue;
+          const h = headers[i].toLowerCase();
+          // Skip columns that are clearly not descriptions
+          if (h.includes('balance') || h.includes('id') || h.includes('number') || h.includes('sort') || h.includes('account')) continue;
           result.descriptionIndex = i;
           usedIndices.add(i);
           console.log(`[CSVDetector] Fallback: Using column ${i} as description: "${headers[i]}"`);
@@ -238,6 +244,68 @@ export class CSVDetector {
         }
       }
     }
+  }
+
+  /**
+   * Analyze first data row to detect column types based on content
+   * This is used when header detection fails
+   */
+  static detectColumnsFromData(headerRow: string, firstDataRow: string): DetectedColumns {
+    const headers = this.parseCSVLine(headerRow).map((h) => h.trim().toLowerCase().replace(/['"]/g, ''));
+    const dataValues = this.parseCSVLine(firstDataRow).map((v) => v.trim().replace(/['"]/g, ''));
+
+    console.log('[CSVDetector] Detecting columns from data content');
+    console.log('[CSVDetector] Headers:', headers);
+    console.log('[CSVDetector] First row data:', dataValues);
+
+    const result: DetectedColumns = {
+      dateIndex: null,
+      amountIndex: null,
+      descriptionIndex: null,
+      categoryIndex: null,
+      typeIndex: null,
+      merchantIndex: null,
+    };
+
+    // Analyze each column's content
+    dataValues.forEach((value, index) => {
+      if (!value) return;
+
+      // Check if it looks like a date
+      if (result.dateIndex === null) {
+        const datePatterns = [
+          /^\d{1,2}\/\d{1,2}\/\d{2,4}$/,           // DD/MM/YYYY or MM/DD/YYYY
+          /^\d{4}-\d{2}-\d{2}/,                      // ISO format
+          /^\d{1,2}\s+\w{3}\s+\d{4}$/,              // DD MMM YYYY
+          /^\d{1,2}-\d{1,2}-\d{2,4}$/,             // DD-MM-YYYY
+        ];
+        if (datePatterns.some(p => p.test(value))) {
+          result.dateIndex = index;
+          console.log(`[CSVDetector] Data analysis: Found date at index ${index}: "${value}"`);
+          return;
+        }
+      }
+
+      // Check if it looks like a number/amount
+      if (result.amountIndex === null && index !== result.dateIndex) {
+        const cleanValue = value.replace(/[£€$,\s()]/g, '').replace(/^-/, '');
+        if (/^\d+\.?\d*$/.test(cleanValue) && parseFloat(cleanValue) !== 0) {
+          result.amountIndex = index;
+          console.log(`[CSVDetector] Data analysis: Found amount at index ${index}: "${value}"`);
+          return;
+        }
+      }
+
+      // Check if it looks like a description (longer text with letters)
+      if (result.descriptionIndex === null && index !== result.dateIndex && index !== result.amountIndex) {
+        if (value.length > 3 && /[a-zA-Z]/.test(value)) {
+          result.descriptionIndex = index;
+          console.log(`[CSVDetector] Data analysis: Found description at index ${index}: "${value}"`);
+        }
+      }
+    });
+
+    return result;
   }
 
   /**
@@ -887,20 +955,41 @@ export class CSVDetector {
     const firstRowIsHeader = this.isHeaderRow(lines[0]);
     const dataLines = firstRowIsHeader ? lines.slice(1) : lines;
     const headerLine = firstRowIsHeader ? lines[0] : lines[0];
+    const firstDataLine = dataLines.length > 0 ? dataLines[0] : '';
 
     console.log('[CSVDetector] Generic parsing - Header:', headerLine.substring(0, 150));
+    console.log('[CSVDetector] Generic parsing - First data:', firstDataLine.substring(0, 150));
     console.log('[CSVDetector] Generic parsing - Is header row:', firstRowIsHeader);
 
-    // Detect columns
-    const detected = this.detectColumns(headerLine);
+    // Detect columns from headers first
+    let detected = this.detectColumns(headerLine);
+
+    // If header detection failed, try data-based detection
+    if (!this.hasMinimumColumns(detected) && firstDataLine) {
+      console.log('[CSVDetector] Header detection failed, trying data-based detection...');
+      const dataDetected = this.detectColumnsFromData(headerLine, firstDataLine);
+
+      // Merge results - prefer header-detected columns, fill in from data detection
+      if (dataDetected.dateIndex !== null && detected.dateIndex === null) {
+        detected.dateIndex = dataDetected.dateIndex;
+      }
+      if (dataDetected.amountIndex !== null && detected.amountIndex === null) {
+        detected.amountIndex = dataDetected.amountIndex;
+      }
+      if (dataDetected.descriptionIndex !== null && detected.descriptionIndex === null) {
+        detected.descriptionIndex = dataDetected.descriptionIndex;
+      }
+      console.log('[CSVDetector] After data-based merge:', detected);
+    }
 
     // Check if we have minimum columns
     if (!this.hasMinimumColumns(detected)) {
-      console.log('[CSVDetector] Generic parsing - Missing columns:', detected);
+      console.log('[CSVDetector] Generic parsing - Still missing columns:', detected);
+      console.log('[CSVDetector] Headers found:', this.parseCSVLine(headerLine));
       return {
         rows: [],
         errors: [
-          "CSV must contain at least: Date, Amount, and Description columns",
+          "CSV must contain at least: Date, Amount, and Description columns. Please check your CSV file format.",
         ],
         detectedColumns: detected,
         formatDetected: "insufficient_columns",
