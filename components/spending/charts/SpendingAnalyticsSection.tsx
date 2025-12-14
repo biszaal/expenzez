@@ -44,7 +44,7 @@ export const SpendingAnalyticsSection: React.FC<
   onRequestAIInsight,
   canRequestInsight = true,
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = spendingAnalyticsSectionStyles;
   const { width } = Dimensions.get("window");
   const [showAIInsight, setShowAIInsight] = useState(false);
@@ -78,7 +78,16 @@ export const SpendingAnalyticsSection: React.FC<
       <View
         style={[
           styles.premiumSpendingCard,
-          { backgroundColor: colors.background.secondary },
+          {
+            backgroundColor: colors.background.primary,
+            borderWidth: isDark ? 1 : 0,
+            borderColor: isDark ? colors.border.light : 'transparent',
+            shadowColor: isDark ? 'transparent' : '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: isDark ? 0 : 0.08,
+            shadowRadius: 12,
+            elevation: isDark ? 0 : 4,
+          },
         ]}
       >
         {/* Improved Analytics Header */}
@@ -133,7 +142,11 @@ export const SpendingAnalyticsSection: React.FC<
                 <View
                   style={[
                     styles.enhancedChartContainer,
-                    { backgroundColor: colors.background.secondary },
+                    {
+                      backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
+                      borderWidth: isDark ? 1 : 0,
+                      borderColor: isDark ? colors.border.light : 'transparent',
+                    },
                   ]}
                 >
                   {/* Modern Interactive Line Chart */}
@@ -278,7 +291,11 @@ export const SpendingAnalyticsSection: React.FC<
                     <View
                       style={[
                         styles.miniStatCard,
-                        { backgroundColor: colors.background.secondary },
+                        {
+                          backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
+                          borderWidth: 1,
+                          borderColor: isDark ? colors.border.light : colors.gray[200],
+                        },
                       ]}
                     >
                       <View
@@ -317,7 +334,11 @@ export const SpendingAnalyticsSection: React.FC<
                     <View
                       style={[
                         styles.miniStatCard,
-                        { backgroundColor: colors.background.secondary },
+                        {
+                          backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
+                          borderWidth: 1,
+                          borderColor: isDark ? colors.border.light : colors.gray[200],
+                        },
                       ]}
                     >
                       <View
@@ -385,7 +406,11 @@ export const SpendingAnalyticsSection: React.FC<
                           <View
                             style={[
                               styles.miniStatCard,
-                              { backgroundColor: colors.background.secondary },
+                              {
+                                backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
+                                borderWidth: 1,
+                                borderColor: isDark ? colors.border.light : colors.gray[200],
+                              },
                             ]}
                           >
                             <View
@@ -442,7 +467,11 @@ export const SpendingAnalyticsSection: React.FC<
               <View
                 style={[
                   styles.premiumEmptyChart,
-                  { backgroundColor: colors.background.secondary },
+                  {
+                    backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
+                    borderWidth: isDark ? 1 : 0,
+                    borderColor: isDark ? colors.border.light : 'transparent',
+                  },
                 ]}
               >
                 <View
