@@ -223,16 +223,20 @@ export default function CustomAddressSearch({
           value={query}
           onChangeText={handleQueryChange}
           placeholder="Search for your address..."
-          
+          placeholderTextColor={colors.text.tertiary}
           style={{
             flex: 1,
             fontSize: 16,
             color: colors.text.primary,
-            minHeight: 20,
+            minHeight: 40,
+            paddingVertical: 8,
           }}
           returnKeyType="search"
           autoCorrect={false}
           autoCapitalize="words"
+          keyboardType="default"
+          editable={true}
+          selectTextOnFocus={true}
         />
         {loading && (
           <ActivityIndicator 

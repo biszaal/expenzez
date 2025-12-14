@@ -283,6 +283,23 @@ export default function Register() {
         ) {
           errorMsg =
             "Password does not meet requirements. It must have uppercase, lowercase, number, and symbol.";
+        } else if (err.response?.data?.error === "INVALID_INPUT") {
+          // Show the actual validation error details from backend
+          const details = err.response?.data?.details || "";
+          if (details.toLowerCase().includes("phone")) {
+            errorMsg = "Phone number format is invalid. Please use format: +447911123456";
+          } else if (details.toLowerCase().includes("birthdate")) {
+            errorMsg = "Date of birth format is invalid. Please select your date again.";
+          } else if (details.toLowerCase().includes("password")) {
+            errorMsg = "Password must have uppercase, lowercase, number, and symbol.";
+          } else if (details.toLowerCase().includes("email")) {
+            errorMsg = "Email format is invalid. Please check your email address.";
+          } else if (details.toLowerCase().includes("username")) {
+            errorMsg = "Username must be 3-30 alphanumeric characters only.";
+          } else {
+            errorMsg = details || "Registration failed. Please check your details.";
+          }
+          console.log("INVALID_INPUT error details:", details);
         } else {
           errorMsg =
             err.response?.data?.message ||
