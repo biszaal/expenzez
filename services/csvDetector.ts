@@ -672,31 +672,42 @@ export class CSVDetector {
 
     // Parse header row to get column names using proper CSV parsing
     const headerLine = lines[skipRows] || '';
-    const headers = this.parseCSVLine(headerLine).map((h) => h.trim().replace(/^"|"$/g, ''));
+    const headers = this.parseCSVLine(headerLine).map((h) => h.trim().replace(/^"|"$/g, '').replace(/"/g, ''));
 
-    console.log('[CSVDetector] Bank format headers found:', headers);
+    console.log('[CSVDetector] Bank format parsing:', bank.name);
+    console.log('[CSVDetector] skipRows:', skipRows, 'dataStartIndex:', dataStartIndex);
+    console.log('[CSVDetector] Header line (raw):', headerLine);
+    console.log('[CSVDetector] Headers parsed:', headers);
 
     // Create case-insensitive header mapping
     const headerMap: Record<string, number> = {};
     headers.forEach((h, idx) => {
-      headerMap[h.toLowerCase()] = idx;
+      if (h) {
+        headerMap[h.toLowerCase().trim()] = idx;
+      }
     });
+
+    console.log('[CSVDetector] Header map:', headerMap);
 
     // Find column indices using bank's column definitions (case-insensitive)
     const findColumnIndex = (possibleNames: string[]): number => {
+      console.log('[CSVDetector] Looking for columns:', possibleNames);
       for (const name of possibleNames) {
-        const lowerName = name.toLowerCase();
+        const lowerName = name.toLowerCase().trim();
         // Exact match
         if (headerMap[lowerName] !== undefined) {
+          console.log('[CSVDetector] Exact match found for', name, 'at index', headerMap[lowerName]);
           return headerMap[lowerName];
         }
         // Partial match
         for (const header of Object.keys(headerMap)) {
           if (header.includes(lowerName) || lowerName.includes(header)) {
+            console.log('[CSVDetector] Partial match found for', name, 'with header', header, 'at index', headerMap[header]);
             return headerMap[header];
           }
         }
       }
+      console.log('[CSVDetector] No match found for', possibleNames);
       return -1;
     };
 
@@ -707,7 +718,7 @@ export class CSVDetector {
     const debitColIdx = bank.columns.debitColumn ? findColumnIndex(bank.columns.debitColumn) : -1;
     const creditColIdx = bank.columns.creditColumn ? findColumnIndex(bank.columns.creditColumn) : -1;
 
-    console.log('[CSVDetector] Column indices - Date:', dateColIdx, 'Amount:', amountColIdx, 'Desc:', descColIdx);
+    console.log('[CSVDetector] Final column indices - Date:', dateColIdx, 'Amount:', amountColIdx, 'Desc:', descColIdx);
 
     // If we couldn't find required columns, return empty to trigger fallback
     if (dateColIdx === -1 || (amountColIdx === -1 && debitColIdx === -1 && creditColIdx === -1) || descColIdx === -1) {
@@ -951,12 +962,23 @@ export class CSVDetector {
   static parseCSVGeneric(csvText: string): CSVParseResult {
     const lines = csvText.split("\n").filter((line) => line.trim());
 
-    // Detect if first row is header
-    const firstRowIsHeader = this.isHeaderRow(lines[0]);
-    const dataLines = firstRowIsHeader ? lines.slice(1) : lines;
-    const headerLine = firstRowIsHeader ? lines[0] : lines[0];
+    // Check if first line is a title row (like "Transactions for period...")
+    let startLineIndex = 0;
+    if (lines.length > 0 && !this.isHeaderRow(lines[0])) {
+      // First line might be a title, try second line as header
+      if (lines.length > 1 && this.isHeaderRow(lines[1])) {
+        console.log('[CSVDetector] Detected title row, using line 2 as header');
+        startLineIndex = 1;
+      }
+    }
+
+    // Detect if selected row is header
+    const firstRowIsHeader = this.isHeaderRow(lines[startLineIndex]);
+    const dataLines = firstRowIsHeader ? lines.slice(startLineIndex + 1) : lines.slice(startLineIndex);
+    const headerLine = lines[startLineIndex];
     const firstDataLine = dataLines.length > 0 ? dataLines[0] : '';
 
+    console.log('[CSVDetector] Generic parsing - Start line:', startLineIndex);
     console.log('[CSVDetector] Generic parsing - Header:', headerLine.substring(0, 150));
     console.log('[CSVDetector] Generic parsing - First data:', firstDataLine.substring(0, 150));
     console.log('[CSVDetector] Generic parsing - Is header row:', firstRowIsHeader);
