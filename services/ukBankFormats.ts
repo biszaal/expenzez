@@ -36,9 +36,9 @@ export interface BankFormat {
   };
 }
 
-// Bank logo URLs using DuckDuckGo icon API
+// Bank logo URLs using high-quality Clearbit Logo API
 const getBankLogoUrl = (domain: string) =>
-  `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+  `https://logo.clearbit.com/${domain}?size=200`;
 
 export const UK_BANK_FORMATS: Record<string, BankFormat> = {
   monzo: {
@@ -401,17 +401,21 @@ export const UK_BANK_FORMATS: Record<string, BankFormat> = {
     logo: '🔵',
     logoUrl: getBankLogoUrl('chase.co.uk'),
     columns: {
-      date: ['Transaction Date', 'Date', 'Trans. Date', 'Trans Date', 'Posting Date', 'Post Date'],
-      amount: ['Amount', 'Transaction Amount', 'Debit/Credit', 'Value'],
-      description: ['Description', 'Merchant', 'Details', 'Narrative', 'Transaction Description', 'Particulars', 'Name', 'Payee'],
-      category: ['Category', 'Type', 'Transaction Type'],
-      balance: ['Balance', 'Running Balance', 'Account Balance'],
+      // Chase UK can have various column names depending on export type
+      date: ['Transaction Date', 'Date', 'Trans. Date', 'Trans Date', 'Posting Date', 'Post Date', 'Created', 'Completed', 'Value Date', 'Payment Date'],
+      amount: ['Amount', 'Transaction Amount', 'Debit/Credit', 'Value', 'GBP', 'Amount (GBP)', 'Sum', 'Total', 'Payment Amount'],
+      description: ['Description', 'Merchant', 'Details', 'Narrative', 'Transaction Description', 'Particulars', 'Name', 'Payee', 'Reference', 'Notes', 'Memo', 'Transaction', 'Payment Description', 'To/From'],
+      category: ['Category', 'Type', 'Transaction Type', 'Payment Type'],
+      balance: ['Balance', 'Running Balance', 'Account Balance', 'Available Balance'],
+      debitColumn: ['Debit', 'Money Out', 'Paid Out', 'Withdrawal', 'Out'],
+      creditColumn: ['Credit', 'Money In', 'Paid In', 'Deposit', 'In'],
     },
     dateFormat: 'DD/MM/YYYY',
-    amountFormat: 'signed',
+    amountFormat: 'signed', // Can be 'split' too - parser will try both
     hasHeader: true,
     detectPatterns: {
-      headers: ['chase', 'Transaction Date', 'Merchant'],
+      // More flexible detection - any of these indicate Chase UK
+      headers: ['chase', 'Transaction Date', 'Merchant', 'Created'],
     },
     exportGuide: {
       appSteps: [
