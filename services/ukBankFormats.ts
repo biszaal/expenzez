@@ -402,21 +402,20 @@ export const UK_BANK_FORMATS: Record<string, BankFormat> = {
     logo: '🔵',
     logoUrl: getBankLogoUrl('chase.co.uk'),
     columns: {
-      // Chase UK can have various column names depending on export type
-      date: ['Transaction Date', 'Date', 'Trans. Date', 'Trans Date', 'Posting Date', 'Post Date', 'Created', 'Completed', 'Value Date', 'Payment Date'],
-      amount: ['Amount', 'Transaction Amount', 'Debit/Credit', 'Value', 'GBP', 'Amount (GBP)', 'Sum', 'Total', 'Payment Amount'],
-      description: ['Description', 'Merchant', 'Details', 'Narrative', 'Transaction Description', 'Particulars', 'Name', 'Payee', 'Reference', 'Notes', 'Memo', 'Transaction', 'Payment Description', 'To/From'],
-      category: ['Category', 'Type', 'Transaction Type', 'Payment Type'],
-      balance: ['Balance', 'Running Balance', 'Account Balance', 'Available Balance'],
-      debitColumn: ['Debit', 'Money Out', 'Paid Out', 'Withdrawal', 'Out'],
-      creditColumn: ['Credit', 'Money In', 'Paid In', 'Deposit', 'In'],
+      // Chase UK CSV format: Date, Time, Transaction Type, Transaction Description, Amount, Currency, Balance
+      date: ['Date', 'Transaction Date', 'Trans. Date', 'Trans Date', 'Posting Date', 'Post Date'],
+      amount: ['Amount', 'Transaction Amount', 'Value'],
+      description: ['Transaction Description', 'Description', 'Merchant', 'Details', 'Narrative'],
+      category: ['Transaction Type', 'Category', 'Type'],
+      balance: ['Balance', 'Running Balance'],
     },
-    dateFormat: 'DD/MM/YYYY',
-    amountFormat: 'signed', // Can be 'split' too - parser will try both
+    dateFormat: 'DD MMM YYYY', // Chase UK uses "24 Sep 2025" format
+    amountFormat: 'signed',
     hasHeader: true,
+    skipRows: 1, // Chase UK CSV has a title row before headers: "Transactions for period..."
     detectPatterns: {
-      // More flexible detection - any of these indicate Chase UK
-      headers: ['chase', 'Transaction Date', 'Merchant', 'Created'],
+      // Detect Chase UK by looking for their unique patterns
+      headers: ['Transaction Description', 'Transaction Type', 'Transactions for period'],
     },
     exportGuide: {
       appSteps: [
@@ -482,26 +481,34 @@ export const detectBankFromCSV = (csvText: string): BankFormat | null => {
   const lines = csvText.split('\n');
   if (lines.length === 0) return null;
 
-  const headerLine = lines[0].toLowerCase();
-  const firstDataLine = lines.length > 1 ? lines[1] : '';
+  // Check first few lines for patterns (some banks have title rows before headers)
+  const linesToCheck = lines.slice(0, Math.min(3, lines.length)).map(l => l.toLowerCase());
+  const combinedLines = linesToCheck.join(' ');
 
   for (const bank of Object.values(UK_BANK_FORMATS)) {
-    // Check for unique header patterns
+    // Skip generic format in detection
+    if (bank.id === 'generic') continue;
+
+    // Check for unique header patterns across first few lines
     if (bank.detectPatterns.headers) {
       const matchCount = bank.detectPatterns.headers.filter((h) =>
-        headerLine.includes(h.toLowerCase())
+        combinedLines.includes(h.toLowerCase())
       ).length;
 
       // If majority of unique headers match, it's likely this bank
       if (matchCount >= Math.ceil(bank.detectPatterns.headers.length / 2)) {
+        console.log(`[BankDetect] Detected ${bank.name} with ${matchCount} pattern matches`);
         return bank;
       }
     }
 
-    // Check date pattern in first data row
-    if (bank.detectPatterns.datePattern && firstDataLine) {
-      const dateMatch = firstDataLine.match(bank.detectPatterns.datePattern);
+    // Check date pattern in data rows
+    if (bank.detectPatterns.datePattern) {
+      const dataStartIdx = bank.skipRows ? bank.skipRows + 1 : 1;
+      const dataLine = lines[dataStartIdx] || '';
+      const dateMatch = dataLine.match(bank.detectPatterns.datePattern);
       if (dateMatch) {
+        console.log(`[BankDetect] Detected ${bank.name} by date pattern`);
         return bank;
       }
     }
