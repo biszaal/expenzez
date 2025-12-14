@@ -189,7 +189,8 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
         {/* Header with AI Button */}
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <Text
-            style={[styles.simpleBudgetTitle, { color: colors.text.primary, marginBottom: 0 }]}
+            style={[styles.simpleBudgetTitle, { color: colors.text.primary, marginBottom: 0, flex: 1, textAlign: 'left' }]}
+            numberOfLines={1}
           >
             {dayjs(selectedMonth).format("MMMM YYYY")} Budget
           </Text>
