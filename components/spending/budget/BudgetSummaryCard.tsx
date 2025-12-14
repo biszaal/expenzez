@@ -53,7 +53,7 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
   onRequestAIInsight,
   canRequestInsight = true,
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = budgetSummaryCardStyles;
   const [showAIInsight, setShowAIInsight] = useState(false);
 
@@ -114,7 +114,16 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
       <View
         style={[
           styles.simpleBudgetCard,
-          { backgroundColor: colors.background.secondary },
+          {
+            backgroundColor: colors.background.primary,
+            borderWidth: isDark ? 1 : 0,
+            borderColor: isDark ? colors.border.light : 'transparent',
+            shadowColor: isDark ? 'transparent' : '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: isDark ? 0 : 0.08,
+            shadowRadius: 12,
+            elevation: isDark ? 0 : 4,
+          },
         ]}
       >
         {/* Warning Alert Banner */}
@@ -213,7 +222,7 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                 cy={120}
                 r={100}
                 fill="none"
-                stroke={colors.background.secondary}
+                stroke={isDark ? 'rgba(255, 255, 255, 0.08)' : colors.gray[200]}
                 strokeWidth={24}
               />
 
@@ -363,7 +372,11 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
               style={[
                 styles.budgetCard,
                 styles.budgetCardPrimary,
-                { backgroundColor: colors.background.secondary },
+                {
+                  backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
+                  borderWidth: 1,
+                  borderColor: isDark ? colors.border.light : colors.gray[200],
+                },
               ]}
             >
               <Text
@@ -388,7 +401,11 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
               style={[
                 styles.budgetCard,
                 styles.budgetCardSecondary,
-                { backgroundColor: colors.background.secondary },
+                {
+                  backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
+                  borderWidth: 1,
+                  borderColor: isDark ? colors.border.light : colors.gray[200],
+                },
               ]}
             >
               <Text
@@ -416,7 +433,11 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
               style={[
                 styles.budgetCard,
                 styles.budgetCardAccent,
-                { backgroundColor: colors.background.secondary },
+                {
+                  backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
+                  borderWidth: 1,
+                  borderColor: isDark ? colors.border.light : colors.gray[200],
+                },
               ]}
             >
               <Text
@@ -441,7 +462,11 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
               style={[
                 styles.budgetCard,
                 styles.budgetCardWarning,
-                { backgroundColor: colors.background.secondary },
+                {
+                  backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
+                  borderWidth: 1,
+                  borderColor: isDark ? colors.border.light : colors.gray[200],
+                },
               ]}
             >
               <Text
