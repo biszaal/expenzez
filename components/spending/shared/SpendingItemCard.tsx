@@ -35,7 +35,7 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
   showBudget = false,
   showCategory = false,
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = spendingItemCardStyles;
 
   const spent = item.monthlySpent || 0;
@@ -78,9 +78,14 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
       <View
         style={[
           styles.itemCard,
-          { backgroundColor: colors.background.secondary },
+          {
+            backgroundColor: colors.background.primary,
+            borderWidth: 1,
+            borderColor: isDark ? colors.border.light : 'transparent',
+          },
           overBudget && {
-            backgroundColor: "#FEF2F2",
+            backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2',
+            borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : 'transparent',
           },
         ]}
       >
@@ -89,7 +94,7 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
             <View
               style={[
                 styles.itemIconBg,
-                { backgroundColor: colors.primary.main[100] },
+                { backgroundColor: isDark ? 'rgba(123, 45, 142, 0.2)' : 'rgba(123, 45, 142, 0.1)' },
               ]}
             >
               {showCategory ? (
@@ -100,7 +105,7 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
                 <CategoryIcon
                   iconName={item.icon}
                   categoryName={item.name}
-                  color={colors.primary.main[600]}
+                  color={colors.primary.main}
                   size={20}
                 />
               )}
@@ -203,7 +208,7 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
             <View
               style={[
                 styles.itemCardProgressTrack,
-                { backgroundColor: colors.background.secondary },
+                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : colors.gray[200] },
               ]}
             >
               <View
@@ -218,7 +223,7 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
             </View>
             <View style={styles.progressInfo}>
               <Text
-                style={[styles.progressText, { color: colors.primary.main[600] }]}
+                style={[styles.progressText, { color: colors.text.secondary }]}
               >
                 {Math.round(percentageOfTotal)}% of total
               </Text>
