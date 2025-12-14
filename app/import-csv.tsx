@@ -28,21 +28,44 @@ import { ExportGuide } from "../components/import/ExportGuide";
 import { BankFormat } from "../services/ukBankFormats";
 import { analyticsService } from "../services/analytics";
 
-// Bank logo component with fallback
+// Bank logo component with fallback and high-quality rendering
 const BankLogo: React.FC<{ bank: BankFormat; size?: number }> = ({ bank, size = 48 }) => {
   const [hasError, setHasError] = useState(false);
+  const { colors } = useTheme();
 
   if (!bank.logoUrl || hasError) {
-    return <Text style={{ fontSize: size * 0.7 }}>{bank.logo}</Text>;
+    // Fallback to emoji with styled container
+    return (
+      <View style={{
+        width: size,
+        height: size,
+        borderRadius: size / 4,
+        backgroundColor: colors.background.secondary,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <Text style={{ fontSize: size * 0.5 }}>{bank.logo}</Text>
+      </View>
+    );
   }
 
   return (
-    <Image
-      source={{ uri: bank.logoUrl }}
-      style={{ width: size, height: size, borderRadius: size / 4 }}
-      onError={() => setHasError(true)}
-      resizeMode="contain"
-    />
+    <View style={{
+      width: size,
+      height: size,
+      borderRadius: size / 4,
+      backgroundColor: '#FFFFFF',
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <Image
+        source={{ uri: bank.logoUrl }}
+        style={{ width: size * 0.8, height: size * 0.8 }}
+        onError={() => setHasError(true)}
+        resizeMode="contain"
+      />
+    </View>
   );
 };
 
