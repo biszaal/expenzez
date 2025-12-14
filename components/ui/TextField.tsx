@@ -63,6 +63,23 @@ interface TextFieldProps {
     | "password"
     | "newPassword";
   passwordRules?: string;
+  autoComplete?:
+    | "off"
+    | "username"
+    | "password"
+    | "email"
+    | "name"
+    | "tel"
+    | "street-address"
+    | "postal-code"
+    | "cc-number"
+    | "cc-csc"
+    | "cc-exp"
+    | "cc-exp-month"
+    | "cc-exp-year"
+    | "new-password"
+    | "current-password"
+    | "one-time-code";
 }
 
 export default function TextField({
@@ -84,6 +101,7 @@ export default function TextField({
   labelStyle,
   textContentType,
   passwordRules,
+  autoComplete,
 }: TextFieldProps) {
   const { colors } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
@@ -184,6 +202,7 @@ export default function TextField({
           onBlur={() => setIsFocused(false)}
           textContentType={textContentType}
           passwordRules={passwordRules}
+          autoComplete={autoComplete}
         />
 
         {secureTextEntry && (
