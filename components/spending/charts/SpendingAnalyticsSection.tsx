@@ -143,9 +143,7 @@ export const SpendingAnalyticsSection: React.FC<
                   style={[
                     styles.enhancedChartContainer,
                     {
-                      backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
-                      borderWidth: isDark ? 1 : 0,
-                      borderColor: isDark ? colors.border.light : 'transparent',
+                      backgroundColor: 'transparent',
                     },
                   ]}
                 >
