@@ -148,6 +148,7 @@ export default function RegisterStep3({
             autoCapitalize="none"
             autoCorrect={false}
             textContentType="emailAddress"
+            autoComplete="email"
             style={styles.input}
           />
 
@@ -207,7 +208,9 @@ export default function RegisterStep3({
             }}
             secureTextEntry={true}
             autoCapitalize="none"
+            autoCorrect={false}
             textContentType="newPassword"
+            autoComplete="new-password"
             passwordRules="minlength: 8; required: lower; required: upper; required: digit; required: special;"
             style={styles.input}
           />
@@ -227,7 +230,9 @@ export default function RegisterStep3({
             }}
             secureTextEntry={true}
             autoCapitalize="none"
+            autoCorrect={false}
             textContentType="newPassword"
+            autoComplete="new-password"
             style={styles.input}
           />
         </View>
