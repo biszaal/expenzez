@@ -99,6 +99,7 @@ export default function CSVImportPreviewScreen() {
       const summary = result.summary || {
         imported: result.imported,
         failed: result.failed,
+        duplicatesSkipped: 0,
         autoCategorized: 0,
       };
 
@@ -106,6 +107,10 @@ export default function CSVImportPreviewScreen() {
       const incomeCount = transactions.filter((t) => t.type === "credit").length;
 
       let summaryMessage = `Import completed!\n• ${summary.imported} transactions saved\n• ${expenseCount} expenses\n• ${incomeCount} income entries`;
+
+      if (summary.duplicatesSkipped > 0) {
+        summaryMessage += `\n• ${summary.duplicatesSkipped} duplicates skipped`;
+      }
 
       if (summary.failed > 0) {
         summaryMessage += `\n• ${summary.failed} failed to import`;
