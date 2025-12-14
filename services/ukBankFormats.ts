@@ -36,9 +36,10 @@ export interface BankFormat {
   };
 }
 
-// Bank logo URLs using high-quality Clearbit Logo API
+// Bank logo URLs using Google's favicon API (reliable, no auth required)
+// Size 128 provides good quality for mobile displays
 const getBankLogoUrl = (domain: string) =>
-  `https://logo.clearbit.com/${domain}?size=200`;
+  `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 
 export const UK_BANK_FORMATS: Record<string, BankFormat> = {
   monzo: {
