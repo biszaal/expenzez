@@ -812,6 +812,11 @@ export default function CSVImportScreen() {
       const parseResult = CSVDetector.parseCSV(csvText, selectedBank);
 
       if (parseResult.rows.length === 0) {
+        // Debug info for troubleshooting
+        const debugInfo = `Bank: ${parseResult.detectedBank?.name || 'None'}\nFormat: ${parseResult.formatDetected}\nErrors: ${parseResult.errors.join(', ')}`;
+        console.log('[CSV Import] Parse failed:', debugInfo);
+        console.log('[CSV Import] First 500 chars:', csvText.substring(0, 500));
+
         Alert.alert(
           "No Data",
           parseResult.errors[0] || "No valid transactions found in the CSV file. Please check the format."
