@@ -61,21 +61,10 @@ const RevenueCatContext = createContext<RevenueCatContextType>({
 export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  // 🔓 FORCE DEV MODE: Check multiple ways to detect development
-  // 1. __DEV__ flag (React Native development mode)
-  // 2. ENV_CONFIG.isDevelopment (from environment.ts)
-  // 3. API URL check (dev API endpoint = dev mode)
-  const isDevMode = __DEV__ ||
-                    ENV_CONFIG.isDevelopment ||
-                    ENV_CONFIG.apiBaseURL.includes('noat6k04ik'); // Dev API Gateway
-
-  console.log("[RevenueCat] ========================================");
-  console.log("[RevenueCat] 🔧 DEV MODE DETECTION");
-  console.log("[RevenueCat] 🔧 __DEV__ FLAG:", __DEV__);
-  console.log("[RevenueCat] 🔧 ENV_CONFIG.isDevelopment:", ENV_CONFIG.isDevelopment);
-  console.log("[RevenueCat] 🔧 API URL:", ENV_CONFIG.apiBaseURL);
-  console.log("[RevenueCat] 🔧 FINAL isDevMode:", isDevMode);
-  console.log("[RevenueCat] ========================================");
+  // Dev-mode premium bypass. Strictly gated on the React Native __DEV__
+  // compile-time flag so it can never be true in a production EAS build,
+  // regardless of runtime config (API URL, env vars, etc.).
+  const isDevMode = __DEV__;
 
   const [isPro, setIsPro] = useState(isDevMode);
   const [isLoading, setIsLoading] = useState(!isDevMode);
@@ -88,34 +77,6 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   const [activeProductIdentifier, setActiveProductIdentifier] = useState<
     string | null
   >(null);
-
-  // Check if we're in dev mode (memoized to prevent recalculation)
-  const isDevModeRef = React.useRef(
-    __DEV__ ||
-    ENV_CONFIG.isDevelopment ||
-    ENV_CONFIG.apiBaseURL.includes('noat6k04ik')
-  );
-
-  // Log isPro changes for debugging
-  useEffect(() => {
-    console.log("[RevenueCat] ========================================");
-    console.log("[RevenueCat] 🔍 PREMIUM STATUS CHECK");
-    console.log("[RevenueCat] 🔍 __DEV__ flag:", __DEV__);
-    console.log("[RevenueCat] 🔍 isDevMode (from ref):", isDevModeRef.current);
-    console.log("[RevenueCat] 🔍 isPro state:", isPro);
-    console.log("[RevenueCat] 🔍 isLoading:", isLoading);
-    console.log("[RevenueCat] 🔍 hasActiveSubscription:", hasActiveSubscription);
-    console.log("[RevenueCat] ========================================");
-
-    // CRITICAL FIX: REMOVED DANGEROUS DEV MODE GUARD
-    // This was forcing isPro = true even for expired subscriptions
-    // Dev mode testing should be done with actual test subscriptions, not backdoors
-    // if (isDevModeRef.current && !isPro) {
-    //   console.log("[RevenueCat] 🚨 DEV MODE: isPro was false, forcing back to true");
-    //   setIsPro(true);
-    //   setHasActiveSubscription(true);
-    // }
-  }, [isPro]);
 
   // Initialize RevenueCat SDK
   useEffect(() => {
@@ -131,13 +92,9 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("[RevenueCat] __DEV__ flag:", __DEV__);
       console.log("[RevenueCat] ENV_CONFIG:", JSON.stringify(ENV_CONFIG));
 
-      // 🔓 DEV MODE: Bypass premium checks in development
-      // Check multiple ways to detect dev mode for maximum reliability
-      const isDevMode = __DEV__ ||
-                        ENV_CONFIG.isDevelopment ||
-                        ENV_CONFIG.apiBaseURL.includes('noat6k04ik'); // Dev API = Dev mode
-
-      if (isDevMode) {
+      // Dev-mode premium bypass — __DEV__ only so it's guaranteed false in
+      // production EAS builds.
+      if (__DEV__) {
         console.log("[RevenueCat] ========================================");
         console.log("[RevenueCat] 🔓 DEVELOPMENT MODE ACTIVATED");
         console.log("[RevenueCat] ✅ All premium features unlocked");
@@ -371,28 +328,6 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const updateCustomerInfo = useCallback(async () => {
-    // GUARD: Never update customer info in dev mode - keep premium access
-    if (isDevModeRef.current) {
-      console.log("[RevenueCat] 🔓 DEV MODE: Skipping updateCustomerInfo, keeping premium access");
-      return;
-    }
-
-    try {
-      if (!Purchases) {
-        // Fallback to backend if SDK not available
-        await syncPremiumStatusFromBackend();
-        return;
-      }
-      const info = await Purchases.getCustomerInfo();
-      await processCustomerInfo(info);
-    } catch (error) {
-      console.error("[RevenueCat] Error updating customer info, falling back to backend");
-      // Fallback to backend on error
-      await syncPremiumStatusFromBackend();
-    }
-  }, [processCustomerInfo, syncPremiumStatusFromBackend]);
-
   /**
    * Sync subscription status directly from RevenueCat API
    * This is the most authoritative source of truth
@@ -436,7 +371,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
    */
   const syncPremiumStatusFromBackend = useCallback(async () => {
     // GUARD: Never sync from backend in dev mode - keep premium access
-    if (isDevModeRef.current) {
+    if (isDevMode) {
       console.log("[RevenueCat] 🔓 DEV MODE: Skipping backend sync, keeping premium access");
       return;
     }
@@ -467,7 +402,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const processCustomerInfo = useCallback(async (info: any) => {
     // GUARD: Never process customer info in dev mode - keep premium access
-    if (isDevModeRef.current) {
+    if (isDevMode) {
       console.log("[RevenueCat] 🔓 DEV MODE: Skipping processCustomerInfo, keeping premium access");
       return;
     }
@@ -565,6 +500,25 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       setActiveProductIdentifier(null);
     }
   }, [syncPremiumStatusFromBackend]);
+
+  const updateCustomerInfo = useCallback(async () => {
+    if (isDevMode) {
+      console.log("[RevenueCat] 🔓 DEV MODE: Skipping updateCustomerInfo, keeping premium access");
+      return;
+    }
+
+    try {
+      if (!Purchases) {
+        await syncPremiumStatusFromBackend();
+        return;
+      }
+      const info = await Purchases.getCustomerInfo();
+      await processCustomerInfo(info);
+    } catch (error) {
+      console.error("[RevenueCat] Error updating customer info, falling back to backend");
+      await syncPremiumStatusFromBackend();
+    }
+  }, [processCustomerInfo, syncPremiumStatusFromBackend]);
 
   const getOfferings = async () => {
     try {
@@ -733,7 +687,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
    */
   const loginUser = async (userId: string) => {
     // GUARD: In dev mode, just log and keep premium access
-    if (isDevModeRef.current) {
+    if (isDevMode) {
       console.log("[RevenueCat] 🔓 DEV MODE: Skipping loginUser, keeping premium access");
       console.log("[RevenueCat] 👤 User ID:", userId);
       return;

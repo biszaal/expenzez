@@ -856,7 +856,84 @@ export class CSVDetector {
       }
 
       const finalDate = parsedDate || this.tryParseDateFlexible(dateStr) || new Date();
-      const type: 'debit' | 'credit' = amount < 0 ? 'debit' : 'credit';
+
+      // Determine transaction type
+      // For banks that use positive amounts for everything (like Chase UK),
+      // we need to infer the type from the description or category
+      let type: 'debit' | 'credit' = amount < 0 ? 'debit' : 'credit';
+
+      // If amount is positive and bank uses signed format, check description/category
+      if (amount > 0 && bank.amountFormat === 'signed') {
+        const descLower = description.toLowerCase();
+        const catLower = (category || '').toLowerCase();
+
+        // Strong indicators for money coming IN (credit) - check description first
+        const strongCreditKeywords = [
+          'from ', ' from', '^from', // "From B Aryal", "Transfer from"
+          'deposit', 'salary', 'income', 'refund', 'received',
+          'interest', 'cashback', 'paid in', 'transfer in'
+        ];
+
+        // Strong indicators for money going OUT (debit)
+        const strongDebitKeywords = [
+          'to ', ' to', '^to', // "To Amazon", "Transfer to"
+          'paid to', 'transfer to', 'withdrawal', 'purchase',
+          'card payment', 'direct debit', 'standing order',
+          'atm', 'cash withdrawal', 'fee', 'charge'
+        ];
+
+        // Weak/ambiguous keywords (could be either)
+        const ambiguousKeywords = ['payment', 'transfer'];
+
+        // Check description for STRONG indicators first
+        const hasStrongCreditDesc = strongCreditKeywords.some(kw => {
+          if (kw.startsWith('^')) {
+            return descLower.startsWith(kw.substring(1));
+          }
+          return descLower.includes(kw);
+        });
+
+        const hasStrongDebitDesc = strongDebitKeywords.some(kw => {
+          if (kw.startsWith('^')) {
+            return descLower.startsWith(kw.substring(1));
+          }
+          return descLower.includes(kw);
+        });
+
+        // If description has strong indicator, trust it
+        if (hasStrongCreditDesc && !hasStrongDebitDesc) {
+          type = 'credit';
+        } else if (hasStrongDebitDesc && !hasStrongCreditDesc) {
+          type = 'debit';
+          amount = -Math.abs(amount);
+        } else {
+          // No strong description indicators, check category
+          const hasCreditCategory = catLower.includes('credit') ||
+                                     catLower.includes('deposit') ||
+                                     catLower.includes('income') ||
+                                     catLower.includes('refund');
+          const hasDebitCategory = catLower.includes('debit') ||
+                                    catLower.includes('withdrawal');
+
+          if (hasCreditCategory && !hasDebitCategory) {
+            type = 'credit';
+          } else if (hasDebitCategory && !hasCreditCategory) {
+            type = 'debit';
+            amount = -Math.abs(amount);
+          } else {
+            // Still ambiguous - default to debit (most transactions are expenses)
+            // unless description suggests otherwise
+            if (descLower.includes('salary') ||
+                descLower.includes('wage') ||
+                descLower.includes('bonus')) {
+              type = 'credit';
+            } else {
+              type = 'debit';
+              amount = -Math.abs(amount);
+            }
+          }
+        }
+      }
 
       return {
         success: true,
@@ -1139,19 +1216,32 @@ export class CSVDetector {
           type = "debit";
         }
       } else if (amount > 0) {
-        // Positive amount might be credit - check description
+        // Positive amount - use smart detection based on description
         const descLower = description.toLowerCase();
-        if (
-          descLower.includes("salary") ||
-          descLower.includes("deposit") ||
-          descLower.includes("income") ||
-          descLower.includes("refund") ||
-          descLower.includes("credit") ||
-          descLower.includes("transfer in")
-        ) {
+
+        // Strong credit indicators (money coming IN)
+        const strongCreditKeywords = [
+          'from ', ' from', // "From Person", "Transfer from"
+          'deposit', 'salary', 'income', 'refund', 'received',
+          'interest', 'cashback', 'paid in', 'transfer in', 'wage', 'bonus'
+        ];
+
+        // Check for strong credit indicators
+        const hasStrongCredit = strongCreditKeywords.some(kw => {
+          if (kw.endsWith(' ') || kw.startsWith(' ')) {
+            return descLower.includes(kw);
+          }
+          return descLower.includes(kw) || descLower.startsWith(kw);
+        });
+
+        if (hasStrongCredit) {
           type = "credit";
+        } else {
+          // Default to debit for positive amounts without clear credit indicators
+          type = "debit";
         }
       } else {
+        // Negative amount is always a debit
         type = "debit";
       }
 

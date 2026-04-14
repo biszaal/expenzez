@@ -769,6 +769,16 @@ export default function SubscriptionPlansScreen() {
           </View>
         </View>
 
+        {/* Pricing Disclosure - Most Prominent */}
+        <View style={styles.pricingDisclosure}>
+          <Text style={[styles.mainPrice, { color: colors.text.primary }]}>
+            {selectedPackage?.identifier === "monthly" ? "£4.99/month" : "£49.99/year"}
+          </Text>
+          <Text style={[styles.afterTrialText, { color: colors.text.secondary }]}>
+            after 14-day free trial
+          </Text>
+        </View>
+
         {/* Purchase Button */}
         <TouchableOpacity
           style={[
@@ -781,15 +791,29 @@ export default function SubscriptionPlansScreen() {
           activeOpacity={0.8}
         >
           <Text style={styles.purchaseButtonText}>
-            {purchasing ? "Processing..." : "Start 14-Day Free Trial"}
+            {purchasing
+              ? "Processing..."
+              : selectedPackage?.identifier === "monthly"
+              ? "Start 14-Day Free Trial, then £4.99/month"
+              : "Start 14-Day Free Trial, then £49.99/year"}
           </Text>
         </TouchableOpacity>
 
-        {/* Trial Note */}
-        <Text style={[styles.trialNote, { color: colors.text.tertiary }]}>
-          Your payment method will be charged £4.99/month after trial ends.
-          Cancel anytime from App Store settings.
-        </Text>
+        {/* Trial & Auto-Renewal Disclosure */}
+        <View style={[styles.disclosureBox, {
+          backgroundColor: colors.background.primary,
+          borderColor: colors.border.light
+        }]}>
+          <Ionicons name="information-circle" size={20} color={colors.primary.main} />
+          <Text style={[styles.disclosureText, { color: colors.text.primary }]}>
+            Your subscription will automatically renew for{" "}
+            <Text style={styles.disclosureBold}>
+              {selectedPackage?.identifier === "monthly" ? "£4.99/month" : "£49.99/year"}
+            </Text>
+            {" "}after the 14-day free trial unless cancelled at least 24 hours before
+            the trial ends. Cancel anytime in App Store settings.
+          </Text>
+        </View>
 
         {/* Restore Purchases */}
         <TouchableOpacity
@@ -1201,9 +1225,25 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  pricingDisclosure: {
+    alignItems: "center",
+    marginHorizontal: 20,
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  mainPrice: {
+    fontSize: 48,
+    fontWeight: "900",
+    letterSpacing: -1,
+    marginBottom: 4,
+  },
+  afterTrialText: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
   purchaseButton: {
     marginHorizontal: 20,
-    marginVertical: 20,
+    marginVertical: 12,
     paddingVertical: 18,
     borderRadius: 14,
     alignItems: "center",
@@ -1221,6 +1261,26 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
     letterSpacing: 0.3,
+  },
+  disclosureBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    marginTop: 12,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  disclosureText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "400",
+  },
+  disclosureBold: {
+    fontWeight: "700",
   },
   trialNote: {
     fontSize: 11,

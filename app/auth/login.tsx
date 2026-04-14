@@ -2,8 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import React, { useState, useEffect } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
   TouchableOpacity,
   View,
   StyleSheet,
@@ -24,6 +22,7 @@ import {
 import { GoogleSignInButton } from "../../components/auth/GoogleSignInButton";
 import { RememberMeCheckbox } from "../../components/RememberMeCheckbox";
 import { analyticsService } from "../../services/analytics";
+import { authAPI } from "../../services/api";
 
 export default function Login() {
   const router = useRouter();
@@ -54,6 +53,23 @@ export default function Login() {
     }
   }, [params, messageShown]);
 
+  // Helper function to resend verification and navigate to verification page
+  const handleUnverifiedAccount = async (userIdentifier: string, userPassword: string) => {
+    console.log("🔄 [Login] Unverified account detected - navigating to verification page");
+
+    // Navigate to verification page first
+    router.replace({
+      pathname: "/auth/EmailVerification",
+      params: {
+        email: userIdentifier.includes("@") ? userIdentifier : "",
+        username: !userIdentifier.includes("@") ? userIdentifier : "",
+        password: userPassword,
+        message: "Your account is not verified. Please check your email for the verification code.",
+        autoResend: "true", // Tell verification page to auto-resend
+      },
+    });
+  };
+
   const handleLogin = async () => {
     if (!identifier || !password) {
       showError("Please fill in all fields");
@@ -75,18 +91,8 @@ export default function Login() {
         return;
       } else {
         if (result.needsEmailVerification) {
-          router.replace({
-            pathname: "/auth/EmailVerification",
-            params: {
-              email:
-                result.email || (identifier.includes("@") ? identifier : ""),
-              username:
-                result.username ||
-                (!identifier.includes("@") ? identifier : ""),
-              password: password, // Pass password for auto-login after verification
-              message: "Please verify your email to complete login.",
-            },
-          });
+          // Automatically resend verification code and navigate to verification page
+          await handleUnverifiedAccount(identifier.trim(), password);
           return;
         }
 
@@ -96,15 +102,8 @@ export default function Login() {
             result.error.toLowerCase().includes("not verified") ||
             result.error.toLowerCase().includes("verify"))
         ) {
-          router.replace({
-            pathname: "/auth/EmailVerification",
-            params: {
-              email: identifier.includes("@") ? identifier : "",
-              username: !identifier.includes("@") ? identifier : "",
-              password: password, // Pass password for auto-login after verification
-              message: "Please verify your email to complete login.",
-            },
-          });
+          // Automatically resend verification code and navigate to verification page
+          await handleUnverifiedAccount(identifier.trim(), password);
           return;
         }
 
@@ -117,15 +116,8 @@ export default function Login() {
         error.isEmailNotVerified ||
         error.response?.data?.error === "UserNotConfirmedException"
       ) {
-        router.replace({
-          pathname: "/auth/EmailVerification",
-          params: {
-            email: identifier.includes("@") ? identifier : "",
-            username: !identifier.includes("@") ? identifier : "",
-            password: password, // Pass password for auto-login after verification
-            message: "Please verify your email to complete login.",
-          },
-        });
+        // Automatically resend verification code and navigate to verification page
+        await handleUnverifiedAccount(identifier.trim(), password);
         return;
       }
 
@@ -147,7 +139,19 @@ export default function Login() {
           userErrorMessage = error.response.data.error;
         }
 
+        // Check if this might be an unverified account error (even if backend says "incorrect password")
+        // AWS Cognito sometimes returns generic errors for unverified accounts
         if (
+          error.response?.status === 400 &&
+          (userErrorMessage.toLowerCase().includes("incorrect") ||
+            userErrorMessage.toLowerCase().includes("password") ||
+            userErrorMessage.toLowerCase().includes("not authorized"))
+        ) {
+          // This might be an unverified account - try to resend verification and navigate
+          console.log("⚠️ [Login] Possible unverified account detected (400 error with password message)");
+          await handleUnverifiedAccount(identifier.trim(), password);
+          return;
+        } else if (
           userErrorMessage.toLowerCase().includes("incorrect") ||
           userErrorMessage.toLowerCase().includes("password")
         ) {
@@ -283,16 +287,12 @@ export default function Login() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
           {/* Header */}
           <View style={styles.header}>
             <View style={[styles.iconCircle, { backgroundColor: colors.primary.main + "15" }]}>
@@ -408,17 +408,13 @@ export default function Login() {
               </TouchableOpacity>
             </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  keyboardView: {
     flex: 1,
   },
   scrollView: {

@@ -29,6 +29,7 @@ import {
 } from "../../components/home";
 import { CompactSpendingSummary } from "../../components/home/CompactSpendingSummary";
 import { CompactBudgetStatus } from "../../components/home/CompactBudgetStatus";
+import { CostOfLivingWidget } from "../../components/home/CostOfLivingWidget";
 import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
 import { AIInsightCard } from "../../components/ai/AIInsightCard";
 import { AIButton } from "../../components/ai/AIButton";
@@ -356,6 +357,14 @@ export default function HomeScreen() {
         {/* Spending Overview Section */}
         <View style={styles.section}>
           <CompactSpendingSummary onViewAll={() => router.push("/spending")} />
+        </View>
+
+        {/* Cost of Living Analysis Section */}
+        <View style={styles.section}>
+          <CostOfLivingWidget
+            transactions={transactions}
+            onViewDetails={() => router.push("/cost-of-living" as any)}
+          />
         </View>
 
         {/* Budget Status Section */}

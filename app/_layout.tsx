@@ -701,7 +701,6 @@ function RootLayoutNav() {
         <Stack.Screen name="import-csv" />
         <Stack.Screen name="settings/index" />
         <Stack.Screen name="subscription/plans" />
-        <Stack.Screen name="CompleteProfile" />
       </Stack>
     </>
   );
