@@ -109,7 +109,15 @@
       ],
       "expo-secure-store",
       "expo-web-browser",
-      "expo-local-authentication"
+      "expo-local-authentication",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
