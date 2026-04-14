@@ -20,6 +20,10 @@ platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
 
 prepare_react_native_project!
 
+# Required by @react-native-firebase when using use_frameworks! (static linkage)
+# https://rnfirebase.io/#altering-cocoapods-to-use-frameworks
+$RNFirebaseAsStaticFramework = true
+
 target 'Expenzez' do
   use_expo_modules!
 
