@@ -117,7 +117,8 @@
             "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true
