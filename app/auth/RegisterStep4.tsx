@@ -79,24 +79,31 @@ export default function RegisterStep4({
   };
 
   const handleNext = () => {
-    const requiredFields = ['address1', 'city', 'country'];
-    const missingFields = requiredFields.filter(field => !values[field]?.trim());
-    
-    if (missingFields.length > 0) {
-      return;
+    // Address is now optional per App Store guidelines
+    // Only combine if user entered address information
+    if (values.address1 || values.city || values.country) {
+      const fullAddress = [
+        values.address1,
+        values.address2,
+        values.city,
+        values.state,
+        values.postcode,
+        countries.find(c => c.value === values.country)?.label
+      ].filter(Boolean).join(', ');
+      onChange('address', fullAddress);
     }
-    
-    // Combine address fields into a single address string
-    const fullAddress = [
-      values.address1,
-      values.address2,
-      values.city,
-      values.state,
-      values.postcode,
-      countries.find(c => c.value === values.country)?.label
-    ].filter(Boolean).join(', ');
-    
-    onChange('address', fullAddress);
+    onNext();
+  };
+
+  const handleSkip = () => {
+    // Clear any partial selections and skip this step
+    onChange("address1", "");
+    onChange("address2", "");
+    onChange("city", "");
+    onChange("state", "");
+    onChange("postcode", "");
+    onChange("country", "");
+    onChange("address", "");
     onNext();
   };
 
@@ -107,10 +114,10 @@ export default function RegisterStep4({
       {/* Header */}
       <View style={styles.header}>
         <Typography variant="h2" style={[styles.title, { color: colors.text.primary }]}>
-          Address Information
+          Address Information (Optional)
         </Typography>
         <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
-          Enter your current address
+          Help us personalize your experience - you can skip this step
         </Typography>
       </View>
 
@@ -172,7 +179,7 @@ export default function RegisterStep4({
           {/* Address Line 1 */}
           <View style={styles.inputContainer}>
             <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
-              Address Line 1 *
+              Address Line 1
             </Typography>
             <TextField
               placeholder="Enter your street address"
@@ -198,7 +205,7 @@ export default function RegisterStep4({
           {/* City */}
           <View style={styles.inputContainer}>
             <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
-              City *
+              City
             </Typography>
             <TextField
               placeholder="Enter your city"
@@ -238,7 +245,7 @@ export default function RegisterStep4({
           {/* Country Picker */}
           <View style={styles.inputContainer}>
             <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
-              Country *
+              Country
             </Typography>
             <TouchableOpacity
               onPress={() => setShowCountryPicker(!showCountryPicker)}
@@ -285,17 +292,26 @@ export default function RegisterStep4({
 
       {/* Navigation Buttons */}
       <View style={styles.buttonContainer}>
-        <Button
-          title="Back"
-          onPress={onBack}
-          style={StyleSheet.flatten([styles.backButton, { borderColor: colors.border.light }])}
-          textStyle={{ color: colors.text.primary }}
-        />
+        {/* Top row: Back and Skip */}
+        <View style={styles.topButtonRow}>
+          <Button
+            title="Back"
+            onPress={onBack}
+            style={StyleSheet.flatten([styles.backButton, { borderColor: colors.primary.main, backgroundColor: 'transparent' }])}
+            textStyle={{ color: colors.primary.main, fontWeight: '600' }}
+          />
+          <Button
+            title="Skip →"
+            onPress={handleSkip}
+            style={StyleSheet.flatten([styles.skipButton, { backgroundColor: colors.primary.main + '20', borderColor: colors.primary.main + '40' }])}
+            textStyle={{ color: colors.primary.main, fontWeight: '600' }}
+          />
+        </View>
+        {/* Bottom row: Continue (full width) */}
         <Button
           title="Continue"
           onPress={handleNext}
           style={StyleSheet.flatten([styles.continueButton, { backgroundColor: colors.primary.main }])}
-          disabled={!values.address1?.trim() || !values.city?.trim() || !values.country}
         />
       </View>
     </View>
@@ -373,9 +389,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginTop: 16,
+    gap: 12,
+  },
+  topButtonRow: {
+    flexDirection: 'row',
     gap: 12,
   },
   backButton: {
@@ -385,8 +403,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     minHeight: 48,
   },
-  continueButton: {
+  skipButton: {
     flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 14,
+    minHeight: 48,
+  },
+  continueButton: {
     borderRadius: 10,
     paddingVertical: 14,
     minHeight: 48,

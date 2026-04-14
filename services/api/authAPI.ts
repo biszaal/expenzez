@@ -151,7 +151,32 @@ export const authAPI = {
     address: string;
     gender: string;
   }) => {
-    const response = await api.post("/auth/register", userData);
+    // Filter out empty optional fields to avoid backend validation errors
+    // Backend requires that if phone_number, birthdate, address, or gender are sent, they must not be empty
+    const cleanedData: any = {
+      username: userData.username,
+      name: userData.name,
+      given_name: userData.given_name,
+      family_name: userData.family_name,
+      email: userData.email,
+      password: userData.password,
+    };
+
+    // Only include optional fields if they have non-empty values
+    if (userData.phone_number && userData.phone_number.trim()) {
+      cleanedData.phone_number = userData.phone_number;
+    }
+    if (userData.birthdate && userData.birthdate.trim()) {
+      cleanedData.birthdate = userData.birthdate;
+    }
+    if (userData.address && userData.address.trim()) {
+      cleanedData.address = userData.address;
+    }
+    if (userData.gender && userData.gender.trim()) {
+      cleanedData.gender = userData.gender;
+    }
+
+    const response = await api.post("/auth/register", cleanedData);
     return response.data;
   },
 
@@ -173,17 +198,20 @@ export const authAPI = {
       );
       return response.data;
     } catch (error: any) {
-      console.error("❌ Login request failed:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-        url: error.config?.url,
-      });
-
-      // Check if this is a 403 (likely email not verified) and suggest verification
+      // Check if this is a 403 (likely email not verified) - this is expected behavior
       if (error.response?.status === 403) {
         const errorData = error.response?.data;
-        console.log("🔍 403 Error details:", errorData);
+
+        // Only log as info (not error) since unverified account is expected
+        if (errorData?.error === "UserNotConfirmedException" ||
+            errorData?.message?.includes("not verified")) {
+          console.log("ℹ️ [Login] Account not verified (expected):", {
+            error: errorData?.error,
+            message: errorData?.message,
+          });
+        } else {
+          console.log("🔍 [Login] 403 Error details:", errorData);
+        }
 
         // If it's UserNotConfirmedException, provide helpful message
         if (
@@ -227,11 +255,18 @@ export const authAPI = {
           console.log("🔍 [authAPI] Fallback login successful");
           return authResponse.data;
         } catch (fallbackError: any) {
-          console.error("Login fallback failed:", fallbackError);
+          console.error("❌ [Login] Fallback failed:", fallbackError);
           // Re-throw original error if fallback also fails
           throw error;
         }
       }
+
+      // Log other errors (not 403 UserNotConfirmed which is expected)
+      console.error("❌ [Login] Request failed:", {
+        message: error.message,
+        status: error.response?.status,
+        error: error.response?.data?.error,
+      });
 
       throw error;
     }

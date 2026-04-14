@@ -54,19 +54,19 @@ export default function EmailVerification() {
     }
   }, [params]);
 
-  // Auto-send verification code when coming from login (no password means not from registration)
+  // Auto-send verification code when coming from login or when autoResend is true
   useEffect(() => {
-    if (email && !password) {
+    if (email && (!password || params.autoResend === "true")) {
       console.log(
-        "📧 [EmailVerification] Auto-sending verification code for login flow",
-        { email, password, params }
+        "📧 [EmailVerification] Auto-sending verification code",
+        { email, hasPassword: !!password, autoResend: params.autoResend }
       );
       // Use setTimeout to ensure component is fully mounted
       setTimeout(() => {
         handleResendCode();
       }, 500);
     }
-  }, [email, password]);
+  }, [email, password, params.autoResend]);
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -259,7 +259,14 @@ export default function EmailVerification() {
             <View style={styles.header}>
               <TouchableOpacity
                 style={styles.backButton}
-                onPress={() => router.back()}
+                onPress={() => {
+                  // Check if we can go back, otherwise navigate to login
+                  if (router.canGoBack()) {
+                    router.back();
+                  } else {
+                    router.replace("/auth/login");
+                  }
+                }}
               >
                 <Ionicons
                   name="chevron-back"

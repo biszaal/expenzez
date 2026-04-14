@@ -166,73 +166,86 @@ export default function RegisterStep5({
     // Clear previous errors
     setPhoneError("");
 
-    // Basic phone number validation
-    if (!phoneNumber.trim()) {
-      setPhoneError("Phone number is required");
-      return;
-    }
+    // Phone number is now optional per App Store guidelines
+    // Only validate if user entered a phone number
+    if (phoneNumber.trim()) {
+      // Clean the phone number - remove any non-digit characters
+      let cleanedNumber = phoneNumber.replace(/[^\d]/g, "");
 
-    // Clean the phone number - remove any non-digit characters
-    let cleanedNumber = phoneNumber.replace(/[^\d]/g, "");
+      // Remove leading zeros (common in many countries)
+      cleanedNumber = cleanedNumber.replace(/^0+/, "");
 
-    // Remove leading zeros (common in many countries)
-    cleanedNumber = cleanedNumber.replace(/^0+/, "");
+      // Check with custom validation function if available
+      if (selectedCountryCode.validateNumber) {
+        if (!selectedCountryCode.validateNumber(cleanedNumber)) {
+          setPhoneError(
+            `Invalid phone number format for ${selectedCountryCode.label}. Example: ${selectedCountryCode.example}`
+          );
+          return;
+        }
+      } else {
+        // Check length based on country (fallback)
+        const expectedLength = selectedCountryCode.expectedLength;
+        const isValidLength = Array.isArray(expectedLength)
+          ? expectedLength.includes(cleanedNumber.length)
+          : cleanedNumber.length === expectedLength;
 
-    // Check with custom validation function if available
-    if (selectedCountryCode.validateNumber) {
-      if (!selectedCountryCode.validateNumber(cleanedNumber)) {
+        if (!isValidLength) {
+          const lengthText = Array.isArray(expectedLength)
+            ? expectedLength.join(" or ")
+            : expectedLength.toString();
+          setPhoneError(
+            `Invalid phone number length. Expected ${lengthText} digits for ${selectedCountryCode.label}. Example: ${selectedCountryCode.example}`
+          );
+          return;
+        }
+      }
+
+      // Create formatted phone number in E.164 format
+      const formattedPhone = `${selectedCountryCode.code}${cleanedNumber}`;
+
+      console.log("Phone formatting debug:", {
+        original: phoneNumber,
+        cleaned: cleanedNumber,
+        countryCode: selectedCountryCode.code,
+        formatted: formattedPhone,
+      });
+
+      // Validate E.164 format (+ followed by 1-15 digits)
+      const e164Regex = /^\+[1-9]\d{1,14}$/;
+      if (!e164Regex.test(formattedPhone)) {
         setPhoneError(
-          `Invalid phone number format for ${selectedCountryCode.label}. Example: ${selectedCountryCode.example}`
+          `Invalid phone number format. Must be in E.164 format (e.g., ${selectedCountryCode.code}1234567890)`
         );
         return;
       }
+
+      // Set phone number in E.164 format (backend expects 'phone_number' with underscore)
+      onChange("phone_number", formattedPhone);
     } else {
-      // Check length based on country (fallback)
-      const expectedLength = selectedCountryCode.expectedLength;
-      const isValidLength = Array.isArray(expectedLength)
-        ? expectedLength.includes(cleanedNumber.length)
-        : cleanedNumber.length === expectedLength;
-
-      if (!isValidLength) {
-        const lengthText = Array.isArray(expectedLength)
-          ? expectedLength.join(" or ")
-          : expectedLength.toString();
-        setPhoneError(
-          `Invalid phone number length. Expected ${lengthText} digits for ${selectedCountryCode.label}. Example: ${selectedCountryCode.example}`
-        );
-        return;
-      }
+      // No phone number provided - clear any previously entered value
+      onChange("phone_number", "");
     }
-
-    // Create formatted phone number in E.164 format
-    const formattedPhone = `${selectedCountryCode.code}${cleanedNumber}`;
-
-    console.log("Phone formatting debug:", {
-      original: phoneNumber,
-      cleaned: cleanedNumber,
-      countryCode: selectedCountryCode.code,
-      formatted: formattedPhone,
-    });
-
-    // Validate E.164 format (+ followed by 1-15 digits)
-    const e164Regex = /^\+[1-9]\d{1,14}$/;
-    if (!e164Regex.test(formattedPhone)) {
-      setPhoneError(
-        `Invalid phone number format. Must be in E.164 format (e.g., ${selectedCountryCode.code}1234567890)`
-      );
-      return;
-    }
-
-    // Set phone number in E.164 format (backend expects 'phone_number' with underscore)
-    onChange("phone_number", formattedPhone);
 
     // Also set the name field as concatenated first and last name for compatibility
     const fullName = `${values.givenName} ${values.familyName}`.trim();
     onChange("name", fullName);
 
     // Pass the values directly to onSubmit to avoid React state timing issues
-    // This ensures the formatted phone_number and name are used immediately
-    onSubmit({ phone_number: formattedPhone, name: fullName });
+    onSubmit({ phone_number: phoneNumber.trim() ? `${selectedCountryCode.code}${phoneNumber.replace(/[^\d]/g, "").replace(/^0+/, "")}` : "", name: fullName });
+  };
+
+  const handleSkip = () => {
+    // Clear phone number and proceed
+    setPhoneNumber("");
+    onChange("phone_number", "");
+
+    // Set the name field
+    const fullName = `${values.givenName} ${values.familyName}`.trim();
+    onChange("name", fullName);
+
+    // Submit without phone number
+    onSubmit({ phone_number: "", name: fullName });
   };
 
   return (
@@ -240,10 +253,10 @@ export default function RegisterStep5({
       {/* Header */}
       <View style={styles.header}>
         <Typography variant="h2" style={[styles.title, { color: colors.text.primary }]}>
-          Phone Number
+          Phone Number (Optional)
         </Typography>
         <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
-          Add your phone number for account security
+          Add your phone number for additional account security - you can skip this step
         </Typography>
       </View>
 
@@ -260,7 +273,7 @@ export default function RegisterStep5({
               style={[styles.inputLabel, { color: colors.text.primary }]}
               weight="medium"
             >
-              Phone Number *
+              Phone Number
             </Typography>
 
             <View style={styles.phoneInputContainer}>
@@ -367,10 +380,9 @@ export default function RegisterStep5({
             backgroundColor: colors.primary.main + '15',
             borderColor: colors.primary.main + '30'
           }]}>
-            <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary.main} />
+            <Ionicons name="information-circle-outline" size={20} color={colors.primary.main} />
             <Typography variant="caption" style={[styles.privacyText, { color: colors.text.primary }]}>
-              Your phone number will be used for account verification and
-              security purposes only.
+              Adding a phone number is optional. If provided, it will be used for additional account security only.
             </Typography>
           </View>
 
@@ -419,20 +431,32 @@ export default function RegisterStep5({
 
       {/* Navigation Buttons */}
       <View style={styles.buttonContainer}>
+        {/* Top row: Back and Skip */}
+        <View style={styles.topButtonRow}>
+          <Button
+            title="Back"
+            onPress={onBack}
+            style={StyleSheet.flatten([styles.backButton, { borderColor: colors.primary.main, backgroundColor: 'transparent' }])}
+            textStyle={{ color: colors.primary.main, fontWeight: '600' }}
+            disabled={isLoading}
+          />
+          <Button
+            title="Skip →"
+            onPress={handleSkip}
+            style={StyleSheet.flatten([styles.skipButton, { backgroundColor: colors.primary.main + '20', borderColor: colors.primary.main + '40' }])}
+            textStyle={{ color: colors.primary.main, fontWeight: '600' }}
+            disabled={isLoading}
+          />
+        </View>
+        {/* Bottom row: Create Account (full width) */}
         <Button
-          title="Back"
-          onPress={onBack}
-          style={StyleSheet.flatten([styles.backButton, { borderColor: colors.border.light }])}
-          textStyle={{ color: colors.text.primary }}
-        />
-        <Button
-          title={isLoading ? "Creating Account..." : "Create Account"}
+          title={isLoading ? "Creating..." : "Create Account"}
           onPress={handleSubmit}
           style={StyleSheet.flatten([
             styles.submitButton,
             { backgroundColor: colors.primary.main, opacity: isLoading ? 0.7 : 1 },
           ])}
-          disabled={isLoading || !phoneNumber.trim()}
+          disabled={isLoading}
         />
       </View>
 
@@ -564,9 +588,11 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     marginTop: spacing.lg,
+    gap: 12,
+  },
+  topButtonRow: {
+    flexDirection: "row",
     gap: 12,
   },
   backButton: {
@@ -576,8 +602,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     minHeight: 48,
   },
-  submitButton: {
+  skipButton: {
     flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 14,
+    minHeight: 48,
+  },
+  submitButton: {
     borderRadius: 10,
     paddingVertical: 14,
     minHeight: 48,
