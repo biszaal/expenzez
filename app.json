@@ -19,7 +19,7 @@
     "description": "Smart expense tracking with AI insights and comprehensive financial management for users.",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "16",
+      "buildNumber": "17",
       "googleServicesFile": "$GOOGLE_SERVICES_PLIST",
       "config": {
         "usesNonExemptEncryption": false
@@ -79,7 +79,7 @@
       ],
       "package": "com.biszaaltech.expenzez",
       "googleServicesFile": "$GOOGLE_SERVICES_JSON",
-      "versionCode": 3
+      "versionCode": 4
     },
     "web": {
       "bundler": "metro",
