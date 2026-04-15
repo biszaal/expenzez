@@ -2,14 +2,11 @@ const { withDangerousMod } = require("@expo/config-plugins");
 const fs = require("fs");
 const path = require("path");
 
-// Required when react-native-firebase is combined with use_frameworks! :linkage => :static
-// https://rnfirebase.io/#altering-cocoapods-to-use-frameworks
-//
-// 1. $RNFirebaseAsStaticFramework = true  — tells RN Firebase to output static libs
-// 2. use_modular_headers!                 — forces all pods to expose modular headers,
-//    which fixes "non-modular header inside framework module" errors from RNFBApp
-//    including React-Core headers.
-module.exports = function withRNFirebaseStaticFramework(config) {
+// Without use_frameworks!, Firebase Swift pods (FirebaseCoreInternal, etc.)
+// need modular headers to be importable from Obj-C modules. Injecting
+// use_modular_headers! at the root of the Podfile sets DEFINES_MODULE=YES
+// globally so every pod exposes a module map.
+module.exports = function withRNFirebasePodfile(config) {
   return withDangerousMod(config, [
     "ios",
     async (cfg) => {
@@ -19,17 +16,10 @@ module.exports = function withRNFirebaseStaticFramework(config) {
       );
       let contents = fs.readFileSync(podfilePath, "utf8");
 
-      if (!contents.includes("$RNFirebaseAsStaticFramework")) {
-        contents = contents.replace(
-          /prepare_react_native_project!/,
-          "$RNFirebaseAsStaticFramework = true\n\nprepare_react_native_project!"
-        );
-      }
-
       if (!contents.includes("use_modular_headers!")) {
         contents = contents.replace(
-          /target 'Expenzez' do\n  use_expo_modules!/,
-          "target 'Expenzez' do\n  use_modular_headers!\n  use_expo_modules!"
+          /prepare_react_native_project!/,
+          "use_modular_headers!\n\nprepare_react_native_project!"
         );
       }
 
