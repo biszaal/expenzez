@@ -18,11 +18,9 @@ ENV['RCT_USE_RN_DEP'] ||= '1' if podfile_properties['ios.buildReactNativeFromSou
 ENV['RCT_USE_PREBUILT_RNCORE'] ||= '1' if podfile_properties['ios.buildReactNativeFromSource'] != 'true' && podfile_properties['newArchEnabled'] != 'false'
 platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
 
-prepare_react_native_project!
+use_modular_headers!
 
-# Required by @react-native-firebase when using use_frameworks! (static linkage)
-# https://rnfirebase.io/#altering-cocoapods-to-use-frameworks
-$RNFirebaseAsStaticFramework = true
+prepare_react_native_project!
 
 target 'Expenzez' do
   use_expo_modules!
