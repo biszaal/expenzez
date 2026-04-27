@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ScrollView,
   RefreshControl,
@@ -15,11 +15,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { NotificationsSkeleton } from "../../components/ui/SkeletonLoader";
 import { EmptyState } from "../../components/ui/EmptyState";
-import {
-  NotificationCard,
-  NotificationCategories,
-  SmartNotificationInsights,
-} from "../../components/notifications";
+import { NotificationCard } from "../../components/notifications";
 import { SPACING, BORDER_RADIUS, SHADOWS } from "../../constants/Colors";
 
 export default function NotificationsScreen() {
@@ -34,11 +30,9 @@ export default function NotificationsScreen() {
     markAsRead,
     markAllAsRead,
     clearNotifications,
-    preferences,
   } = useNotifications();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -101,45 +95,6 @@ export default function NotificationsScreen() {
     }
   };
 
-  const filteredNotifications = notifications.filter((notification) => {
-    if (selectedCategory === "all") return true;
-    return notification.type === selectedCategory;
-  });
-
-  // Show unread count in badges for better UX
-  const categories = [
-    {
-      id: "all",
-      title: "All",
-      icon: "list-outline",
-      count: unreadCount, // Show unread count instead of total
-    },
-    {
-      id: "transaction",
-      title: "Transactions",
-      icon: "swap-horizontal-outline",
-      count: notifications.filter((n) => n.type === "transaction" && !n.read).length,
-    },
-    {
-      id: "budget",
-      title: "Budget",
-      icon: "pie-chart-outline",
-      count: notifications.filter((n) => n.type === "budget" && !n.read).length,
-    },
-    {
-      id: "insight",
-      title: "Insights",
-      icon: "bulb-outline",
-      count: notifications.filter((n) => n.type === "insight" && !n.read).length,
-    },
-    {
-      id: "security",
-      title: "Security",
-      icon: "shield-checkmark-outline",
-      count: notifications.filter((n) => n.type === "security" && !n.read).length,
-    },
-  ];
-
   const styles = createStyles(colors);
 
   if (loading) {
@@ -199,16 +154,6 @@ export default function NotificationsScreen() {
           />
         }
       >
-        {/* Smart Insights Section */}
-        <SmartNotificationInsights />
-
-        {/* Category Filter */}
-        <NotificationCategories
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-        />
-
         {/* Error State */}
         {error && (
           <View style={styles.errorContainer}>
@@ -228,41 +173,28 @@ export default function NotificationsScreen() {
         {/* Notifications List */}
         <View style={styles.notificationsSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              {selectedCategory === "all"
-                ? "All Notifications"
-                : categories.find((c) => c.id === selectedCategory)?.title}
-            </Text>
+            <Text style={styles.sectionTitle}>Notifications</Text>
             <Text style={styles.sectionSubtitle}>
-              {filteredNotifications.length} notification
-              {filteredNotifications.length !== 1 ? "s" : ""}
+              {notifications.length} notification
+              {notifications.length !== 1 ? "s" : ""}
             </Text>
           </View>
 
-          {filteredNotifications.length > 0 ? (
-            filteredNotifications.map((notification, index) => (
+          {notifications.length > 0 ? (
+            notifications.map((notification, index) => (
               <NotificationCard
                 key={`${notification.id}_${index}_${notification.time}`}
                 notification={notification}
                 onPress={() => handleNotificationPress(notification)}
-                isLast={index === filteredNotifications.length - 1}
+                isLast={index === notifications.length - 1}
               />
             ))
           ) : (
             <EmptyState
               type="notifications"
-              iconName={
-                selectedCategory === "all"
-                  ? "notifications-off-outline"
-                  : (categories.find((c) => c.id === selectedCategory)
-                      ?.icon as any)
-              }
-              title={`No ${selectedCategory === "all" ? "" : categories.find((c) => c.id === selectedCategory)?.title?.toLowerCase() + " "}notifications`}
-              description={
-                selectedCategory === "all"
-                  ? "You're all caught up! New notifications will appear here."
-                  : `No ${categories.find((c) => c.id === selectedCategory)?.title?.toLowerCase()} notifications yet.`
-              }
+              iconName="notifications-off-outline"
+              title="No notifications"
+              description="You're all caught up! New notifications will appear here."
             />
           )}
         </View>

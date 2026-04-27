@@ -19,8 +19,7 @@
     "description": "Smart expense tracking with AI insights and comprehensive financial management for users.",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "13",
-      "googleServicesFile": "./GoogleService-Info.plist",
+      "buildNumber": "23",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -78,7 +77,7 @@
         "android.permission.POST_NOTIFICATIONS"
       ],
       "package": "com.biszaaltech.expenzez",
-      "googleServicesFile": "./google-services.json"
+      "versionCode": 10
     },
     "web": {
       "bundler": "metro",
@@ -108,7 +107,27 @@
       ],
       "expo-secure-store",
       "expo-web-browser",
-      "expo-local-authentication"
+      "expo-local-authentication",
+      [
+        "expo-share-intent",
+        {
+          "androidIntentFilters": ["application/pdf"]
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "blockedPermissions": [
+              "android.permission.READ_MEDIA_IMAGES",
+              "android.permission.READ_MEDIA_VIDEO",
+              "android.permission.READ_EXTERNAL_STORAGE",
+              "android.permission.WRITE_EXTERNAL_STORAGE"
+            ]
+          }
+        }
+      ],
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true

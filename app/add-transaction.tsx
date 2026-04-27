@@ -210,8 +210,8 @@ export default function AddTransaction() {
 
         // Track transaction in analytics
         analyticsService.logAddTransaction({
-          amount: numericAmount,
-          category: category?.name || "General",
+          amount: transactionAmount,
+          category: selectedCategory?.name || "General",
           type: transactionType === "expense" ? "debit" : "credit",
         });
 

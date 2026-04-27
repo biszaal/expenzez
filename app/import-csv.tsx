@@ -825,18 +825,29 @@ export default function CSVImportScreen() {
         return;
       }
 
-      // Auto-categorize transactions (ignore CSV categories, always use smart detection)
-      const categorizedTransactions = parseResult.rows.map((row) => ({
-        id: `csv_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-        date: row.date,
-        description: row.description,
-        amount: row.amount,
-        originalAmount: row.amount,
-        category: CategorizeTransaction.categorize(row.description, row.merchant),
-        type: row.type,
-        merchant: row.merchant,
-        tags: ["csv-import"],
-      }));
+      // Auto-categorize transactions using description, merchant, and bank's category hint
+      const categorizedTransactions = parseResult.rows.map((row) => {
+        // Calculate the signed amount based on transaction type
+        // Debits (expenses) should be negative, credits (income) should be positive
+        const signedAmount = row.type === 'debit' ? -Math.abs(row.amount) : Math.abs(row.amount);
+
+        return {
+          id: `csv_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+          date: row.date,
+          description: row.description,
+          amount: signedAmount,
+          originalAmount: row.amount,
+          category: CategorizeTransaction.categorize(
+            row.description,
+            row.merchant,
+            row.category, // Pass bank's category (e.g., Chase's "Transaction Type")
+            row.type // Pass transaction type for better categorization
+          ),
+          type: row.type,
+          merchant: row.merchant,
+          tags: ["csv-import"],
+        };
+      });
 
       // Show warnings if there were parsing errors
       if (parseResult.errors.length > 0) {

@@ -2,19 +2,11 @@ import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import * as WebBrowser from "expo-web-browser";
-import { DEEP_LINK_URLS } from "../../constants/config";
 import { SHADOWS } from "../../constants/Colors";
 import { styles } from "./QuickActions.styles";
 
 export const QuickActions: React.FC = () => {
   const router = useRouter();
-  // All users have free access to all features
-
-  const handleConnectBank = async () => {
-    // Navigate to bank selection screen instead of direct connection
-    router.push("/(tabs)/banks" as any);
-  };
 
   return (
     <View style={styles.professionalQuickActionsWrapper}>
@@ -126,34 +118,6 @@ export const QuickActions: React.FC = () => {
               </Text>
               <Text style={styles.professionalQuickActionSubtitle}>
                 Upload data
-              </Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.professionalQuickActionCardWide}
-          disabled={true}
-          activeOpacity={1}
-        >
-          <View
-            style={[
-              styles.professionalQuickActionGradient,
-              SHADOWS.lg,
-              { backgroundColor: "#6B7280", opacity: 0.7, alignItems: "center", justifyContent: "center" },
-            ]}
-          >
-            <View style={[styles.professionalQuickActionIconContainer, { alignItems: "center" }]}>
-              <View style={styles.professionalQuickActionIcon}>
-                <Ionicons name="link-outline" size={24} color="white" />
-              </View>
-            </View>
-            <View style={[styles.professionalQuickActionText, { alignItems: "center" }]}>
-              <Text style={styles.professionalQuickActionTitle}>
-                Connect Bank
-              </Text>
-              <Text style={styles.professionalQuickActionSubtitle}>
-                Coming soon
               </Text>
             </View>
           </View>

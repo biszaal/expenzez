@@ -2,14 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState, useEffect } from "react";
 import {
-  Alert,
   ScrollView,
   Switch,
   Text,
   TouchableOpacity,
   View,
   StyleSheet,
-  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../auth/AuthContext";
@@ -29,85 +27,35 @@ interface PreferenceItem {
   key: keyof NotificationPreferences;
   title: string;
   subtitle: string;
-  type: "boolean" | "number" | "select";
-  icon?: string;
-  min?: number;
-  max?: number;
-  step?: number;
-  unit?: string;
-  options?: { label: string; value: any }[];
+  icon: string;
 }
 
 const simplifiedPreferences: PreferenceItem[] = [
   {
     key: "pushEnabled",
     title: "Push Notifications",
-    subtitle: "Master switch for all push notifications",
-    type: "boolean",
+    subtitle: "Master switch for all notifications",
     icon: "notifications-outline",
   },
   {
     key: "transactionAlerts",
     title: "Transaction Alerts",
-    subtitle: "Notify me about all transactions",
-    type: "boolean",
+    subtitle: "Notify me about transactions",
     icon: "swap-horizontal-outline",
-  },
-  {
-    key: "largeTransactionThreshold",
-    title: "Large Transaction Alerts",
-    subtitle: "Notify for transactions over this amount",
-    type: "number",
-    min: 100,
-    max: 2000,
-    step: 50,
-    unit: "£",
-    icon: "warning-outline",
   },
   {
     key: "budgetAlerts",
     title: "Budget Alerts",
-    subtitle: "Warn me when approaching budget limits",
-    type: "boolean",
+    subtitle: "Warn when approaching budget limits",
     icon: "pie-chart-outline",
-  },
-  {
-    key: "lowBalanceThreshold",
-    title: "Low Balance Alerts",
-    subtitle: "Warn when account balance drops below",
-    type: "number",
-    min: 10,
-    max: 500,
-    step: 10,
-    unit: "£",
-    icon: "trending-down-outline",
-  },
-  {
-    key: "weeklyInsights",
-    title: "Weekly Summary",
-    subtitle: "Receive weekly spending insights and tips",
-    type: "boolean",
-    icon: "calendar-outline",
-  },
-  {
-    key: "maxNotificationsPerDay",
-    title: "Notification Frequency",
-    subtitle: "How many notifications per day",
-    type: "select",
-    icon: "settings-outline",
-    options: [
-      { label: "Few (1-5 per day)", value: 5 },
-      { label: "Normal (6-15 per day)", value: 15 },
-      { label: "Many (16+ per day)", value: 30 },
-    ],
   },
 ];
 
 export default function NotificationPreferencesScreen() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
-  const { colors, isDark } = useTheme();
-  const { preferences, updatePreferences, loading, error } = useNotifications();
+  const { colors } = useTheme();
+  const { preferences, updatePreferences } = useNotifications();
 
   const [localPreferences, setLocalPreferences] =
     useState<NotificationPreferences | null>(null);
@@ -144,219 +92,65 @@ export default function NotificationPreferencesScreen() {
 
     const value = localPreferences[item.key];
 
-    switch (item.type) {
-      case "boolean":
-        return (
+    return (
+      <View
+        key={item.key}
+        style={[
+          styles.preferenceItem,
+          {
+            backgroundColor: colors.background.primary,
+            borderColor: colors.border.light,
+          },
+        ]}
+      >
+        <View style={styles.preferenceLeft}>
           <View
-            key={item.key}
             style={[
-              styles.preferenceItem,
-              {
-                backgroundColor: colors.background.primary,
-                borderColor: colors.border.light,
-              },
+              styles.preferenceIcon,
+              { backgroundColor: colors.primary.main[100] },
             ]}
           >
-            <View style={styles.preferenceLeft}>
-              {item.icon && (
-                <View
-                  style={[
-                    styles.preferenceIcon,
-                    { backgroundColor: colors.primary.main[100] },
-                  ]}
-                >
-                  <Ionicons
-                    name={item.icon as any}
-                    size={24}
-                    color={colors.primary.main}
-                  />
-                </View>
-              )}
-              <View style={styles.preferenceContent}>
-                <Text
-                  style={[
-                    styles.preferenceTitle,
-                    { color: colors.text.primary },
-                  ]}
-                >
-                  {item.title}
-                </Text>
-                <Text
-                  style={[
-                    styles.preferenceSubtitle,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  {item.subtitle}
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={Boolean(value)}
-              onValueChange={(newValue) =>
-                handlePreferenceChange(item.key, newValue)
-              }
-              trackColor={{
-                false: colors.gray[300],
-                true: colors.primary.main[400],
-              }}
-              thumbColor={
-                Boolean(value) ? colors.primary.main[600] : colors.gray[400]
-              }
-              ios_backgroundColor={colors.gray[300]}
+            <Ionicons
+              name={item.icon as any}
+              size={24}
+              color={colors.primary.main}
             />
           </View>
-        );
-
-      case "number":
-        return (
-          <View
-            key={item.key}
-            style={[
-              styles.preferenceItem,
-              {
-                backgroundColor: colors.background.primary,
-                borderColor: colors.border.light,
-              },
-            ]}
-          >
-            <View style={styles.preferenceLeft}>
-              {item.icon && (
-                <View
-                  style={[
-                    styles.preferenceIcon,
-                    { backgroundColor: colors.primary.main[100] },
-                  ]}
-                >
-                  <Ionicons
-                    name={item.icon as any}
-                    size={24}
-                    color={colors.primary.main}
-                  />
-                </View>
-              )}
-              <View style={styles.preferenceContent}>
-                <Text
-                  style={[
-                    styles.preferenceTitle,
-                    { color: colors.text.primary },
-                  ]}
-                >
-                  {item.title}
-                </Text>
-                <Text
-                  style={[
-                    styles.preferenceSubtitle,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  {item.subtitle}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.numberInputContainer}>
-              <Text style={[styles.numberUnit, { color: colors.text.primary }]}>
-                {item.unit}
-              </Text>
-              <TextInput
-                style={[
-                  styles.numberInput,
-                  {
-                    color: colors.text.primary,
-                    borderColor: colors.border.light,
-                    backgroundColor: colors.background.secondary,
-                  },
-                ]}
-                value={String(value || 0)}
-                onChangeText={(text) => {
-                  const numValue = parseFloat(text) || 0;
-                  if (item.min !== undefined && numValue < item.min) return;
-                  if (item.max !== undefined && numValue > item.max) return;
-                  handlePreferenceChange(item.key, numValue);
-                }}
-                keyboardType="numeric"
-              />
-            </View>
+          <View style={styles.preferenceContent}>
+            <Text
+              style={[
+                styles.preferenceTitle,
+                { color: colors.text.primary },
+              ]}
+            >
+              {item.title}
+            </Text>
+            <Text
+              style={[
+                styles.preferenceSubtitle,
+                { color: colors.text.secondary },
+              ]}
+            >
+              {item.subtitle}
+            </Text>
           </View>
-        );
-
-      case "select":
-        const selectedOption = item.options?.find((opt) => opt.value === value);
-        return (
-          <TouchableOpacity
-            key={item.key}
-            style={[
-              styles.preferenceItem,
-              {
-                backgroundColor: colors.background.primary,
-                borderColor: colors.border.light,
-              },
-            ]}
-            onPress={() => {
-              if (item.options) {
-                Alert.alert(item.title, "Choose your preference", [
-                  ...item.options.map((option) => ({
-                    text: option.label,
-                    onPress: () =>
-                      handlePreferenceChange(item.key, option.value),
-                  })),
-                  { text: "Cancel", style: "cancel" as const },
-                ]);
-              }
-            }}
-          >
-            <View style={styles.preferenceLeft}>
-              {item.icon && (
-                <View
-                  style={[
-                    styles.preferenceIcon,
-                    { backgroundColor: colors.primary.main[100] },
-                  ]}
-                >
-                  <Ionicons
-                    name={item.icon as any}
-                    size={24}
-                    color={colors.primary.main}
-                  />
-                </View>
-              )}
-              <View style={styles.preferenceContent}>
-                <Text
-                  style={[
-                    styles.preferenceTitle,
-                    { color: colors.text.primary },
-                  ]}
-                >
-                  {item.title}
-                </Text>
-                <Text
-                  style={[
-                    styles.preferenceSubtitle,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  {item.subtitle}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.selectContainer}>
-              <Text
-                style={[styles.selectValue, { color: colors.text.primary }]}
-              >
-                {selectedOption?.label || "Not set"}
-              </Text>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.text.tertiary}
-              />
-            </View>
-          </TouchableOpacity>
-        );
-
-      default:
-        return null;
-    }
+        </View>
+        <Switch
+          value={Boolean(value)}
+          onValueChange={(newValue) =>
+            handlePreferenceChange(item.key, newValue)
+          }
+          trackColor={{
+            false: colors.gray[300],
+            true: colors.primary.main[400],
+          }}
+          thumbColor={
+            Boolean(value) ? colors.primary.main[600] : colors.gray[400]
+          }
+          ios_backgroundColor={colors.gray[300]}
+        />
+      </View>
+    );
   };
 
   if (!isLoggedIn || !localPreferences) {
@@ -510,37 +304,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 20,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  sectionHeaderLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  sectionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  sectionHeaderContent: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600" as const,
-    marginBottom: 4,
-  },
-  sectionDescription: {
-    fontSize: 12,
-    opacity: 0.7,
-  },
   preferencesCard: {
     borderRadius: 8,
     borderWidth: 1,
@@ -578,42 +341,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.7,
   },
-  numberInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  numberUnit: {
-    fontSize: typography.fontSizes.base,
-    fontWeight: "600" as const,
-    marginRight: spacing.sm,
-  },
-  numberInput: {
-    borderWidth: 1,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: typography.fontSizes.base,
-    minWidth: 80,
-    textAlign: "center",
-  },
   separator: {
     height: 1,
-    marginLeft: spacing.lg + 40 + spacing.md, // Icon width + margin
+    marginLeft: spacing.lg + 40 + spacing.md,
   },
   description: {
     fontSize: typography.fontSizes.sm,
     lineHeight: 20,
     textAlign: "center",
     marginBottom: spacing.md,
-  },
-  selectContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  selectValue: {
-    fontSize: typography.fontSizes.base,
-    fontWeight: "500" as const,
-    marginRight: spacing.sm,
   },
   securityNote: {
     flexDirection: "row",

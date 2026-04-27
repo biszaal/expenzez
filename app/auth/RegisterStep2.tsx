@@ -110,9 +110,14 @@ export default function RegisterStep2({
   };
 
   const handleNext = () => {
-    if (!values.dob || !values.gender) {
-      return;
-    }
+    // Personal information is now optional per App Store guidelines
+    onNext();
+  };
+
+  const handleSkip = () => {
+    // Clear any partial selections and skip this step
+    onChange("dob", "");
+    onChange("gender", "");
     onNext();
   };
 
@@ -134,10 +139,10 @@ export default function RegisterStep2({
       {/* Header */}
       <View style={styles.header}>
         <Typography variant="h2" style={[styles.title, { color: colors.text.primary }]}>
-          Personal Details
+          Personal Details (Optional)
         </Typography>
         <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
-          Tell us about yourself
+          Help us personalize your experience - you can skip this step
         </Typography>
       </View>
 
@@ -146,7 +151,7 @@ export default function RegisterStep2({
         {/* Date of Birth */}
         <View style={styles.inputContainer}>
           <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
-            Date of Birth
+            Date of Birth (Optional)
           </Typography>
           <TouchableOpacity
             onPress={openDatePicker}
@@ -172,7 +177,7 @@ export default function RegisterStep2({
         {/* Gender Selection */}
         <View style={styles.inputContainer}>
           <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
-            Gender
+            Gender (Optional)
           </Typography>
           <View style={styles.genderContainer}>
             {genderOptions.map((option) => (
@@ -216,17 +221,26 @@ export default function RegisterStep2({
 
       {/* Navigation Buttons */}
       <View style={styles.buttonContainer}>
-        <Button
-          title="Back"
-          onPress={onBack}
-          style={StyleSheet.flatten([styles.backButton, { borderColor: colors.border.light }])}
-          textStyle={{ color: colors.text.primary }}
-        />
+        {/* Top row: Back and Skip */}
+        <View style={styles.topButtonRow}>
+          <Button
+            title="Back"
+            onPress={onBack}
+            style={StyleSheet.flatten([styles.backButton, { borderColor: colors.primary.main, backgroundColor: 'transparent' }])}
+            textStyle={{ color: colors.primary.main, fontWeight: '600' }}
+          />
+          <Button
+            title="Skip →"
+            onPress={handleSkip}
+            style={StyleSheet.flatten([styles.skipButton, { backgroundColor: colors.primary.main + '20', borderColor: colors.primary.main + '40' }])}
+            textStyle={{ color: colors.primary.main, fontWeight: '600' }}
+          />
+        </View>
+        {/* Bottom row: Continue (full width) */}
         <Button
           title="Continue"
           onPress={handleNext}
           style={StyleSheet.flatten([styles.continueButton, { backgroundColor: colors.primary.main }])}
-          disabled={!values.dob || !values.gender}
         />
       </View>
 
@@ -371,9 +385,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     marginTop: 16,
+    gap: 12,
+  },
+  topButtonRow: {
+    flexDirection: "row",
     gap: 12,
   },
   backButton: {
@@ -383,8 +399,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     minHeight: 48,
   },
-  continueButton: {
+  skipButton: {
     flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 14,
+    minHeight: 48,
+  },
+  continueButton: {
     borderRadius: 10,
     paddingVertical: 14,
     minHeight: 48,

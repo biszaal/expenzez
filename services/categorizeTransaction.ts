@@ -26,9 +26,51 @@ export class CategorizeTransaction {
    */
   static categorizeByKeyword(
     description: string,
-    merchant?: string
+    merchant?: string,
+    bankCategory?: string, // Bank's category hint
+    transactionType?: 'debit' | 'credit' // Transaction type
   ): string {
     const text = `${description} ${merchant || ""}`.toLowerCase();
+    const bankCat = (bankCategory || "").toLowerCase();
+
+    // PRIORITY 1: Handle bank-specific patterns (Chase, Monzo, etc.)
+    // Chase UK has generic descriptions like "From X" or "To X", use Transaction Type
+    if (bankCat === "transfer") {
+      // Transfers between own accounts - categorize as "other" or could add a "Transfer" category
+      return "other";
+    }
+
+    if (bankCat === "payment") {
+      // Chase "Payment" can be both incoming and outgoing
+      // Use description to determine if it's income or expense
+      if (text.startsWith("from ") || text.includes(" from ") || text.includes("received") || text.includes("refund") || text.includes("rewards")) {
+        // Money coming IN - check if it's salary/income or just a person-to-person transfer
+        if (text.includes("salary") || text.includes("wage") || text.includes("pay back") || text.includes("payback")) {
+          return "income";
+        }
+        // Rewards/cashback
+        if (text.includes("reward") || text.includes("cashback") || text.includes("cash back")) {
+          return "income";
+        }
+        // Person-to-person payments received - categorize as income
+        return "income";
+      }
+
+      // Money going OUT - "To X" patterns
+      if (text.startsWith("to ") || text.includes(" to ")) {
+        // Check if it's a bill payment, transfer, or general expense
+        if (text.includes("rent") || text.includes("landlord")) {
+          return "bills";
+        }
+        // Otherwise it's a payment to someone - categorize as "other"
+        return "other";
+      }
+    }
+
+    if (bankCat === "purchase") {
+      // Chase "Purchase" means money spent at a merchant
+      // Continue with description-based categorization to determine specific category
+    }
 
     // Check for income keywords first (but exclude rent payments)
     if (
@@ -407,10 +449,12 @@ export class CategorizeTransaction {
   static categorize(
     description: string,
     merchant?: string,
+    bankCategory?: string, // Bank's category hint (e.g., Chase's "Transaction Type")
+    transactionType?: 'debit' | 'credit', // Debit or credit
     tryAI: boolean = false
   ): string {
     // Always use keyword matching first (fast, reliable)
-    return this.categorizeByKeyword(description, merchant);
+    return this.categorizeByKeyword(description, merchant, bankCategory, transactionType);
 
     // Note: AI categorization would be added here if needed
     // For now, keyword-based categorization is sufficient

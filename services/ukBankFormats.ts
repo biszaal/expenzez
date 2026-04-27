@@ -541,9 +541,37 @@ export const parseBankDate = (
       }
     }
 
-    // Handle DD MMM YYYY (e.g., 01 Jan 2024)
+    // Handle DD MMM YYYY (e.g., 24 Sep 2025, 01 Jan 2024)
     if (format === 'DD MMM YYYY') {
-      return new Date(dateStr);
+      const trimmed = dateStr.trim();
+      // Parse using regex for DD MMM YYYY format
+      const match = trimmed.match(/^(\d{1,2})\s+(\w{3})\s+(\d{4})$/);
+      if (match) {
+        const day = parseInt(match[1]);
+        const monthStr = match[2];
+        const year = parseInt(match[3]);
+
+        // Map month abbreviations to month numbers
+        const months: Record<string, number> = {
+          'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5,
+          'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
+        };
+
+        const month = months[monthStr.toLowerCase()];
+        if (month !== undefined) {
+          const date = new Date(year, month, day);
+          // Validate the date is correct (handles invalid dates like Feb 30)
+          if (date.getDate() === day && date.getMonth() === month && date.getFullYear() === year) {
+            return date;
+          }
+        }
+      }
+
+      // Fallback to standard Date parsing
+      const fallbackDate = new Date(trimmed);
+      if (!isNaN(fallbackDate.getTime())) {
+        return fallbackDate;
+      }
     }
 
     return new Date(dateStr);
