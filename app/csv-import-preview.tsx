@@ -108,8 +108,9 @@ export default function CSVImportPreviewScreen() {
 
       let summaryMessage = `Import completed!\n• ${summary.imported} transactions saved\n• ${expenseCount} expenses\n• ${incomeCount} income entries`;
 
-      if (summary.duplicatesSkipped > 0) {
-        summaryMessage += `\n• ${summary.duplicatesSkipped} duplicates skipped`;
+      const duplicatesSkipped = ("duplicatesSkipped" in summary ? summary.duplicatesSkipped : 0) ?? 0;
+      if (duplicatesSkipped > 0) {
+        summaryMessage += `\n• ${duplicatesSkipped} duplicates skipped`;
       }
 
       if (summary.failed > 0) {

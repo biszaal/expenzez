@@ -1,6 +1,10 @@
-import { Stack, useSegments } from "expo-router";
+import { Stack, router, useSegments } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useState, useCallback } from "react";
+import {
+  ShareIntentProvider,
+  useShareIntentContext,
+} from "expo-share-intent";
 import {
   AppState,
   Text,
@@ -701,30 +705,62 @@ function RootLayoutNav() {
         <Stack.Screen name="import-csv" />
         <Stack.Screen name="settings/index" />
         <Stack.Screen name="subscription/plans" />
-        <Stack.Screen name="CompleteProfile" />
       </Stack>
     </>
   );
 }
 
+// Watches for inbound PDF shares (Android Share intent / iOS Share extension when
+// enabled) and routes the user into the import-statement flow with the file URI.
+function ShareIntentRouter() {
+  const { hasShareIntent, shareIntent, resetShareIntent } =
+    useShareIntentContext();
+
+  useEffect(() => {
+    if (!hasShareIntent || !shareIntent?.files?.length) return;
+
+    const pdf = shareIntent.files.find(
+      (f) => f.mimeType === "application/pdf"
+    );
+    if (!pdf?.path) {
+      resetShareIntent();
+      return;
+    }
+
+    router.push({
+      pathname: "/import-statement",
+      params: {
+        sharedUri: pdf.path,
+        sharedName: pdf.fileName ?? "statement.pdf",
+      },
+    });
+    resetShareIntent();
+  }, [hasShareIntent, shareIntent, resetShareIntent]);
+
+  return null;
+}
+
 export default function RootLayout() {
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <NetworkProvider>
-          <RevenueCatProvider>
-            <SubscriptionProvider>
-              <AuthProvider>
-                <SecurityProvider>
-                  <NotificationProvider>
-                    <RootLayoutNav />
-                  </NotificationProvider>
-                </SecurityProvider>
-              </AuthProvider>
-            </SubscriptionProvider>
-          </RevenueCatProvider>
-        </NetworkProvider>
-      </ThemeProvider>
+      <ShareIntentProvider>
+        <ThemeProvider>
+          <NetworkProvider>
+            <RevenueCatProvider>
+              <SubscriptionProvider>
+                <AuthProvider>
+                  <SecurityProvider>
+                    <NotificationProvider>
+                      <ShareIntentRouter />
+                      <RootLayoutNav />
+                    </NotificationProvider>
+                  </SecurityProvider>
+                </AuthProvider>
+              </SubscriptionProvider>
+            </RevenueCatProvider>
+          </NetworkProvider>
+        </ThemeProvider>
+      </ShareIntentProvider>
     </ErrorBoundary>
   );
 }

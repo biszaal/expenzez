@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import { useAuth } from "../app/auth/AuthContext";
 import { useSecurity } from "./SecurityContext";
 import { notificationAPI } from "../services/api";
@@ -31,17 +32,13 @@ try {
 }
 
 export interface NotificationPreferences {
-  // Core settings - reduced from 42 to 8 essential settings
+  // Simplified to 3 essential user-configurable settings
   pushEnabled: boolean; // Master switch
-  transactionAlerts: boolean; // All transactions
-  largeTransactionThreshold: number; // Large transaction alerts (£500 default)
+  transactionAlerts: boolean; // Transaction notifications
   budgetAlerts: boolean; // Budget warnings
-  lowBalanceThreshold: number; // Low balance alerts (£50 default)
-  weeklyInsights: boolean; // Weekly summary instead of complex AI settings
-  maxNotificationsPerDay: number; // Simple daily limit (5/15/30)
 
-  // Always-enabled security settings (not user-configurable)
-  securityAlerts: boolean; // Always true - login/security issues
+  // Always-enabled security (not user-configurable)
+  securityAlerts: boolean; // Always true
 }
 
 export interface NotificationHistoryItem {
@@ -87,17 +84,10 @@ const NotificationContext = createContext<NotificationContextType | undefined>(
 );
 
 const defaultPreferences: NotificationPreferences = {
-  // Core simplified settings
   pushEnabled: true,
   transactionAlerts: true,
-  largeTransactionThreshold: 500.0, // Default £500 for large transactions
   budgetAlerts: true,
-  lowBalanceThreshold: 50.0, // Default £50 for low balance
-  weeklyInsights: true,
-  maxNotificationsPerDay: 15, // Default "Normal" (6-15 per day)
-
-  // Always-enabled security (not user-configurable)
-  securityAlerts: true,
+  securityAlerts: true, // Always enabled
 };
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -174,18 +164,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(true);
       setError(null);
 
-      // Longer delay to ensure auth tokens are fully ready after login
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      // Short delay to ensure auth tokens are ready
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Register for push notifications if possible
       const tokenRegistered = await registerForPushNotifications();
 
-      // If token registration failed due to auth, retry after a delay
+      // If token registration failed due to auth, retry after a brief delay
       if (!tokenRegistered) {
         console.log(
-          "[NotificationContext] Initial token registration failed, retrying in 3 seconds..."
+          "[NotificationContext] Initial token registration failed, retrying..."
         );
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         await registerForPushNotifications();
       }
 
@@ -272,10 +262,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         return false;
       }
 
-      // Get the token
+      // Get the token using project ID from app config
       console.log("[NotificationContext] 🎫 Getting Expo push token...");
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+      if (!projectId) {
+        console.error("[NotificationContext] No project ID found in app config");
+        setError("Push notification configuration missing");
+        return false;
+      }
       const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: "abdbfccb-cbc1-4be7-8fcc-76ac70f61747",
+        projectId,
       });
 
       const token = tokenData.data;
@@ -611,21 +607,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     // Persist locally first (ensures state survives app restart)
-    await persistReadState(id, true);
+    try {
+      await persistReadState(id, true);
+    } catch (localError) {
+      console.error("[NotificationContext] Failed to persist read state locally:", localError);
+    }
 
     // Then persist to backend database
     try {
       const { notificationAPI } = await import("../services/api");
       await notificationAPI.markAsRead(id);
-      console.log(
-        `[NotificationContext] Marked notification ${id} as read in database`
-      );
-    } catch (error: any) {
-      console.error(
-        "[NotificationContext] Error marking notification as read in backend:",
-        error
-      );
-      // Local persistence already done above as fallback
+    } catch (backendError) {
+      console.error("[NotificationContext] Failed to sync read state to backend:", backendError);
     }
   };
 
@@ -635,9 +628,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     // Persist all read states to AsyncStorage
-    const allIds = notifications.map((n) => n.id);
-    for (const id of allIds) {
-      await persistReadState(id, true);
+    try {
+      const allIds = notifications.map((n) => n.id);
+      await Promise.all(allIds.map((id) => persistReadState(id, true)));
+    } catch (error) {
+      console.error("[NotificationContext] Failed to persist all read states:", error);
     }
   };
 
