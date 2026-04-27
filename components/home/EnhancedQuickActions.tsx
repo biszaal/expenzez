@@ -55,6 +55,14 @@ const quickActions: QuickAction[] = [
     colors: ["#F59E0B", "#D97706"] as const,
     route: "/import-csv",
   },
+  {
+    id: "import-statement",
+    title: "Import Statement",
+    subtitle: "Upload PDF",
+    icon: "document-attach",
+    colors: ["#10B981", "#059669"] as const,
+    route: "/import-statement",
+  },
 ];
 
 export const EnhancedQuickActions: React.FC = () => {

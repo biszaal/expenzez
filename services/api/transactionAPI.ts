@@ -77,6 +77,28 @@ export interface CSVImportResponse {
   };
 }
 
+export interface StatementImportResponse {
+  message: string;
+  alreadyImported?: boolean;
+  statement: {
+    issuer: string | null;
+    accountIdentifier: string | null;
+    periodStart: string | null;
+    periodEnd: string | null;
+    filename: string | null;
+  };
+  summary: {
+    total: number;
+    imported: number;
+    duplicatesSkipped: number;
+    failed: number;
+    autoCategorized: number;
+    keywordCategorized: number;
+    aiCategorized: number;
+  };
+  errors?: string[];
+}
+
 export const transactionAPI = {
   createTransaction: async (
     data: TransactionCreateData
@@ -116,6 +138,20 @@ export const transactionAPI = {
     const response = await api.post("/transactions/import-csv", {
       transactions,
     });
+    return response.data;
+  },
+
+  // PDF statement import: backend parses the PDF and runs the same dedup + AI
+  // categorization pipeline as CSV import.
+  importStatement: async (
+    fileBase64: string,
+    filename?: string
+  ): Promise<StatementImportResponse> => {
+    const response = await api.post(
+      "/transactions/import-statement",
+      { fileBase64, filename },
+      { timeout: 90000 }
+    );
     return response.data;
   },
 
