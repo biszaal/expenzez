@@ -122,6 +122,38 @@ export const QuickActions: React.FC = () => {
             </View>
           </View>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.professionalQuickActionCard}
+          onPress={() => router.push("/import-statement" as any)}
+          activeOpacity={0.85}
+        >
+          <View
+            style={[
+              styles.professionalQuickActionGradient,
+              SHADOWS.lg,
+              { backgroundColor: "#10B981" },
+            ]}
+          >
+            <View style={styles.professionalQuickActionIconContainer}>
+              <View style={styles.professionalQuickActionIcon}>
+                <Ionicons
+                  name="document-attach-outline"
+                  size={24}
+                  color="white"
+                />
+              </View>
+            </View>
+            <View style={styles.professionalQuickActionText}>
+              <Text style={styles.professionalQuickActionTitle}>
+                Import Statement
+              </Text>
+              <Text style={styles.professionalQuickActionSubtitle}>
+                Upload PDF
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity>
       </View>
     </View>
   );
