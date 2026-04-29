@@ -1,5 +1,5 @@
 import React from "react";
-import { View, TouchableOpacity, Text } from "react-native";
+import { View, TouchableOpacity, Text, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SHADOWS } from "../../constants/Colors";
@@ -7,6 +7,25 @@ import { styles } from "./QuickActions.styles";
 
 export const QuickActions: React.FC = () => {
   const router = useRouter();
+
+  const handleImportPress = () => {
+    Alert.alert(
+      "Import transactions",
+      "Choose what to upload",
+      [
+        {
+          text: "PDF statement",
+          onPress: () => router.push("/import-statement" as any),
+        },
+        {
+          text: "CSV file",
+          onPress: () => router.push("/import-csv"),
+        },
+        { text: "Cancel", style: "cancel" },
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
     <View style={styles.professionalQuickActionsWrapper}>
@@ -93,7 +112,7 @@ export const QuickActions: React.FC = () => {
 
         <TouchableOpacity
           style={styles.professionalQuickActionCard}
-          onPress={() => router.push("/import-csv")}
+          onPress={handleImportPress}
           activeOpacity={0.85}
         >
           <View
@@ -106,50 +125,16 @@ export const QuickActions: React.FC = () => {
             <View style={styles.professionalQuickActionIconContainer}>
               <View style={styles.professionalQuickActionIcon}>
                 <Ionicons
-                  name="document-text-outline"
+                  name="cloud-upload-outline"
                   size={24}
                   color="white"
                 />
               </View>
             </View>
             <View style={styles.professionalQuickActionText}>
-              <Text style={styles.professionalQuickActionTitle}>
-                Import CSV
-              </Text>
+              <Text style={styles.professionalQuickActionTitle}>Import</Text>
               <Text style={styles.professionalQuickActionSubtitle}>
-                Upload data
-              </Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.professionalQuickActionCard}
-          onPress={() => router.push("/import-statement" as any)}
-          activeOpacity={0.85}
-        >
-          <View
-            style={[
-              styles.professionalQuickActionGradient,
-              SHADOWS.lg,
-              { backgroundColor: "#10B981" },
-            ]}
-          >
-            <View style={styles.professionalQuickActionIconContainer}>
-              <View style={styles.professionalQuickActionIcon}>
-                <Ionicons
-                  name="document-attach-outline"
-                  size={24}
-                  color="white"
-                />
-              </View>
-            </View>
-            <View style={styles.professionalQuickActionText}>
-              <Text style={styles.professionalQuickActionTitle}>
-                Import Statement
-              </Text>
-              <Text style={styles.professionalQuickActionSubtitle}>
-                Upload PDF
+                CSV or PDF
               </Text>
             </View>
           </View>
