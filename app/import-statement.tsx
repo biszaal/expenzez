@@ -257,7 +257,7 @@ const ImportResultCard: React.FC<{ result: StatementImportResponse }> = ({
           styles.viewButton,
           { borderColor: colors.primary[500] },
         ]}
-        onPress={() => router.replace("/(tabs)/transactions" as any)}
+        onPress={() => router.replace("/(tabs)/spending" as any)}
       >
         <Text style={[styles.viewButtonText, { color: colors.primary[500] }]}>
           View transactions
