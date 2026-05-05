@@ -195,15 +195,6 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
             {dayjs(selectedMonth).format("MMMM YYYY")} Budget
           </Text>
 
-          {/* AI Insight Button - Premium Feature - Hidden when insight is active */}
-          {isPro && totalBudget > 0 && !showAIInsight && (
-            <AIButton
-              onPress={handleAIButtonPress}
-              loading={aiInsightLoading}
-              active={false}
-              label="Ask AI"
-            />
-          )}
         </View>
 
         {/* Animated SVG Donut Chart - MOVED ABOVE METRICS */}
