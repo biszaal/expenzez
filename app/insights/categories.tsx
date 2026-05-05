@@ -217,15 +217,6 @@ export default function CategoriesAnalysisScreen() {
           </Text>
         </View>
 
-        {/* AI Button in Header - Hidden when insight is active */}
-        {isPremium && categoryInsights.length > 0 && !showAIInsight && (
-          <AIButton
-            onPress={handleAIButtonPress}
-            loading={insightLoading}
-            active={false}
-            label="Ask AI"
-          />
-        )}
       </View>
 
       <ScrollView ref={scrollViewRef} style={styles.content} showsVerticalScrollIndicator={false}>

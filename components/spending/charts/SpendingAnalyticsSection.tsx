@@ -121,15 +121,6 @@ export const SpendingAnalyticsSection: React.FC<
             </View>
           </View>
 
-          {/* AI Insight Button - Hidden when insight is active */}
-          {isPro && hasTransactions && !showAIInsight && (
-            <AIButton
-              onPress={handleAIButtonPress}
-              loading={aiInsightLoading}
-              active={false}
-              label="Ask AI"
-            />
-          )}
         </View>
 
         {/* Premium Custom Chart Section */}

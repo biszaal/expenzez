@@ -423,18 +423,6 @@ export default function BudgetsScreen() {
         {/* AI Budget Insight - Premium Feature */}
         {isPremium && (
           <View style={{ marginTop: spacing.md }}>
-            {/* AI Button - Hidden when insight is active */}
-            {!showAIInsight[progress.budget.id] && (
-              <View style={{ alignItems: "flex-end", marginBottom: spacing.sm }}>
-                <AIButton
-                  onPress={() => handleAIButtonPress(progress)}
-                  loading={insightLoading[progress.budget.id]}
-                  active={false}
-                  label="Ask AI"
-                />
-              </View>
-            )}
-
             {/* AI Insight Card */}
             {showAIInsight[progress.budget.id] && budgetInsights[progress.budget.id] && (
               <AIInsightCard

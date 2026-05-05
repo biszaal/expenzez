@@ -300,22 +300,6 @@ export default function HomeScreen() {
               isRefreshing={balanceRefreshing}
             />
 
-            {/* AI Button - Positioned inside balance card at bottom right */}
-            {isPro && transactions.length > 0 && !showAIInsight && (
-              <View style={{
-                position: 'absolute',
-                bottom: 16,
-                right: 32,
-                zIndex: 10,
-              }}>
-                <AIButton
-                  onPress={handleAIButtonPress}
-                  loading={insightLoading}
-                  active={false}
-                  label="Ask AI"
-                />
-              </View>
-            )}
           </View>
 
           {/* AI Insight Card - Below balance card when active */}

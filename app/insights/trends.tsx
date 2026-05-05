@@ -321,15 +321,6 @@ export default function TrendsAnalysisScreen() {
           </Text>
         </View>
 
-        {/* AI Button in Header - Hidden when insight is active */}
-        {isPremium && trends.length >= 2 && !showAIInsight && (
-          <AIButton
-            onPress={handleAIButtonPress}
-            loading={insightLoading}
-            active={false}
-            label="Ask AI"
-          />
-        )}
       </View>
 
       {/* Unified Controls */}
