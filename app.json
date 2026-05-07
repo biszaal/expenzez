@@ -100,7 +100,9 @@
       [
         "@react-native-google-signin/google-signin",
         {
-          "androidClientId": "904573665938-g7c644i3vp7m1rtj61ljvm0b5m98arq9.apps.googleusercontent.com"
+          "androidClientId": "904573665938-g7c644i3vp7m1rtj61ljvm0b5m98arq9.apps.googleusercontent.com",
+          "iosClientId": "904573665938-iosplaceholder.apps.googleusercontent.com",
+          "iosUrlScheme": "com.googleusercontent.apps.904573665938-iosplaceholder"
         }
       ],
       "expo-secure-store",
