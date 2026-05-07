@@ -19,7 +19,7 @@
     "description": "Smart expense tracking with AI insights and comprehensive financial management for users.",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "28",
+      "buildNumber": "32",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -100,9 +100,7 @@
       [
         "@react-native-google-signin/google-signin",
         {
-          "iosClientId": "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com",
-          "androidClientId": "904573665938-g7c644i3vp7m1rtj61ljvm0b5m98arq9.apps.googleusercontent.com",
-          "iosUrlScheme": "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID"
+          "androidClientId": "904573665938-g7c644i3vp7m1rtj61ljvm0b5m98arq9.apps.googleusercontent.com"
         }
       ],
       "expo-secure-store",
