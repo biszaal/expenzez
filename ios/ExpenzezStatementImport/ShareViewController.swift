@@ -403,16 +403,25 @@ class ShareViewController: UIViewController {
 
   private func handlePdf(content: NSExtensionItem, attachment: NSItemProvider, index: Int) async {
     Task.detached {
-      if let url = try? await attachment.loadItem(forTypeIdentifier: self.pdfContentType) as? URL {
-        Task { @MainActor in
-
+      do {
+        if let url = try await attachment.loadItem(forTypeIdentifier: self.pdfContentType) as? URL {
+          // PDF delivered as a file URL (Files app, Mail attachment, etc.)
           await self.handleFileURL(content: content, url: url, index: index)
-
+        } else if let data = try await attachment.loadItem(forTypeIdentifier: self.pdfContentType) as? Data {
+          // PDF delivered as inline Data (PayPal, banking apps, etc.) — write
+          // to a temp file so the rest of the pipeline can copy it via URL.
+          let tempFileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + ".pdf")
+          try data.write(to: tempFileURL)
+          await self.handleFileURL(content: content, url: tempFileURL, index: index)
+        } else {
+          NSLog("[ERROR] Cannot load pdf content !\(String(describing: content))")
+          await self.dismissWithError(
+            message: "Cannot load pdf content \(String(describing: content))")
         }
-      } else {
-        NSLog("[ERROR] Cannot load pdf content !\(String(describing: content))")
-        await self.dismissWithError(
-          message: "Cannot load pdf content \(String(describing: content))")
+      } catch {
+        NSLog("[ERROR] handlePdf exception: \(error.localizedDescription)")
+        await self.dismissWithError(message: "PDF error: \(error.localizedDescription)")
       }
     }
   }
