@@ -19,7 +19,7 @@
     "description": "Smart expense tracking with AI insights and comprehensive financial management for users.",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "32",
+      "buildNumber": "34",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -114,9 +114,7 @@
           "androidIntentFilters": [
             "application/pdf"
           ],
-          "iosActivationRules": {
-            "NSExtensionActivationSupportsFileWithMaxCount": 1
-          },
+          "iosActivationRules": "SUBQUERY(extensionItems, $extensionItem, SUBQUERY($extensionItem.attachments, $attachment, ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO \"com.adobe.pdf\").@count > 0).@count > 0",
           "iosShareExtensionName": "Expenzez Statement Import"
         }
       ],
