@@ -1,12 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Tabs, Redirect } from "expo-router";
 import React from "react";
-import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../auth/AuthContext";
 import { LoadingScreen } from "../../components/ui";
+import { FloatingTabBar } from "../../components/navigation/FloatingTabBar";
 
 export default function TabLayout() {
-  const { colors } = useTheme();
   const { isLoggedIn, loading } = useAuth();
 
   // Show loading screen while checking authentication
@@ -21,69 +19,19 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: colors.primary.main,
-        tabBarInactiveTintColor: colors.text.tertiary,
-        tabBarStyle: {
-          backgroundColor: colors.background.primary,
-          borderTopWidth: 0,
-          elevation: 0,
-          shadowOpacity: 0,
-          height: 88,
-          paddingBottom: 20,
-          paddingTop: 12,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "600",
-        },
-        headerShown: false,
-      }}
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <FloatingTabBar {...props} />}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="spending"
-        options={{
-          title: "Spending",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="pie-chart-outline" size={size} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="spending" options={{ title: "Spending" }} />
+      <Tabs.Screen name="progress" options={{ title: "Goals" }} />
+      <Tabs.Screen name="account" options={{ title: "Account" }} />
+      {/* Health screen kept routable but hidden from the floating bar.
+          The bar only renders the four tabs above; deep-link or button
+          navigation can still reach /health. */}
       <Tabs.Screen
         name="health"
-        options={{
-          title: "Health",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="heart-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="progress"
-        options={{
-          title: "Progress",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="trophy-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="account"
-        options={{
-          title: "Account",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
-        }}
+        options={{ title: "Health", href: null }}
       />
     </Tabs>
   );
