@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
+  Text,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useAuth } from "./AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -17,9 +19,9 @@ import RegisterStep2 from "./RegisterStep2";
 import RegisterStep3 from "./RegisterStep3";
 import RegisterStep4 from "./RegisterStep4";
 import RegisterStep5 from "./RegisterStep5";
-import { Typography } from "../../components/ui";
 import { useAlert } from "../../hooks/useAlert";
 import { Ionicons } from "@expo/vector-icons";
+import { fontFamily } from "../../constants/theme";
 
 const initialState = {
   username: "",
@@ -325,55 +327,101 @@ export default function Register() {
     >
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
+      {/* Top glow */}
+      <LinearGradient
+        colors={
+          isDark
+            ? ["rgba(157,91,255,0.18)", "rgba(157,91,255,0)"]
+            : ["rgba(123,63,228,0.10)", "rgba(123,63,228,0)"]
+        }
+        style={[StyleSheet.absoluteFillObject, { height: 280 }]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        pointerEvents="none"
+      />
+
       {/* Header Section */}
-      <View style={[styles.header, { borderBottomColor: colors.border.light }]}>
+      <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.replace("/auth/login")}
-          style={styles.backButton}
-          accessibilityLabel="Back to Login"
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-        </TouchableOpacity>
-
-        <View style={styles.headerContent}>
-          <Typography
-            variant="h2"
-            style={[styles.welcomeTitle, { color: colors.text.primary }]}
-            align="center"
-          >
-            Create Account
-          </Typography>
-        </View>
-
-        <View style={{ width: 24 }} />
-      </View>
-
-      {/* Progress Bar */}
-      <View
-        style={[
-          styles.progressContainer,
-          { backgroundColor: colors.background.secondary },
-        ]}
-      >
-        <View
           style={[
-            styles.progressBar,
+            styles.backButton,
             {
-              width: `${(step / 5) * 100}%`,
-              backgroundColor: colors.primary.main,
+              backgroundColor: colors.card.background,
+              borderColor: colors.border.medium,
             },
           ]}
-        />
+          accessibilityLabel="Back to Login"
+        >
+          <Ionicons name="chevron-back" size={18} color={colors.text.secondary} />
+        </TouchableOpacity>
+
+        <View
+          style={[
+            styles.stepBadge,
+            {
+              backgroundColor: colors.card.background,
+              borderColor: colors.border.medium,
+            },
+          ]}
+        >
+          <Text
+            style={{
+              fontSize: 11,
+              fontFamily: fontFamily.semibold,
+              color: colors.text.secondary,
+              letterSpacing: 0.6,
+            }}
+          >
+            STEP {step} / 5
+          </Text>
+        </View>
       </View>
 
-      {/* Step Counter */}
-      <View style={styles.stepCounter}>
-        <Typography
-          variant="body"
-          style={[styles.stepText, { color: colors.text.secondary }]}
+      {/* Title block */}
+      <View style={styles.titleBlock}>
+        <Text
+          style={{
+            fontSize: 28,
+            letterSpacing: -0.6,
+            color: colors.text.primary,
+            fontFamily: fontFamily.semibold,
+          }}
         >
-          Step {step} of 5
-        </Typography>
+          Create your{"\n"}Expenzez account
+          <Text style={{ color: colors.primary[500] }}>.</Text>
+        </Text>
+        <Text
+          style={{
+            fontSize: 14,
+            marginTop: 8,
+            color: colors.text.secondary,
+            fontFamily: fontFamily.medium,
+            lineHeight: 20,
+          }}
+        >
+          Set up in 60 seconds. Free forever, premium when you want.
+        </Text>
+      </View>
+
+      {/* Progress dots */}
+      <View style={styles.progressDots}>
+        {[1, 2, 3, 4, 5].map((s) => (
+          <View
+            key={s}
+            style={{
+              flex: 1,
+              height: 4,
+              borderRadius: 4,
+              backgroundColor:
+                s <= step
+                  ? colors.primary[500]
+                  : isDark
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(40,20,80,0.08)",
+            }}
+          />
+        ))}
       </View>
 
       <KeyboardAvoidingView
@@ -387,22 +435,28 @@ export default function Register() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Glass Form Container */}
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: colors.background.secondary },
-            ]}
-          >
-            <View style={styles.formContent}>
-              {registrationError ? (
-                <View style={styles.errorContainer}>
-                  <Ionicons name="warning" size={20} color="white" />
-                  <Typography variant="body" style={styles.errorText}>
-                    {registrationError}
-                  </Typography>
-                </View>
-              ) : null}
+          <View style={styles.formContent}>
+            {registrationError ? (
+              <View
+                style={[
+                  styles.errorContainer,
+                  {
+                    backgroundColor: colors.negBg,
+                    borderColor: colors.rose[500],
+                  },
+                ]}
+              >
+                <Ionicons name="warning" size={18} color={colors.rose[500]} />
+                <Text
+                  style={[
+                    styles.errorText,
+                    { color: colors.rose[500], fontFamily: fontFamily.medium },
+                  ]}
+                >
+                  {registrationError}
+                </Text>
+              </View>
+            ) : null}
 
               {step === 1 && (
                 <RegisterStep1
@@ -446,30 +500,26 @@ export default function Register() {
                 />
               )}
 
-              {/* Login Link */}
-              <View style={styles.loginLinkContainer}>
-                <Typography
-                  variant="body"
+            {/* Login Link */}
+            <View style={styles.loginLinkContainer}>
+              <Text
+                style={[
+                  styles.loginLinkText,
+                  { color: colors.text.secondary, fontFamily: fontFamily.medium },
+                ]}
+              >
+                Already have an account?{" "}
+              </Text>
+              <TouchableOpacity onPress={() => router.replace("/auth/login")}>
+                <Text
                   style={[
-                    styles.loginLinkText,
-                    { color: colors.text.secondary },
+                    styles.loginLinkBold,
+                    { color: colors.primary[500], fontFamily: fontFamily.semibold },
                   ]}
-                  align="center"
                 >
-                  Already have an account?{" "}
-                </Typography>
-                <TouchableOpacity onPress={() => router.replace("/auth/login")}>
-                  <Typography
-                    variant="body"
-                    style={[
-                      styles.loginLinkBold,
-                      { color: colors.primary.main },
-                    ]}
-                  >
-                    Sign In
-                  </Typography>
-                </TouchableOpacity>
-              </View>
+                  Sign in
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
@@ -479,98 +529,68 @@ export default function Register() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    justifyContent: "space-between",
+    paddingHorizontal: 22,
+    paddingTop: 6,
   },
   backButton: {
-    padding: 8,
-    marginLeft: -8,
-  },
-  headerContent: {
-    flex: 1,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     alignItems: "center",
+    justifyContent: "center",
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  welcomeTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: 0.2,
+  stepBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  progressContainer: {
-    height: 4,
-    width: "100%",
+  titleBlock: {
+    paddingHorizontal: 22,
+    paddingTop: 24,
   },
-  progressBar: {
-    height: "100%",
-    borderRadius: 2,
+  progressDots: {
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 22,
+    paddingTop: 18,
   },
-  stepCounter: {
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  stepText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
+  keyboardView: { flex: 1 },
+  scrollView: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: 22,
+    paddingTop: 22,
+    paddingBottom: 28,
   },
-  formContent: {
-    paddingHorizontal: 0,
-  },
+  formContent: { paddingHorizontal: 0 },
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 14,
     marginBottom: 16,
-    borderWidth: 1,
+    gap: 8,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   errorText: {
-    marginLeft: 8,
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 18,
   },
   loginLinkContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 24,
-    paddingVertical: 12,
+    marginTop: 18,
+    paddingVertical: 8,
   },
-  loginLinkText: {
-    fontSize: 14,
-  },
-  loginLinkBold: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  card: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
+  loginLinkText: { fontSize: 14 },
+  loginLinkBold: { fontSize: 14 },
 });
