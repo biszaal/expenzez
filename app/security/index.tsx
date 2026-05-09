@@ -185,23 +185,30 @@ export default function SecurityScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background.secondary }]}
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+      edges={["top"]}
     >
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.background.primary }]}>
+      <View style={styles.header}>
         <View style={styles.headerContent}>
           <TouchableOpacity
             style={[
               styles.backButton,
-              { backgroundColor: colors.background.secondary },
-              shadows.sm,
+              {
+                backgroundColor: colors.card.background,
+                borderColor: colors.border.medium,
+              },
             ]}
             onPress={() => router.back()}
           >
-            <Ionicons name="chevron-back" size={24} color={colors.primary.main} />
+            <Ionicons
+              name="chevron-back"
+              size={18}
+              color={colors.text.secondary}
+            />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-            Security Settings
+            Security
           </Text>
           <View style={styles.headerRight} />
         </View>
@@ -229,7 +236,7 @@ export default function SecurityScreen() {
                 <View
                   style={[
                     styles.settingIcon,
-                    { backgroundColor: colors.primary.main[100] },
+                    { backgroundColor: colors.primary[100] },
                   ]}
                 >
                   <Ionicons name="lock-closed" size={20} color={colors.primary.main} />
@@ -378,7 +385,7 @@ export default function SecurityScreen() {
                   <View
                     style={[
                       styles.settingIcon,
-                      { backgroundColor: colors.primary.main[100] },
+                      { backgroundColor: colors.primary[100] },
                     ]}
                   >
                     <Ionicons name="key" size={20} color={colors.primary.main} />
@@ -450,7 +457,7 @@ export default function SecurityScreen() {
                             styles.deviceIcon,
                             {
                               backgroundColor: isCurrentDevice
-                                ? colors.primary.main[100]
+                                ? colors.primary[100]
                                 : colors.gray[100],
                             },
                           ]}

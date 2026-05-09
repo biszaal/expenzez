@@ -168,7 +168,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                 {
                   backgroundColor: colors.background.secondary,
                   color: colors.text.primary,
-                  borderColor: colors.primary.main[200],
+                  borderColor: colors.primary[200],
                 },
               ]}
               value={new Date(editedTransaction.date)
@@ -191,7 +191,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                 {
                   backgroundColor: colors.background.secondary,
                   color: colors.text.primary,
-                  borderColor: colors.primary.main[200],
+                  borderColor: colors.primary[200],
                 },
               ]}
               value={editedTransaction.merchant}
@@ -212,7 +212,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                 {
                   backgroundColor: colors.background.secondary,
                   color: colors.text.primary,
-                  borderColor: colors.primary.main[200],
+                  borderColor: colors.primary[200],
                 },
               ]}
               value={editedTransaction.description || ""}
@@ -239,7 +239,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                   {
                     backgroundColor: colors.background.secondary,
                     color: colors.text.primary,
-                    borderColor: colors.primary.main[200],
+                    borderColor: colors.primary[200],
                   },
                 ]}
                 value={amountText}
@@ -273,7 +273,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                       borderColor:
                         editedTransaction.type === type
                           ? colors.primary.main
-                          : colors.primary.main[200],
+                          : colors.primary[200],
                     },
                   ]}
                   onPress={() => updateField("type", type)}
@@ -306,7 +306,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                 styles.categoryButton,
                 {
                   backgroundColor: colors.background.secondary,
-                  borderColor: colors.primary.main[200],
+                  borderColor: colors.primary[200],
                 },
               ]}
               onPress={() => setShowCategoryPicker(!showCategoryPicker)}
@@ -341,7 +341,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
                       {
                         backgroundColor:
                           editedTransaction.category === cat.id
-                            ? colors.primary.main[50]
+                            ? colors.primary[50]
                             : "transparent",
                         borderBottomColor: colors.background.tertiary,
                       },

@@ -146,7 +146,7 @@ export const CompactSpendingSummary: React.FC<CompactSpendingSummaryProps> = ({
           <View
             style={[
               styles.primaryMetric,
-              { backgroundColor: colors.primary.main[50] || colors.primary.main[100] },
+              { backgroundColor: colors.primary[50] || colors.primary[100] },
             ]}
           >
             <Text style={[styles.primaryLabel, { color: colors.text.secondary }]}>

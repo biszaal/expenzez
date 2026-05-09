@@ -85,7 +85,7 @@ export default function Header({
       borderRadius: borderRadius.xl,
       alignItems: "center" as const,
       justifyContent: "center" as const,
-      backgroundColor: colors.primary.main[100],
+      backgroundColor: colors.primary[100],
       ...shadows.sm,
     };
   };

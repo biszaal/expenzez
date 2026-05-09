@@ -66,7 +66,7 @@ export default function ListItem({
         return {
           titleColor: colors.text.primary,
           iconColor: colors.primary.main,
-          iconBackground: colors.primary.main[100],
+          iconBackground: colors.primary[100],
         };
     }
   };

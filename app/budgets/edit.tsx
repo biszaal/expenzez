@@ -470,10 +470,10 @@ export default function EditBudgetPage() {
             <View
               style={[
                 styles.iconContainer,
-                { backgroundColor: colors.primary.main[100] },
+                { backgroundColor: colors.primary[100] },
               ]}
             >
-              <Ionicons name="wallet" size={24} color={colors.primary.main[600]} />
+              <Ionicons name="wallet" size={24} color={colors.primary[600]} />
             </View>
             <View style={styles.headerText}>
               <Text style={[styles.cardTitle, { color: colors.text.primary }]}>
@@ -554,10 +554,10 @@ export default function EditBudgetPage() {
               <View
                 style={[
                   styles.iconContainer,
-                  { backgroundColor: colors.primary.main[100] },
+                  { backgroundColor: colors.primary[100] },
                 ]}
               >
-                <Ionicons name="list" size={24} color={colors.primary.main[600]} />
+                <Ionicons name="list" size={24} color={colors.primary[600]} />
               </View>
               <View style={styles.headerText}>
                 <Text
@@ -639,7 +639,7 @@ export default function EditBudgetPage() {
             styles.saveButton,
             {
               backgroundColor: saving
-                ? colors.primary.main[300]
+                ? colors.primary[300]
                 : colors.primary.main,
             },
           ]}

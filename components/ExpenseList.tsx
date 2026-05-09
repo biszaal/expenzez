@@ -183,9 +183,9 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
           <View style={styles.actionButtons}>
             <TouchableOpacity
               onPress={() => onExpenseEdit?.(expense)}
-              style={[styles.actionButton, { backgroundColor: colors.primary.main[100] }]}
+              style={[styles.actionButton, { backgroundColor: colors.primary[100] }]}
             >
-              <Ionicons name="pencil" size={16} color={colors.primary.main[600]} />
+              <Ionicons name="pencil" size={16} color={colors.primary[600]} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleDeleteExpense(expense)}
@@ -211,8 +211,8 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
       
       {expense.isRecurring && (
         <View style={styles.recurringBadge}>
-          <Ionicons name="refresh" size={12} color={colors.primary.main[600]} />
-          <Text style={[styles.recurringText, { color: colors.primary.main[600] }]}>
+          <Ionicons name="refresh" size={12} color={colors.primary[600]} />
+          <Text style={[styles.recurringText, { color: colors.primary[600] }]}>
             Recurring
           </Text>
         </View>

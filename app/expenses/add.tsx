@@ -126,7 +126,7 @@ export default function AddExpensePage() {
               key={cat}
               style={[
                 styles.categoryOption,
-                category === cat && { backgroundColor: colors.primary.main[100] },
+                category === cat && { backgroundColor: colors.primary[100] },
               ]}
               onPress={() => setCategory(cat)}
             >
@@ -134,7 +134,7 @@ export default function AddExpensePage() {
                 style={{
                   color:
                     category === cat
-                      ? colors.primary.main[600]
+                      ? colors.primary[600]
                       : colors.text.primary,
                 }}
               >

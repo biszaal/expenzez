@@ -201,11 +201,11 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
                 {
                   backgroundColor:
                     sortBy === col
-                      ? colors.primary.main[100]
+                      ? colors.primary[100]
                       : colors.background.tertiary,
                   borderColor:
                     sortBy === col
-                      ? colors.primary.main[300]
+                      ? colors.primary[300]
                       : colors.background.tertiary,
                 },
               ]}
