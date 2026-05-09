@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme, ColorScheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../auth/AuthContext";
-import { spacing, borderRadius, shadows } from "../../constants/theme";
+import { spacing, borderRadius, shadows, fontFamily } from "../../constants/theme";
 import { useSubscription } from "../../hooks/useSubscription";
 import { useRevenueCat } from "../../contexts/RevenueCatContext";
 
@@ -276,19 +276,26 @@ export default function SettingsPage() {
     <SafeAreaView
       style={[
         styles.safeArea,
-        { backgroundColor: colors.background.secondary },
+        { backgroundColor: colors.background.primary },
       ]}
     >
       <View
         style={[
           styles.topBar,
-          { backgroundColor: colors.background.secondary },
+          { backgroundColor: colors.background.primary },
         ]}
       >
         <TouchableOpacity
           style={[
             styles.backButton,
-            { backgroundColor: colors.background.primary },
+            {
+              backgroundColor: colors.card.background,
+              borderColor: colors.border.medium,
+              borderWidth: StyleSheet.hairlineWidth,
+              borderRadius: 14,
+              width: 40,
+              height: 40,
+            },
           ]}
           onPress={() => {
             if (router.canGoBack()) {
@@ -299,12 +306,21 @@ export default function SettingsPage() {
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
+          <Ionicons
+            name="chevron-back"
+            size={18}
+            color={colors.text.secondary}
+          />
         </TouchableOpacity>
-        <Text style={[styles.topBarTitle, { color: colors.text.primary }]}>
+        <Text
+          style={[
+            styles.topBarTitle,
+            { color: colors.text.primary, fontFamily: fontFamily.semibold },
+          ]}
+        >
           Settings
         </Text>
-        <View style={{ width: 32 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
@@ -342,12 +358,13 @@ export default function SettingsPage() {
                   style={[
                     styles.themeOption,
                     index !== themeOptions.length - 1 && {
-                      borderBottomWidth: 1,
-                      borderBottomColor: colors.border.light,
+                      borderBottomWidth: StyleSheet.hairlineWidth,
+                      borderBottomColor: colors.border.medium,
                     },
                     colorScheme === option.key && {
-                      backgroundColor:
-                        colors.primary.main[100] || "rgba(124, 58, 237, 0.1)",
+                      backgroundColor: isDark
+                        ? "rgba(157,91,255,0.10)"
+                        : "rgba(123,63,228,0.06)",
                     },
                   ]}
                   onPress={() => setColorScheme(option.key)}
@@ -521,13 +538,15 @@ export default function SettingsPage() {
                 styles.subscriptionCard,
                 {
                   backgroundColor: isPremium
-                    ? colors.primary.main[50] || "rgba(124, 58, 237, 0.05)"
-                    : colors.background.primary,
+                    ? isDark
+                      ? "rgba(157,91,255,0.10)"
+                      : "rgba(123,63,228,0.06)"
+                    : colors.card.background,
                   borderColor: isPremium
-                    ? colors.primary.main[200] || "rgba(124, 58, 237, 0.2)"
-                    : colors.border.light,
+                    ? colors.primary[500]
+                    : colors.border.medium,
+                  borderWidth: StyleSheet.hairlineWidth,
                 },
-                shadows.sm,
               ]}
             >
               <View style={styles.subscriptionHeader}>
@@ -711,23 +730,24 @@ export default function SettingsPage() {
               style={[
                 styles.settingItem,
                 {
-                  backgroundColor: isDark ? "#7F1D1D" : "#FEF2F2",
-                  borderColor: isDark ? "#991B1B" : "#FECACA",
+                  backgroundColor: colors.negBg,
+                  borderColor: isDark
+                    ? "rgba(255,107,138,0.20)"
+                    : "rgba(214,58,102,0.18)",
                 },
-                shadows.sm,
               ]}
               onPress={handleDeleteData}
             >
               <Ionicons
                 name="trash-outline"
                 size={22}
-                color={isDark ? "#FCA5A5" : "#DC2626"}
+                color={colors.rose[500]}
                 style={{ marginRight: 14 }}
               />
               <Text
                 style={[
                   styles.settingText,
-                  { color: isDark ? "#FCA5A5" : "#DC2626" },
+                  { color: colors.rose[500] },
                 ]}
               >
                 Delete All Data
@@ -754,13 +774,13 @@ export default function SettingsPage() {
               <Ionicons
                 name="close-circle-outline"
                 size={22}
-                color={isDark ? "#FCA5A5" : "#DC2626"}
+                color={colors.rose[500]}
                 style={{ marginRight: 14 }}
               />
               <Text
                 style={[
                   styles.settingText,
-                  { color: isDark ? "#FCA5A5" : "#DC2626" },
+                  { color: colors.rose[500] },
                 ]}
               >
                 Delete Account
@@ -1035,10 +1055,11 @@ export default function SettingsPage() {
               style={[
                 styles.settingItem,
                 {
-                  backgroundColor: isDark ? "#7F1D1D" : "#FEF2F2",
-                  borderColor: isDark ? "#991B1B" : "#FECACA",
+                  backgroundColor: colors.negBg,
+                  borderColor: isDark
+                    ? "rgba(255,107,138,0.20)"
+                    : "rgba(214,58,102,0.18)",
                 },
-                shadows.sm,
               ]}
               onPress={() => {
                 Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -1064,13 +1085,13 @@ export default function SettingsPage() {
               <Ionicons
                 name="log-out-outline"
                 size={22}
-                color={isDark ? "#FCA5A5" : "#DC2626"}
+                color={colors.rose[500]}
                 style={{ marginRight: 14 }}
               />
               <Text
                 style={[
                   styles.settingText,
-                  { color: isDark ? "#FCA5A5" : "#DC2626" },
+                  { color: colors.rose[500] },
                 ]}
               >
                 Sign Out
@@ -1091,31 +1112,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 20,
+    paddingTop: 6,
     paddingBottom: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
   },
   backButton: {
-    width: 28,
-    height: 28,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 14,
   },
   topBarTitle: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontSize: 16,
+    letterSpacing: -0.2,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
     paddingTop: 8,
     paddingBottom: 40,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 22,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -1124,14 +1142,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 11,
+    letterSpacing: 1.2,
+    fontFamily: fontFamily.semibold,
+    textTransform: "uppercase",
   },
   sectionDescription: {
-    fontSize: 14,
-    marginBottom: 16,
+    fontSize: 13,
+    marginBottom: 14,
     lineHeight: 18,
-    opacity: 0.7,
+    fontFamily: fontFamily.medium,
   },
   trialBadge: {
     flexDirection: "row",
@@ -1146,15 +1166,15 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   themeContainer: {
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
   themeOption: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
   },
   themeOptionLeft: {
@@ -1163,9 +1183,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   themeIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -1187,15 +1207,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderRadius: 8,
-    paddingVertical: 12,
+    borderRadius: 16,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 8,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   settingText: {
-    fontWeight: "500",
-    fontSize: 15,
+    fontFamily: fontFamily.medium,
+    fontSize: 14,
     flex: 1,
   },
   settingItemContent: {
@@ -1204,8 +1224,8 @@ const styles = StyleSheet.create({
   },
   settingSubtext: {
     fontSize: 12,
-    marginTop: 4,
-    opacity: 0.7,
+    marginTop: 3,
+    fontFamily: fontFamily.medium,
   },
   settingValue: {
     flexDirection: "row",
@@ -1216,15 +1236,15 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   aboutContainer: {
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
   aboutItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
   },
   aboutLabel: {
