@@ -24,6 +24,7 @@ import { fontFamily } from "../../constants/theme";
 import { DashboardSkeleton } from "../../components/ui/SkeletonLoader";
 import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
 import { useDashboardData } from "../../hooks/useDashboardData";
+import { BillsAPI, type SavedBill } from "../../services/api/billsAPI";
 
 // v1.5 home — electric purple + lime, mono numerals, full-bleed dark.
 // All data wiring (useDashboardData, RevenueCat, notifications, auth) is
@@ -107,7 +108,7 @@ export default function HomeScreen() {
   const { colors, isDark } = useTheme();
   const { isLocked } = useSecurity();
   const router = useRouter();
-  const { unreadCount } = useNotifications();
+  const { unreadCount, notifications } = useNotifications();
   const { isLoggedIn, user } = useAuth();
   const revenueCatData = useRevenueCat();
   const { isPro, isLoading: revenueCatLoading, refreshCustomerInfo } = revenueCatData;
@@ -121,6 +122,7 @@ export default function HomeScreen() {
   } = useDashboardData();
 
   const [userBudget, setUserBudget] = useState<number>(2000);
+  const [bills, setBills] = useState<SavedBill[]>([]);
 
   // Aggregate the current calendar month's transactions for the hero + cards.
   const monthAggregates = useMemo(() => {
@@ -161,6 +163,34 @@ export default function HomeScreen() {
   // Budget % used for the ring; clamp to [0, 1] so ring never overflows.
   const budgetUsed = userBudget > 0 ? Math.min(monthAggregates.spent / userBudget, 1) : 0;
 
+  const recentTxns = useMemo(() => {
+    return [...transactions]
+      .sort((a, b) =>
+        dayjs(b.date || 0).valueOf() - dayjs(a.date || 0).valueOf()
+      )
+      .slice(0, 5);
+  }, [transactions]);
+
+  const upcomingBills = useMemo(() => {
+    const today = dayjs().startOf("day");
+    return [...bills]
+      .filter((b) => b?.nextDueDate && b.status !== "cancelled")
+      .filter((b) => dayjs(b.nextDueDate).isAfter(today.subtract(1, "day")))
+      .sort(
+        (a, b) =>
+          dayjs(a.nextDueDate).valueOf() - dayjs(b.nextDueDate).valueOf()
+      )
+      .slice(0, 3);
+  }, [bills]);
+
+  const unreadList = useMemo(
+    () =>
+      (notifications || [])
+        .filter((n) => !n.read)
+        .slice(0, 3),
+    [notifications]
+  );
+
   const loadUserBudget = async () => {
     try {
       const prefs = await budgetAPI.getBudgetPreferences();
@@ -170,11 +200,28 @@ export default function HomeScreen() {
     }
   };
 
+  const loadBills = async () => {
+    try {
+      const list = await BillsAPI.getBills();
+      setBills(Array.isArray(list) ? list : []);
+    } catch (err) {
+      // Silent — bills are optional widget data, missing them shouldn't disrupt home.
+      setBills([]);
+    }
+  };
+
   useEffect(() => {
     if (!isLocked && isLoggedIn) {
       loadUserBudget();
     }
   }, [isLocked, isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLocked && isLoggedIn) {
+      loadBills();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLocked, isLoggedIn, transactions.length]);
 
   const checkForNewTransaction = useCallback(async () => {
     try {
@@ -532,6 +579,268 @@ export default function HomeScreen() {
                       </View>
                     </View>
                   </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Recent transactions */}
+        {recentTxns.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text
+                style={[styles.sectionTitle, { color: colors.text.primary }]}
+              >
+                Recent transactions
+              </Text>
+              <Pressable onPress={() => router.push("/(tabs)/spending" as any)}>
+                <Text
+                  style={[styles.sectionLink, { color: colors.primary[500] }]}
+                >
+                  See all
+                </Text>
+              </Pressable>
+            </View>
+            <View style={{ gap: 8 }}>
+              {recentTxns.map((tx, idx) => {
+                const amt = Number(tx.amount) || 0;
+                const isCredit = tx.type === "credit" || amt > 0;
+                const cat = normalizeCategory(tx.category);
+                const pal = colors.category[cat];
+                const formatted = formatGBP(amt);
+                const desc =
+                  (tx as any).merchant ||
+                  tx.description ||
+                  CATEGORY_LABEL[cat];
+                return (
+                  <View
+                    key={`${tx.id || idx}-${idx}`}
+                    style={[
+                      styles.txnRow,
+                      {
+                        backgroundColor: colors.card.background,
+                        borderColor: colors.border.medium,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[styles.txnIcon, { backgroundColor: pal.bg }]}
+                    >
+                      <Ionicons
+                        name={CATEGORY_ICON[cat]}
+                        size={16}
+                        color={pal.fg}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        numberOfLines={1}
+                        style={[styles.txnName, { color: colors.text.primary }]}
+                      >
+                        {desc}
+                      </Text>
+                      <Text
+                        style={[styles.txnDate, { color: colors.text.tertiary }]}
+                      >
+                        {tx.date ? dayjs(tx.date).format("D MMM") : ""}
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.txnAmount,
+                        {
+                          color: isCredit ? colors.lime[500] : colors.text.primary,
+                        },
+                      ]}
+                    >
+                      {isCredit ? "+" : "−"}£{formatted.whole}
+                      <Text style={{ color: colors.text.tertiary }}>
+                        {formatted.decimals}
+                      </Text>
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Upcoming bills */}
+        {upcomingBills.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text
+                style={[styles.sectionTitle, { color: colors.text.primary }]}
+              >
+                Upcoming bills
+              </Text>
+              <Pressable onPress={() => router.push("/budgets" as any)}>
+                <Text
+                  style={[styles.sectionLink, { color: colors.primary[500] }]}
+                >
+                  See all
+                </Text>
+              </Pressable>
+            </View>
+            <View style={{ gap: 8 }}>
+              {upcomingBills.map((bill) => {
+                const due = dayjs(bill.nextDueDate);
+                const daysOut = due.diff(dayjs().startOf("day"), "day");
+                const cat = normalizeCategory(bill.category);
+                const pal = colors.category[cat];
+                const formatted = formatGBP(bill.amount);
+                const dueLabel =
+                  daysOut <= 0
+                    ? "Due today"
+                    : daysOut === 1
+                      ? "Due tomorrow"
+                      : `In ${daysOut} days · ${due.format("D MMM")}`;
+                const urgent = daysOut <= 3;
+                return (
+                  <Pressable
+                    key={bill.id}
+                    onPress={() => router.push("/budgets" as any)}
+                    style={[
+                      styles.txnRow,
+                      {
+                        backgroundColor: colors.card.background,
+                        borderColor: urgent
+                          ? "rgba(245,179,66,0.4)"
+                          : colors.border.medium,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[styles.txnIcon, { backgroundColor: pal.bg }]}
+                    >
+                      <Ionicons
+                        name={CATEGORY_ICON[cat]}
+                        size={16}
+                        color={pal.fg}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        numberOfLines={1}
+                        style={[styles.txnName, { color: colors.text.primary }]}
+                      >
+                        {bill.name || bill.merchant}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.txnDate,
+                          {
+                            color: urgent
+                              ? colors.amber[500]
+                              : colors.text.tertiary,
+                          },
+                        ]}
+                      >
+                        {dueLabel}
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.txnAmount,
+                        { color: colors.text.primary },
+                      ]}
+                    >
+                      £{formatted.whole}
+                      <Text style={{ color: colors.text.tertiary }}>
+                        {formatted.decimals}
+                      </Text>
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Unread notifications */}
+        {unreadList.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text
+                style={[styles.sectionTitle, { color: colors.text.primary }]}
+              >
+                What's new
+              </Text>
+              <Pressable
+                onPress={() => router.push("/notifications" as any)}
+              >
+                <Text
+                  style={[styles.sectionLink, { color: colors.primary[500] }]}
+                >
+                  See all
+                </Text>
+              </Pressable>
+            </View>
+            <View style={{ gap: 8 }}>
+              {unreadList.map((n) => {
+                const iconName: keyof typeof Ionicons.glyphMap =
+                  n.type === "transaction"
+                    ? "swap-horizontal"
+                    : n.type === "budget"
+                      ? "wallet"
+                      : n.type === "security"
+                        ? "shield-checkmark"
+                        : n.type === "insight"
+                          ? "sparkles"
+                          : "notifications";
+                return (
+                  <Pressable
+                    key={n.id}
+                    onPress={() => router.push("/notifications" as any)}
+                    style={[
+                      styles.notifRow,
+                      {
+                        backgroundColor: colors.card.background,
+                        borderColor: colors.border.medium,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.notifIcon,
+                        {
+                          backgroundColor: isDark
+                            ? "rgba(157,91,255,0.16)"
+                            : "rgba(123,63,228,0.12)",
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name={iconName}
+                        size={16}
+                        color={colors.primary[500]}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        numberOfLines={1}
+                        style={[styles.txnName, { color: colors.text.primary }]}
+                      >
+                        {n.title}
+                      </Text>
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.txnDate,
+                          { color: colors.text.tertiary },
+                        ]}
+                      >
+                        {n.message}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.notifDot,
+                        { backgroundColor: colors.lime[500] },
+                      ]}
+                    />
+                  </Pressable>
                 );
               })}
             </View>
@@ -991,6 +1300,62 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginTop: 7,
     overflow: "hidden",
+  },
+
+  // Transaction / bill rows
+  txnRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  txnIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  txnName: {
+    fontSize: 14,
+    fontFamily: fontFamily.medium,
+    letterSpacing: -0.1,
+  },
+  txnDate: {
+    fontSize: 11.5,
+    fontFamily: fontFamily.medium,
+    marginTop: 2,
+  },
+  txnAmount: {
+    fontFamily: fontFamily.monoMedium,
+    fontSize: 14,
+    letterSpacing: -0.4,
+  },
+
+  // Notification rows
+  notifRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  notifIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notifDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 
   // AI strip

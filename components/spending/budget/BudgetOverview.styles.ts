@@ -1,6 +1,9 @@
 import { StyleSheet } from 'react-native';
 import { spacing } from '../../../constants/theme';
 
+// v1.5 redesign — hairline-only tiles, mono numerals, alignment left.
+// Background tinting and font choice are passed inline from BudgetOverview
+// so the same chrome can host themed colours without duplicating styles.
 export const styles = StyleSheet.create({
   budgetCards: {
     padding: spacing.lg,
@@ -12,32 +15,23 @@ export const styles = StyleSheet.create({
   },
   budgetCard: {
     flex: 1,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    borderRadius: 12,
-    alignItems: 'center',
-    backgroundColor: 'rgba(139, 92, 246, 0.05)',
-  },
-  budgetCardPrimary: {
-    backgroundColor: 'rgba(139, 92, 246, 0.08)',
-  },
-  budgetCardSecondary: {
-    backgroundColor: 'rgba(59, 130, 246, 0.05)',
-  },
-  budgetCardAccent: {
-    backgroundColor: 'rgba(16, 185, 129, 0.05)',
-  },
-  budgetCardWarning: {
-    backgroundColor: 'rgba(245, 158, 11, 0.05)',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    alignItems: 'flex-start',
+    minHeight: 76,
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
   },
   budgetCardAmount: {
     fontSize: 18,
-    fontWeight: '700',
     marginBottom: 4,
+    letterSpacing: -0.4,
+    textAlign: 'left',
   },
   budgetCardLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
+    fontSize: 11.5,
+    textAlign: 'left',
+    letterSpacing: 0.4,
   },
 });

@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { View, Text, Animated, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Svg, { Circle } from "react-native-svg";
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
 import dayjs from "dayjs";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { budgetSummaryCardStyles } from "./BudgetSummaryCard.styles";
 import { AIInsightCard } from "../../ai/AIInsightCard";
 import { AIButton } from "../../ai/AIButton";
 import { ChartInsightResponse } from "../../../services/api/chartInsightsAPI";
+import { fontFamily } from "../../../constants/theme";
 
 interface BudgetSummaryCardProps {
   selectedMonth: string;
@@ -115,86 +116,81 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
         style={[
           styles.simpleBudgetCard,
           {
-            backgroundColor: colors.background.primary,
-            borderWidth: isDark ? 1 : 0,
-            borderColor: isDark ? colors.border.light : 'transparent',
-            shadowColor: isDark ? 'transparent' : '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: isDark ? 0 : 0.08,
-            shadowRadius: 12,
-            elevation: isDark ? 0 : 4,
+            backgroundColor: colors.card.background,
+            borderColor: colors.border.medium,
           },
         ]}
       >
         {/* Warning Alert Banner */}
-        {warningLevel && warningMessage && (
-          <View
-            style={[
-              {
+        {warningLevel && warningMessage && (() => {
+          const isOver = warningLevel === "critical" || warningLevel === "warning";
+          const accent = isOver ? colors.rose[500] : colors.amber[500];
+          const tintBg = isOver ? colors.negBg : "rgba(245,179,66,0.12)";
+          return (
+            <View
+              style={{
                 flexDirection: "row",
                 alignItems: "flex-start",
                 padding: 12,
-                borderRadius: 12,
+                borderRadius: 14,
                 marginBottom: 16,
                 gap: 12,
-                backgroundColor:
-                  warningLevel === "critical"
-                    ? `${colors.error.main}15`
+                backgroundColor: tintBg,
+              }}
+            >
+              <Ionicons
+                name={warningLevel === "critical" ? "alert-circle" : "warning"}
+                size={20}
+                color={accent}
+              />
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontFamily: fontFamily.semibold,
+                    color: accent,
+                    marginBottom: 2,
+                    letterSpacing: 0.2,
+                  }}
+                >
+                  {warningLevel === "critical"
+                    ? "Critical Budget Alert"
                     : warningLevel === "warning"
-                      ? `${colors.error.main}10`
-                      : `${colors.warning.main}10`,
-              },
-            ]}
-          >
-            <Ionicons
-              name={warningLevel === "critical" ? "alert-circle" : "warning"}
-              size={24}
-              color={
-                warningLevel === "critical" || warningLevel === "warning"
-                  ? colors.error.main
-                  : colors.warning.main
-              }
-            />
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color:
-                    warningLevel === "critical" || warningLevel === "warning"
-                      ? colors.error.main
-                      : colors.warning.main,
-                  marginBottom: 4,
-                }}
-              >
-                {warningLevel === "critical"
-                  ? "Critical Budget Alert"
-                  : warningLevel === "warning"
-                    ? "Budget Exceeded"
-                    : "Budget Warning"}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 13,
-                  lineHeight: 18,
-                  color: colors.text.secondary,
-                }}
-              >
-                {warningMessage}
-              </Text>
+                      ? "Budget Exceeded"
+                      : "Budget Warning"}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 12.5,
+                    lineHeight: 17,
+                    fontFamily: fontFamily.medium,
+                    color: colors.text.secondary,
+                  }}
+                >
+                  {warningMessage}
+                </Text>
+              </View>
             </View>
-          </View>
-        )}
+          );
+        })()}
 
         {/* Header with AI Button */}
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <Text
-            style={[styles.simpleBudgetTitle, { color: colors.text.primary, marginBottom: 0, flex: 1, textAlign: 'left' }]}
+            style={[
+              styles.simpleBudgetTitle,
+              {
+                color: colors.text.primary,
+                marginBottom: 0,
+                flex: 1,
+                textAlign: "left",
+                fontFamily: fontFamily.semibold,
+              },
+            ]}
             numberOfLines={1}
           >
             {dayjs(selectedMonth).format("MMMM YYYY")} Budget
           </Text>
-
         </View>
 
         {/* Animated SVG Donut Chart - MOVED ABOVE METRICS */}
@@ -208,51 +204,34 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
         >
           <View style={styles.donutChart}>
             <Svg width={240} height={240} style={{ position: "absolute" }}>
+              <Defs>
+                <SvgLinearGradient id="budgetRingGrad" x1="0" y1="0" x2="240" y2="240">
+                  <Stop offset="0" stopColor={colors.primary[500]} />
+                  <Stop offset="1" stopColor={colors.lime[500]} />
+                </SvgLinearGradient>
+              </Defs>
+
               {/* Background Ring */}
               <Circle
                 cx={120}
                 cy={120}
                 r={100}
                 fill="none"
-                stroke={isDark ? 'rgba(255, 255, 255, 0.08)' : colors.gray[200]}
-                strokeWidth={24}
+                stroke={isDark ? "rgba(255,255,255,0.06)" : "rgba(40,20,80,0.08)"}
+                strokeWidth={20}
               />
 
               {/* Progress Ring with Rounded Caps */}
               {monthlySpentPercentage > 0 && (
                 <>
-                  {/* Shadow Ring for Over-Budget Effect */}
-                  {monthlySpentPercentage > 100 && (
-                    <AnimatedCircle
-                      cx={120}
-                      cy={120}
-                      r={100}
-                      fill="none"
-                      stroke={colors.error[300]}
-                      strokeWidth={24}
-                      strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 100}`}
-                      strokeDashoffset={animatedProgress.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [2 * Math.PI * 100, 0],
-                      })}
-                      transform={`rotate(-90 120 120)`}
-                      opacity={0.3}
-                    />
-                  )}
-
-                  {/* Main Progress Ring */}
+                  {/* Main Progress Ring (gradient when on track, rose when over) */}
                   <AnimatedCircle
                     cx={120}
                     cy={120}
                     r={100}
                     fill="none"
-                    stroke={
-                      monthlyOverBudget
-                        ? colors.error.main
-                        : colors.primary.main
-                    }
-                    strokeWidth={24}
+                    stroke={monthlyOverBudget ? colors.rose[500] : "url(#budgetRingGrad)"}
+                    strokeWidth={20}
                     strokeLinecap="round"
                     strokeDasharray={`${2 * Math.PI * 100}`}
                     strokeDashoffset={animatedProgress.interpolate({
@@ -269,8 +248,8 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                       cy={120}
                       r={100}
                       fill="none"
-                      stroke={colors.error.main}
-                      strokeWidth={24}
+                      stroke={colors.rose[500]}
+                      strokeWidth={20}
                       strokeLinecap="round"
                       strokeDasharray={`${2 * Math.PI * 100}`}
                       strokeDashoffset={animatedProgress.interpolate({
@@ -284,6 +263,7 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                         ],
                       })}
                       transform={`rotate(-90 120 120)`}
+                      opacity={0.55}
                     />
                   )}
                 </>
@@ -295,7 +275,7 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
               style={[
                 styles.donutCenter,
                 {
-                  backgroundColor: colors.background.primary,
+                  backgroundColor: colors.card.background,
                   opacity: animatedProgress.interpolate({
                     inputRange: [0, 0.1, 1],
                     outputRange: [0.8, 1, 1],
@@ -308,8 +288,9 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                   styles.donutCenterPercentage,
                   {
                     color: monthlyOverBudget
-                      ? colors.error.main
-                      : colors.primary.main,
+                      ? colors.rose[500]
+                      : colors.text.primary,
+                    fontFamily: fontFamily.monoSemibold,
                     opacity: animatedProgress.interpolate({
                       inputRange: [0, 0.2, 1],
                       outputRange: [0.7, 1, 1],
@@ -323,7 +304,8 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                 style={[
                   styles.donutCenterLabel,
                   {
-                    color: colors.text.secondary,
+                    color: colors.text.tertiary,
+                    fontFamily: fontFamily.semibold,
                     opacity: animatedProgress.interpolate({
                       inputRange: [0, 0.3, 1],
                       outputRange: [0.6, 1, 1],
@@ -339,8 +321,9 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                   {
                     color:
                       displayLeftToSpend < 0
-                        ? colors.error.main
-                        : colors.text.primary,
+                        ? colors.rose[500]
+                        : colors.text.secondary,
+                    fontFamily: fontFamily.mono,
                     opacity: animatedProgress.interpolate({
                       inputRange: [0, 0.4, 1],
                       outputRange: [0.5, 1, 1],
@@ -363,18 +346,18 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
             <View
               style={[
                 styles.budgetCard,
-                styles.budgetCardPrimary,
                 {
-                  backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
-                  borderWidth: 1,
-                  borderColor: isDark ? colors.border.light : colors.gray[200],
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.03)"
+                    : "rgba(40,20,80,0.03)",
+                  borderColor: colors.border.medium,
                 },
               ]}
             >
               <Text
                 style={[
                   styles.budgetCardAmount,
-                  { color: colors.text.primary },
+                  { color: colors.text.primary, fontFamily: fontFamily.monoMedium },
                 ]}
               >
                 {formatAmount(monthlyTotalSpent, currency)}
@@ -382,28 +365,28 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
               <Text
                 style={[
                   styles.budgetCardLabel,
-                  { color: colors.text.secondary },
+                  { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
                 ]}
               >
-                This Month Spent
+                THIS MONTH SPENT
               </Text>
             </View>
 
             <View
               style={[
                 styles.budgetCard,
-                styles.budgetCardSecondary,
                 {
-                  backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
-                  borderWidth: 1,
-                  borderColor: isDark ? colors.border.light : colors.gray[200],
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.03)"
+                    : "rgba(40,20,80,0.03)",
+                  borderColor: colors.border.medium,
                 },
               ]}
             >
               <Text
                 style={[
                   styles.budgetCardAmount,
-                  { color: colors.text.primary },
+                  { color: colors.text.primary, fontFamily: fontFamily.monoMedium },
                 ]}
               >
                 {formatAmount(totalBudget, currency)}
@@ -411,10 +394,10 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
               <Text
                 style={[
                   styles.budgetCardLabel,
-                  { color: colors.text.secondary },
+                  { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
                 ]}
               >
-                Monthly Budget
+                MONTHLY BUDGET
               </Text>
             </View>
           </View>
@@ -424,18 +407,18 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
             <View
               style={[
                 styles.budgetCard,
-                styles.budgetCardAccent,
                 {
-                  backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
-                  borderWidth: 1,
-                  borderColor: isDark ? colors.border.light : colors.gray[200],
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.03)"
+                    : "rgba(40,20,80,0.03)",
+                  borderColor: colors.border.medium,
                 },
               ]}
             >
               <Text
                 style={[
                   styles.budgetCardAmount,
-                  { color: colors.primary.main },
+                  { color: colors.primary[500], fontFamily: fontFamily.monoMedium },
                 ]}
               >
                 {formatAmount(averageSpendPerDay, currency)}
@@ -443,21 +426,21 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
               <Text
                 style={[
                   styles.budgetCardLabel,
-                  { color: colors.text.secondary },
+                  { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
                 ]}
               >
-                Average Per Day
+                AVERAGE PER DAY
               </Text>
             </View>
 
             <View
               style={[
                 styles.budgetCard,
-                styles.budgetCardWarning,
                 {
-                  backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
-                  borderWidth: 1,
-                  borderColor: isDark ? colors.border.light : colors.gray[200],
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.03)"
+                    : "rgba(40,20,80,0.03)",
+                  borderColor: colors.border.medium,
                 },
               ]}
             >
@@ -467,13 +450,13 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                   {
                     color: (() => {
                       if (totalBudget === 0) return colors.text.primary;
-
                       const percentage =
                         (predictedMonthlySpend / totalBudget) * 100;
-                      if (percentage > 100) return colors.error.main;
-                      if (percentage > 80) return colors.warning.main;
-                      return colors.success.main;
+                      if (percentage > 100) return colors.rose[500];
+                      if (percentage > 80) return colors.amber[500];
+                      return colors.lime[500];
                     })(),
+                    fontFamily: fontFamily.monoMedium,
                   },
                 ]}
               >
@@ -482,10 +465,10 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
               <Text
                 style={[
                   styles.budgetCardLabel,
-                  { color: colors.text.secondary },
+                  { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
                 ]}
               >
-                Expected Total
+                EXPECTED TOTAL
               </Text>
             </View>
           </View>
