@@ -77,16 +77,32 @@ export interface CSVImportResponse {
   };
 }
 
+export interface ParsedStatementTransaction {
+  date: string;
+  merchant: string;
+  description?: string;
+  amount: number;
+  type: "debit" | "credit";
+  category?: string;
+}
+
+export interface StatementMetadata {
+  issuer: string | null;
+  accountIdentifier: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  filename: string | null;
+}
+
+export interface StatementParseResponse {
+  statement: StatementMetadata;
+  transactions: ParsedStatementTransaction[];
+}
+
 export interface StatementImportResponse {
   message: string;
   alreadyImported?: boolean;
-  statement: {
-    issuer: string | null;
-    accountIdentifier: string | null;
-    periodStart: string | null;
-    periodEnd: string | null;
-    filename: string | null;
-  };
+  statement: StatementMetadata;
   summary: {
     total: number;
     imported: number;
@@ -141,16 +157,29 @@ export const transactionAPI = {
     return response.data;
   },
 
-  // PDF statement import: backend parses the PDF and runs the same dedup + AI
-  // categorization pipeline as CSV import.
-  importStatement: async (
+  // Parse a PDF statement (no save). Backend extracts and categorizes
+  // transactions and returns them for the user to review before importing.
+  parseStatement: async (
     fileBase64: string,
     filename?: string
+  ): Promise<StatementParseResponse> => {
+    const response = await api.post(
+      "/transactions/parse-statement",
+      { fileBase64, filename },
+      { timeout: 90000 }
+    );
+    return response.data;
+  },
+
+  // Import user-confirmed transactions from a parsed statement.
+  importStatement: async (
+    transactions: ParsedStatementTransaction[],
+    statement?: StatementMetadata
   ): Promise<StatementImportResponse> => {
     const response = await api.post(
       "/transactions/import-statement",
-      { fileBase64, filename },
-      { timeout: 90000 }
+      { transactions, statement },
+      { timeout: 30000 }
     );
     return response.data;
   },
