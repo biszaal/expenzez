@@ -1,7 +1,7 @@
 import React from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useTheme } from "../../../contexts/ThemeContext";
-import { spendingMonthPickerStyles } from "./SpendingMonthPicker.styles";
+import { fontFamily } from "../../../constants/theme";
 
 interface MonthObject {
   id: number;
@@ -15,89 +15,84 @@ interface SpendingMonthPickerProps {
   months: MonthObject[];
 }
 
+// v1.5 redesign — month chips. Active chip = subtle primary tint with a
+// 1-px primary border; inactive = transparent with a hairline border.
+// Year labels stay between groups so users can still orient themselves
+// across years.
 export const SpendingMonthPicker: React.FC<SpendingMonthPickerProps> = ({
   selectedMonth,
   setSelectedMonth,
   months,
 }) => {
-  const { colors } = useTheme();
-  const styles = spendingMonthPickerStyles;
+  const { colors, isDark } = useTheme();
 
-  // Group months by year
   const monthsByYear = months.reduce(
-    (acc, monthObj) => {
-      const year = monthObj.value.substring(0, 4); // Extract year from YYYY-MM format
-      if (!acc[year]) {
-        acc[year] = [];
-      }
-      acc[year].push(monthObj);
+    (acc, m) => {
+      const year = m.value.substring(0, 4);
+      if (!acc[year]) acc[year] = [];
+      acc[year].push(m);
       return acc;
     },
-    {} as Record<string, typeof months>
+    {} as Record<string, MonthObject[]>
   );
 
+  const activeBg = isDark
+    ? "rgba(157,91,255,0.16)"
+    : "rgba(123,63,228,0.10)";
+
   return (
-    <View style={styles.premiumMonthPickerContainer}>
+    <View style={styles.container}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.premiumMonthPickerContent}
+        contentContainerStyle={styles.scrollContent}
       >
         {Object.entries(monthsByYear)
-          .sort(([yearA], [yearB]) => parseInt(yearB) - parseInt(yearA)) // Sort years descending
+          .sort(([a], [b]) => parseInt(b) - parseInt(a))
           .map(([year, yearMonths]) => (
             <React.Fragment key={year}>
-              {yearMonths.map((monthObj) => (
-                <TouchableOpacity
-                  key={monthObj.id}
-                  style={[
-                    styles.premiumMonthButton,
-                    {
-                      backgroundColor:
-                        selectedMonth === monthObj.value
-                          ? colors.primary.main
-                          : colors.background.primary,
-                      borderColor:
-                        selectedMonth === monthObj.value
-                          ? colors.primary.main
-                          : colors.border.light,
-                    },
-                  ]}
-                  onPress={() => setSelectedMonth(monthObj.value)}
-                  activeOpacity={0.8}
-                >
-                  <Text
+              {yearMonths.map((m) => {
+                const active = selectedMonth === m.value;
+                return (
+                  <Pressable
+                    key={m.id}
+                    onPress={() => setSelectedMonth(m.value)}
                     style={[
-                      styles.premiumMonthButtonText,
+                      styles.chip,
                       {
-                        color:
-                          selectedMonth === monthObj.value
-                            ? colors.text.inverse
-                            : colors.text.primary,
-                        fontWeight:
-                          selectedMonth === monthObj.value ? "700" : "600",
+                        backgroundColor: active ? activeBg : "transparent",
+                        borderColor: active
+                          ? colors.primary[500]
+                          : colors.border.medium,
                       },
                     ]}
                   >
-                    {monthObj.name.split(" ")[0]}{" "}
-                    {/* Show only month name, not year */}
-                  </Text>
-                  {selectedMonth === monthObj.value && (
-                    <View
+                    <Text
                       style={[
-                        styles.premiumMonthIndicator,
-                        { backgroundColor: colors.text.inverse },
+                        styles.chipText,
+                        {
+                          color: active
+                            ? colors.text.primary
+                            : colors.text.secondary,
+                          fontFamily: active
+                            ? fontFamily.semibold
+                            : fontFamily.medium,
+                        },
                       ]}
-                    />
-                  )}
-                </TouchableOpacity>
-              ))}
-              {/* Year label at the end of each year */}
+                    >
+                      {m.name.split(" ")[0]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
               <View style={styles.yearLabel}>
                 <Text
                   style={[
-                    styles.yearLabelText,
-                    { color: colors.text.secondary },
+                    styles.yearText,
+                    {
+                      color: colors.text.tertiary,
+                      fontFamily: fontFamily.semibold,
+                    },
                   ]}
                 >
                   {year}
@@ -109,3 +104,31 @@ export const SpendingMonthPicker: React.FC<SpendingMonthPickerProps> = ({
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    paddingTop: 14,
+  },
+  scrollContent: {
+    paddingHorizontal: 22,
+    gap: 8,
+    alignItems: "center",
+  },
+  chip: {
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  chipText: {
+    fontSize: 13,
+  },
+  yearLabel: {
+    paddingHorizontal: 8,
+    justifyContent: "center",
+  },
+  yearText: {
+    fontSize: 11,
+    letterSpacing: 0.6,
+  },
+});

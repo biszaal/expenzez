@@ -1,56 +1,69 @@
-import { StyleSheet } from 'react-native';
-import { spacing } from '../../../constants/theme';
+import { StyleSheet } from "react-native";
 
+// v1.5 redesign — clean header chrome matching the design language.
 export const styles = StyleSheet.create({
   premiumHeader: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing["3xl"],
-    paddingBottom: spacing.xl,
+    paddingHorizontal: 22,
+    paddingTop: 6,
+    paddingBottom: 4,
   },
   premiumHeaderContent: {
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
   },
   premiumBrandSection: {
-    alignItems: 'center',
-    width: '100%',
+    flex: 1,
+  },
+  dateRange: {
+    fontSize: 13,
+    letterSpacing: 0.2,
   },
   premiumTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: spacing.md,
-  },
-  monthSelector: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  navButton: {
-    padding: spacing.sm,
-  },
-  infoButton: {
-    padding: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 2,
   },
   premiumTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontSize: 28,
+    letterSpacing: -0.6,
   },
   currentIndicator: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 12,
+    letterSpacing: 0.5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  iconCluster: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconButtonDisabled: {
+    opacity: 0.4,
   },
   spendingOverview: {
-    alignItems: 'center',
-    marginTop: spacing.sm,
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 8,
+    paddingHorizontal: 22,
+    paddingTop: 12,
   },
   totalSpent: {
-    fontSize: 36,
-    fontWeight: '800',
-    marginBottom: spacing.xs,
+    fontSize: 30,
+    letterSpacing: -1.2,
   },
   comparison: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 12,
   },
 });

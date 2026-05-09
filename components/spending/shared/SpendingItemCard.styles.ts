@@ -1,37 +1,34 @@
 import { StyleSheet } from "react-native";
-import { spacing, borderRadius } from "../../../constants/theme";
 
+// v1.5 redesign — rounded card with category-tinted icon, mono numerals.
 export const spendingItemCardStyles = StyleSheet.create({
   itemCardPressable: {
-    marginBottom: spacing.lg,
+    marginBottom: 8,
   },
   itemCard: {
     borderRadius: 16,
-    borderWidth: 0,
-    padding: spacing.lg,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
   },
   itemCardHeader: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: spacing.sm,
+    alignItems: "center",
+    gap: 12,
   },
   itemCardHeaderLeft: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
+    gap: 12,
   },
   itemIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: spacing.sm,
   },
   itemCardHeaderContent: {
     flex: 1,
@@ -39,31 +36,30 @@ export const spendingItemCardStyles = StyleSheet.create({
   itemCardHeaderTop: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.xs,
+    alignItems: "baseline",
+    gap: 8,
   },
   itemCardTitle: {
-    fontSize: 16,
-    fontWeight: "700",
     flex: 1,
+    fontSize: 14,
   },
   itemCardAmount: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 14,
   },
   itemCardHeaderBottom: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginTop: 2,
   },
   itemCardInfo: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    flexShrink: 1,
   },
   itemCardTransactions: {
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 11.5,
   },
   trendContainer: {
     flexDirection: "row",
@@ -71,42 +67,41 @@ export const spendingItemCardStyles = StyleSheet.create({
     gap: 2,
   },
   trendText: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 11,
   },
   itemCardBudget: {
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 11.5,
+    flexShrink: 1,
+    textAlign: "right",
   },
   itemCardHeaderRight: {
     alignItems: "flex-end",
     justifyContent: "center",
-    minWidth: 50,
+    minWidth: 36,
   },
   itemCardPercentage: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 13,
     textAlign: "right",
   },
 
-  // Progress Bar
+  // Slim progress bar (4 px) — sits flush under the row.
   itemCardProgress: {
-    marginBottom: spacing.sm,
+    gap: 4,
   },
   itemCardProgressTrack: {
-    height: 6,
-    borderRadius: 3,
+    height: 4,
+    borderRadius: 4,
     overflow: "hidden",
   },
   itemCardProgressBar: {
     height: "100%",
-    borderRadius: 3,
+    borderRadius: 4,
   },
   progressInfo: {
-    marginTop: 4,
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   progressText: {
     fontSize: 11,
-    fontWeight: "600",
   },
 });

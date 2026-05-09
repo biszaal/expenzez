@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
-import { FontAwesome5 } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { CategoryIcon } from "../utils/CategoryIcon";
-import { getMerchantInfo } from "../../../services/merchantService";
+import { fontFamily } from "../../../constants/theme";
 import { spendingItemCardStyles } from "./SpendingItemCard.styles";
 
 interface SpendingItemData {
@@ -26,6 +26,33 @@ interface SpendingItemCardProps {
   showCategory?: boolean;
 }
 
+// Maps a category name to a colors.category[key] palette. Mirrors the
+// home screen's normalizeCategory so categories share visual treatment.
+type CategoryKey =
+  | "food"
+  | "transport"
+  | "shopping"
+  | "entertainment"
+  | "bills"
+  | "healthcare"
+  | "travel"
+  | "groceries"
+  | "income";
+
+function categoryKey(name: string): CategoryKey {
+  const s = (name || "").toLowerCase();
+  if (s.includes("grocer") || s.includes("supermarket")) return "groceries";
+  if (s.includes("food") || s.includes("dining") || s.includes("restaurant")) return "food";
+  if (s.includes("transport") || s.includes("uber") || s.includes("taxi") || s.includes("rail") || s.includes("travel")) return "transport";
+  if (s.includes("shop") || s.includes("amazon") || s.includes("retail")) return "shopping";
+  if (s.includes("bill") || s.includes("utility") || s.includes("rent")) return "bills";
+  if (s.includes("trip") || s.includes("hotel") || s.includes("flight") || s.includes("airbnb")) return "travel";
+  if (s.includes("health") || s.includes("pharma") || s.includes("medic") || s.includes("fitness") || s.includes("gym")) return "healthcare";
+  if (s.includes("game") || s.includes("netflix") || s.includes("spotify") || s.includes("entertainment") || s.includes("movie")) return "entertainment";
+  if (s.includes("salary") || s.includes("income") || s.includes("refund")) return "income";
+  return "shopping";
+}
+
 export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
   item,
   totalSpending,
@@ -35,41 +62,39 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
   showBudget = false,
   showCategory = false,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const styles = spendingItemCardStyles;
 
   const spent = item.monthlySpent || 0;
   const budget = item.defaultBudget || 0;
-  const left = budget - spent;
   const percent = budget > 0 ? (spent / budget) * 100 : 0;
-  const overBudget = spent > budget;
+  const overBudget = spent > budget && budget > 0;
   const percentageOfTotal =
     totalSpending > 0 ? (spent / totalSpending) * 100 : 0;
 
-  // Simulate trend (in reality, this would compare to previous month)
+  // Trend simulation kept identical to the previous behaviour so the
+  // up/down arrow logic doesn't change.
   const getTrend = () => {
     if (spent === 0) return { direction: "flat", percentage: 0 };
-    const trendValue = (spent % 100) / 10; // 0-10%
-    if (percentageOfTotal > 25)
-      return { direction: "up", percentage: trendValue };
-    if (percentageOfTotal > 15)
-      return { direction: "down", percentage: trendValue };
+    const trendValue = (spent % 100) / 10;
+    if (percentageOfTotal > 25) return { direction: "up", percentage: trendValue };
+    if (percentageOfTotal > 15) return { direction: "down", percentage: trendValue };
     return { direction: "flat", percentage: 0 };
   };
-
   const trend = getTrend();
+
+  // Resolve category palette from the new theme tokens.
+  const palette =
+    colors.category[categoryKey(item.category || item.name)] ?? {
+      bg: "rgba(157,91,255,0.18)",
+      fg: colors.primary[500],
+    };
 
   return (
     <Pressable
       style={({ pressed }) => [
         styles.itemCardPressable,
-        {
-          transform: [{ scale: pressed ? 0.98 : 1 }],
-          shadowColor: colors.primary.main,
-          shadowOpacity: pressed ? 0.15 : 0.08,
-          shadowRadius: 12,
-          elevation: pressed ? 4 : 2,
-        },
+        { opacity: pressed ? 0.92 : 1 },
       ]}
       accessibilityRole="button"
       accessibilityLabel={`View details for ${item.name}`}
@@ -79,41 +104,40 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
         style={[
           styles.itemCard,
           {
-            backgroundColor: colors.background.primary,
-            borderWidth: 1,
-            borderColor: isDark ? colors.border.light : 'transparent',
-          },
-          overBudget && {
-            backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2',
-            borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : 'transparent',
+            backgroundColor: colors.card.background,
+            borderColor: overBudget
+              ? "rgba(255,107,138,0.40)"
+              : colors.border.medium,
           },
         ]}
       >
         <View style={styles.itemCardHeader}>
           <View style={styles.itemCardHeaderLeft}>
             <View
-              style={[
-                styles.itemIconBg,
-                { backgroundColor: isDark ? 'rgba(123, 45, 142, 0.2)' : 'rgba(123, 45, 142, 0.1)' },
-              ]}
+              style={[styles.itemIconBg, { backgroundColor: palette.bg }]}
             >
               {showCategory ? (
-                // For merchants, display emoji directly
-                <Text style={{ fontSize: 20 }}>{item.icon}</Text>
+                <Text style={{ fontSize: 18 }}>{item.icon}</Text>
               ) : (
-                // For categories, use CategoryIcon component
                 <CategoryIcon
                   iconName={item.icon}
                   categoryName={item.name}
-                  color={colors.primary.main}
-                  size={20}
+                  color={palette.fg}
+                  size={18}
                 />
               )}
             </View>
             <View style={styles.itemCardHeaderContent}>
               <View style={styles.itemCardHeaderTop}>
                 <Text
-                  style={[styles.itemCardTitle, { color: colors.text.primary }]}
+                  numberOfLines={1}
+                  style={[
+                    styles.itemCardTitle,
+                    {
+                      color: colors.text.primary,
+                      fontFamily: fontFamily.medium,
+                    },
+                  ]}
                 >
                   {item.name}
                 </Text>
@@ -121,9 +145,8 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
                   style={[
                     styles.itemCardAmount,
                     {
-                      color: overBudget
-                        ? colors.error.main
-                        : colors.text.primary,
+                      color: overBudget ? colors.rose[500] : colors.text.primary,
+                      fontFamily: fontFamily.monoMedium,
                     },
                   ]}
                 >
@@ -135,22 +158,23 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
                   <Text
                     style={[
                       styles.itemCardTransactions,
-                      { color: colors.text.secondary },
+                      {
+                        color: colors.text.tertiary,
+                        fontFamily: fontFamily.regular,
+                      },
                     ]}
                   >
                     {spent > 0 ? "1 transaction" : "No spending this month"}
                   </Text>
                   {spent > 0 && trend.direction !== "flat" && (
                     <View style={styles.trendContainer}>
-                      <FontAwesome5
-                        name={
-                          trend.direction === "up" ? "arrow-up" : "arrow-down"
-                        }
+                      <Ionicons
+                        name={trend.direction === "up" ? "arrow-up" : "arrow-down"}
                         size={10}
                         color={
                           trend.direction === "up"
-                            ? colors.error.main
-                            : colors.success.main
+                            ? colors.rose[500]
+                            : colors.lime[500]
                         }
                       />
                       <Text
@@ -159,8 +183,9 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
                           {
                             color:
                               trend.direction === "up"
-                                ? colors.error.main
-                                : colors.success.main,
+                                ? colors.rose[500]
+                                : colors.lime[500],
+                            fontFamily: fontFamily.semibold,
                           },
                         ]}
                       >
@@ -170,9 +195,13 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
                   )}
                 </View>
                 <Text
+                  numberOfLines={1}
                   style={[
                     styles.itemCardBudget,
-                    { color: colors.text.secondary },
+                    {
+                      color: colors.text.tertiary,
+                      fontFamily: fontFamily.regular,
+                    },
                   ]}
                 >
                   {showBudget && budget > 0
@@ -190,10 +219,11 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
                 styles.itemCardPercentage,
                 {
                   color: overBudget
-                    ? colors.error.main
+                    ? colors.rose[500]
                     : percent > 80
-                      ? colors.warning.main
-                      : colors.success.main,
+                      ? colors.amber[500]
+                      : colors.lime[500],
+                  fontFamily: fontFamily.monoSemibold,
                 },
               ]}
             >
@@ -202,13 +232,12 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
           </View>
         </View>
 
-        {/* Progress Bar */}
         {spent > 0 && (
           <View style={styles.itemCardProgress}>
             <View
               style={[
                 styles.itemCardProgressTrack,
-                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : colors.gray[200] },
+                { backgroundColor: colors.border.light },
               ]}
             >
               <View
@@ -216,14 +245,20 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
                   styles.itemCardProgressBar,
                   {
                     width: `${Math.min(percentageOfTotal, 100)}%`,
-                    backgroundColor: colors.primary.main,
+                    backgroundColor: palette.fg,
                   },
                 ]}
               />
             </View>
             <View style={styles.progressInfo}>
               <Text
-                style={[styles.progressText, { color: colors.text.secondary }]}
+                style={[
+                  styles.progressText,
+                  {
+                    color: colors.text.tertiary,
+                    fontFamily: fontFamily.regular,
+                  },
+                ]}
               >
                 {Math.round(percentageOfTotal)}% of total
               </Text>

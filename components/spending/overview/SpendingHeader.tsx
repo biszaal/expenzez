@@ -1,8 +1,10 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../../contexts/ThemeContext';
-import { styles } from './SpendingHeader.styles';
+import React from "react";
+import { View, Text, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import dayjs from "dayjs";
+import { useTheme } from "../../../contexts/ThemeContext";
+import { fontFamily } from "../../../constants/theme";
+import { styles } from "./SpendingHeader.styles";
 
 interface SpendingHeaderProps {
   selectedMonth: string;
@@ -16,6 +18,13 @@ interface SpendingHeaderProps {
   onInfoPress: () => void;
 }
 
+// v1.5 redesign — clean two-row header.
+//   Row 1: date range (small, dim) + month/year title + chevron buttons
+//          on the left, info button on the right.
+//   Row 2: large mono total spent + comparison vs previous month chip.
+//
+// Original arrows + info handlers are preserved unchanged so callers
+// don't need to update.
 export const SpendingHeader: React.FC<SpendingHeaderProps> = ({
   selectedMonth,
   currentMonth,
@@ -29,66 +38,142 @@ export const SpendingHeader: React.FC<SpendingHeaderProps> = ({
 }) => {
   const { colors } = useTheme();
 
+  const monthDate = dayjs(selectedMonth);
+  const dateRange = `${monthDate.format("D MMM")} – ${monthDate.endOf("month").format("D MMM")}`;
+  const monthTitle = monthDate.format("MMMM YYYY");
+
   const diff = monthlyTotalSpent - prevMonthSpent;
-  const diffLabel = diff >= 0
-    ? `▲ ${formatAmount(Math.abs(diff), currency)}`
-    : `▼ ${formatAmount(Math.abs(diff), currency)}`;
-  const diffColor = diff >= 0 ? colors.error.main : colors.success.main;
+  const diffPositive = diff >= 0;
+  const diffMagnitude = formatAmount(Math.abs(diff), currency);
 
   return (
-    <View style={[styles.premiumHeader, { backgroundColor: colors.background.secondary }]}>
+    <View style={styles.premiumHeader}>
       <View style={styles.premiumHeaderContent}>
         <View style={styles.premiumBrandSection}>
+          <Text
+            style={[
+              styles.dateRange,
+              {
+                color: colors.text.secondary,
+                fontFamily: fontFamily.medium,
+              },
+            ]}
+          >
+            {dateRange}
+          </Text>
           <View style={styles.premiumTitleRow}>
-            <TouchableOpacity
-              onPress={onPreviousMonth}
-              style={styles.navButton}
+            <Text
+              style={[
+                styles.premiumTitle,
+                {
+                  color: colors.text.primary,
+                  fontFamily: fontFamily.semibold,
+                },
+              ]}
+              numberOfLines={1}
             >
-              <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-            </TouchableOpacity>
-            
-            <View style={styles.monthSelector}>
-              <Text style={[styles.premiumTitle, { color: colors.text.primary }]}>
-                {new Date(selectedMonth).toLocaleDateString("en-US", {
-                  month: "long",
-                  year: "numeric",
-                })}
-                {currentMonth && (
-                  <Text style={[styles.currentIndicator, { color: colors.primary.main }]}>
-                    {" "}• Current
-                  </Text>
-                )}
-              </Text>
-            </View>
-            
-            <TouchableOpacity
-              onPress={onNextMonth}
-              style={styles.navButton}
-              disabled={currentMonth}
-            >
-              <Ionicons 
-                name="chevron-forward" 
-                size={24} 
-                color={currentMonth ? colors.text.tertiary : colors.text.primary} 
-              />
-            </TouchableOpacity>
-            
-            <TouchableOpacity onPress={onInfoPress} style={styles.infoButton}>
-              <Ionicons name="information-circle-outline" size={24} color={colors.text.secondary} />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.spendingOverview}>
-            <Text style={[styles.totalSpent, { color: colors.text.primary }]}>
-              {formatAmount(monthlyTotalSpent, currency)}
+              {monthTitle}
             </Text>
-            <Text style={[styles.comparison, { color: diffColor }]}>
-              {diffLabel} vs. previous month
-            </Text>
+            {currentMonth && (
+              <View
+                style={{
+                  backgroundColor: colors.primary[500] + "26",
+                  borderRadius: 8,
+                }}
+              >
+                <Text
+                  style={[
+                    styles.currentIndicator,
+                    {
+                      color: colors.primary[500],
+                      fontFamily: fontFamily.semibold,
+                    },
+                  ]}
+                >
+                  CURRENT
+                </Text>
+              </View>
+            )}
           </View>
         </View>
+
+        <View style={styles.iconCluster}>
+          <Pressable
+            onPress={onPreviousMonth}
+            style={[
+              styles.iconButton,
+              {
+                backgroundColor: colors.card.background,
+                borderColor: colors.border.medium,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Previous month"
+          >
+            <Ionicons name="chevron-back" size={18} color={colors.text.secondary} />
+          </Pressable>
+          <Pressable
+            onPress={onNextMonth}
+            disabled={currentMonth}
+            style={[
+              styles.iconButton,
+              {
+                backgroundColor: colors.card.background,
+                borderColor: colors.border.medium,
+              },
+              currentMonth && styles.iconButtonDisabled,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Next month"
+          >
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={currentMonth ? colors.text.tertiary : colors.text.secondary}
+            />
+          </Pressable>
+          <Pressable
+            onPress={onInfoPress}
+            style={[
+              styles.iconButton,
+              {
+                backgroundColor: colors.card.background,
+                borderColor: colors.border.medium,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Spending insights"
+          >
+            <Ionicons name="information-circle-outline" size={18} color={colors.text.secondary} />
+          </Pressable>
+        </View>
+      </View>
+
+      <View style={styles.spendingOverview}>
+        <Text
+          style={[
+            styles.totalSpent,
+            {
+              color: colors.text.primary,
+              fontFamily: fontFamily.monoMedium,
+            },
+          ]}
+        >
+          {formatAmount(monthlyTotalSpent, currency)}
+        </Text>
+        <Text
+          style={[
+            styles.comparison,
+            {
+              color: diffPositive ? colors.rose[500] : colors.lime[500],
+              fontFamily: fontFamily.medium,
+            },
+          ]}
+        >
+          {diffPositive ? "+" : "−"}
+          {diffMagnitude} vs last month
+        </Text>
       </View>
     </View>
   );
 };
-
