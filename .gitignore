@@ -108,3 +108,6 @@ google-services.json
 ios/GoogleService-Info.plist
 secrets/
 GoogleService-Info.plist
+
+# Markdown docs (kept local only)
+*.md
