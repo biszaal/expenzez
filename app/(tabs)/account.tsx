@@ -23,6 +23,7 @@ import {
   borderRadius,
   shadows,
   typography,
+  fontFamily,
 } from "../../constants/theme";
 import {
   getProfile,
@@ -343,14 +344,18 @@ export default function AccountScreen() {
           <View style={styles.headerContent}>
             <View style={styles.headerLeft}>
               <Text
-                style={[styles.headerTitle, { color: colors.text.primary }]}
+                style={[
+                  styles.headerTitle,
+                  { color: colors.text.primary, fontFamily: fontFamily.semibold },
+                ]}
               >
-                Profile
+                Account
+                <Text style={{ color: colors.primary[500] }}>.</Text>
               </Text>
               <Text
                 style={[
                   styles.headerSubtitle,
-                  { color: colors.text.secondary },
+                  { color: colors.text.secondary, fontFamily: fontFamily.medium },
                 ]}
               >
                 Manage your account
@@ -359,14 +364,19 @@ export default function AccountScreen() {
             <TouchableOpacity
               style={[
                 styles.headerButton,
-                { backgroundColor: colors.background.primary, ...shadows.sm },
+                {
+                  backgroundColor: colors.card.background,
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: colors.border.medium,
+                  borderRadius: 14,
+                },
               ]}
               onPress={() => router.push("/settings")}
             >
               <Ionicons
                 name="settings-outline"
-                size={20}
-                color={colors.primary.main}
+                size={18}
+                color={colors.text.secondary}
               />
             </TouchableOpacity>
           </View>
@@ -374,91 +384,125 @@ export default function AccountScreen() {
 
         {/* Profile Section */}
         <View style={styles.profileSection}>
-          <View
-            style={[
-              styles.profileCard,
-              { backgroundColor: colors.background.primary, ...shadows.lg },
-            ]}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => router.push("/profile/personal")}
+            style={{
+              borderRadius: 22,
+              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: colors.border.dark,
+              overflow: "hidden",
+            }}
           >
-            <View style={styles.profileContent}>
-              <View style={styles.avatarContainer}>
-                <View
-                  style={[
-                    styles.avatar,
-                    { backgroundColor: colors.primary.main },
-                  ]}
-                >
-                  <Text style={styles.avatarText}>{getUserInitials()}</Text>
-                </View>
-              </View>
-              <View style={styles.profileDetails}>
+            <LinearGradient
+              colors={
+                isDark
+                  ? ["rgba(157,91,255,0.18)", "rgba(197,242,92,0.06)"]
+                  : ["rgba(123,63,228,0.12)", "rgba(92,133,25,0.06)"]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                padding: 18,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 14,
+              }}
+            >
+              <LinearGradient
+                colors={[colors.primary[500], colors.primary[600]]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 18,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  shadowColor: colors.primary[500],
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: 0.4,
+                  shadowRadius: 18,
+                  elevation: 6,
+                }}
+              >
                 <Text
-                  style={[styles.profileName, { color: colors.text.primary }]}
+                  style={{
+                    color: "#fff",
+                    fontSize: 22,
+                    fontFamily: fontFamily.bold,
+                  }}
+                >
+                  {getUserInitials()}
+                </Text>
+              </LinearGradient>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    fontSize: 16,
+                    color: colors.text.primary,
+                    fontFamily: fontFamily.semibold,
+                  }}
                 >
                   {getUserDisplayName()}
                 </Text>
                 <Text
-                  style={[
-                    styles.profileEmail,
-                    { color: colors.text.secondary },
-                  ]}
+                  numberOfLines={1}
+                  style={{
+                    fontSize: 12.5,
+                    color: colors.text.secondary,
+                    fontFamily: fontFamily.medium,
+                    marginTop: 2,
+                  }}
                 >
                   {getUserEmail()}
                 </Text>
-                <View style={styles.profileBadges}>
-                  {isPro && (
-                    <View
-                      style={[
-                        styles.premiumBadge,
-                        {
-                          backgroundColor: isDark ? "#92400E" : "#FEF3C7",
-                          borderColor: isDark ? "#D97706" : "#F59E0B",
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name="sparkles"
-                        size={12}
-                        color={isDark ? "#FCD34D" : "#92400E"}
-                      />
-                      <Text
-                        style={[
-                          styles.premiumBadgeText,
-                          {
-                            color: isDark ? "#FCD34D" : "#92400E",
-                          },
-                        ]}
-                      >
-                        {isInTrialPeriod ? "Premium Trial" : "Premium Member"}
-                      </Text>
-                    </View>
-                  )}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                    marginTop: 6,
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                    borderRadius: 7,
+                    backgroundColor: isPro
+                      ? "rgba(197,242,92,0.16)"
+                      : isDark
+                        ? "rgba(255,255,255,0.06)"
+                        : "rgba(40,20,80,0.06)",
+                    alignSelf: "flex-start",
+                  }}
+                >
+                  <Ionicons
+                    name="sparkles"
+                    size={10}
+                    color={isPro ? colors.lime[500] : colors.text.tertiary}
+                  />
                   <Text
-                    style={[
-                      styles.memberText,
-                      { color: colors.text.secondary },
-                    ]}
+                    style={{
+                      fontSize: 10.5,
+                      fontFamily: fontFamily.bold,
+                      letterSpacing: 0.4,
+                      color: isPro ? colors.lime[500] : colors.text.tertiary,
+                    }}
                   >
-                    Member since {getMemberSince()}
+                    {isPro
+                      ? isInTrialPeriod
+                        ? "PRO TRIAL"
+                        : "EXPENZEZ PRO"
+                      : "FREE PLAN"}
                   </Text>
                 </View>
               </View>
-            </View>
-            <TouchableOpacity
-              style={[
-                styles.editButton,
-                { backgroundColor: colors.primary.main + "20" },
-              ]}
-              onPress={() => router.push("/profile/personal")}
-            >
-              <Ionicons name="pencil" size={16} color={colors.primary.main} />
-              <Text
-                style={[styles.editButtonText, { color: colors.primary.main }]}
-              >
-                Edit
-              </Text>
-            </TouchableOpacity>
-          </View>
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={colors.text.tertiary}
+              />
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
 
         {/* Savings Goals Stats */}
@@ -781,41 +825,44 @@ export default function AccountScreen() {
             style={[
               styles.logoutButton,
               {
-                backgroundColor: isDark ? "#7F1D1D" : "#FEF2F2",
-                borderColor: isDark ? "#991B1B" : "#FECACA",
+                backgroundColor: colors.negBg,
+                borderColor: isDark
+                  ? "rgba(255,107,138,0.20)"
+                  : "rgba(214,58,102,0.18)",
                 opacity: isLoggingOut ? 0.7 : 1,
-                ...shadows.sm,
               },
             ]}
             disabled={isLoggingOut}
           >
             {isLoggingOut ? (
-              <ActivityIndicator
-                size="small"
-                color={isDark ? "#FCA5A5" : "#DC2626"}
-              />
+              <ActivityIndicator size="small" color={colors.rose[500]} />
             ) : (
               <Ionicons
                 name="log-out-outline"
-                size={20}
-                color={isDark ? "#FCA5A5" : "#DC2626"}
+                size={18}
+                color={colors.rose[500]}
               />
             )}
             <Text
               style={[
                 styles.logoutText,
-                { color: isDark ? "#FCA5A5" : "#DC2626" },
+                { color: colors.rose[500], fontFamily: fontFamily.semibold },
               ]}
             >
-              {isLoggingOut ? "Signing Out..." : "Sign Out"}
+              {isLoggingOut ? "Signing Out…" : "Sign Out"}
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* App Info */}
         <View style={styles.appInfo}>
-          <Text style={[styles.appCopyright, { color: colors.text.tertiary }]}>
-            Expenzez v1.0.0 - © {new Date().getFullYear()}
+          <Text
+            style={[
+              styles.appCopyright,
+              { color: colors.text.tertiary, fontFamily: fontFamily.medium, letterSpacing: 0.5 },
+            ]}
+          >
+            EXPENZEZ · v1.5.0
           </Text>
         </View>
       </ScrollView>
