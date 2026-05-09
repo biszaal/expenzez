@@ -1068,8 +1068,8 @@ export default function CSVImportScreen() {
                 style={[
                   styles.selectButton,
                   {
-                    backgroundColor: colors.primary.main[100],
-                    borderColor: colors.primary.main[300],
+                    backgroundColor: colors.primary[100],
+                    borderColor: colors.primary[300],
                   },
                 ]}
                 onPress={handleFileSelect}
@@ -1078,15 +1078,15 @@ export default function CSVImportScreen() {
                 <Ionicons
                   name="document-text"
                   size={24}
-                  color={colors.primary.main[600]}
+                  color={colors.primary[600]}
                 />
                 <Text
-                  style={[styles.selectButtonText, { color: colors.primary.main[600] }]}
+                  style={[styles.selectButtonText, { color: colors.primary[600] }]}
                 >
                   {loading ? "Reading file..." : "Select CSV File"}
                 </Text>
                 {loading && (
-                  <ActivityIndicator size="small" color={colors.primary.main[600]} />
+                  <ActivityIndicator size="small" color={colors.primary[600]} />
                 )}
               </TouchableOpacity>
 

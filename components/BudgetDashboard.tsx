@@ -208,9 +208,9 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
         <View style={styles.budgetActions}>
           <TouchableOpacity
             onPress={() => onBudgetEdit?.(budget)}
-            style={[styles.actionButton, { backgroundColor: colors.primary.main[100] }]}
+            style={[styles.actionButton, { backgroundColor: colors.primary[100] }]}
           >
-            <Ionicons name="pencil" size={16} color={colors.primary.main[600]} />
+            <Ionicons name="pencil" size={16} color={colors.primary[600]} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleDeleteBudget(budget)}
@@ -323,7 +323,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
       {summary && (
         <View style={[styles.summaryCard, { backgroundColor: colors.background.primary }]}>
           <LinearGradient
-            colors={[colors.primary.main, colors.primary.main[600]]}
+            colors={[colors.primary.main, colors.primary[600]]}
             style={styles.summaryGradient}
           >
             <Text style={styles.summaryTitle}>Monthly Overview</Text>

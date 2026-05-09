@@ -188,21 +188,21 @@ export default function CSVImportPreviewScreen() {
         <View
           style={[
             styles.summaryCard,
-            { backgroundColor: colors.primary.main[50] },
+            { backgroundColor: colors.primary[50] },
           ]}
         >
           <View style={styles.summaryContent}>
-            <Text style={[styles.summaryValue, { color: colors.primary.main[700] }]}>
+            <Text style={[styles.summaryValue, { color: colors.primary[700] }]}>
               {transactions.length}
             </Text>
-            <Text style={[styles.summaryLabel, { color: colors.primary.main[600] }]}>
+            <Text style={[styles.summaryLabel, { color: colors.primary[600] }]}>
               Transactions
             </Text>
           </View>
           <Ionicons
             name="list-outline"
             size={32}
-            color={colors.primary.main[200]}
+            color={colors.primary[200]}
           />
         </View>
 
@@ -269,7 +269,7 @@ export default function CSVImportPreviewScreen() {
         <TouchableOpacity
           style={[
             styles.cancelButton,
-            { borderColor: colors.primary.main[300] },
+            { borderColor: colors.primary[300] },
           ]}
           onPress={() => router.back()}
           disabled={importing}

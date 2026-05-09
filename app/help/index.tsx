@@ -143,7 +143,7 @@ export default function HelpSupportScreen() {
             <TouchableOpacity
               style={[
                 styles.contactButton,
-                { backgroundColor: colors.primary.main[100] },
+                { backgroundColor: colors.primary[100] },
                 shadows.sm,
               ]}
               onPress={contactSupport}
@@ -178,7 +178,7 @@ export default function HelpSupportScreen() {
                 <View
                   style={[
                     styles.helpIcon,
-                    { backgroundColor: colors.primary.main[100] },
+                    { backgroundColor: colors.primary[100] },
                   ]}
                 >
                   <Ionicons
@@ -240,7 +240,7 @@ export default function HelpSupportScreen() {
                     <View
                       style={[
                         styles.faqIcon,
-                        { backgroundColor: colors.primary.main[100] },
+                        { backgroundColor: colors.primary[100] },
                       ]}
                     >
                       <Ionicons

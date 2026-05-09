@@ -91,7 +91,7 @@ const MonthlyChart: React.FC<{
                   height: Math.max(barHeight, 4),
                   backgroundColor: isCurrentMonth
                     ? colors.primary.main
-                    : colors.primary.main[300],
+                    : colors.primary[300],
                 },
               ]}
             />
@@ -521,7 +521,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
                 onValueChange={handleNotificationToggle}
                 trackColor={{
                   false: colors.background.primary,
-                  true: colors.primary.main[200],
+                  true: colors.primary[200],
                 }}
                 thumbColor={
                   notificationsEnabled

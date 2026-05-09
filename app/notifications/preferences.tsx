@@ -107,7 +107,7 @@ export default function NotificationPreferencesScreen() {
           <View
             style={[
               styles.preferenceIcon,
-              { backgroundColor: colors.primary.main[100] },
+              { backgroundColor: colors.primary[100] },
             ]}
           >
             <Ionicons
@@ -142,10 +142,10 @@ export default function NotificationPreferencesScreen() {
           }
           trackColor={{
             false: colors.gray[300],
-            true: colors.primary.main[400],
+            true: colors.primary[400],
           }}
           thumbColor={
-            Boolean(value) ? colors.primary.main[600] : colors.gray[400]
+            Boolean(value) ? colors.primary[600] : colors.gray[400]
           }
           ios_backgroundColor={colors.gray[300]}
         />
@@ -243,16 +243,16 @@ export default function NotificationPreferencesScreen() {
           <View
             style={[
               styles.securityNote,
-              { backgroundColor: colors.primary.main[100] },
+              { backgroundColor: colors.primary[100] },
             ]}
           >
             <Ionicons
               name="shield-checkmark"
               size={24}
-              color={colors.primary.main[600]}
+              color={colors.primary[600]}
             />
             <Text
-              style={[styles.securityNoteText, { color: colors.primary.main[700] }]}
+              style={[styles.securityNoteText, { color: colors.primary[700] }]}
             >
               Security alerts (login attempts, failed logins) are always enabled
               and cannot be disabled to protect your account.

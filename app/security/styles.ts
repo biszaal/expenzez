@@ -1,13 +1,16 @@
 import { StyleSheet } from "react-native";
-import { spacing, borderRadius, shadows, typography } from "../../constants/theme";
+import { spacing, borderRadius, shadows, typography, fontFamily } from "../../constants/theme";
 
+// v1.5 redesign — hairline section cards, uppercase eyebrow labels,
+// 14 px row title with mono-friendly meta, rose-token reset button.
 export const securityStyles = StyleSheet.create({
   container: {
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 22,
+    paddingTop: 6,
+    paddingBottom: 14,
   },
   headerContent: {
     flexDirection: "row",
@@ -15,15 +18,17 @@ export const securityStyles = StyleSheet.create({
     justifyContent: "space-between",
   },
   backButton: {
-    width: 28,
-    height: 28,
+    width: 40,
+    height: 40,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: StyleSheet.hairlineWidth,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontFamily: fontFamily.semibold,
+    letterSpacing: -0.2,
   },
   headerRight: {
     width: 40,
@@ -32,27 +37,30 @@ export const securityStyles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: 30,
   },
   section: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    marginHorizontal: 22,
     marginBottom: 12,
   },
+  sectionTitle: {
+    fontSize: 11,
+    fontFamily: fontFamily.semibold,
+    letterSpacing: 1.2,
+    marginBottom: 10,
+    textTransform: "uppercase",
+  },
   card: {
-    borderRadius: 8,
+    borderRadius: 18,
     overflow: "hidden",
+    borderWidth: StyleSheet.hairlineWidth,
   },
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   settingLeft: {
     flexDirection: "row",
@@ -60,9 +68,9 @@ export const securityStyles = StyleSheet.create({
     flex: 1,
   },
   settingIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 34,
+    height: 34,
+    borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -71,13 +79,14 @@ export const securityStyles = StyleSheet.create({
     flex: 1,
   },
   settingTitle: {
-    fontSize: 15,
-    fontWeight: "500",
-    marginBottom: 4,
+    fontSize: 14,
+    fontFamily: fontFamily.medium,
+    marginBottom: 2,
+    letterSpacing: -0.1,
   },
   settingSubtitle: {
-    fontSize: 12,
-    opacity: 0.7,
+    fontSize: 11.5,
+    fontFamily: fontFamily.medium,
   },
   infoItem: {
     flexDirection: "row",
@@ -89,20 +98,21 @@ export const securityStyles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 12,
     flex: 1,
-    opacity: 0.7,
+    fontFamily: fontFamily.medium,
   },
   resetButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
+    paddingVertical: 13,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 14,
+    gap: 8,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   resetButtonText: {
-    fontSize: 15,
-    fontWeight: "500",
-    marginLeft: 8,
+    fontSize: 13.5,
+    fontFamily: fontFamily.semibold,
   },
   // PIN Verification Screen styles
   verificationContainer: {

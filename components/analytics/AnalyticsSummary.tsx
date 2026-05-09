@@ -116,8 +116,8 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
                     {forecast.month}
                   </Text>
                 </View>
-                <View style={[styles.confidenceTag, { backgroundColor: colors.primary.main[100] }]}>
-                  <Text style={[styles.confidenceText, { color: colors.primary.main[600] }]}>
+                <View style={[styles.confidenceTag, { backgroundColor: colors.primary[100] }]}>
+                  <Text style={[styles.confidenceText, { color: colors.primary[600] }]}>
                     {analyticsAPI.formatConfidence(forecast.confidence)}
                   </Text>
                 </View>

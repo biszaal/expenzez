@@ -297,7 +297,7 @@ export default function SavingsGoals({
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={isCompleted ? ['#10B981', '#059669'] : [colors.primary.main[100], colors.primary.main[50]]}
+                  colors={isCompleted ? ['#10B981', '#059669'] : [colors.primary[100], colors.primary[50]]}
                   style={styles.goalGradient}
                 >
                   {/* Goal Header */}

@@ -108,7 +108,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
 
       <View style={[styles.promptCard, { backgroundColor: colors.background.primary }]}>
         {/* Premium Icon */}
-        <View style={[styles.iconContainer, { backgroundColor: colors.primary.main[100] }]}>
+        <View style={[styles.iconContainer, { backgroundColor: colors.primary[100] }]}>
           <Ionicons name="diamond" size={48} color={colors.primary.main} />
         </View>
 

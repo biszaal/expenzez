@@ -86,7 +86,7 @@ export const CSVImportPaywall: React.FC = () => {
           <View
             style={[
               styles.iconBg,
-              { backgroundColor: colors.primary.main[100] },
+              { backgroundColor: colors.primary[100] },
             ]}
           >
             <Ionicons
@@ -126,7 +126,7 @@ export const CSVImportPaywall: React.FC = () => {
               <View
                 style={[
                   styles.featureIcon,
-                  { backgroundColor: colors.primary.main[100] },
+                  { backgroundColor: colors.primary[100] },
                 ]}
               >
                 <Ionicons
@@ -166,7 +166,7 @@ export const CSVImportPaywall: React.FC = () => {
               styles.planCard,
               {
                 backgroundColor: colors.background.secondary,
-                borderColor: colors.primary.main[300],
+                borderColor: colors.primary[300],
               },
             ]}
             onPress={handleUpgrade}
@@ -204,7 +204,7 @@ export const CSVImportPaywall: React.FC = () => {
                 styles.annualPlan,
                 {
                   backgroundColor: colors.primary.main,
-                  borderColor: colors.primary.main[600],
+                  borderColor: colors.primary[600],
                 },
               ]}
               onPress={handleUpgrade}
@@ -228,7 +228,7 @@ export const CSVImportPaywall: React.FC = () => {
         <View
           style={[
             styles.trialInfo,
-            { backgroundColor: colors.primary.main[50] },
+            { backgroundColor: colors.primary[50] },
           ]}
         >
           <Ionicons
@@ -237,7 +237,7 @@ export const CSVImportPaywall: React.FC = () => {
             color={colors.primary.main}
           />
           <Text
-            style={[styles.trialText, { color: colors.primary.main[700] }]}
+            style={[styles.trialText, { color: colors.primary[700] }]}
           >
             14-day free trial on all plans. Cancel anytime.
           </Text>

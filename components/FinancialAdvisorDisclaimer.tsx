@@ -45,7 +45,7 @@ This tool is designed to help you understand your spending patterns and develop 
             Not Certified Financial Advice
           </Text>
           <TouchableOpacity onPress={() => setModalVisible(true)}>
-            <Text style={[styles.readMoreText, { color: colors.primary.main[600] }]}>
+            <Text style={[styles.readMoreText, { color: colors.primary[600] }]}>
               Read More
             </Text>
           </TouchableOpacity>

@@ -94,11 +94,11 @@ export default function BudgetOverview() {
             onPress={() => router.push("/budgets/edit")}
             style={[
               styles.createButton,
-              { backgroundColor: colors.primary.main[100] },
+              { backgroundColor: colors.primary[100] },
             ]}
           >
             <Text
-              style={[styles.createButtonText, { color: colors.primary.main[600] }]}
+              style={[styles.createButtonText, { color: colors.primary[600] }]}
             >
               Create Budget
             </Text>
@@ -248,14 +248,14 @@ export default function BudgetOverview() {
           ]}
         >
           <Text
-            style={[styles.viewAllButtonText, { color: colors.primary.main[600] }]}
+            style={[styles.viewAllButtonText, { color: colors.primary[600] }]}
           >
             View All Budgets ({budgetProgress.length}+)
           </Text>
           <Ionicons
             name="chevron-forward"
             size={16}
-            color={colors.primary.main[600]}
+            color={colors.primary[600]}
           />
         </TouchableOpacity>
       )}

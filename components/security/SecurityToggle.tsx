@@ -41,7 +41,7 @@ export const SecurityToggle: React.FC<SecurityToggleProps> = ({
   const { colors } = useTheme();
 
   const finalIconColor = iconColor || colors.primary.main;
-  const finalIconBgColor = iconBackgroundColor || colors.primary.main[100];
+  const finalIconBgColor = iconBackgroundColor || colors.primary[100];
 
   const content = (
     <View style={styles.settingItem}>

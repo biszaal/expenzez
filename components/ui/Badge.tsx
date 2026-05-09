@@ -47,12 +47,12 @@ export default function Badge({
         };
       case "info":
         return {
-          backgroundColor: colors.primary.main[100],
-          textColor: colors.primary.main[600],
+          backgroundColor: colors.primary[100],
+          textColor: colors.primary[600],
         };
       default:
         return {
-          backgroundColor: colors.primary.main[100],
+          backgroundColor: colors.primary[100],
           textColor: colors.primary.main,
         };
     }

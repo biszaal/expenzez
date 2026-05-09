@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primary.main[100],
+    backgroundColor: colors.primary[100],
     ...shadows.sm,
   },
   section: {
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.primary.main[100],
+    backgroundColor: colors.primary[100],
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,

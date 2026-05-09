@@ -191,11 +191,11 @@ export default function InsightsScreen() {
               <View
                 style={[
                   styles.metricBadge,
-                  { backgroundColor: colors.primary.main[100] },
+                  { backgroundColor: colors.primary[100] },
                 ]}
               >
                 <Text
-                  style={[styles.metricText, { color: colors.primary.main[700] }]}
+                  style={[styles.metricText, { color: colors.primary[700] }]}
                 >
                   £{insight.amount.toFixed(0)}
                 </Text>
@@ -205,11 +205,11 @@ export default function InsightsScreen() {
               <View
                 style={[
                   styles.metricBadge,
-                  { backgroundColor: colors.primary.main[100] },
+                  { backgroundColor: colors.primary[100] },
                 ]}
               >
                 <Text
-                  style={[styles.metricText, { color: colors.primary.main[700] }]}
+                  style={[styles.metricText, { color: colors.primary[700] }]}
                 >
                   {insight.percentage.toFixed(0)}%
                 </Text>
@@ -341,7 +341,7 @@ export default function InsightsScreen() {
           style={[
             styles.tab,
             activeTab === "insights" && {
-              backgroundColor: colors.primary.main[100],
+              backgroundColor: colors.primary[100],
             },
           ]}
         >
@@ -351,7 +351,7 @@ export default function InsightsScreen() {
               {
                 color:
                   activeTab === "insights"
-                    ? colors.primary.main[700]
+                    ? colors.primary[700]
                     : colors.text.secondary,
                 fontWeight: activeTab === "insights" ? "600" : "400",
               },
@@ -365,7 +365,7 @@ export default function InsightsScreen() {
           onPress={() => setActiveTab("nudges")}
           style={[
             styles.tab,
-            activeTab === "nudges" && { backgroundColor: colors.primary.main[100] },
+            activeTab === "nudges" && { backgroundColor: colors.primary[100] },
           ]}
         >
           <Text
@@ -374,7 +374,7 @@ export default function InsightsScreen() {
               {
                 color:
                   activeTab === "nudges"
-                    ? colors.primary.main[700]
+                    ? colors.primary[700]
                     : colors.text.secondary,
                 fontWeight: activeTab === "nudges" ? "600" : "400",
               },
