@@ -1360,12 +1360,17 @@ export default function SpendingPage() {
     );
   }
 
+  // v1.5 redesign — date range + month label + filter/info icon button.
+  const monthDate = dayjs(selectedMonth);
+  const headerDateRange = `${monthDate.format("D MMM")} – ${monthDate.endOf("month").format("D MMM")}`;
+
   return (
     <SafeAreaView
       style={[
         styles.container,
-        { backgroundColor: colors.background.secondary },
+        { backgroundColor: colors.background.primary },
       ]}
+      edges={["top"]}
     >
       <ScrollView
         ref={scrollViewRef}
@@ -1373,15 +1378,18 @@ export default function SpendingPage() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Premium Header */}
-        <View
-          style={[
-            styles.premiumHeader,
-            { backgroundColor: colors.background.secondary },
-          ]}
-        >
+        {/* v1.5 redesign — date range + Spending title + filter button */}
+        <View style={styles.premiumHeader}>
           <View style={styles.premiumHeaderContent}>
             <View style={styles.premiumBrandSection}>
+              <Text
+                style={[
+                  styles.premiumHeaderEyebrow,
+                  { color: colors.text.secondary },
+                ]}
+              >
+                {headerDateRange}
+              </Text>
               <Text
                 style={[
                   styles.premiumHeaderTitle,
@@ -1390,37 +1398,26 @@ export default function SpendingPage() {
               >
                 Spending
               </Text>
-              <View
-                style={[
-                  styles.premiumBrandAccent,
-                  { backgroundColor: colors.primary.main },
-                ]}
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.premiumHeaderButton,
+                {
+                  backgroundColor: colors.card.background,
+                  borderColor: colors.border.medium,
+                },
+              ]}
+              activeOpacity={0.85}
+              onPress={handleInfoPress}
+              accessibilityRole="button"
+              accessibilityLabel="Spending insights"
+            >
+              <Ionicons
+                name="options-outline"
+                size={18}
+                color={colors.text.secondary}
               />
-            </View>
-            <View style={styles.premiumHeaderRight}>
-              <Text
-                style={[
-                  styles.premiumHeaderSubtitle,
-                  { color: colors.text.secondary },
-                ]}
-              >
-                {`Updated ${dayjs().format("HH:mm")}`}
-              </Text>
-              <TouchableOpacity
-                style={[
-                  styles.premiumHeaderButton,
-                  { backgroundColor: colors.background.primary },
-                ]}
-                activeOpacity={0.8}
-                onPress={handleInfoPress}
-              >
-                <Ionicons
-                  name="information-circle"
-                  size={20}
-                  color={colors.primary.main}
-                />
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -1666,60 +1663,40 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing["2xl"],
+    paddingBottom: 120, // leave room for the floating tab bar
   },
 
-  // Header Styles
+  // v1.5 redesign — header chrome (date range + Spending + filter icon).
   premiumHeader: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    marginBottom: spacing.sm,
+    paddingHorizontal: 22,
+    paddingTop: 6,
+    paddingBottom: 4,
   },
   premiumHeaderContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    minHeight: 40,
+    gap: 12,
   },
   premiumBrandSection: {
-    flexDirection: "row",
-    alignItems: "center",
     flex: 1,
+  },
+  premiumHeaderEyebrow: {
+    fontSize: 13,
+    letterSpacing: 0.2,
   },
   premiumHeaderTitle: {
     fontSize: 28,
-    fontWeight: "700",
-    marginRight: spacing.sm,
-    lineHeight: 36,
-  },
-  premiumBrandAccent: {
-    width: 4,
-    height: 20,
-    borderRadius: 2,
-  },
-  premiumHeaderRight: {
-    alignItems: "flex-end",
-    justifyContent: "flex-start",
-  },
-  premiumHeaderSubtitle: {
-    fontSize: 13,
-    fontWeight: "500",
-    marginBottom: spacing.sm,
-    opacity: 0.7,
-    lineHeight: 18,
+    letterSpacing: -0.6,
+    marginTop: 2,
   },
   premiumHeaderButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
 
   // Empty State Styles
