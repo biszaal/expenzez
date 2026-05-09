@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../auth/AuthContext';
-import { spacing, borderRadius } from '../../constants/theme';
+import { spacing, borderRadius, fontFamily } from '../../constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -158,10 +158,11 @@ export default function FinancialHealthScreen() {
       <View style={styles.header}>
         <View>
           <Text style={[styles.title, { color: colors.text.primary }]}>
-            Financial Health
+            Financial health
+            <Text style={{ color: colors.primary[500] }}>.</Text>
           </Text>
           <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
-            Track your credit score and financial wellness
+            Track your credit score and financial wellness.
           </Text>
         </View>
       </View>
@@ -175,7 +176,13 @@ export default function FinancialHealthScreen() {
       >
         {/* Credit Score Card */}
         <TouchableOpacity
-          style={[styles.creditScoreCard, { backgroundColor: colors.background.secondary }]}
+          style={[
+            styles.creditScoreCard,
+            {
+              backgroundColor: colors.card.background,
+              borderColor: colors.border.medium,
+            },
+          ]}
           onPress={() => router.push('/credit-score')}
           activeOpacity={0.7}
         >
@@ -274,7 +281,7 @@ export default function FinancialHealthScreen() {
         </TouchableOpacity>
 
         {/* AI Credit Education Card */}
-        <View style={[styles.section, { backgroundColor: colors.background.secondary }]}>
+        <View style={[styles.section, { backgroundColor: colors.card.background, borderColor: colors.border.medium }]}>
           <View style={styles.sectionHeader}>
             <Ionicons name="school-outline" size={24} color={colors.primary.main} />
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
@@ -297,7 +304,7 @@ export default function FinancialHealthScreen() {
         </View>
 
         {/* Financial Overview */}
-        <View style={[styles.section, { backgroundColor: colors.background.secondary }]}>
+        <View style={[styles.section, { backgroundColor: colors.card.background, borderColor: colors.border.medium }]}>
           <View style={styles.sectionHeader}>
             <Ionicons name="stats-chart-outline" size={24} color={colors.primary.main} />
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
@@ -333,7 +340,7 @@ export default function FinancialHealthScreen() {
         </View>
 
         {/* External Resources */}
-        <View style={[styles.section, { backgroundColor: colors.background.secondary }]}>
+        <View style={[styles.section, { backgroundColor: colors.card.background, borderColor: colors.border.medium }]}>
           <View style={styles.sectionHeader}>
             <Ionicons name="link-outline" size={24} color={colors.primary.main} />
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
@@ -420,33 +427,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingHorizontal: 22,
+    paddingTop: 6,
+    paddingBottom: 14,
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
+    fontFamily: fontFamily.semibold,
+    letterSpacing: -0.6,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
     lineHeight: 20,
+    fontFamily: fontFamily.medium,
   },
   content: {
     flex: 1,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 22,
   },
 
   // Credit Score Card
   creditScoreCard: {
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 12,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   creditScoreHeader: {
     flexDirection: 'row',
@@ -460,19 +466,21 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   creditScoreIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   creditScoreTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontFamily: fontFamily.semibold,
+    letterSpacing: -0.2,
     marginBottom: 2,
   },
   creditScoreSubtitle: {
-    fontSize: 13,
+    fontSize: 12.5,
+    fontFamily: fontFamily.medium,
   },
   creditScoreBody: {
     paddingVertical: spacing.lg,
@@ -507,66 +515,66 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scoreValue: {
-    fontSize: 32,
-    fontWeight: '700',
-    lineHeight: 36,
+    fontSize: 28,
+    fontFamily: fontFamily.monoMedium,
+    lineHeight: 32,
+    letterSpacing: -0.6,
   },
   trendBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    paddingHorizontal: 4,
+    paddingHorizontal: 5,
     paddingVertical: 2,
-    borderRadius: 4,
-    marginTop: 2,
+    borderRadius: 6,
+    marginTop: 4,
   },
   trendText: {
     fontSize: 10,
-    fontWeight: '600',
+    fontFamily: fontFamily.semibold,
   },
   scoreMax: {
     fontSize: 11,
     marginTop: 2,
+    fontFamily: fontFamily.mono,
   },
   updateScoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
-    borderRadius: borderRadius.md,
-    marginTop: spacing.sm,
+    paddingVertical: 12,
+    borderRadius: 14,
+    marginTop: 8,
   },
   updateScoreButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 13.5,
+    fontFamily: fontFamily.semibold,
   },
 
   // Section Card
   section: {
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 12,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    gap: 8,
+    marginBottom: 6,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 15,
+    fontFamily: fontFamily.semibold,
+    letterSpacing: -0.2,
   },
   sectionDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: spacing.md,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 14,
+    fontFamily: fontFamily.medium,
   },
   sectionButton: {
     flexDirection: 'row',
@@ -574,12 +582,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 12,
-    borderRadius: borderRadius.md,
-    borderWidth: 1.5,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   sectionButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 13.5,
+    fontFamily: fontFamily.semibold,
   },
 
   // Metrics Grid

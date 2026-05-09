@@ -16,6 +16,7 @@ import {
   CelebrationAnimation
 } from '../../components/achievements';
 import { SPACING, BORDER_RADIUS } from '../../constants/Colors';
+import { fontFamily } from '../../constants/theme';
 
 export default function ProgressScreen() {
   const { colors } = useTheme();
@@ -229,7 +230,7 @@ export default function ProgressScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]} edges={["top"]}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -237,16 +238,19 @@ export default function ProgressScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => loadAchievementData(true)}
-            colors={[colors.primary.main]}
-            tintColor={colors.primary.main}
+            colors={[colors.primary[500]]}
+            tintColor={colors.primary[500]}
           />
         }
       >
         {/* Clean Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Your Progress</Text>
+          <Text style={styles.headerTitle}>
+            Your progress
+            <Text style={{ color: colors.primary[500] }}>.</Text>
+          </Text>
           <Text style={styles.headerSubtitle}>
-            Keep building great financial habits!
+            Keep building great financial habits.
           </Text>
         </View>
 
@@ -543,54 +547,50 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1
   },
   header: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.md
+    paddingHorizontal: 22,
+    paddingTop: 6,
+    paddingBottom: 14
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: '700',
+    fontFamily: fontFamily.semibold,
+    letterSpacing: -0.6,
     color: colors.text.primary
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.text.secondary,
-    marginTop: 4
+    marginTop: 4,
+    fontFamily: fontFamily.medium
   },
   statsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: SPACING.lg,
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.lg
+    paddingHorizontal: 18,
+    marginTop: 14,
+    marginBottom: 14,
+    gap: 8
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.background.primary,
-    borderRadius: 20,
-    padding: SPACING.lg,
-    marginHorizontal: SPACING.xs,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
+    backgroundColor: colors.card.background,
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border.medium,
     position: 'relative',
     overflow: 'hidden'
   },
   statCardXP: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#60A5FA',
-    backgroundColor: colors.background.primary
+    borderLeftWidth: 3,
+    borderLeftColor: colors.cyan[500]
   },
   statCardAchievements: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#FFD700',
-    backgroundColor: colors.background.primary
+    borderLeftWidth: 3,
+    borderLeftColor: colors.amber[500]
   },
   statCardStreak: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF6B6B',
-    backgroundColor: colors.background.primary
+    borderLeftWidth: 3,
+    borderLeftColor: colors.rose[500]
   },
   statCardHeader: {
     flexDirection: 'row',
@@ -600,25 +600,25 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: SPACING.sm
   },
   statIconContainer: {
-    backgroundColor: colors.background.secondary,
-    padding: 8,
-    borderRadius: 12
+    backgroundColor: colors.background.tertiary,
+    padding: 7,
+    borderRadius: 11
   },
   statTrend: {
-    backgroundColor: '#10B98120',
+    backgroundColor: colors.posBg,
     padding: 4,
     borderRadius: 8
   },
   statBadge: {
-    backgroundColor: '#FFD70020',
+    backgroundColor: 'rgba(245,179,66,0.16)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 10
   },
   statBadgeText: {
     fontSize: 10,
-    fontWeight: '600',
-    color: '#FFD700'
+    fontFamily: fontFamily.bold,
+    color: colors.amber[500]
   },
   statStreakIndicator: {
     transform: [{ rotate: '10deg' }]
@@ -627,15 +627,16 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16
   },
   statValue: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 24,
+    fontFamily: fontFamily.monoMedium,
     color: colors.text.primary,
-    marginTop: SPACING.xs
+    marginTop: 6,
+    letterSpacing: -0.6
   },
   statLabel: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    fontWeight: '600',
+    fontSize: 10.5,
+    color: colors.text.tertiary,
+    fontFamily: fontFamily.semibold,
     marginTop: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5
@@ -654,18 +655,13 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderRadius: 2
   },
   motivationalContainer: {
-    backgroundColor: colors.primary.main[50],
-    marginHorizontal: SPACING.lg,
-    marginBottom: SPACING.lg,
-    padding: SPACING.xl,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: colors.primary.main[200],
-    shadowColor: colors.primary.main,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4
+    backgroundColor: 'rgba(157,91,255,0.10)',
+    marginHorizontal: 22,
+    marginBottom: 14,
+    padding: 18,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(157,91,255,0.28)'
   },
   motivationalHeader: {
     flexDirection: 'row',
@@ -674,18 +670,19 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: SPACING.md
   },
   motivationalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.primary.main,
-    marginHorizontal: SPACING.sm
+    fontSize: 14,
+    fontFamily: fontFamily.semibold,
+    color: colors.primary[500],
+    marginHorizontal: 8,
+    letterSpacing: -0.2
   },
   motivationalMessage: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.text.primary,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: SPACING.md
+    lineHeight: 20,
+    marginBottom: 12
   },
   motivationalFooter: {
     alignItems: 'center'
@@ -702,37 +699,39 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginHorizontal: 4
   },
   progressDotActive: {
-    backgroundColor: colors.primary.main,
+    backgroundColor: colors.primary[500],
     width: 10,
     height: 10,
     borderRadius: 5
   },
   categoryFilterContainer: {
-    marginBottom: SPACING.lg
+    marginBottom: 14
   },
   categoryFilter: {
-    paddingHorizontal: SPACING.lg
+    paddingHorizontal: 22,
+    gap: 6
   },
   categoryButton: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: 20,
-    backgroundColor: colors.background.primary,
-    marginRight: SPACING.sm,
-    borderWidth: 1,
-    borderColor: colors.border.light
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 10,
+    backgroundColor: 'transparent',
+    marginRight: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border.medium
   },
   categoryButtonActive: {
-    backgroundColor: colors.primary.main,
-    borderColor: colors.primary.main
+    backgroundColor: colors.text.primary,
+    borderColor: colors.text.primary
   },
   categoryButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12.5,
+    fontFamily: fontFamily.medium,
     color: colors.text.secondary
   },
   categoryButtonTextActive: {
-    color: '#FFFFFF'
+    color: colors.background.primary,
+    fontFamily: fontFamily.semibold
   },
   categoryCount: {
     opacity: 0.8
@@ -742,10 +741,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: SPACING.xl
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 16,
+    fontFamily: fontFamily.semibold,
     color: colors.text.primary,
-    marginBottom: SPACING.lg
+    letterSpacing: -0.2
   },
   achievementsList: {
     marginBottom: SPACING.md
@@ -828,11 +827,13 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary.main[50],
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-    borderRadius: 12,
-    marginTop: SPACING.sm
+    backgroundColor: 'rgba(157,91,255,0.08)',
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    marginTop: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(157,91,255,0.20)'
   },
   viewMoreText: {
     fontSize: 14,
@@ -880,18 +881,13 @@ const createStyles = (colors: any) => StyleSheet.create({
 
   // XP Guide Styles
   xpGuideContainer: {
-    backgroundColor: colors.background.primary,
-    marginHorizontal: SPACING.lg,
-    marginBottom: SPACING.xl + SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
-    shadowColor: colors.shadow.medium,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: colors.border.light
+    backgroundColor: colors.card.background,
+    marginHorizontal: 22,
+    marginBottom: 24,
+    borderRadius: 22,
+    padding: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border.medium
   },
   xpGuideHeader: {
     flexDirection: 'row',
@@ -912,26 +908,23 @@ const createStyles = (colors: any) => StyleSheet.create({
     gap: SPACING.md
   },
   xpCategoryTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text.primary,
-    marginBottom: SPACING.md,
-    letterSpacing: 0.5
+    fontSize: 11,
+    fontFamily: fontFamily.semibold,
+    color: colors.text.tertiary,
+    marginBottom: 8,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase'
   },
   xpActivityItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.background.secondary,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-    shadowColor: colors.shadow.subtle,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    elevation: 1
+    backgroundColor: 'transparent',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border.medium
   },
   xpActivityLeft: {
     flexDirection: 'row',
@@ -939,45 +932,44 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1
   },
   xpActivityIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS.lg,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.md
+    marginRight: 12
   },
   xpActivityContent: {
     flex: 1
   },
   xpActivityTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontFamily: fontFamily.medium,
     color: colors.text.primary,
-    marginBottom: 4
+    marginBottom: 2,
+    letterSpacing: -0.1
   },
   xpActivityDescription: {
-    fontSize: 14,
+    fontSize: 12,
     color: colors.text.secondary,
-    lineHeight: 20
+    lineHeight: 16,
+    fontFamily: fontFamily.medium
   },
   xpReward: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primary.main,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.xl,
-    gap: 6,
-    shadowColor: colors.primary.main,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 2
+    backgroundColor: 'rgba(157,91,255,0.12)',
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 10,
+    gap: 5,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(157,91,255,0.22)'
   },
   xpRewardText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF'
+    fontSize: 12,
+    fontFamily: fontFamily.bold,
+    color: colors.primary[500]
   },
   levelBenefitsContainer: {
     marginTop: SPACING.lg,
