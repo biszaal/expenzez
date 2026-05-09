@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../contexts/ThemeContext";
+import { fontFamily } from "../../constants/theme";
 import { useAuth } from "../auth/AuthContext";
 import { useSubscription } from "../../hooks/useSubscription";
 import { useRevenueCat } from "../../contexts/RevenueCatContext";
@@ -291,35 +292,65 @@ export default function SubscriptionPlansScreen() {
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity
-              style={styles.backButton}
+              style={[
+                styles.backButton,
+                {
+                  backgroundColor: colors.card.background,
+                  borderColor: colors.border.medium,
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderRadius: 14,
+                  width: 40,
+                  height: 40,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                },
+              ]}
               onPress={() => router.back()}
             >
               <Ionicons
-                name="arrow-back"
-                size={24}
-                color={colors.text.primary}
+                name="chevron-back"
+                size={18}
+                color={colors.text.secondary}
               />
             </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-              Premium Subscription
+            <Text
+              style={[
+                styles.headerTitle,
+                { color: colors.text.primary, fontFamily: fontFamily.semibold },
+              ]}
+            >
+              Subscription
             </Text>
             <View style={styles.placeholder} />
           </View>
 
           {/* Premium Status */}
           <View style={styles.premiumStatusContainer}>
-            <Ionicons
-              name="checkmark-circle"
-              size={64}
-              color={colors.success.main}
-            />
+            <View
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: 22,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: colors.posBg,
+              }}
+            >
+              <Ionicons
+                name="checkmark-circle"
+                size={42}
+                color={colors.lime[500]}
+              />
+            </View>
             <Text
               style={[
                 styles.premiumStatusTitle,
-                { color: colors.text.primary },
+                { color: colors.text.primary, fontFamily: fontFamily.semibold },
               ]}
             >
-              You&apos;re Premium!
+              You&apos;re Premium
+              <Text style={{ color: colors.primary[500] }}>.</Text>
             </Text>
             {(() => {
               // Get expiry date from RevenueCat context (more reliable) or subscriptionStatus
@@ -611,15 +642,43 @@ export default function SubscriptionPlansScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={[
+              styles.backButton,
+              {
+                backgroundColor: colors.card.background,
+                borderColor: colors.border.medium,
+                borderWidth: StyleSheet.hairlineWidth,
+                borderRadius: 14,
+                width: 40,
+                height: 40,
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+              },
+            ]}
             onPress={() => router.back()}
           >
-            <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+            <Ionicons name="chevron-back" size={18} color={colors.text.secondary} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-            Upgrade to Premium
+          <Text
+            style={[
+              styles.headerTitle,
+              { color: colors.text.primary, fontFamily: fontFamily.semibold },
+            ]}
+          >
+            Upgrade
           </Text>
-          <View style={styles.placeholder} />
+          <TouchableOpacity onPress={handleRestorePurchases}>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.text.secondary,
+                fontFamily: fontFamily.medium,
+              }}
+            >
+              Restore
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Hero Section - Simplified */}
@@ -627,20 +686,34 @@ export default function SubscriptionPlansScreen() {
           <View
             style={[
               styles.trialBadge,
-              { backgroundColor: colors.success.main + "20" },
+              { backgroundColor: colors.posBg },
             ]}
           >
-            <Ionicons name="star" size={16} color={colors.success.main} />
+            <Ionicons name="sparkles" size={13} color={colors.lime[500]} />
             <Text
-              style={[styles.trialBadgeText, { color: colors.success.main }]}
+              style={[
+                styles.trialBadgeText,
+                { color: colors.lime[500], fontFamily: fontFamily.bold, letterSpacing: 0.8 },
+              ]}
             >
-              Start Your 14-Day Free Trial Now
+              EXPENZEZ PRO
             </Text>
           </View>
-          <Text style={[styles.heroTitle, { color: colors.text.primary }]}>
-            Unlock Unlimited Potential
+          <Text
+            style={[
+              styles.heroTitle,
+              { color: colors.text.primary, fontFamily: fontFamily.semibold },
+            ]}
+          >
+            Master your money,{"\n"}faster
+            <Text style={{ color: colors.primary[500] }}>.</Text>
           </Text>
-          <Text style={[styles.heroSubtitle, { color: colors.text.secondary }]}>
+          <Text
+            style={[
+              styles.heroSubtitle,
+              { color: colors.text.secondary, fontFamily: fontFamily.medium },
+            ]}
+          >
             Unlimited budgets · 50+ AI chats daily · Advanced analytics · No
             limits
           </Text>

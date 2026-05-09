@@ -10,13 +10,14 @@ import {
   ActivityIndicator,
   Animated,
   Alert,
+  StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { notificationAPI, aiService } from "../../services/api";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../app/auth/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { spacing, borderRadius, typography } from "../../constants/theme";
+import { spacing, borderRadius, typography, fontFamily } from "../../constants/theme";
 import { useRouter } from "expo-router";
 import MarkdownRenderer from "../../components/ui/MarkdownRenderer";
 import type { ProactiveInsight } from "../../services/api/aiAPI";
@@ -500,16 +501,11 @@ export default function AIAssistantScreen() {
       <View
         style={{
           backgroundColor: colors.background.primary,
-          paddingHorizontal: 20,
-          paddingTop: 16,
-          paddingBottom: 20,
-          borderBottomWidth: 1,
-          borderBottomColor: "rgba(0,0,0,0.05)",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 2,
+          paddingHorizontal: 22,
+          paddingTop: 6,
+          paddingBottom: 14,
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: colors.border.medium,
         }}
       >
         <View
@@ -524,66 +520,52 @@ export default function AIAssistantScreen() {
             style={{
               width: 40,
               height: 40,
-              borderRadius: 20,
-              backgroundColor: colors.background.secondary,
+              borderRadius: 14,
+              backgroundColor: colors.card.background,
+              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: colors.border.medium,
               alignItems: "center",
               justifyContent: "center",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.1,
-              shadowRadius: 2,
-              elevation: 1,
             }}
           >
             <Ionicons
               name="chevron-back"
-              size={24}
-              color={colors.primary.main}
+              size={18}
+              color={colors.text.secondary}
             />
           </TouchableOpacity>
 
-          <View
-            style={{ flex: 1, alignItems: "center", paddingHorizontal: 16 }}
-          >
+          <View style={{ flex: 1, alignItems: "center", paddingHorizontal: 16 }}>
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 4,
+                gap: 6,
               }}
             >
-              <View
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: colors.primary.main + "15",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 8,
-                }}
-              >
-                <Ionicons
-                  name="sparkles"
-                  size={18}
-                  color={colors.primary.main}
-                />
-              </View>
+              <Ionicons
+                name="sparkles"
+                size={14}
+                color={colors.primary[500]}
+              />
               <Text
                 style={{
-                  fontSize: 20,
-                  fontWeight: "800",
+                  fontSize: 16,
+                  letterSpacing: -0.2,
                   color: colors.text.primary,
+                  fontFamily: fontFamily.semibold,
                 }}
               >
-                AI Assistant
+                Expenzez AI
               </Text>
             </View>
             <Text
               style={{
-                fontSize: 14,
-                color: colors.text.secondary,
+                fontSize: 12,
+                color: colors.text.tertiary,
                 textAlign: "center",
+                fontFamily: fontFamily.medium,
+                marginTop: 2,
               }}
             >
               Financial insights & advice
@@ -596,10 +578,10 @@ export default function AIAssistantScreen() {
             style={{
               width: 40,
               height: 40,
-              borderRadius: 20,
-              backgroundColor: loading
-                ? colors.background.tertiary
-                : colors.error.main + "15",
+              borderRadius: 14,
+              backgroundColor: colors.card.background,
+              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: colors.border.medium,
               alignItems: "center",
               justifyContent: "center",
               opacity: loading ? 0.5 : 1,
@@ -607,8 +589,8 @@ export default function AIAssistantScreen() {
           >
             <Ionicons
               name="trash-outline"
-              size={18}
-              color={loading ? colors.text.tertiary : colors.error.main}
+              size={16}
+              color={loading ? colors.text.tertiary : colors.rose[500]}
             />
           </TouchableOpacity>
         </View>
