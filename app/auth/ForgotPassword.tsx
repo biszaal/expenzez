@@ -1,20 +1,27 @@
 import React, { useState, useEffect } from "react";
 import {
   View,
+  Text,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  TouchableOpacity,
   StatusBar,
   ScrollView,
+  Pressable,
+  TextInput,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { TextField, Typography } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
 import { authAPI } from "../../services/api";
+import { fontFamily } from "../../constants/theme";
+
+// v1.5 redesign — back chip + lock-icon brand block, hairline username
+// field, gradient submit button. Success state shows lime check tile and
+// continue CTA.
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -24,10 +31,10 @@ export default function ForgotPasswordScreen() {
   const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const [userEmail, setUserEmail] = useState(""); // Store email for success message
+  const [userEmail, setUserEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [focused, setFocused] = useState(false);
 
-  // Countdown timer for resend
   useEffect(() => {
     if (resendCooldown > 0) {
       const timer = setTimeout(() => {
@@ -50,25 +57,19 @@ export default function ForgotPasswordScreen() {
         username: username.trim(),
       });
 
-      // Extract email from response if available
       const email = response?.email || "your registered email";
       setUserEmail(email);
-
       setEmailSent(true);
-      setResendCooldown(60); // 60 second cooldown for resend
+      setResendCooldown(60);
       showSuccess(`Password reset code sent to ${email}!`);
 
-      // Auto-navigate after showing success message
       setTimeout(() => {
         router.push({
           pathname: "/auth/ResetPassword",
           params: { username: username.trim(), email: email },
         });
-      }, 3000); // Reduced to 3 seconds for better UX
+      }, 3000);
     } catch (error: any) {
-      console.error("Forgot password error:", error);
-
-      // Extract specific error message
       let errorMessage = "Failed to send reset code";
 
       if (error.response?.data?.message) {
@@ -77,7 +78,6 @@ export default function ForgotPasswordScreen() {
         errorMessage = error.message;
       }
 
-      // Handle specific scenarios
       if (
         errorMessage.toLowerCase().includes("user not found") ||
         errorMessage.toLowerCase().includes("username")
@@ -107,9 +107,6 @@ export default function ForgotPasswordScreen() {
       setResendCooldown(60);
       showSuccess("Reset code sent again!");
     } catch (error: any) {
-      console.error("Resend error:", error);
-
-      // Extract specific error message
       let errorMessage = "Failed to resend code";
 
       if (error.response?.data?.message) {
@@ -118,7 +115,6 @@ export default function ForgotPasswordScreen() {
         errorMessage = error.message;
       }
 
-      // Handle specific scenarios for resend
       if (
         errorMessage.toLowerCase().includes("limit") ||
         errorMessage.toLowerCase().includes("many")
@@ -134,8 +130,24 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+
+      {/* Top glow */}
+      <LinearGradient
+        colors={
+          isDark
+            ? ["rgba(157,91,255,0.18)", "rgba(157,91,255,0)"]
+            : ["rgba(123,63,228,0.10)", "rgba(123,63,228,0)"]
+        }
+        style={[StyleSheet.absoluteFillObject, { height: 280 }]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        pointerEvents="none"
+      />
+
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -148,177 +160,301 @@ export default function ForgotPasswordScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
+            <Pressable
               onPress={() => router.back()}
+              style={[
+                styles.backChip,
+                {
+                  backgroundColor: colors.card.background,
+                  borderColor: colors.border.medium,
+                },
+              ]}
             >
-              <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-            </TouchableOpacity>
+              <Ionicons
+                name="chevron-back"
+                size={18}
+                color={colors.text.secondary}
+              />
+            </Pressable>
+          </View>
 
-            <View style={styles.headerContent}>
-              <View style={[styles.logoContainer, { backgroundColor: colors.primary.main + "15" }]}>
+          {/* Title block */}
+          <View style={styles.titleBlock}>
+            <LinearGradient
+              colors={[colors.primary[500], colors.primary[600]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.iconBadge, { shadowColor: colors.primary[500] }]}
+            >
+              <Ionicons name="lock-closed" size={26} color="#fff" />
+            </LinearGradient>
+            <Text
+              style={[
+                styles.title,
+                { color: colors.text.primary, fontFamily: fontFamily.semibold },
+              ]}
+            >
+              Reset password
+              <Text style={{ color: colors.primary[500] }}>.</Text>
+            </Text>
+            <Text
+              style={[
+                styles.subtitle,
+                { color: colors.text.secondary, fontFamily: fontFamily.medium },
+              ]}
+            >
+              Enter your username and we&apos;ll send you a{"\n"}reset code.
+            </Text>
+          </View>
+
+          {/* Success */}
+          {emailSent ? (
+            <View style={styles.form}>
+              <View
+                style={[
+                  styles.successCard,
+                  {
+                    backgroundColor: colors.card.background,
+                    borderColor: colors.border.medium,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.successIconCircle,
+                    { backgroundColor: colors.posBg },
+                  ]}
+                >
+                  <Ionicons
+                    name="checkmark"
+                    size={26}
+                    color={colors.lime[500]}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.successTitle,
+                    {
+                      color: colors.text.primary,
+                      fontFamily: fontFamily.semibold,
+                    },
+                  ]}
+                >
+                  Code sent
+                </Text>
+                <Text
+                  style={[
+                    styles.successMessage,
+                    {
+                      color: colors.text.secondary,
+                      fontFamily: fontFamily.medium,
+                    },
+                  ]}
+                >
+                  Reset code sent to {userEmail}
+                </Text>
+                <View
+                  style={[
+                    styles.instructionBox,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(255,255,255,0.04)"
+                        : "rgba(40,20,80,0.04)",
+                      borderColor: colors.border.medium,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="information-circle"
+                    size={16}
+                    color={colors.text.tertiary}
+                  />
+                  <Text
+                    style={[
+                      styles.instructionText,
+                      {
+                        color: colors.text.secondary,
+                        fontFamily: fontFamily.medium,
+                      },
+                    ]}
+                  >
+                    Check your email for the 6-digit code, then create your new
+                    password.
+                  </Text>
+                </View>
+              </View>
+
+              <Pressable
+                onPress={handleResend}
+                disabled={resendCooldown > 0 || isLoading}
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  {
+                    borderColor: colors.primary[500],
+                    opacity:
+                      resendCooldown > 0 || isLoading || pressed ? 0.6 : 1,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.secondaryButtonText,
+                    {
+                      color: colors.primary[500],
+                      fontFamily: fontFamily.semibold,
+                    },
+                  ]}
+                >
+                  {resendCooldown > 0
+                    ? `Resend in ${resendCooldown}s`
+                    : isLoading
+                      ? "Sending…"
+                      : "Resend code"}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  router.push({
+                    pathname: "/auth/ResetPassword",
+                    params: {
+                      username: username.trim(),
+                      email: userEmail,
+                    },
+                  });
+                }}
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  { opacity: pressed ? 0.85 : 1 },
+                ]}
+              >
+                <LinearGradient
+                  colors={[colors.primary[500], colors.primary[600]]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[
+                    styles.primaryButtonGradient,
+                    { shadowColor: colors.primary[500] },
+                  ]}
+                >
+                  <Text style={styles.primaryButtonText}>Continue</Text>
+                  <Ionicons name="arrow-forward" size={16} color="#fff" />
+                </LinearGradient>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.form}>
+              <Text
+                style={[
+                  styles.inputLabel,
+                  {
+                    color: colors.text.tertiary,
+                    fontFamily: fontFamily.semibold,
+                  },
+                ]}
+              >
+                USERNAME
+              </Text>
+              <View
+                style={[
+                  styles.fieldWrap,
+                  {
+                    backgroundColor: colors.card.background,
+                    borderColor: focused
+                      ? colors.primary[500]
+                      : colors.border.medium,
+                  },
+                ]}
+              >
                 <Ionicons
-                  name="lock-closed-outline"
-                  size={40}
-                  color={colors.primary.main}
+                  name="person-outline"
+                  size={17}
+                  color={focused ? colors.primary[500] : colors.text.tertiary}
+                />
+                <TextInput
+                  value={username}
+                  onChangeText={setUsername}
+                  placeholder="Your username"
+                  placeholderTextColor={colors.text.tertiary}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!isLoading}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  style={{
+                    flex: 1,
+                    color: colors.text.primary,
+                    fontFamily: fontFamily.medium,
+                    fontSize: 15,
+                    paddingVertical: 0,
+                  }}
                 />
               </View>
 
-              <Typography variant="h1" style={[styles.title, { color: colors.text.primary }]}>
-                Reset Password
-              </Typography>
-              <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
-                Enter your username and we&apos;ll send you a reset code
-              </Typography>
-            </View>
-          </View>
-
-          {/* Form Container */}
-          <View style={[styles.formCard, { backgroundColor: colors.background.secondary }]}>
-            {/* Success State */}
-            {emailSent && (
-              <View style={styles.successContainer}>
-                <View style={[styles.successIconCircle, { backgroundColor: colors.success.main + "20", borderColor: colors.border.light }]}>
-                  <Ionicons name="checkmark" size={40} color={colors.success.main} />
-                </View>
-
-                <Typography variant="h2" style={[styles.successTitle, { color: colors.text.primary }]}>
-                  Code Sent
-                </Typography>
-
-                <Typography variant="body" style={[styles.successMessage, { color: colors.text.secondary }]}>
-                  Reset code sent to {userEmail}
-                </Typography>
-
-                <View style={[styles.instructionBox, { backgroundColor: colors.background.primary, borderColor: colors.border.light }]}>
-                  <Ionicons
-                    name="information-circle"
-                    size={20}
-                    color={colors.text.secondary}
-                  />
-                  <Typography
-                    variant="caption"
-                    style={[styles.instructionText, { color: colors.text.secondary }]}
-                  >
-                    Check your email for the 6-digit code, then create your new password.
-                  </Typography>
-                </View>
-
-                {/* Resend Button */}
-                <TouchableOpacity
+              <Pressable
+                onPress={handleSubmit}
+                disabled={isLoading}
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  { opacity: pressed || isLoading ? 0.85 : 1, marginTop: 18 },
+                ]}
+              >
+                <LinearGradient
+                  colors={[colors.primary[500], colors.primary[600]]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                   style={[
-                    styles.resendCodeButton,
-                    { borderColor: colors.primary.main, opacity: resendCooldown > 0 || isLoading ? 0.6 : 1 },
+                    styles.primaryButtonGradient,
+                    { shadowColor: colors.primary[500] },
                   ]}
-                  onPress={handleResend}
-                  disabled={resendCooldown > 0 || isLoading}
-                  activeOpacity={0.8}
                 >
-                  <Typography variant="body" style={[styles.resendButtonText, { color: colors.primary.main }]}>
-                    {resendCooldown > 0
-                      ? `Resend in ${resendCooldown}s`
-                      : isLoading
-                        ? "Sending..."
-                        : "Resend Code"}
-                  </Typography>
-                </TouchableOpacity>
+                  <Text style={styles.primaryButtonText}>
+                    {isLoading ? "Sending…" : "Send reset code"}
+                  </Text>
+                  {!isLoading && (
+                    <Ionicons name="mail" size={16} color="#fff" />
+                  )}
+                </LinearGradient>
+              </Pressable>
 
-                <TouchableOpacity
-                  style={[styles.continueButton, { backgroundColor: colors.primary.main }]}
-                  onPress={() => {
-                    router.push({
-                      pathname: "/auth/ResetPassword",
-                      params: {
-                        username: username.trim(),
-                        email: userEmail,
+              <View style={styles.linksRow}>
+                <Pressable onPress={() => router.push("/auth/ForgotUsername")}>
+                  <Text
+                    style={[
+                      styles.linkText,
+                      {
+                        color: colors.primary[500],
+                        fontFamily: fontFamily.semibold,
                       },
-                    });
+                    ]}
+                  >
+                    Forgot username?
+                  </Text>
+                </Pressable>
+                <Text
+                  style={{
+                    color: colors.text.tertiary,
+                    fontFamily: fontFamily.medium,
                   }}
-                  activeOpacity={0.8}
                 >
-                  <Typography variant="body" style={styles.buttonText} weight="semibold">
-                    Continue
-                  </Typography>
-                  <Ionicons name="arrow-forward" size={18} color="white" />
-                </TouchableOpacity>
+                  ·
+                </Text>
+                <Pressable onPress={() => router.push("/auth/login")}>
+                  <Text
+                    style={[
+                      styles.linkText,
+                      {
+                        color: colors.primary[500],
+                        fontFamily: fontFamily.semibold,
+                      },
+                    ]}
+                  >
+                    Sign in
+                  </Text>
+                </Pressable>
               </View>
-            )}
-
-            {/* Form State */}
-            {!emailSent && (
-              <>
-                {/* Username Input */}
-                <View style={styles.inputContainer}>
-                  <Typography
-                    variant="body"
-                    style={[styles.inputLabel, { color: colors.text.primary }]}
-                    weight="medium"
-                  >
-                    Username
-                  </Typography>
-                  <TextField
-                    placeholder="Enter your username"
-                    value={username}
-                    onChangeText={setUsername}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    editable={!isLoading}
-                    placeholderTextColor={colors.text.tertiary}
-                  />
-                </View>
-
-                {/* Submit Button */}
-                <TouchableOpacity
-                  style={[
-                    styles.submitButton,
-                    { backgroundColor: colors.primary.main, opacity: isLoading ? 0.7 : 1 },
-                  ]}
-                  onPress={handleSubmit}
-                  disabled={isLoading}
-                  activeOpacity={0.8}
-                >
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    style={styles.buttonText}
-                  >
-                    {isLoading ? "Sending..." : "Send Reset Code"}
-                  </Typography>
-                  <Ionicons name="mail" size={18} color="white" />
-                </TouchableOpacity>
-
-                {/* Additional Links */}
-                <View style={styles.linksContainer}>
-                  <TouchableOpacity
-                    style={styles.linkButton}
-                    onPress={() => router.push("/auth/ForgotUsername")}
-                  >
-                    <Typography variant="body" style={[styles.linkText, { color: colors.primary.main }]}>
-                      Forgot username?
-                    </Typography>
-                  </TouchableOpacity>
-
-                  <View style={styles.linkSeparator} />
-
-                  <TouchableOpacity
-                    style={styles.linkButton}
-                    onPress={() => router.push("/auth/login")}
-                  >
-                    <Typography variant="body" style={[styles.linkTextSecondary, { color: colors.text.secondary }]}>
-                      Back to{" "}
-                      <Typography
-                        variant="body"
-                        style={[styles.linkText, { color: colors.primary.main }]}
-                        weight="semibold"
-                      >
-                        Sign In
-                      </Typography>
-                    </Typography>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-          </View>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -326,169 +462,148 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  keyboardView: { flex: 1 },
+  scrollView: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: 22,
+    paddingTop: 6,
+    paddingBottom: 32,
   },
   header: {
-    alignItems: "center",
-    marginBottom: 32,
-  },
-  backButton: {
-    alignSelf: "flex-start",
-    padding: 8,
-    marginLeft: -8,
-    marginBottom: 16,
-  },
-  headerContent: {
+    flexDirection: "row",
     alignItems: "center",
   },
-  logoContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
+  backChip: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  titleBlock: {
+    alignItems: "center",
+    paddingTop: 32,
+    gap: 14,
+  },
+  iconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 8,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "800",
-    marginBottom: 6,
-    letterSpacing: -0.5,
+    fontSize: 26,
+    letterSpacing: -0.6,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: 15,
-    textAlign: "center",
-    lineHeight: 22,
-    maxWidth: "90%",
-  },
-  formCard: {
-    borderRadius: 12,
-    padding: 20,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    marginBottom: 8,
     fontSize: 14,
-    fontWeight: "600",
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    minHeight: 48,
-  },
-  submitButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 10,
-    paddingVertical: 14,
-    marginBottom: 16,
-    gap: 8,
-  },
-  resendCodeButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 10,
-    paddingVertical: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-  },
-  resendButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  continueButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 10,
-    paddingVertical: 14,
-    gap: 8,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.2,
-  },
-  linksContainer: {
-    alignItems: "center",
-    gap: 16,
-    marginTop: 16,
-  },
-  linkButton: {
-    paddingVertical: 8,
-  },
-  linkSeparator: {
-    height: 1,
-    width: 40,
-  },
-  linkText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  linkTextSecondary: {
-    fontSize: 14,
-  },
-  successContainer: {
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  successIconCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    marginBottom: 16,
-  },
-  successTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  successMessage: {
     textAlign: "center",
     lineHeight: 20,
-    marginBottom: 16,
-    maxWidth: "90%",
+  },
+  form: {
+    paddingTop: 32,
+  },
+  inputLabel: {
+    fontSize: 11,
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  fieldWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  primaryButton: {
+    borderRadius: 18,
+    overflow: "hidden",
+  },
+  primaryButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 17,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  primaryButtonText: {
+    color: "#fff",
     fontSize: 15,
+    fontFamily: fontFamily.semibold,
+    letterSpacing: 0.2,
+  },
+  secondaryButton: {
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 12,
+  },
+  secondaryButtonText: {
+    fontSize: 14,
+  },
+  linksRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 14,
+    marginTop: 18,
+  },
+  linkText: { fontSize: 13 },
+  successCard: {
+    padding: 20,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 18,
+  },
+  successIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  successTitle: {
+    fontSize: 20,
+    letterSpacing: -0.4,
+    marginTop: 6,
+  },
+  successMessage: {
+    fontSize: 13.5,
+    textAlign: "center",
+    lineHeight: 18,
+    paddingHorizontal: 8,
   },
   instructionBox: {
     flexDirection: "row",
     alignItems: "flex-start",
-    padding: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    gap: 10,
-    marginBottom: 16,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+    marginTop: 8,
+    width: "100%",
   },
   instructionText: {
-    fontSize: 13,
-    lineHeight: 16,
-    textAlign: "left",
     flex: 1,
+    fontSize: 12.5,
+    lineHeight: 17,
   },
 });
