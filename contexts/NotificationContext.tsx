@@ -25,6 +25,40 @@ try {
       shouldShowList: true,
     }),
   });
+
+  // Android 8+ requires NotificationChannels for notifications to display.
+  // Register them once on import so the system has them before any push arrives.
+  if (Platform.OS === "android") {
+    const HIGH = Notifications.AndroidImportance?.HIGH ?? 4;
+    const DEFAULT = Notifications.AndroidImportance?.DEFAULT ?? 3;
+    Promise.all([
+      Notifications.setNotificationChannelAsync("default", {
+        name: "General",
+        importance: DEFAULT,
+        lightColor: "#6B2D7B",
+      }),
+      Notifications.setNotificationChannelAsync("transactions", {
+        name: "Transactions",
+        description: "New transactions and account activity",
+        importance: HIGH,
+        lightColor: "#6B2D7B",
+      }),
+      Notifications.setNotificationChannelAsync("budgets", {
+        name: "Budgets & Goals",
+        description: "Budget warnings and goal progress",
+        importance: DEFAULT,
+        lightColor: "#6B2D7B",
+      }),
+      Notifications.setNotificationChannelAsync("security", {
+        name: "Security",
+        description: "Security alerts and sign-in notifications",
+        importance: HIGH,
+        lightColor: "#6B2D7B",
+      }),
+    ]).catch((e) => {
+      console.warn("[NotificationContext] Failed to register Android channels", e);
+    });
+  }
 } catch (error) {
   // Notifications not available (Expo Go SDK 53+)
   console.log('⚠️ expo-notifications not available. Use development build or production build.');
@@ -257,7 +291,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           finalStatus
         );
         setError(
-          "Notification permissions not granted. Please enable in iOS Settings."
+          Platform.OS === "ios"
+            ? "Notification permissions not granted. Please enable in iOS Settings."
+            : "Notification permissions not granted. Please enable in Android Settings."
         );
         return false;
       }
