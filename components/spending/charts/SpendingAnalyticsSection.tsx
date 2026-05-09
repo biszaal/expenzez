@@ -9,6 +9,7 @@ import { spendingAnalyticsSectionStyles } from "./SpendingAnalyticsSection.style
 import { AIInsightCard } from "../../ai/AIInsightCard";
 import { AIButton } from "../../ai/AIButton";
 import { ChartInsightResponse } from "../../../services/api/chartInsightsAPI";
+import { fontFamily } from "../../../constants/theme";
 
 interface SpendingAnalyticsSectionProps {
   selectedMonth: string;
@@ -79,14 +80,8 @@ export const SpendingAnalyticsSection: React.FC<
         style={[
           styles.premiumSpendingCard,
           {
-            backgroundColor: colors.background.primary,
-            borderWidth: isDark ? 1 : 0,
-            borderColor: isDark ? colors.border.light : 'transparent',
-            shadowColor: isDark ? 'transparent' : '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: isDark ? 0 : 0.08,
-            shadowRadius: 12,
-            elevation: isDark ? 0 : 4,
+            backgroundColor: colors.card.background,
+            borderColor: colors.border.medium,
           },
         ]}
       >
@@ -96,16 +91,20 @@ export const SpendingAnalyticsSection: React.FC<
             <View
               style={[
                 styles.premiumAnalyticsIcon,
-                { backgroundColor: "#4ECDC4" },
+                {
+                  backgroundColor: isDark
+                    ? "rgba(157,91,255,0.16)"
+                    : "rgba(123,63,228,0.12)",
+                },
               ]}
             >
-              <Ionicons name="analytics" size={20} color="white" />
+              <Ionicons name="analytics" size={18} color={colors.primary[500]} />
             </View>
             <View style={styles.premiumSpendingHeaderText}>
               <Text
                 style={[
                   styles.premiumSpendingTitle,
-                  { color: colors.text.primary },
+                  { color: colors.text.primary, fontFamily: fontFamily.semibold },
                 ]}
               >
                 {dayjs(selectedMonth).format("MMMM")} Analytics
@@ -113,14 +112,13 @@ export const SpendingAnalyticsSection: React.FC<
               <Text
                 style={[
                   styles.premiumSpendingSubtitle,
-                  { color: colors.text.secondary },
+                  { color: colors.text.secondary, fontFamily: fontFamily.medium },
                 ]}
               >
                 Spending overview
               </Text>
             </View>
           </View>
-
         </View>
 
         {/* Premium Custom Chart Section */}
@@ -148,11 +146,15 @@ export const SpendingAnalyticsSection: React.FC<
                       interactive={true}
                       gradientColors={
                         monthlyOverBudget
-                          ? ["#EF4444", "#F87171"] // Red gradient for over budget
-                          : ["#8B5CF6", "#6366F1"] // Purple to indigo gradient for within budget
+                          ? [colors.rose[500], colors.rose[600]]
+                          : [colors.primary[500], colors.lime[500]]
                       }
-                      lineColor={monthlyOverBudget ? "#EF4444" : "#8B5CF6"}
-                      pointColor={monthlyOverBudget ? "#EF4444" : "#8B5CF6"}
+                      lineColor={
+                        monthlyOverBudget ? colors.rose[500] : colors.primary[500]
+                      }
+                      pointColor={
+                        monthlyOverBudget ? colors.rose[500] : colors.primary[500]
+                      }
                       backgroundColor="transparent"
                       onPointSelect={onPointSelect}
                       showGrid={true}
@@ -170,13 +172,17 @@ export const SpendingAnalyticsSection: React.FC<
                     <View
                       style={[
                         styles.premiumChartLegendDot,
-                        { backgroundColor: colors.primary.main },
+                        {
+                          backgroundColor: monthlyOverBudget
+                            ? colors.rose[500]
+                            : colors.primary[500],
+                        },
                       ]}
                     />
                     <Text
                       style={[
                         styles.premiumChartLegendText,
-                        { color: colors.text.secondary },
+                        { color: colors.text.secondary, fontFamily: fontFamily.medium },
                       ]}
                     >
                       This Month
@@ -192,17 +198,15 @@ export const SpendingAnalyticsSection: React.FC<
                           style={[
                             styles.premiumChartLegendDot,
                             {
-                              backgroundColor: "rgba(156, 163, 175, 0.6)",
-                              borderStyle: "dashed",
-                              borderWidth: 1,
-                              borderColor: "rgba(156, 163, 175, 0.8)",
+                              backgroundColor: colors.text.tertiary,
+                              opacity: 0.6,
                             },
                           ]}
                         />
                         <Text
                           style={[
                             styles.premiumChartLegendText,
-                            { color: colors.text.secondary },
+                            { color: colors.text.secondary, fontFamily: fontFamily.medium },
                           ]}
                         >
                           {dayjs(selectedMonth)
@@ -230,17 +234,15 @@ export const SpendingAnalyticsSection: React.FC<
 
                   const isIncrease = thisMonthTotal > lastMonthTotal;
                   const arrowName = isIncrease ? "arrow-up" : "arrow-down";
-                  const arrowColor = isIncrease ? colors.error.main : colors.success.main;
-                  const backgroundColor = isIncrease
-                    ? 'rgba(239, 68, 68, 0.1)'  // Light red background for increase
-                    : 'rgba(34, 197, 94, 0.1)';  // Light green background for decrease
+                  const arrowColor = isIncrease ? colors.rose[500] : colors.lime[500];
+                  const backgroundColor = isIncrease ? colors.negBg : colors.posBg;
 
                   return (
                     <View style={styles.currentValueContainer}>
                       <Text
                         style={[
                           styles.currentValue,
-                          { color: arrowColor },
+                          { color: colors.text.primary, fontFamily: fontFamily.monoMedium },
                         ]}
                       >
                         £
@@ -254,13 +256,13 @@ export const SpendingAnalyticsSection: React.FC<
                       ]}>
                         <Ionicons
                           name={arrowName}
-                          size={16}
+                          size={13}
                           color={arrowColor}
                         />
                         <Text
                           style={[
                             styles.currentValueLabel,
-                            { color: arrowColor },
+                            { color: arrowColor, fontFamily: fontFamily.semibold },
                           ]}
                         >
                           vs. {daysToCompare}{" "}
@@ -274,182 +276,171 @@ export const SpendingAnalyticsSection: React.FC<
                 })()}
 
                 {/* Mini Stat Cards - IMPROVED LAYOUT */}
-                {dailySpendingData && dailySpendingData.data.length > 0 && (
-                  <View style={styles.miniStatsContainer}>
-                    {/* Peak Day Card */}
-                    <View
-                      style={[
-                        styles.miniStatCard,
-                        {
-                          backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
-                          borderWidth: 1,
-                          borderColor: isDark ? colors.border.light : colors.gray[200],
-                        },
-                      ]}
-                    >
+                {dailySpendingData && dailySpendingData.data.length > 0 && (() => {
+                  const tileBg = isDark
+                    ? "rgba(255,255,255,0.03)"
+                    : "rgba(40,20,80,0.03)";
+                  const primaryTint = isDark
+                    ? "rgba(157,91,255,0.16)"
+                    : "rgba(123,63,228,0.12)";
+                  return (
+                    <View style={styles.miniStatsContainer}>
+                      {/* Peak Day Card */}
                       <View
                         style={[
-                          styles.miniStatIcon,
-                          { backgroundColor: colors.primary.main[100] },
+                          styles.miniStatCard,
+                          { backgroundColor: tileBg, borderColor: colors.border.medium },
                         ]}
                       >
-                        <Ionicons
-                          name="trending-up"
-                          size={18}
-                          color={colors.primary.main}
-                        />
-                      </View>
-                      <View style={styles.miniStatContent}>
-                        <Text
+                        <View
                           style={[
-                            styles.miniStatValue,
-                            { color: colors.text.primary },
+                            styles.miniStatIcon,
+                            { backgroundColor: primaryTint },
                           ]}
                         >
-                          £{Math.max(...dailySpendingData.data).toFixed(0)}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.miniStatLabel,
-                            { color: colors.text.secondary },
-                          ]}
-                        >
-                          Peak Day
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Daily Average Card */}
-                    <View
-                      style={[
-                        styles.miniStatCard,
-                        {
-                          backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
-                          borderWidth: 1,
-                          borderColor: isDark ? colors.border.light : colors.gray[200],
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.miniStatIcon,
-                          { backgroundColor: colors.success[100] },
-                        ]}
-                      >
-                        <Ionicons
-                          name="bar-chart-outline"
-                          size={18}
-                          color={colors.success.main}
-                        />
-                      </View>
-                      <View style={styles.miniStatContent}>
-                        <Text
-                          style={[
-                            styles.miniStatValue,
-                            { color: colors.text.primary },
-                          ]}
-                        >
-                          £
-                          {(
-                            dailySpendingData.data.reduce((a, b) => a + b, 0) /
-                            dailySpendingData.data.filter((v) => v > 0).length
-                          ).toFixed(0)}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.miniStatLabel,
-                            { color: colors.text.secondary },
-                          ]}
-                        >
-                          Daily Avg
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* vs Last Month Card */}
-                    {dailySpendingData.prevMonthData &&
-                      dailySpendingData.prevMonthData.some((v) => v > 0) &&
-                      (() => {
-                        // Only compare up to the same day in both months for fair comparison
-                        // Current month has data up to today, so compare previous month up to the same day
-                        const daysToCompare = Math.min(
-                          dailySpendingData.data.length,
-                          dailySpendingData.prevMonthData.length
-                        );
-
-                        const thisMonthTotal = dailySpendingData.data
-                          .slice(0, daysToCompare)
-                          .reduce((a, b) => a + b, 0);
-                        const lastMonthTotal =
-                          dailySpendingData.prevMonthData
-                            .slice(0, daysToCompare)
-                            .reduce((a, b) => a + b, 0);
-                        const diff = thisMonthTotal - lastMonthTotal;
-                        const percentChange =
-                          lastMonthTotal > 0
-                            ? (diff / lastMonthTotal) * 100
-                            : 0;
-                        const isIncrease = diff > 0;
-
-                        return (
-                          <View
+                          <Ionicons
+                            name="trending-up"
+                            size={16}
+                            color={colors.primary[500]}
+                          />
+                        </View>
+                        <View style={styles.miniStatContent}>
+                          <Text
                             style={[
-                              styles.miniStatCard,
-                              {
-                                backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
-                                borderWidth: 1,
-                                borderColor: isDark ? colors.border.light : colors.gray[200],
-                              },
+                              styles.miniStatValue,
+                              { color: colors.text.primary, fontFamily: fontFamily.monoMedium },
                             ]}
                           >
+                            £{Math.max(...dailySpendingData.data).toFixed(0)}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.miniStatLabel,
+                              { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
+                            ]}
+                          >
+                            PEAK DAY
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Daily Average Card */}
+                      <View
+                        style={[
+                          styles.miniStatCard,
+                          { backgroundColor: tileBg, borderColor: colors.border.medium },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.miniStatIcon,
+                            { backgroundColor: colors.posBg },
+                          ]}
+                        >
+                          <Ionicons
+                            name="bar-chart-outline"
+                            size={16}
+                            color={colors.lime[500]}
+                          />
+                        </View>
+                        <View style={styles.miniStatContent}>
+                          <Text
+                            style={[
+                              styles.miniStatValue,
+                              { color: colors.text.primary, fontFamily: fontFamily.monoMedium },
+                            ]}
+                          >
+                            £
+                            {(
+                              dailySpendingData.data.reduce((a, b) => a + b, 0) /
+                              Math.max(
+                                dailySpendingData.data.filter((v) => v > 0).length,
+                                1
+                              )
+                            ).toFixed(0)}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.miniStatLabel,
+                              { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
+                            ]}
+                          >
+                            DAILY AVG
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* vs Last Month Card */}
+                      {dailySpendingData.prevMonthData &&
+                        dailySpendingData.prevMonthData.some((v) => v > 0) &&
+                        (() => {
+                          const daysToCompare = Math.min(
+                            dailySpendingData.data.length,
+                            dailySpendingData.prevMonthData.length
+                          );
+                          const thisMonthTotal = dailySpendingData.data
+                            .slice(0, daysToCompare)
+                            .reduce((a, b) => a + b, 0);
+                          const lastMonthTotal =
+                            dailySpendingData.prevMonthData
+                              .slice(0, daysToCompare)
+                              .reduce((a, b) => a + b, 0);
+                          const diff = thisMonthTotal - lastMonthTotal;
+                          const percentChange =
+                            lastMonthTotal > 0
+                              ? (diff / lastMonthTotal) * 100
+                              : 0;
+                          const isIncrease = diff > 0;
+                          const accent = isIncrease
+                            ? colors.rose[500]
+                            : colors.lime[500];
+                          const accentBg = isIncrease
+                            ? colors.negBg
+                            : colors.posBg;
+                          return (
                             <View
                               style={[
-                                styles.miniStatIcon,
-                                {
-                                  backgroundColor: isIncrease
-                                    ? colors.error[100]
-                                    : colors.success[100],
-                                },
+                                styles.miniStatCard,
+                                { backgroundColor: tileBg, borderColor: colors.border.medium },
                               ]}
                             >
-                              <Ionicons
-                                name={isIncrease ? "arrow-up" : "arrow-down"}
-                                size={18}
-                                color={
-                                  isIncrease
-                                    ? colors.error.main
-                                    : colors.success.main
-                                }
-                              />
-                            </View>
-                            <View style={styles.miniStatContent}>
-                              <Text
+                              <View
                                 style={[
-                                  styles.miniStatValue,
-                                  {
-                                    color: isIncrease
-                                      ? colors.error.main
-                                      : colors.success.main,
-                                  },
+                                  styles.miniStatIcon,
+                                  { backgroundColor: accentBg },
                                 ]}
                               >
-                                {isIncrease ? "+" : ""}
-                                {Math.abs(percentChange).toFixed(0)}%
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.miniStatLabel,
-                                  { color: colors.text.secondary },
-                                ]}
-                              >
-                                vs Last Mo
-                              </Text>
+                                <Ionicons
+                                  name={isIncrease ? "arrow-up" : "arrow-down"}
+                                  size={16}
+                                  color={accent}
+                                />
+                              </View>
+                              <View style={styles.miniStatContent}>
+                                <Text
+                                  style={[
+                                    styles.miniStatValue,
+                                    { color: accent, fontFamily: fontFamily.monoMedium },
+                                  ]}
+                                >
+                                  {isIncrease ? "+" : ""}
+                                  {Math.abs(percentChange).toFixed(0)}%
+                                </Text>
+                                <Text
+                                  style={[
+                                    styles.miniStatLabel,
+                                    { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
+                                  ]}
+                                >
+                                  VS LAST MO
+                                </Text>
+                              </View>
                             </View>
-                          </View>
-                        );
-                      })()}
-                  </View>
-                )}
+                          );
+                        })()}
+                    </View>
+                  );
+                })()}
               </>
             ) : (
               /* Empty Chart State */
@@ -457,28 +448,33 @@ export const SpendingAnalyticsSection: React.FC<
                 style={[
                   styles.premiumEmptyChart,
                   {
-                    backgroundColor: isDark ? colors.background.secondary : colors.background.primary,
-                    borderWidth: isDark ? 1 : 0,
-                    borderColor: isDark ? colors.border.light : 'transparent',
+                    backgroundColor: isDark
+                      ? "rgba(255,255,255,0.03)"
+                      : "rgba(40,20,80,0.03)",
+                    borderColor: colors.border.medium,
                   },
                 ]}
               >
                 <View
                   style={[
                     styles.premiumEmptyChartIcon,
-                    { backgroundColor: colors.background.secondary },
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(157,91,255,0.16)"
+                        : "rgba(123,63,228,0.12)",
+                    },
                   ]}
                 >
                   <Ionicons
                     name="analytics-outline"
-                    size={32}
-                    color={colors.text.tertiary}
+                    size={28}
+                    color={colors.primary[500]}
                   />
                 </View>
                 <Text
                   style={[
                     styles.premiumEmptyChartTitle,
-                    { color: colors.text.primary },
+                    { color: colors.text.primary, fontFamily: fontFamily.semibold },
                   ]}
                 >
                   No spending data
@@ -486,7 +482,7 @@ export const SpendingAnalyticsSection: React.FC<
                 <Text
                   style={[
                     styles.premiumEmptyChartSubtitle,
-                    { color: colors.text.secondary },
+                    { color: colors.text.secondary, fontFamily: fontFamily.medium },
                   ]}
                 >
                   Start spending to see your analytics

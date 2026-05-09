@@ -1,38 +1,33 @@
 import { StyleSheet } from 'react-native';
 
+// v1.5 redesign — flat circular center, no shadow, mono numerals (set inline).
 export const styles = StyleSheet.create({
   donutCenter: {
     position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 144,
+    height: 144,
+    borderRadius: 72,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
   donutCenterPercentage: {
-    fontSize: 28,
-    fontWeight: '800',
-    marginBottom: 2,
+    fontSize: 38,
+    marginBottom: 0,
+    letterSpacing: -1.4,
   },
   donutCenterLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    marginBottom: 4,
+    fontSize: 10,
+    marginTop: 2,
+    letterSpacing: 1.4,
   },
   donutCenterAmount: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 14,
     textAlign: 'center',
-    marginBottom: 2,
+    marginTop: 6,
   },
   donutCenterSubLabel: {
-    fontSize: 10,
-    fontWeight: '400',
+    fontSize: 11,
     textAlign: 'center',
+    marginTop: 2,
   },
 });
