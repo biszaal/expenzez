@@ -1,48 +1,50 @@
-// Clean Purple-focused Professional Theme - Matching EX Logo
+// Expenzez v1.5 — electric purple + lime, dark/light variants.
+// Source: Claude Design handoff (Expenzez Redesign).
 export const lightColors = {
-  // Primary colors - Deep purple palette matching logo (#6B2D7B)
+  // Primary colors - Electric purple
   primary: {
-    50: "#FDF4FF",
-    100: "#FAE8FF",
-    200: "#F5D0FE",
-    300: "#E879F9",
-    400: "#A855F7",
-    500: "#7B2D8E", // Main purple primary - matches logo
-    600: "#6B2D7B", // Slightly darker
-    700: "#5B2468",
-    800: "#4A1D54",
-    900: "#3A1541",
-    main: "#7B2D8E", // Alias for 500 - logo color
+    50: "#F5EFFD",
+    100: "#E8DAFB",
+    200: "#D6BBF7",
+    300: "#B58BF0",
+    400: "#9461E9",
+    500: "#7B3FE4", // Main electric purple
+    600: "#5B23B8", // Dim variant for gradients
+    700: "#481B91",
+    800: "#36156D",
+    900: "#270F50",
+    main: "#7B3FE4",
+    glow: "rgba(123,63,228,0.24)", // Soft glow for shadows behind primary CTAs
   },
 
-  // Secondary color - Green for financial success/positive actions
+  // Secondary - lime accent (positive / income / savings)
   secondary: {
-    50: "#F0FDF4",
-    100: "#DCFCE7",
-    200: "#BBF7D0",
-    300: "#86EFAC",
-    400: "#4ADE80",
-    500: "#22C55E", // Green secondary
-    600: "#16A34A",
-    700: "#15803D",
-    800: "#166534",
-    900: "#14532D",
-    main: "#22C55E", // Alias for 500
+    50: "#F1F8E1",
+    100: "#E2F1C3",
+    200: "#C8E68A",
+    300: "#9FCB48",
+    400: "#7AA827",
+    500: "#5C8519", // Main lime (light mode contrast-safe)
+    600: "#496B14",
+    700: "#3F5B12",
+    800: "#33490E",
+    900: "#27370B",
+    main: "#5C8519",
   },
 
-  // Accent color - Complementary color for variety
+  // Accent — kept as cyan for charts / informational badges
   accent: {
-    50: "#F0F9FF",
-    100: "#E0F2FE",
-    200: "#BAE6FD",
-    300: "#7DD3FC",
-    400: "#38BDF8",
-    500: "#0EA5E9", // Blue accent for contrast
-    600: "#0284C7",
-    700: "#0369A1",
-    800: "#075985",
-    900: "#0C4A6E",
-    main: "#0EA5E9", // Alias for 500
+    50: "#E6F2FA",
+    100: "#C5E0F1",
+    200: "#9BC9E5",
+    300: "#5BA1CC",
+    400: "#3F8FBF",
+    500: "#2D7DB8", // Cyan accent
+    600: "#256594",
+    700: "#1D4D71",
+    800: "#15364E",
+    900: "#0D2030",
+    main: "#2D7DB8",
   },
 
   // Neutral gray scale - Essential only
@@ -59,76 +61,99 @@ export const lightColors = {
     900: "#18181B",
   },
 
-  // Minimal status colors - Clean and subtle
+  // Status colors — light mode tones
   success: {
-    50: "#F0FDF4",
-    100: "#DCFCE7",
-    500: "#22C55E", // Main success color
-    600: "#16A34A",
-    700: "#15803D",
-    main: "#22C55E", // Alias for 500
+    50: "#F1F8E1",
+    100: "#E2F1C3",
+    500: "#5C8519", // Lime as success in light mode
+    600: "#496B14",
+    700: "#3F5B12",
+    main: "#5C8519",
   },
 
   error: {
-    50: "#FEF2F2",
-    100: "#FEE2E2",
-    500: "#EF4444", // Main error color
-    600: "#DC2626",
-    700: "#B91C1C",
-    main: "#EF4444", // Alias for 500
+    50: "#FBE4EB",
+    100: "#F4BCCC",
+    500: "#D63A66", // Rose
+    600: "#A8294F",
+    700: "#7E1F3B",
+    main: "#D63A66",
   },
 
   warning: {
-    50: "#FFFBEB",
-    100: "#FEF3C7",
-    500: "#F59E0B", // Main warning color
-    600: "#D97706",
-    700: "#B45309",
-    main: "#F59E0B", // Alias for 500
+    50: "#F8EBD0",
+    100: "#EFD49B",
+    500: "#B8761A", // Amber
+    600: "#8C5A14",
+    700: "#664210",
+    main: "#B8761A",
   },
 
-  // Clean background system with neutral tones
+  // Backgrounds (light)
   background: {
-    primary: "#FFFFFF", // Pure white
-    secondary: "#FAFAFA", // Very subtle gray tint
-    tertiary: "#F4F4F5", // Light gray background
-    overlay: "rgba(123, 45, 142, 0.02)", // Subtle purple overlay matching logo
+    primary: "#FAF8FF", // bg
+    secondary: "#F3EFFB", // bgSoft
+    tertiary: "#F7F4FE", // cardSoft
+    overlay: "rgba(123,63,228,0.08)",
   },
 
-  // Minimal text hierarchy
+  // Text hierarchy (light)
   text: {
-    primary: "#18181B", // Near black - high contrast
-    secondary: "#52525B", // Medium gray - readable
-    tertiary: "#A1A1AA", // Light gray - subtle text
-    inverse: "#FFFFFF", // White text on dark backgrounds
-    muted: "#D4D4D8", // Very light - placeholders
-    textSecondary: "#52525B", // Alias for secondary
+    primary: "#1A1430",
+    secondary: "rgba(26,20,48,0.62)",
+    tertiary: "rgba(26,20,48,0.42)",
+    inverse: "#FFFFFF",
+    muted: "rgba(26,20,48,0.30)",
+    textSecondary: "rgba(26,20,48,0.62)",
   },
 
-  // Divider colors
-  divider: "#E4E4E7", // Light gray divider
+  divider: "rgba(40,20,80,0.05)",
 
-  // Simple border system - matching logo purple
+  // Borders (light)
   border: {
-    light: "#FAE8FF", // Very subtle purple tint
-    medium: "#F5D0FE", // Standard borders with purple tint
-    dark: "#E879F9", // Pronounced borders
-    focus: "#7B2D8E", // Purple focus state matching logo
+    light: "rgba(40,20,80,0.05)",
+    medium: "rgba(40,20,80,0.08)",
+    dark: "rgba(40,20,80,0.14)",
+    focus: "#7B3FE4",
   },
 
-  // Minimal shadow system
   shadow: {
-    subtle: "rgba(0, 0, 0, 0.02)", // Almost invisible
-    soft: "rgba(0, 0, 0, 0.05)", // Gentle elevation
-    medium: "rgba(0, 0, 0, 0.08)", // Card elevation
-    strong: "rgba(0, 0, 0, 0.12)", // Modal/overlay
+    subtle: "rgba(40,20,80,0.04)",
+    soft: "rgba(40,20,80,0.08)",
+    medium: "rgba(40,20,80,0.12)",
+    strong: "rgba(40,20,80,0.18)",
   },
 
-  // Card colors - matching logo purple
+  // Cards (light)
   card: {
     background: "#FFFFFF",
-    border: "#FAE8FF",
-    shadow: "rgba(0, 0, 0, 0.02)",
+    border: "rgba(40,20,80,0.08)",
+    shadow: "rgba(40,20,80,0.04)",
+  },
+
+  // New v1.5 accent palettes — used directly via colors.lime, colors.rose, etc.
+  lime: { 500: "#5C8519", 600: "#496B14", main: "#5C8519" },
+  rose: { 500: "#D63A66", 600: "#A8294F", main: "#D63A66" },
+  amber: { 500: "#B8761A", 600: "#8C5A14", main: "#B8761A" },
+  cyan: { 500: "#2D7DB8", 600: "#256594", main: "#2D7DB8" },
+
+  // Soft positive / negative tints (used for cashflow chips / badges)
+  posBg: "rgba(92,133,25,0.14)",
+  posFg: "#3F5B12",
+  negBg: "rgba(214,58,102,0.10)",
+  negFg: "#A8294F",
+
+  // Category color pairs (light)
+  category: {
+    food: { bg: "rgba(200,90,30,0.10)", fg: "#8C4515" },
+    transport: { bg: "rgba(45,125,184,0.10)", fg: "#1F5680" },
+    shopping: { bg: "rgba(190,55,90,0.10)", fg: "#8C2A4A" },
+    entertainment: { bg: "rgba(92,133,25,0.12)", fg: "#3F5B12" },
+    bills: { bg: "rgba(123,63,228,0.10)", fg: "#5B23B8" },
+    healthcare: { bg: "rgba(50,130,90,0.10)", fg: "#1F5638" },
+    travel: { bg: "rgba(80,90,180,0.10)", fg: "#2F3A8A" },
+    groceries: { bg: "rgba(184,118,26,0.12)", fg: "#7A4F12" },
+    income: { bg: "rgba(92,133,25,0.14)", fg: "#3F5B12" },
   },
 
   // Additional utility colors for components
@@ -199,49 +224,50 @@ export const lightColors = {
 };
 
 export const darkColors = {
-  // Primary colors - Purple palette for dark mode matching logo
+  // Primary - electric purple in dark mode
   primary: {
-    50: "#FDF4FF",
-    100: "#FAE8FF",
-    200: "#F5D0FE",
-    300: "#E879F9",
-    400: "#A855F7",
-    500: "#7B2D8E", // Same as light mode for consistency
-    600: "#6B2D7B",
-    700: "#5B2468",
-    800: "#4A1D54",
-    900: "#3A1541",
-    main: "#7B2D8E", // Same as light mode
+    50: "#1F0F36",
+    100: "#311854",
+    200: "#492279",
+    300: "#5B23B8",
+    400: "#7E40D6",
+    500: "#9D5BFF", // Main electric purple (dark mode)
+    600: "#6B2EB8", // Dim variant for gradients
+    700: "#5B23B8",
+    800: "#481B91",
+    900: "#36156D",
+    main: "#9D5BFF",
+    glow: "rgba(157,91,255,0.35)",
   },
 
-  // Secondary color - Green for financial success/positive actions (dark mode)
+  // Secondary - lime accent (dark mode)
   secondary: {
-    50: "#14532D",
-    100: "#166534",
-    200: "#15803D",
-    300: "#16A34A",
-    400: "#22C55E",
-    500: "#4ADE80", // Lighter green for dark mode
-    600: "#86EFAC",
-    700: "#BBF7D0",
-    800: "#DCFCE7",
-    900: "#F0FDF4",
-    main: "#4ADE80", // Alias for 500
+    50: "#27370B",
+    100: "#33490E",
+    200: "#3F5B12",
+    300: "#496B14",
+    400: "#5C8519",
+    500: "#C5F25C", // Lime (dark mode contrast-safe)
+    600: "#A8D848",
+    700: "#8FB83C",
+    800: "#769830",
+    900: "#5C7826",
+    main: "#C5F25C",
   },
 
-  // Accent color - Blue accent for variety in dark mode
+  // Accent - cyan
   accent: {
-    50: "#0C4A6E",
-    100: "#075985",
-    200: "#0369A1",
-    300: "#0284C7",
-    400: "#0EA5E9",
-    500: "#38BDF8", // Blue accent
-    600: "#7DD3FC",
-    700: "#BAE6FD",
-    800: "#E0F2FE",
-    900: "#F0F9FF",
-    main: "#38BDF8", // Alias for 500
+    50: "#0D2030",
+    100: "#15364E",
+    200: "#1D4D71",
+    300: "#256594",
+    400: "#2D7DB8",
+    500: "#5BC8FF", // Cyan (dark mode bright)
+    600: "#7AD4FF",
+    700: "#9FDDFF",
+    800: "#C5E8FF",
+    900: "#E5F4FF",
+    main: "#5BC8FF",
   },
 
   // Neutral gray scale - Inverted for dark mode
@@ -258,76 +284,97 @@ export const darkColors = {
     900: "#FAFAFA",
   },
 
-  // Minimal status colors - Same as light mode
+  // Status colors — dark mode
   success: {
-    50: "#0F2419",
-    100: "#14532D",
-    500: "#22C55E", // Main success color
-    600: "#16A34A",
-    700: "#15803D",
-    main: "#22C55E", // Alias for 500
+    50: "#27370B",
+    100: "#33490E",
+    500: "#C5F25C", // Lime as success in dark mode
+    600: "#A8D848",
+    700: "#8FB83C",
+    main: "#C5F25C",
   },
 
   error: {
-    50: "#450A0A",
-    100: "#7F1D1D",
-    500: "#EF4444", // Main error color
-    600: "#DC2626",
-    700: "#B91C1C",
-    main: "#EF4444", // Alias for 500
+    50: "#3D0E1B",
+    100: "#5E1729",
+    500: "#FF6B8A", // Rose
+    600: "#E54E72",
+    700: "#C0395B",
+    main: "#FF6B8A",
   },
 
   warning: {
-    50: "#451A03",
-    100: "#78350F",
-    500: "#F59E0B", // Main warning color
-    600: "#D97706",
-    700: "#B45309",
-    main: "#F59E0B", // Alias for 500
+    50: "#3B2A0A",
+    100: "#5A3F12",
+    500: "#F5B342", // Amber
+    600: "#D89A2E",
+    700: "#B57F22",
+    main: "#F5B342",
   },
 
-  // Clean background system for dark mode with logo purple tints
+  // Backgrounds (dark)
   background: {
-    primary: "#0F0B12", // Deep black with purple hint
-    secondary: "#1A1222", // Dark purple tint matching logo
-    tertiary: "#2A1B35", // Card backgrounds with logo purple
-    overlay: "rgba(123, 45, 142, 0.05)", // Purple overlay matching logo
+    primary: "#0A0712", // bg
+    secondary: "#100B1B", // bgSoft
+    tertiary: "#1B1428", // cardSoft
+    overlay: "rgba(157,91,255,0.10)",
   },
 
-  // Minimal text hierarchy for dark mode
+  // Text hierarchy (dark)
   text: {
-    primary: "#FAFAFA", // Near white - high contrast
-    secondary: "#D4D4D8", // Light gray - readable
-    tertiary: "#A1A1AA", // Medium gray - subtle text
-    inverse: "#18181B", // Dark text on light backgrounds
-    muted: "#52525B", // Very dark - placeholders
-    textSecondary: "#D4D4D8", // Alias for secondary
+    primary: "#F4F1FA",
+    secondary: "rgba(244,241,250,0.62)",
+    tertiary: "rgba(244,241,250,0.38)",
+    inverse: "#1A1430",
+    muted: "rgba(244,241,250,0.30)",
+    textSecondary: "rgba(244,241,250,0.62)",
   },
 
-  // Divider colors for dark mode
-  divider: "#3F3F46", // Dark gray divider
+  divider: "rgba(255,255,255,0.04)",
 
-  // Simple border system for dark mode with logo purple tints
+  // Borders (dark)
   border: {
-    light: "#2A1B35", // Very subtle purple tint
-    medium: "#3D2550", // Standard borders with logo purple
-    dark: "#52525B", // Pronounced borders
-    focus: "#A855F7", // Purple focus state for dark mode
+    light: "rgba(255,255,255,0.04)",
+    medium: "rgba(255,255,255,0.06)",
+    dark: "rgba(255,255,255,0.10)",
+    focus: "#9D5BFF",
   },
 
-  // Minimal shadow system for dark mode
   shadow: {
-    subtle: "rgba(0, 0, 0, 0.5)", // More visible in dark mode
-    soft: "rgba(0, 0, 0, 0.6)", // Gentle elevation
-    medium: "rgba(0, 0, 0, 0.7)", // Card elevation
-    strong: "rgba(0, 0, 0, 0.8)", // Modal/overlay
+    subtle: "rgba(0,0,0,0.40)",
+    soft: "rgba(0,0,0,0.55)",
+    medium: "rgba(0,0,0,0.70)",
+    strong: "rgba(0,0,0,0.85)",
   },
 
-  // Card colors for dark mode - matching logo purple
   card: {
-    background: "#1A1222",
-    border: "#2A1B35",
-    shadow: "rgba(0, 0, 0, 0.5)",
+    background: "#161122", // card
+    border: "rgba(255,255,255,0.06)",
+    shadow: "rgba(0,0,0,0.55)",
+  },
+
+  // New v1.5 accent palettes
+  lime: { 500: "#C5F25C", 600: "#A8D848", main: "#C5F25C" },
+  rose: { 500: "#FF6B8A", 600: "#E54E72", main: "#FF6B8A" },
+  amber: { 500: "#F5B342", 600: "#D89A2E", main: "#F5B342" },
+  cyan: { 500: "#5BC8FF", 600: "#7AD4FF", main: "#5BC8FF" },
+
+  posBg: "rgba(197,242,92,0.16)",
+  posFg: "#C5F25C",
+  negBg: "rgba(255,107,138,0.14)",
+  negFg: "#FF6B8A",
+
+  // Category color pairs (dark)
+  category: {
+    food: { bg: "rgba(255,143,90,0.16)", fg: "#FFB48A" },
+    transport: { bg: "rgba(91,200,255,0.16)", fg: "#7AD4FF" },
+    shopping: { bg: "rgba(255,107,138,0.16)", fg: "#FF95B0" },
+    entertainment: { bg: "rgba(197,242,92,0.16)", fg: "#C5F25C" },
+    bills: { bg: "rgba(157,91,255,0.18)", fg: "#C29CFF" },
+    healthcare: { bg: "rgba(112,221,165,0.16)", fg: "#7BE5B0" },
+    travel: { bg: "rgba(120,140,255,0.16)", fg: "#9FAFFF" },
+    groceries: { bg: "rgba(245,179,66,0.16)", fg: "#F5C77A" },
+    income: { bg: "rgba(197,242,92,0.18)", fg: "#C5F25C" },
   },
 
   // Additional utility colors for components (same as light theme)
@@ -399,6 +446,21 @@ export const darkColors = {
 
 // Legacy colors export for backward compatibility
 export const colors = lightColors;
+
+// Geist font family — primary (body) and Geist Mono (numerals/currency).
+// Loaded via @expo-google-fonts/geist + @expo-google-fonts/geist-mono in
+// the root layout. Falls back to system if fonts haven't loaded yet.
+export const fontFamily = {
+  // Body — Geist
+  regular: "Geist_400Regular",
+  medium: "Geist_500Medium",
+  semibold: "Geist_600SemiBold",
+  bold: "Geist_700Bold",
+  // Mono — for currency, balances, account numbers (tabular numerals)
+  mono: "GeistMono_400Regular",
+  monoMedium: "GeistMono_500Medium",
+  monoSemibold: "GeistMono_600SemiBold",
+};
 
 // Minimal typography system - clean and readable
 export const typography = {

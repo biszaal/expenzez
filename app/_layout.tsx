@@ -6,6 +6,18 @@ import {
   useShareIntentContext,
 } from "expo-share-intent";
 import {
+  useFonts as useGeistFonts,
+  Geist_400Regular,
+  Geist_500Medium,
+  Geist_600SemiBold,
+  Geist_700Bold,
+} from "@expo-google-fonts/geist";
+import {
+  GeistMono_400Regular,
+  GeistMono_500Medium,
+  GeistMono_600SemiBold,
+} from "@expo-google-fonts/geist-mono";
+import {
   AppState,
   Text,
   View,
@@ -740,27 +752,60 @@ function ShareIntentRouter() {
   return null;
 }
 
+// Loads the Geist + Geist Mono font families before rendering the app.
+// If the load errors out we still render with system fallbacks so the app
+// never gets stuck on a black screen because of a missing font.
+function FontGate({ children }: { children: React.ReactNode }) {
+  const [fontsLoaded, fontError] = useGeistFonts({
+    Geist_400Regular,
+    Geist_500Medium,
+    Geist_600SemiBold,
+    Geist_700Bold,
+    GeistMono_400Regular,
+    GeistMono_500Medium,
+    GeistMono_600SemiBold,
+  });
+
+  if (!fontsLoaded && !fontError) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#0A0712",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <ActivityIndicator color="#9D5BFF" />
+      </View>
+    );
+  }
+  return <>{children}</>;
+}
+
 export default function RootLayout() {
   return (
     <ErrorBoundary>
-      <ShareIntentProvider>
-        <ThemeProvider>
-          <NetworkProvider>
-            <RevenueCatProvider>
-              <SubscriptionProvider>
-                <AuthProvider>
-                  <SecurityProvider>
-                    <NotificationProvider>
-                      <ShareIntentRouter />
-                      <RootLayoutNav />
-                    </NotificationProvider>
-                  </SecurityProvider>
-                </AuthProvider>
-              </SubscriptionProvider>
-            </RevenueCatProvider>
-          </NetworkProvider>
-        </ThemeProvider>
-      </ShareIntentProvider>
+      <FontGate>
+        <ShareIntentProvider>
+          <ThemeProvider>
+            <NetworkProvider>
+              <RevenueCatProvider>
+                <SubscriptionProvider>
+                  <AuthProvider>
+                    <SecurityProvider>
+                      <NotificationProvider>
+                        <ShareIntentRouter />
+                        <RootLayoutNav />
+                      </NotificationProvider>
+                    </SecurityProvider>
+                  </AuthProvider>
+                </SubscriptionProvider>
+              </RevenueCatProvider>
+            </NetworkProvider>
+          </ThemeProvider>
+        </ShareIntentProvider>
+      </FontGate>
     </ErrorBoundary>
   );
 }
