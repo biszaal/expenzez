@@ -6,6 +6,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Pressable,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,6 +18,7 @@ import { NotificationsSkeleton } from "../../components/ui/SkeletonLoader";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { NotificationCard } from "../../components/notifications";
 import { SPACING, BORDER_RADIUS, SHADOWS } from "../../constants/Colors";
+import { fontFamily } from "../../constants/theme";
 
 export default function NotificationsScreen() {
   const { colors } = useTheme();
@@ -111,36 +113,47 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
+        <Pressable
           onPress={() => router.back()}
+          style={[
+            styles.headerChip,
+            {
+              backgroundColor: colors.card.background,
+              borderColor: colors.border.medium,
+            },
+          ]}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={styles.headerActions}>
-          {unreadCount > 0 && (
-            <TouchableOpacity
-              style={styles.markAllReadButton}
-              onPress={markAllAsRead}
-            >
-              <Text style={styles.markAllReadText}>Mark all read</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => router.push("/notifications/preferences")}
-          >
-            <Ionicons
-              name="settings-outline"
-              size={20}
-              color={colors.text.secondary}
-            />
-          </TouchableOpacity>
-        </View>
+          <Ionicons name="chevron-back" size={18} color={colors.text.secondary} />
+        </Pressable>
+        <Text
+          style={[
+            styles.headerTitleText,
+            { color: colors.text.primary, fontFamily: fontFamily.semibold },
+          ]}
+        >
+          Activity
+        </Text>
+        <Pressable
+          onPress={() => router.push("/notifications/preferences")}
+          style={[
+            styles.headerChip,
+            {
+              backgroundColor: colors.card.background,
+              borderColor: colors.border.medium,
+            },
+          ]}
+        >
+          <Ionicons
+            name="settings-outline"
+            size={18}
+            color={colors.text.secondary}
+          />
+        </Pressable>
       </View>
 
       <ScrollView
@@ -170,40 +183,127 @@ export default function NotificationsScreen() {
           </View>
         )}
 
-        {/* Notifications List */}
-        <View style={styles.notificationsSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Notifications</Text>
-            <Text style={styles.sectionSubtitle}>
-              {notifications.length} notification
-              {notifications.length !== 1 ? "s" : ""}
-            </Text>
+        {/* Summary card */}
+        {notifications.length > 0 && (
+          <View style={styles.summaryWrap}>
+            <View
+              style={[
+                styles.summaryCard,
+                { borderColor: colors.border.dark },
+              ]}
+            >
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: colors.text.secondary,
+                    fontFamily: fontFamily.medium,
+                  }}
+                >
+                  All activity
+                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "baseline",
+                    gap: 8,
+                    marginTop: 2,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 22,
+                      color: colors.text.primary,
+                      fontFamily: fontFamily.monoMedium,
+                      letterSpacing: -0.6,
+                    }}
+                  >
+                    {notifications.length}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: colors.text.secondary,
+                      fontFamily: fontFamily.medium,
+                    }}
+                  >
+                    {notifications.length === 1 ? "item" : "items"}
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    fontSize: 11.5,
+                    color: unreadCount > 0 ? colors.lime[500] : colors.text.tertiary,
+                    fontFamily: fontFamily.semibold,
+                    marginTop: 6,
+                  }}
+                >
+                  {unreadCount > 0
+                    ? `${unreadCount} unread`
+                    : "All caught up"}
+                </Text>
+              </View>
+              {unreadCount > 0 && (
+                <Pressable
+                  onPress={markAllAsRead}
+                  style={[
+                    styles.markAllChip,
+                    {
+                      backgroundColor: colors.card.background,
+                      borderColor: colors.border.medium,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.primary[500],
+                      fontFamily: fontFamily.semibold,
+                    }}
+                  >
+                    Mark all
+                  </Text>
+                </Pressable>
+              )}
+            </View>
           </View>
+        )}
 
-          {notifications.length > 0 ? (
-            notifications.map((notification, index) => (
-              <NotificationCard
-                key={`${notification.id}_${index}_${notification.time}`}
-                notification={notification}
-                onPress={() => handleNotificationPress(notification)}
-                isLast={index === notifications.length - 1}
-              />
-            ))
-          ) : (
-            <EmptyState
-              type="notifications"
-              iconName="notifications-off-outline"
-              title="No notifications"
-              description="You're all caught up! New notifications will appear here."
+        {/* Section label */}
+        {notifications.length > 0 && (
+          <Text
+            style={[
+              styles.sectionLabel,
+              { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
+            ]}
+          >
+            RECENT
+          </Text>
+        )}
+
+        {/* Notifications List */}
+        {notifications.length > 0 ? (
+          notifications.map((notification, index) => (
+            <NotificationCard
+              key={`${notification.id}_${index}_${notification.time}`}
+              notification={notification}
+              onPress={() => handleNotificationPress(notification)}
+              isLast={index === notifications.length - 1}
             />
-          )}
-        </View>
+          ))
+        ) : (
+          <EmptyState
+            type="notifications"
+            iconName="notifications-off-outline"
+            title="No notifications"
+            description="You're all caught up! New notifications will appear here."
+          />
+        )}
 
         {/* Clear All Option */}
         {notifications.length > 0 && (
           <View style={styles.clearSection}>
-            <TouchableOpacity
-              style={styles.clearAllButton}
+            <Pressable
               onPress={() => {
                 Alert.alert(
                   "Clear All Notifications",
@@ -218,14 +318,24 @@ export default function NotificationsScreen() {
                   ]
                 );
               }}
+              style={[
+                styles.clearAllButton,
+                {
+                  backgroundColor: colors.negBg,
+                  borderColor: "rgba(214,58,102,0.18)",
+                },
+              ]}
             >
-              <Ionicons
-                name="trash-outline"
-                size={16}
-                color={colors.error.main}
-              />
-              <Text style={styles.clearAllText}>Clear All Notifications</Text>
-            </TouchableOpacity>
+              <Ionicons name="trash-outline" size={16} color={colors.rose[500]} />
+              <Text
+                style={[
+                  styles.clearAllText,
+                  { color: colors.rose[500], fontFamily: fontFamily.semibold },
+                ]}
+              >
+                Clear all
+              </Text>
+            </Pressable>
           </View>
         )}
 
@@ -238,143 +348,102 @@ export default function NotificationsScreen() {
 
 const createStyles = (colors: any) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background.secondary,
-    },
+    container: { flex: 1 },
     header: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
-      padding: SPACING.lg,
-      backgroundColor: colors.background.primary,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border.light,
+      justifyContent: "space-between",
+      paddingHorizontal: 22,
+      paddingTop: 6,
+      paddingBottom: 14,
     },
-    backButton: {
-      padding: SPACING.sm,
+    headerChip: {
+      width: 40,
+      height: 40,
+      borderRadius: 14,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: StyleSheet.hairlineWidth,
     },
-    headerTitle: {
-      fontSize: 20,
-      fontWeight: "700",
-      color: colors.text.primary,
-      flex: 1,
-      textAlign: "center",
-      marginHorizontal: SPACING.md,
+    headerTitleText: {
+      fontSize: 16,
+      letterSpacing: -0.2,
     },
-    headerActions: {
+    scrollView: { flex: 1 },
+    summaryWrap: {
+      paddingHorizontal: 22,
+      paddingTop: 6,
+    },
+    summaryCard: {
       flexDirection: "row",
       alignItems: "center",
-      gap: SPACING.sm,
+      gap: 14,
+      padding: 18,
+      borderRadius: 22,
+      borderWidth: StyleSheet.hairlineWidth,
+      backgroundColor: "rgba(157,91,255,0.06)",
     },
-    markAllReadButton: {
-      paddingHorizontal: SPACING.md,
-      paddingVertical: SPACING.sm,
-      backgroundColor: colors.primary.main + "15",
-      borderRadius: BORDER_RADIUS.sm,
+    markAllChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
     },
-    markAllReadText: {
-      fontSize: 12,
-      fontWeight: "600",
-      color: colors.primary.main,
-    },
-    settingsButton: {
-      padding: SPACING.sm,
-    },
-    scrollView: {
-      flex: 1,
-    },
-    notificationsSection: {
-      marginTop: SPACING.lg,
-    },
-    sectionHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingHorizontal: SPACING.lg,
-      marginBottom: SPACING.md,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: colors.text.primary,
-    },
-    sectionSubtitle: {
-      fontSize: 14,
-      color: colors.text.secondary,
-      fontWeight: "500",
-    },
-    emptyState: {
-      backgroundColor: colors.background.primary,
-      margin: SPACING.lg,
-      padding: SPACING.xl,
-      borderRadius: BORDER_RADIUS.lg,
-      alignItems: "center",
-      ...SHADOWS.sm,
-    },
-    emptyTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.text.primary,
-      marginTop: SPACING.md,
-      marginBottom: SPACING.sm,
-    },
-    emptyText: {
-      fontSize: 14,
-      color: colors.text.secondary,
-      textAlign: "center",
-      lineHeight: 20,
+    sectionLabel: {
+      paddingHorizontal: 28,
+      paddingTop: 22,
+      paddingBottom: 10,
+      fontSize: 11,
+      letterSpacing: 1.2,
     },
     clearSection: {
-      margin: SPACING.lg,
-      marginTop: SPACING.xl,
+      paddingHorizontal: 22,
+      marginTop: 12,
     },
     clearAllButton: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.error.main + "10",
-      padding: SPACING.md,
-      borderRadius: BORDER_RADIUS.md,
-      borderWidth: 1,
-      borderColor: colors.error.main + "30",
+      gap: 8,
+      paddingVertical: 13,
+      borderRadius: 14,
+      borderWidth: StyleSheet.hairlineWidth,
     },
-    clearAllText: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: colors.error.main,
-      marginLeft: SPACING.sm,
-    },
+    clearAllText: { fontSize: 13.5 },
     errorContainer: {
-      backgroundColor: colors.background.primary,
-      margin: SPACING.lg,
-      padding: SPACING.xl,
-      borderRadius: BORDER_RADIUS.lg,
+      marginHorizontal: 22,
+      marginTop: 14,
+      padding: 18,
+      borderRadius: 18,
       alignItems: "center",
-      ...SHADOWS.sm,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border.medium,
+      backgroundColor: colors.card.background,
     },
     errorTitle: {
-      fontSize: 18,
-      fontWeight: "600",
+      fontSize: 15,
+      fontFamily: fontFamily.semibold,
       color: colors.text.primary,
-      marginTop: SPACING.md,
-      marginBottom: SPACING.sm,
+      marginTop: 10,
+      marginBottom: 4,
     },
     errorText: {
-      fontSize: 14,
+      fontSize: 13,
       color: colors.text.secondary,
       textAlign: "center",
-      marginBottom: SPACING.lg,
+      marginBottom: 14,
+      fontFamily: fontFamily.medium,
+      lineHeight: 18,
     },
     retryButton: {
-      backgroundColor: colors.primary.main,
-      paddingHorizontal: SPACING.lg,
-      paddingVertical: SPACING.md,
-      borderRadius: BORDER_RADIUS.md,
+      backgroundColor: colors.primary[500],
+      paddingHorizontal: 18,
+      paddingVertical: 11,
+      borderRadius: 12,
     },
     retryButtonText: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: colors.background.primary,
+      fontSize: 13,
+      fontFamily: fontFamily.semibold,
+      color: "#fff",
     },
   });

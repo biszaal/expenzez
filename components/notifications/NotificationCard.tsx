@@ -3,7 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { NotificationHistoryItem } from '../../contexts/NotificationContext';
-import { SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/Colors';
+import { fontFamily } from '../../constants/theme';
+
+// v1.5 redesign — hairline 18px row, category-tinted icon, primary
+// accent stripe for unread, mono numerals for time + amount.
 
 interface NotificationCardProps {
   notification: NotificationHistoryItem;
@@ -14,42 +17,49 @@ interface NotificationCardProps {
 export const NotificationCard: React.FC<NotificationCardProps> = ({
   notification,
   onPress,
-  isLast = false
+  isLast = false,
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = (type: string): keyof typeof Ionicons.glyphMap => {
     switch (type) {
       case 'transaction':
         return 'swap-horizontal';
       case 'budget':
-        return 'pie-chart';
+        return 'wallet';
       case 'account':
         return 'card';
       case 'security':
         return 'shield-checkmark';
       case 'insight':
-        return 'bulb';
+        return 'sparkles';
       default:
         return 'notifications';
     }
   };
 
-  const getNotificationColor = (type: string) => {
+  const getNotificationAccent = (type: string) => {
     switch (type) {
       case 'transaction':
-        return colors.primary.main;
+        return colors.primary[500];
       case 'budget':
-        return colors.warning.main;
+        return colors.amber[500];
       case 'account':
-        return colors.primary.main;
+        return colors.cyan[500];
       case 'security':
-        return colors.error.main;
+        return colors.rose[500];
       case 'insight':
-        return colors.accent.main;
+        return colors.lime[500];
       default:
         return colors.text.secondary;
     }
+  };
+
+  const getNotificationTint = (type: string) => {
+    const accent = getNotificationAccent(type);
+    if (type === 'security') return colors.negBg;
+    if (type === 'insight') return colors.posBg;
+    return isDark ? `${accent}26` : `${accent}1F`;
   };
 
   const formatAmount = (amount?: number) => {
@@ -62,165 +72,173 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
     }).format(Math.abs(amount));
   };
 
-  const styles = createStyles(colors);
+  const accent = getNotificationAccent(notification.type);
+  const tintBg = getNotificationTint(notification.type);
 
   return (
     <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={onPress}
       style={[
         styles.container,
-        !notification.read && styles.unreadContainer,
-        isLast && styles.lastContainer
+        {
+          backgroundColor: colors.card.background,
+          borderColor: !notification.read
+            ? isDark
+              ? 'rgba(157,91,255,0.28)'
+              : 'rgba(123,63,228,0.22)'
+            : colors.border.medium,
+        },
+        isLast && { marginBottom: 24 },
       ]}
-      onPress={onPress}
-      activeOpacity={0.7}
     >
+      {!notification.read && (
+        <View
+          style={[styles.unreadStripe, { backgroundColor: colors.primary[500] }]}
+        />
+      )}
+
       <View style={styles.content}>
-        {/* Icon */}
-        <View style={[styles.iconContainer, { backgroundColor: getNotificationColor(notification.type) + '15' }]}>
+        <View style={[styles.iconContainer, { backgroundColor: tintBg }]}>
           <Ionicons
-            name={getNotificationIcon(notification.type) as any}
-            size={20}
-            color={getNotificationColor(notification.type)}
+            name={getNotificationIcon(notification.type)}
+            size={18}
+            color={accent}
           />
         </View>
 
-        {/* Content */}
         <View style={styles.textContent}>
-          <View style={styles.header}>
-            <Text style={[styles.title, !notification.read && styles.unreadTitle]}>
+          <View style={styles.headerRow}>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.title,
+                {
+                  color: colors.text.primary,
+                  fontFamily: notification.read
+                    ? fontFamily.medium
+                    : fontFamily.semibold,
+                },
+              ]}
+            >
               {notification.title}
             </Text>
-            <View style={styles.meta}>
-              <Text style={styles.time}>{notification.time}</Text>
-              {!notification.read && <View style={styles.unreadDot} />}
-            </View>
+            {notification.data?.amount && (
+              <Text
+                style={[
+                  styles.amount,
+                  {
+                    color:
+                      notification.data.amount > 0
+                        ? colors.lime[500]
+                        : colors.text.primary,
+                    fontFamily: fontFamily.monoMedium,
+                  },
+                ]}
+              >
+                {notification.data.amount > 0 ? '+' : '−'}
+                {formatAmount(notification.data.amount)}
+              </Text>
+            )}
           </View>
 
-          <Text style={styles.message} numberOfLines={2}>
+          <Text
+            numberOfLines={2}
+            style={[
+              styles.message,
+              { color: colors.text.secondary, fontFamily: fontFamily.medium },
+            ]}
+          >
             {notification.message}
           </Text>
 
-          {/* Additional details for specific notification types */}
-          {notification.data && (
-            <View style={styles.details}>
-              {notification.data.amount && (
-                <View style={styles.detailRow}>
-                  <Ionicons name="cash-outline" size={14} color={colors.text.tertiary} />
-                  <Text style={styles.detailText}>
-                    {formatAmount(notification.data.amount)}
-                  </Text>
-                </View>
-              )}
-              {notification.data.merchant && (
-                <View style={styles.detailRow}>
-                  <Ionicons name="storefront-outline" size={14} color={colors.text.tertiary} />
-                  <Text style={styles.detailText} numberOfLines={1}>
-                    {notification.data.merchant}
-                  </Text>
-                </View>
-              )}
-              {notification.data.category && (
-                <View style={styles.detailRow}>
-                  <Ionicons name="pricetag-outline" size={14} color={colors.text.tertiary} />
-                  <Text style={styles.detailText}>
-                    {notification.data.category}
-                  </Text>
-                </View>
-              )}
+          <View style={styles.metaRow}>
+            <View
+              style={[
+                styles.tag,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255,255,255,0.05)'
+                    : 'rgba(40,20,80,0.05)',
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: colors.text.tertiary,
+                  fontFamily: fontFamily.semibold,
+                  letterSpacing: 0.4,
+                }}
+              >
+                {notification.type.toUpperCase()}
+              </Text>
             </View>
-          )}
+            <Text
+              style={{
+                fontSize: 11,
+                color: colors.text.tertiary,
+                fontFamily: fontFamily.mono,
+              }}
+            >
+              {notification.time}
+            </Text>
+          </View>
         </View>
-
-        {/* Arrow */}
-        <Ionicons name="chevron-forward" size={16} color={colors.text.tertiary} />
       </View>
     </TouchableOpacity>
   );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background.primary,
-    marginHorizontal: SPACING.lg,
-    marginBottom: SPACING.sm,
-    borderRadius: BORDER_RADIUS.md,
-    ...SHADOWS.sm
+    marginHorizontal: 22,
+    marginBottom: 8,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
   },
-  unreadContainer: {
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary.main
-  },
-  lastContainer: {
-    marginBottom: SPACING.lg
+  unreadStripe: {
+    position: 'absolute',
+    left: 0,
+    top: 14,
+    width: 3,
+    height: 22,
+    borderTopRightRadius: 2,
+    borderBottomRightRadius: 2,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    padding: SPACING.md,
-    gap: SPACING.md
+    padding: 14,
+    gap: 12,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2
   },
-  textContent: {
-    flex: 1
-  },
-  header: {
+  textContent: { flex: 1, minWidth: 0 },
+  headerRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: SPACING.xs
+    gap: 8,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text.primary,
-    flex: 1,
-    marginRight: SPACING.sm
-  },
-  unreadTitle: {
-    fontWeight: '700'
-  },
-  meta: {
+  title: { fontSize: 14, flex: 1, letterSpacing: -0.1 },
+  amount: { fontSize: 14, letterSpacing: -0.4 },
+  message: { fontSize: 12.5, lineHeight: 17, marginTop: 3 },
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.xs
+    justifyContent: 'space-between',
+    marginTop: 8,
   },
-  time: {
-    fontSize: 12,
-    color: colors.text.tertiary,
-    fontWeight: '500'
+  tag: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary.main
-  },
-  message: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    lineHeight: 18,
-    marginBottom: SPACING.sm
-  },
-  details: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.md
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs
-  },
-  detailText: {
-    fontSize: 12,
-    color: colors.text.tertiary,
-    fontWeight: '500'
-  }
 });
