@@ -1,112 +1,92 @@
-import { StyleSheet } from 'react-native';
-import { spacing, borderRadius } from '../../../constants/theme';
+import { StyleSheet } from "react-native";
 
+// v1.5 redesign — rounded 22 card, soft hairline border, no heavy shadows.
+// Card chrome inherits theme background through inline style at the
+// component, so colours auto-update with the theme.
 export const budgetSummaryCardStyles = StyleSheet.create({
   simpleBudgetContainer: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+    paddingHorizontal: 22,
+    paddingTop: 14,
   },
   simpleBudgetCard: {
-    padding: spacing.lg,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    padding: 18,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   simpleBudgetTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: spacing.lg,
+    fontSize: 16,
+    textAlign: "left",
+    marginBottom: 12,
   },
+
+  // Stat tiles below the donut.
   budgetGridContainer: {
-    marginBottom: spacing.lg,
+    marginTop: 4,
   },
   budgetRow: {
-    flexDirection: 'row',
-    marginBottom: spacing.md,
-    gap: spacing.md,
+    flexDirection: "row",
+    marginTop: 10,
+    gap: 10,
   },
   budgetCard: {
     flex: 1,
-    padding: spacing.lg,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
     borderRadius: 16,
-    alignItems: 'center',
-    minHeight: 100,
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    alignItems: "flex-start",
+    minHeight: 76,
+    justifyContent: "center",
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  budgetCardPrimary: {
-    // Will be set dynamically with theme colors
-  },
-  budgetCardSecondary: {
-    // Will be set dynamically with theme colors
-  },
-  budgetCardAccent: {
-    // Will be set dynamically with theme colors
-  },
-  budgetCardWarning: {
-    // Will be set dynamically with theme colors
-  },
+  budgetCardPrimary: {},
+  budgetCardSecondary: {},
+  budgetCardAccent: {},
+  budgetCardWarning: {},
   budgetCardAmount: {
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 6,
+    fontSize: 18,
+    textAlign: "left",
+    marginBottom: 4,
+    letterSpacing: -0.4,
   },
   budgetCardLabel: {
-    fontSize: 13,
-    textAlign: 'center',
-    fontWeight: '500',
+    fontSize: 11.5,
+    textAlign: "left",
+    letterSpacing: 0.4,
   },
-  
-  // Animated Donut Chart Styles
+
+  // Donut chart container.
   donutChartContainer: {
-    alignItems: 'center',
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
+    alignItems: "center",
+    marginVertical: 8,
   },
   donutChart: {
-    width: 280,
-    height: 280,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
+    width: 240,
+    height: 240,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
   },
   donutCenter: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    width: 144,
+    height: 144,
+    borderRadius: 72,
+    alignItems: "center",
+    justifyContent: "center",
   },
   donutCenterPercentage: {
-    fontSize: 40,
-    fontWeight: '800',
-    textAlign: 'center',
+    fontSize: 38,
+    textAlign: "center",
+    letterSpacing: -1.4,
   },
   donutCenterLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: 4,
-    letterSpacing: 1.5,
+    fontSize: 10,
+    textAlign: "center",
+    marginTop: 2,
+    letterSpacing: 1.4,
   },
   donutCenterAmount: {
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontSize: 14,
+    textAlign: "center",
     marginTop: 6,
   },
 });
