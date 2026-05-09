@@ -105,3 +105,6 @@ app-example
 android-service-account.json
 *service-account*.json
 secrets/
+
+# Markdown docs
+*.md
