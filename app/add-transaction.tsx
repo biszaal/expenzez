@@ -9,11 +9,14 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
+import { fontFamily } from "../constants/theme";
 import { transactionAPI } from "../services/api";
 import { useXP } from "../hooks/useXP";
 import {
@@ -307,6 +310,13 @@ export default function AddTransaction() {
   const currentCategories =
     transactionType === "expense" ? expenseCategories : incomeCategories;
 
+  const isExpense = transactionType === "expense";
+  const amountText = amount || "0.00";
+  const [whole, dec] = amountText.includes(".")
+    ? amountText.split(".")
+    : [amountText, ""];
+  const decimalsDisplay = dec ? `.${dec.padEnd(2, "0").slice(0, 2)}` : ".00";
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background.primary }]}
@@ -315,219 +325,319 @@ export default function AddTransaction() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoidingView}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Top bar */}
+          <View style={styles.topBar}>
+            <Pressable
               onPress={() => router.back()}
-              style={styles.backButton}
+              style={[
+                styles.backChip,
+                {
+                  backgroundColor: colors.card.background,
+                  borderColor: colors.border.medium,
+                },
+              ]}
             >
               <Ionicons
-                name="arrow-back"
-                size={24}
-                color={colors.text.primary}
+                name="chevron-back"
+                size={18}
+                color={colors.text.secondary}
               />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-              Add {transactionType === "expense" ? "Expense" : "Income"}
+            </Pressable>
+            <Text
+              style={[
+                styles.topTitle,
+                { color: colors.text.primary, fontFamily: fontFamily.semibold },
+              ]}
+            >
+              New transaction
             </Text>
-            <View style={styles.placeholder} />
+            <View style={{ width: 40 }} />
           </View>
 
-          {/* Transaction Type Toggle */}
-          <View style={styles.typeToggle}>
-            <TouchableOpacity
-              style={[
-                styles.typeButton,
-                transactionType === "expense" && styles.typeButtonActive,
-                {
-                  backgroundColor:
-                    transactionType === "expense"
-                      ? colors.primary.main
-                      : colors.background.primary,
-                },
-              ]}
-              onPress={() => {
-                setTransactionType("expense");
-                setSelectedCategory(expenseCategories[0]);
-              }}
-            >
-              <Text
-                style={[
-                  styles.typeButtonText,
-                  {
-                    color:
-                      transactionType === "expense"
-                        ? "#FFFFFF"
-                        : colors.text.primary,
-                  },
-                ]}
-              >
-                Expense
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.typeButton,
-                transactionType === "income" && styles.typeButtonActive,
-                {
-                  backgroundColor:
-                    transactionType === "income"
-                      ? colors.primary.main
-                      : colors.background.primary,
-                },
-              ]}
-              onPress={() => {
-                setTransactionType("income");
-                setSelectedCategory(incomeCategories[0]);
-              }}
-            >
-              <Text
-                style={[
-                  styles.typeButtonText,
-                  {
-                    color:
-                      transactionType === "income"
-                        ? "#FFFFFF"
-                        : colors.text.primary,
-                  },
-                ]}
-              >
-                Income
-              </Text>
-            </TouchableOpacity>
+          {/* Type toggle */}
+          <View
+            style={[
+              styles.typeToggle,
+              {
+                backgroundColor: colors.card.background,
+                borderColor: colors.border.medium,
+              },
+            ]}
+          >
+            {(["expense", "income"] as const).map((tp) => {
+              const active = transactionType === tp;
+              return (
+                <Pressable
+                  key={tp}
+                  onPress={() => {
+                    setTransactionType(tp);
+                    setSelectedCategory(
+                      tp === "expense" ? expenseCategories[0] : incomeCategories[0]
+                    );
+                  }}
+                  style={{ flex: 1, borderRadius: 12, overflow: "hidden" }}
+                >
+                  {active ? (
+                    <LinearGradient
+                      colors={
+                        tp === "expense"
+                          ? [colors.rose[500], colors.rose[600]]
+                          : [colors.lime[500], colors.lime[600]]
+                      }
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.typePill}
+                    >
+                      <Ionicons
+                        name={
+                          tp === "expense" ? "arrow-up" : "arrow-down"
+                        }
+                        size={13}
+                        color="#fff"
+                      />
+                      <Text style={styles.typePillTextActive}>
+                        {tp === "expense" ? "Expense" : "Income"}
+                      </Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={styles.typePill}>
+                      <Ionicons
+                        name={
+                          tp === "expense" ? "arrow-up" : "arrow-down"
+                        }
+                        size={13}
+                        color={colors.text.tertiary}
+                      />
+                      <Text
+                        style={[
+                          styles.typePillText,
+                          {
+                            color: colors.text.secondary,
+                            fontFamily: fontFamily.semibold,
+                          },
+                        ]}
+                      >
+                        {tp === "expense" ? "Expense" : "Income"}
+                      </Text>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
           </View>
 
-          {/* Form */}
-          <View style={styles.form}>
-            {/* Name Field */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text.primary }]}>
-                Name
+          {/* Amount hero */}
+          <View style={styles.amountHero}>
+            <Text
+              style={[
+                styles.amountEyebrow,
+                { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
+              ]}
+            >
+              AMOUNT
+            </Text>
+            <View style={styles.amountRow}>
+              <Text
+                style={[
+                  styles.amountCurrency,
+                  { color: colors.text.tertiary, fontFamily: fontFamily.mono },
+                ]}
+              >
+                £
               </Text>
+              <Text
+                style={[
+                  styles.amountWhole,
+                  { color: colors.text.primary, fontFamily: fontFamily.monoMedium },
+                ]}
+              >
+                {whole || "0"}
+              </Text>
+              <Text
+                style={[
+                  styles.amountDecimals,
+                  { color: colors.text.tertiary, fontFamily: fontFamily.mono },
+                ]}
+              >
+                {decimalsDisplay}
+              </Text>
+            </View>
+            <TextInput
+              style={styles.amountHiddenInput}
+              placeholder="0.00"
+              placeholderTextColor="transparent"
+              value={amount}
+              onChangeText={handleAmountChange}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Description */}
+          <View style={styles.fieldBlock}>
+            <Text
+              style={[
+                styles.fieldEyebrow,
+                { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
+              ]}
+            >
+              DESCRIPTION
+            </Text>
+            <View
+              style={[
+                styles.fieldWrap,
+                {
+                  backgroundColor: colors.card.background,
+                  borderColor: colors.border.medium,
+                },
+              ]}
+            >
+              <Ionicons
+                name="receipt-outline"
+                size={17}
+                color={colors.text.tertiary}
+              />
               <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.background.primary,
-                    color: colors.text.primary,
-                    borderColor: colors.border.light,
-                  },
-                ]}
-                placeholder="Enter transaction name"
-                placeholderTextColor={colors.text.secondary}
+                style={{
+                  flex: 1,
+                  color: colors.text.primary,
+                  fontFamily: fontFamily.medium,
+                  fontSize: 15,
+                  paddingVertical: 0,
+                }}
+                placeholder="e.g. Tesco — Bethnal Green"
+                placeholderTextColor={colors.text.tertiary}
                 value={name}
                 onChangeText={handleNameChange}
                 autoFocus
               />
             </View>
+          </View>
 
-            {/* Amount Field */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text.primary }]}>
-                Amount
+          {/* Category grid */}
+          <View style={styles.fieldBlock}>
+            <View style={styles.catHeader}>
+              <Text
+                style={[
+                  styles.fieldEyebrow,
+                  { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
+                ]}
+              >
+                CATEGORY
               </Text>
-              <View style={styles.amountContainer}>
-                <Text
-                  style={[
-                    styles.currencySymbol,
-                    { color: colors.text.primary },
-                  ]}
+              {autoDetectedCategory && (
+                <View
+                  style={{
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                    borderRadius: 7,
+                    backgroundColor: colors.posBg,
+                  }}
                 >
-                  £
-                </Text>
-                <TextInput
-                  style={[
-                    styles.amountInput,
-                    {
-                      backgroundColor: colors.background.primary,
-                      color: colors.text.primary,
-                      borderColor: colors.border.light,
-                    },
-                  ]}
-                  placeholder="0.00"
-                  placeholderTextColor={colors.text.secondary}
-                  value={amount}
-                  onChangeText={handleAmountChange}
-                  keyboardType="numeric"
-                />
-              </View>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: colors.lime[500],
+                      fontFamily: fontFamily.bold,
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    AUTO
+                  </Text>
+                </View>
+              )}
             </View>
 
-            {/* Category Selection */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text.primary }]}>
-                Category
-              </Text>
-              <View style={styles.categoryGrid}>
-                {currentCategories.map((category) => (
-                  <TouchableOpacity
+            <View style={styles.catGrid}>
+              {currentCategories.map((category) => {
+                const active = selectedCategory.id === category.id;
+                return (
+                  <Pressable
                     key={category.id}
+                    onPress={() => setSelectedCategory(category)}
                     style={[
-                      styles.categoryItem,
+                      styles.catTile,
                       {
-                        backgroundColor:
-                          selectedCategory.id === category.id
-                            ? category.color
-                            : colors.background.primary,
-                        borderColor:
-                          selectedCategory.id === category.id
-                            ? category.color
-                            : colors.border.light,
+                        backgroundColor: active
+                          ? "rgba(157,91,255,0.12)"
+                          : colors.card.background,
+                        borderColor: active
+                          ? colors.primary[500]
+                          : colors.border.medium,
                       },
                     ]}
-                    onPress={() => setSelectedCategory(category)}
                   >
-                    <Ionicons
-                      name={category.icon as any}
-                      size={20}
-                      color={
-                        selectedCategory.id === category.id
-                          ? "#FFFFFF"
-                          : colors.text.primary
-                      }
-                    />
-                    <Text
+                    <View
                       style={[
-                        styles.categoryText,
-                        {
-                          color:
-                            selectedCategory.id === category.id
-                              ? "#FFFFFF"
-                              : colors.text.primary,
-                        },
+                        styles.catTileIcon,
+                        { backgroundColor: category.color + "22" },
                       ]}
+                    >
+                      <Ionicons
+                        name={category.icon as any}
+                        size={17}
+                        color={category.color}
+                      />
+                    </View>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 11.5,
+                        color: active
+                          ? colors.text.primary
+                          : colors.text.secondary,
+                        fontFamily: fontFamily.medium,
+                      }}
                     >
                       {category.name}
                     </Text>
-                    {autoDetectedCategory &&
-                      selectedCategory.id === category.id && (
-                        <View style={styles.autoDetectedBadge}>
-                          <Text style={styles.autoDetectedText}>Auto</Text>
-                        </View>
-                      )}
-                  </TouchableOpacity>
-                ))}
-              </View>
+                    {active && (
+                      <View
+                        style={[
+                          styles.catCheck,
+                          { backgroundColor: colors.primary[500] },
+                        ]}
+                      >
+                        <Ionicons name="checkmark" size={10} color="#fff" />
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
           {/* Save Button */}
-          <TouchableOpacity
-            style={[
-              styles.saveButton,
-              { backgroundColor: colors.primary.main },
-              loading && styles.saveButtonDisabled,
-            ]}
+          <Pressable
             onPress={handleSaveTransaction}
             disabled={loading}
+            style={({ pressed }) => [
+              styles.saveButton,
+              { opacity: pressed || loading ? 0.85 : 1 },
+            ]}
           >
-            <Text style={styles.saveButtonText}>
-              {loading
-                ? "Saving..."
-                : `Save ${transactionType === "expense" ? "Expense" : "Income"}`}
-            </Text>
-          </TouchableOpacity>
+            <LinearGradient
+              colors={[colors.primary[500], colors.primary[600]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[
+                styles.saveButtonGradient,
+                { shadowColor: colors.primary[500] },
+              ]}
+            >
+              <Text style={styles.saveButtonText}>
+                {loading
+                  ? "Saving…"
+                  : `Save ${isExpense ? "expense" : "income"}`}
+              </Text>
+              {!loading && (
+                <Ionicons name="arrow-forward" size={16} color="#fff" />
+              )}
+            </LinearGradient>
+          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -535,142 +645,167 @@ export default function AddTransaction() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  keyboardAvoidingView: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
-    padding: 20,
+    paddingHorizontal: 22,
+    paddingTop: 6,
+    paddingBottom: 32,
   },
-  header: {
+  topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 30,
   },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-  },
-  placeholder: {
+  backChip: {
     width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  topTitle: {
+    fontSize: 16,
+    letterSpacing: -0.2,
   },
   typeToggle: {
     flexDirection: "row",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 12,
+    marginTop: 20,
     padding: 4,
-    marginBottom: 30,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 4,
   },
-  typeButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+  typePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 11,
+  },
+  typePillText: {
+    fontSize: 13.5,
+  },
+  typePillTextActive: {
+    color: "#fff",
+    fontSize: 13.5,
+    fontFamily: fontFamily.semibold,
+  },
+  amountHero: {
+    paddingTop: 32,
     alignItems: "center",
   },
-  typeButtonActive: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  amountEyebrow: {
+    fontSize: 11,
+    letterSpacing: 1.2,
   },
-  typeButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
+  amountRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "center",
+    gap: 4,
+    marginTop: 8,
   },
-  form: {
-    flex: 1,
+  amountCurrency: {
+    fontSize: 30,
+    letterSpacing: -1,
   },
-  inputGroup: {
-    marginBottom: 24,
+  amountWhole: {
+    fontSize: 64,
+    letterSpacing: -3,
+    lineHeight: 64,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
+  amountDecimals: {
+    fontSize: 36,
+    letterSpacing: -1.4,
+  },
+  amountHiddenInput: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    color: "transparent",
+    fontSize: 1,
+    backgroundColor: "transparent",
+  },
+  fieldBlock: {
+    marginTop: 24,
+  },
+  fieldEyebrow: {
+    fontSize: 11,
+    letterSpacing: 1,
     marginBottom: 8,
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-  },
-  amountContainer: {
+  fieldWrap: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 12,
-    // backgroundColor removed - applied dynamically for dark mode support
-  },
-  currencySymbol: {
-    fontSize: 18,
-    fontWeight: "600",
+    gap: 10,
     paddingHorizontal: 16,
     paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  amountInput: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingRight: 16,
-    fontSize: 16,
-    borderWidth: 0,
+  catHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
   },
-  categoryGrid: {
+  catGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: 8,
   },
-  categoryItem: {
-    flexDirection: "row",
+  catTile: {
+    width: "31.6%",
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    minWidth: 100,
-    justifyContent: "center",
+    gap: 8,
     position: "relative",
   },
-  categoryText: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginLeft: 6,
-  },
-  autoDetectedBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    backgroundColor: "#10B981",
-    borderRadius: 8,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-  },
-  autoDetectedText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "600",
-  },
-  saveButton: {
-    paddingVertical: 16,
+  catTileIcon: {
+    width: 36,
+    height: 36,
     borderRadius: 12,
     alignItems: "center",
-    marginTop: 20,
+    justifyContent: "center",
   },
-  saveButtonDisabled: {
-    opacity: 0.6,
+  catCheck: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  saveButton: {
+    marginTop: 24,
+    borderRadius: 18,
+    overflow: "hidden",
+  },
+  saveButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 17,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 8,
   },
   saveButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
+    color: "#fff",
+    fontSize: 15,
+    fontFamily: fontFamily.semibold,
+    letterSpacing: 0.2,
   },
 });
