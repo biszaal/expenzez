@@ -4,13 +4,17 @@ import React, { useState, useEffect } from "react";
 import {
   TouchableOpacity,
   View,
+  Text,
   StyleSheet,
   StatusBar,
   ScrollView,
+  Pressable,
+  TextInput,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Svg, { Path, Text as SvgText } from "react-native-svg";
 import { useAuth } from "../auth/AuthContext";
-import { TextField, Typography } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
 import { jwtDecode } from "jwt-decode";
 import * as SecureStore from "expo-secure-store";
@@ -20,9 +24,134 @@ import {
   useAppleSignIn,
 } from "../../components/auth/AppleSignInButton";
 import { GoogleSignInButton } from "../../components/auth/GoogleSignInButton";
-import { RememberMeCheckbox } from "../../components/RememberMeCheckbox";
 import { analyticsService } from "../../services/analytics";
-import { authAPI } from "../../services/api";
+import { fontFamily } from "../../constants/theme";
+
+// v1.5 redesign — wordmark + tagline header, hairline inputs,
+// gradient primary button, segmented social row.
+
+const BrandLogo: React.FC<{ size?: number; primary: string; primaryDim: string }> = ({
+  size = 64,
+  primary,
+  primaryDim,
+}) => {
+  return (
+    <LinearGradient
+      colors={[primary, primaryDim]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size * 0.28,
+        alignItems: "center",
+        justifyContent: "center",
+        shadowColor: primary,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.4,
+        shadowRadius: 24,
+        elevation: 10,
+      }}
+    >
+      <Svg width={size * 0.55} height={size * 0.55} viewBox="0 0 32 32">
+        <Path
+          d="M5 24 L13 14 L18 18 L27 8"
+          stroke="#fff"
+          strokeWidth={3}
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M22 8 L27 8 L27 13"
+          stroke="#fff"
+          strokeWidth={3}
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <SvgText x="6" y="14" fontSize="10" fontWeight="800" fill="#fff">
+          £
+        </SvgText>
+      </Svg>
+    </LinearGradient>
+  );
+};
+
+interface AuthFieldProps {
+  label: string;
+  iconName: keyof typeof Ionicons.glyphMap;
+  value: string;
+  placeholder: string;
+  onChangeText: (text: string) => void;
+  secureTextEntry?: boolean;
+  editable?: boolean;
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
+  colors: any;
+}
+
+const AuthField: React.FC<AuthFieldProps> = ({
+  label,
+  iconName,
+  value,
+  placeholder,
+  onChangeText,
+  secureTextEntry,
+  editable = true,
+  autoCapitalize = "none",
+  colors,
+}) => {
+  const [focused, setFocused] = useState(false);
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <Text
+        style={{
+          fontSize: 11,
+          color: colors.text.tertiary,
+          letterSpacing: 1,
+          fontFamily: fontFamily.semibold,
+          marginBottom: 8,
+        }}
+      >
+        {label}
+      </Text>
+      <View
+        style={[
+          styles.fieldWrap,
+          {
+            backgroundColor: colors.card.background,
+            borderColor: focused ? colors.primary[500] : colors.border.medium,
+          },
+        ]}
+      >
+        <Ionicons
+          name={iconName}
+          size={17}
+          color={focused ? colors.primary[500] : colors.text.tertiary}
+        />
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.text.tertiary}
+          secureTextEntry={secureTextEntry}
+          autoCapitalize={autoCapitalize}
+          editable={editable}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          style={{
+            flex: 1,
+            color: colors.text.primary,
+            fontFamily: secureTextEntry && value ? fontFamily.mono : fontFamily.medium,
+            fontSize: 15,
+            letterSpacing: secureTextEntry && value ? 4 : 0,
+            paddingVertical: 0,
+          }}
+        />
+      </View>
+    </View>
+  );
+};
 
 export default function Login() {
   const router = useRouter();
@@ -39,7 +168,6 @@ export default function Login() {
   const [messageShown, setMessageShown] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Handle incoming parameters from registration redirect
   useEffect(() => {
     if (params.email) {
       setIdentifier(params.email as string);
@@ -53,19 +181,19 @@ export default function Login() {
     }
   }, [params, messageShown]);
 
-  // Helper function to resend verification and navigate to verification page
-  const handleUnverifiedAccount = async (userIdentifier: string, userPassword: string) => {
-    console.log("🔄 [Login] Unverified account detected - navigating to verification page");
-
-    // Navigate to verification page first
+  const handleUnverifiedAccount = async (
+    userIdentifier: string,
+    userPassword: string
+  ) => {
     router.replace({
       pathname: "/auth/EmailVerification",
       params: {
         email: userIdentifier.includes("@") ? userIdentifier : "",
         username: !userIdentifier.includes("@") ? userIdentifier : "",
         password: userPassword,
-        message: "Your account is not verified. Please check your email for the verification code.",
-        autoResend: "true", // Tell verification page to auto-resend
+        message:
+          "Your account is not verified. Please check your email for the verification code.",
+        autoResend: "true",
       },
     });
   };
@@ -83,15 +211,12 @@ export default function Login() {
         const idToken = await SecureStore.getItemAsync("idToken", {
           keychainService: "expenzez-tokens",
         });
-        if (idToken) {
-          jwtDecode(idToken);
-        }
+        if (idToken) jwtDecode(idToken);
         setIsNavigating(true);
         router.replace("/(tabs)");
         return;
       } else {
         if (result.needsEmailVerification) {
-          // Automatically resend verification code and navigate to verification page
           await handleUnverifiedAccount(identifier.trim(), password);
           return;
         }
@@ -102,7 +227,6 @@ export default function Login() {
             result.error.toLowerCase().includes("not verified") ||
             result.error.toLowerCase().includes("verify"))
         ) {
-          // Automatically resend verification code and navigate to verification page
           await handleUnverifiedAccount(identifier.trim(), password);
           return;
         }
@@ -116,7 +240,6 @@ export default function Login() {
         error.isEmailNotVerified ||
         error.response?.data?.error === "UserNotConfirmedException"
       ) {
-        // Automatically resend verification code and navigate to verification page
         await handleUnverifiedAccount(identifier.trim(), password);
         return;
       }
@@ -139,24 +262,19 @@ export default function Login() {
           userErrorMessage = error.response.data.error;
         }
 
-        // Check if this might be an unverified account error (even if backend says "incorrect password")
-        // AWS Cognito sometimes returns generic errors for unverified accounts
         if (
           error.response?.status === 400 &&
           (userErrorMessage.toLowerCase().includes("incorrect") ||
             userErrorMessage.toLowerCase().includes("password") ||
             userErrorMessage.toLowerCase().includes("not authorized"))
         ) {
-          // This might be an unverified account - try to resend verification and navigate
-          console.log("⚠️ [Login] Possible unverified account detected (400 error with password message)");
           await handleUnverifiedAccount(identifier.trim(), password);
           return;
         } else if (
           userErrorMessage.toLowerCase().includes("incorrect") ||
           userErrorMessage.toLowerCase().includes("password")
         ) {
-          userErrorMessage =
-            "Incorrect username or password. Please try again.";
+          userErrorMessage = "Incorrect username or password. Please try again.";
         }
 
         showError(userErrorMessage);
@@ -173,42 +291,33 @@ export default function Login() {
       await tokenManager.clearAllTokens();
 
       const credential = await handleAppleSignIn();
+      if (!credential) return;
 
-      if (!credential) {
-        return;
-      }
+      const result = await loginWithApple(
+        credential.identityToken,
+        credential.authorizationCode,
+        credential.user,
+        credential.email,
+        credential.fullName,
+        rememberMe
+      );
 
-      if (credential) {
-        const result = await loginWithApple(
-          credential.identityToken,
-          credential.authorizationCode,
-          credential.user,
-          credential.email,
-          credential.fullName,
-          rememberMe
-        );
-
-        if (result.success) {
-          if (result.needsProfileCompletion) {
-            router.replace({
-              pathname: "/auth/AppleProfileFlow",
-              params: {
-                user: JSON.stringify(result.user),
-              },
-            });
-          } else {
-            setIsNavigating(true);
-            router.replace("/(tabs)");
-            return;
-          }
+      if (result.success) {
+        if (result.needsProfileCompletion) {
+          router.replace({
+            pathname: "/auth/AppleProfileFlow",
+            params: { user: JSON.stringify(result.user) },
+          });
         } else {
-          showError(result.error || "Apple Sign In failed. Please try again.");
+          setIsNavigating(true);
+          router.replace("/(tabs)");
+          return;
         }
+      } else {
+        showError(result.error || "Apple Sign In failed. Please try again.");
       }
     } catch (error: any) {
-      if (error.code === "ERR_REQUEST_CANCELED") {
-        return;
-      }
+      if (error.code === "ERR_REQUEST_CANCELED") return;
       showError(error.message || "Apple Sign In failed. Please try again.");
     } finally {
       setIsLoading(false);
@@ -218,48 +327,29 @@ export default function Login() {
   const handleGoogleLogin = async (idToken: string, user: any) => {
     try {
       setIsLoading(true);
-      console.log('🔍 [Login] Google Sign-In initiated:', user.email);
-
-      // Import API client
       const { api } = await import("../../services/config/apiClient");
-
-      // Call backend Google login endpoint
-      const response = await api.post("/auth/google-login", {
-        idToken,
-        user,
-      });
+      const response = await api.post("/auth/google-login", { idToken, user });
 
       if (response.data && response.data.tokens) {
-        console.log('✅ [Login] Google Sign-In successful');
-
-        // Import token manager
         const { tokenManager } = await import("../../services/tokenManager");
-
-        // Save tokens
         await tokenManager.storeTokens({
           idToken: response.data.tokens.idToken,
           accessToken: response.data.tokens.accessToken,
           refreshToken: response.data.tokens.refreshToken,
         });
-
-        // Navigate to main app
         setIsNavigating(true);
         router.replace("/(tabs)");
         return;
       } else {
-        throw new Error('Invalid response from server');
+        throw new Error("Invalid response from server");
       }
     } catch (error: any) {
-      console.error('❌ [Login] Google Sign-In failed:', error);
-
       let errorMessage = "Google Sign In failed. Please try again.";
-
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
-
       showError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -268,289 +358,335 @@ export default function Login() {
 
   if (isNavigating) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background.primary }]}
+      >
         <View style={styles.successContainer}>
-          <View style={[styles.successIconContainer, { backgroundColor: colors.primary.main }]}>
-            <Ionicons name="shield-checkmark" size={60} color="white" />
-          </View>
-          <Typography variant="h2" style={[styles.successTitle, { color: colors.text.primary }]}>
-            Success!
-          </Typography>
-          <Typography variant="body" style={[styles.successSubtitle, { color: colors.text.secondary }]}>
-            Loading your dashboard...
-          </Typography>
+          <BrandLogo size={80} primary={colors.primary[500]} primaryDim={colors.primary[600]} />
+          <Text
+            style={[
+              styles.successTitle,
+              { color: colors.text.primary, fontFamily: fontFamily.semibold },
+            ]}
+          >
+            Welcome back
+          </Text>
+          <Text
+            style={[
+              styles.successSubtitle,
+              { color: colors.text.secondary, fontFamily: fontFamily.medium },
+            ]}
+          >
+            Loading your dashboard…
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+
+      {/* Top glow */}
+      <LinearGradient
+        colors={
+          isDark
+            ? ["rgba(157,91,255,0.28)", "rgba(157,91,255,0)"]
+            : ["rgba(123,63,228,0.16)", "rgba(123,63,228,0)"]
+        }
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 0.45 }}
+        pointerEvents="none"
+      />
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary.main + "15" }]}>
-              <Ionicons name="lock-closed" size={48} color={colors.primary.main} />
-            </View>
-          </View>
+        {/* Header */}
+        <View style={styles.header}>
+          <BrandLogo size={68} primary={colors.primary[500]} primaryDim={colors.primary[600]} />
+          <Text
+            style={[
+              styles.title,
+              { color: colors.text.primary, fontFamily: fontFamily.semibold },
+            ]}
+          >
+            Welcome back
+            <Text style={{ color: colors.primary[500] }}>.</Text>
+          </Text>
+          <Text
+            style={[
+              styles.subtitle,
+              { color: colors.text.secondary, fontFamily: fontFamily.medium },
+            ]}
+          >
+            Sign in to continue managing{"\n"}your money smartly.
+          </Text>
+        </View>
 
-          {/* Form Content */}
-          <View style={styles.formContent}>
-            {/* Username Field */}
-            <View style={styles.inputContainer}>
-              <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]}>
-                Username or Email
-              </Typography>
-              <TextField
-                placeholder="Enter your username or email"
-                value={identifier}
-                onChangeText={setIdentifier}
-                autoCapitalize="none"
-                editable={!isLoading}
-                placeholderTextColor={colors.text.tertiary}
-              />
-            </View>
+        {/* Form */}
+        <View style={styles.form}>
+          <AuthField
+            label="USERNAME OR EMAIL"
+            iconName="person-outline"
+            value={identifier}
+            placeholder="you@expenzez.com"
+            onChangeText={setIdentifier}
+            editable={!isLoading}
+            colors={colors}
+          />
 
-            {/* Password Field */}
-            <View style={styles.inputContainer}>
-              <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]}>
-                Password
-              </Typography>
-              <TextField
-                placeholder="Enter your password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={true}
-                autoCapitalize="none"
-                editable={!isLoading}
-                placeholderTextColor={colors.text.tertiary}
-              />
-            </View>
+          <AuthField
+            label="PASSWORD"
+            iconName="lock-closed-outline"
+            value={password}
+            placeholder="Your password"
+            onChangeText={setPassword}
+            secureTextEntry
+            editable={!isLoading}
+            colors={colors}
+          />
 
-            {/* Remember Me & Forgot Password Row */}
-            <View style={styles.optionsRow}>
-              <View style={styles.rememberMeWrapper}>
-                <RememberMeCheckbox
-                  value={rememberMe}
-                  onValueChange={setRememberMe}
-                  label="Remember me"
-                  lightText={false}
-                />
-              </View>
-              <TouchableOpacity
-                onPress={() => router.push("/auth/ForgotPassword")}
-              >
-                <Typography variant="body" style={[styles.forgotText, { color: colors.primary.main }]}>
-                  Forgot Password?
-                </Typography>
-              </TouchableOpacity>
-            </View>
-
-            {/* Sign In Button */}
-            <TouchableOpacity
-              style={[styles.signInButton, { backgroundColor: colors.primary.main }]}
-              onPress={handleLogin}
-              disabled={isLoading}
-              activeOpacity={0.8}
+          {/* Remember + forgot */}
+          <View style={styles.optionsRow}>
+            <Pressable
+              onPress={() => setRememberMe(!rememberMe)}
+              style={styles.rememberRow}
             >
-              {isLoading ? (
-                <Typography variant="body" style={styles.buttonText}>
-                  Signing in...
-                </Typography>
-              ) : (
-                <>
-                  <Typography variant="body" style={styles.buttonText}>
-                    Sign In
-                  </Typography>
-                  <Ionicons name="arrow-forward" size={18} color="white" />
-                </>
-              )}
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.dividerContainer}>
-              <View style={[styles.dividerLine, { backgroundColor: colors.border.light }]} />
-              <Typography variant="caption" style={[styles.dividerText, { color: colors.text.tertiary }]}>
-                or
-              </Typography>
-              <View style={[styles.dividerLine, { backgroundColor: colors.border.light }]} />
-            </View>
-
-            {/* Apple Sign In (iOS only) */}
-            <AppleSignInButton
-              onPress={handleAppleLogin}
-              type="sign-in"
-              disabled={isLoading}
-            />
-
-            {/* Google Sign In (Android only) */}
-            <GoogleSignInButton
-              onPress={handleGoogleLogin}
-              type="sign-in"
-              disabled={isLoading}
-            />
-
-            {/* Register Link */}
-            <View style={styles.registerContainer}>
-              <Typography variant="body" style={[styles.registerText, { color: colors.text.secondary }]}>
-                New to Expenzez?{" "}
-              </Typography>
-              <TouchableOpacity onPress={() => router.push("/auth/Register")}>
-                <Typography variant="body" style={[styles.registerTextBold, { color: colors.primary.main }]}>
-                  Create Account
-                </Typography>
-              </TouchableOpacity>
-            </View>
+              <View
+                style={[
+                  styles.checkbox,
+                  {
+                    backgroundColor: rememberMe
+                      ? colors.primary[500]
+                      : "transparent",
+                    borderColor: rememberMe
+                      ? colors.primary[500]
+                      : colors.border.medium,
+                  },
+                ]}
+              >
+                {rememberMe && (
+                  <Ionicons name="checkmark" size={12} color="#fff" />
+                )}
+              </View>
+              <Text
+                style={[
+                  styles.rememberText,
+                  { color: colors.text.secondary, fontFamily: fontFamily.medium },
+                ]}
+              >
+                Remember me
+              </Text>
+            </Pressable>
+            <Pressable onPress={() => router.push("/auth/ForgotPassword")}>
+              <Text
+                style={[
+                  styles.forgotText,
+                  { color: colors.primary[500], fontFamily: fontFamily.semibold },
+                ]}
+              >
+                Forgot?
+              </Text>
+            </Pressable>
           </View>
+
+          {/* Primary button */}
+          <Pressable
+            onPress={handleLogin}
+            disabled={isLoading}
+            style={({ pressed }) => [
+              styles.primaryButton,
+              { opacity: pressed || isLoading ? 0.85 : 1 },
+            ]}
+          >
+            <LinearGradient
+              colors={[colors.primary[500], colors.primary[600]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[
+                styles.primaryButtonGradient,
+                {
+                  shadowColor: colors.primary[500],
+                },
+              ]}
+            >
+              <Text style={styles.primaryButtonText}>
+                {isLoading ? "Signing in…" : "Sign in"}
+              </Text>
+              {!isLoading && (
+                <Ionicons name="arrow-forward" size={16} color="#fff" />
+              )}
+            </LinearGradient>
+          </Pressable>
+
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View
+              style={[styles.dividerLine, { backgroundColor: colors.border.medium }]}
+            />
+            <Text
+              style={[
+                styles.dividerText,
+                { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
+              ]}
+            >
+              OR CONTINUE WITH
+            </Text>
+            <View
+              style={[styles.dividerLine, { backgroundColor: colors.border.medium }]}
+            />
+          </View>
+
+          {/* Apple / Google */}
+          <AppleSignInButton
+            onPress={handleAppleLogin}
+            type="sign-in"
+            disabled={isLoading}
+          />
+          <GoogleSignInButton
+            onPress={handleGoogleLogin}
+            type="sign-in"
+            disabled={isLoading}
+          />
+
+          {/* Register link */}
+          <View style={styles.registerContainer}>
+            <Text
+              style={[
+                styles.registerText,
+                { color: colors.text.secondary, fontFamily: fontFamily.medium },
+              ]}
+            >
+              New to Expenzez?{" "}
+            </Text>
+            <Pressable onPress={() => router.push("/auth/Register")}>
+              <Text
+                style={[
+                  styles.registerTextBold,
+                  { color: colors.primary[500], fontFamily: fontFamily.semibold },
+                ]}
+              >
+                Create account
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  scrollView: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: 22,
+    paddingTop: 32,
+    paddingBottom: 32,
   },
-  header: {
-    alignItems: "center",
-    marginBottom: 32,
-  },
-  logoContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  appLogo: {
-    width: 110,
-    height: 110,
-    marginBottom: 16,
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
+  header: { alignItems: "center", marginBottom: 32 },
   title: {
     fontSize: 28,
-    fontWeight: "800",
-    marginBottom: 0,
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
+    marginTop: 22,
+    textAlign: "center",
   },
-  formContent: {
-    paddingHorizontal: 0,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    marginBottom: 8,
+  subtitle: {
     fontSize: 14,
-    fontWeight: "600",
+    marginTop: 6,
+    textAlign: "center",
+    lineHeight: 20,
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    minHeight: 48,
+  form: { gap: 0 },
+  fieldWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   optionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
-    gap: 12,
+    marginTop: 6,
+    marginBottom: 14,
   },
-  rememberMeWrapper: {
-    flex: 1,
+  rememberRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  forgotText: {
-    fontSize: 14,
-    fontWeight: "600",
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  signInButton: {
+  rememberText: { fontSize: 13 },
+  forgotText: { fontSize: 13 },
+  primaryButton: {
+    borderRadius: 18,
+    overflow: "hidden",
+    marginTop: 6,
+  },
+  primaryButtonGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10,
-    paddingVertical: 14,
-    marginBottom: 16,
     gap: 8,
+    paddingVertical: 17,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 8,
   },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "700",
+  primaryButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontFamily: fontFamily.semibold,
     letterSpacing: 0.2,
   },
-  dividerContainer: {
+  divider: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 20,
+    gap: 10,
+    marginVertical: 18,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: 12,
-    fontSize: 13,
-  },
+  dividerLine: { flex: 1, height: StyleSheet.hairlineWidth },
+  dividerText: { fontSize: 11, letterSpacing: 1 },
   registerContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: 18,
   },
-  registerText: {
-    fontSize: 14,
-  },
-  registerTextBold: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
+  registerText: { fontSize: 14 },
+  registerTextBold: { fontSize: 14 },
   successContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  successIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
+    paddingHorizontal: 22,
+    gap: 16,
   },
   successTitle: {
-    marginBottom: 10,
-    fontSize: 32,
-    fontWeight: "800",
+    fontSize: 28,
+    letterSpacing: -0.6,
+    marginTop: 8,
   },
-  successSubtitle: {
-    fontSize: 16,
-  },
+  successSubtitle: { fontSize: 14 },
 });
