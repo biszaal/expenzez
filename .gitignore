@@ -23,6 +23,8 @@ expo-env.d.ts
 android/app/release/
 android/app/debug/
 ios/build/
+ios/sentry.properties
+android/sentry.properties
 
 # Metro
 .metro-health-check*
