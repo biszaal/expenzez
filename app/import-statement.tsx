@@ -48,12 +48,56 @@ export default function ImportStatementScreen() {
 
   const parseFromUri = useCallback(
     async (uri: string, filename?: string) => {
+      // Track the most recent step so we can surface a useful error message
+      // when something fails — "An unexpected error occurred" was hiding the
+      // real cause (typically iOS share-intent URI permissions).
+      let step: "info" | "copy" | "read" | "upload" = "info";
+
       try {
         setStage("parsing");
         setResult(null);
 
-        const info = await FileSystem.getInfoAsync(uri);
-        if (info.exists && (info as any).size && (info as any).size > MAX_PDF_BYTES) {
+        // iOS share-intent (e.g. "Share PDF" from PayPal) hands us a URI in
+        // the source app's sandbox. FileSystem.readAsStringAsync can fail
+        // because of security-scoped resource access. Copying to our own
+        // cache directory first is the canonical workaround and is cheap.
+        let workingUri = uri;
+        const isShareUri =
+          typeof uri === "string" &&
+          (uri.includes("/tmp/") ||
+            uri.includes("Inbox") ||
+            uri.startsWith("ph://") ||
+            uri.startsWith("content://"));
+
+        if (isShareUri) {
+          step = "copy";
+          const cacheDir = (FileSystem as any).cacheDirectory as
+            | string
+            | undefined;
+          if (cacheDir) {
+            const safeName =
+              (filename && filename.replace(/[^\w.\-]/g, "_")) ||
+              `share-${Date.now()}.pdf`;
+            const dest = `${cacheDir}${safeName}`;
+            try {
+              await FileSystem.copyAsync({ from: uri, to: dest });
+              workingUri = dest;
+            } catch (copyErr: any) {
+              console.warn(
+                "[ImportStatement] copyAsync failed, falling back to original URI",
+                copyErr?.message
+              );
+            }
+          }
+        }
+
+        step = "info";
+        const info = await FileSystem.getInfoAsync(workingUri);
+        if (
+          info.exists &&
+          (info as any).size &&
+          (info as any).size > MAX_PDF_BYTES
+        ) {
           Alert.alert(
             "File too large",
             "Statements must be 8 MB or smaller. Try splitting it or contact support."
@@ -62,10 +106,12 @@ export default function ImportStatementScreen() {
           return;
         }
 
-        const fileBase64 = await FileSystem.readAsStringAsync(uri, {
+        step = "read";
+        const fileBase64 = await FileSystem.readAsStringAsync(workingUri, {
           encoding: FileSystem.EncodingType.Base64,
         });
 
+        step = "upload";
         const response = await transactionAPI.parseStatement(
           fileBase64,
           filename
@@ -82,14 +128,31 @@ export default function ImportStatementScreen() {
 
         setStatement(response.statement);
         setTransactions(response.transactions);
-        // Default to all rows selected so the user can just tap Import.
         setSelected(new Set(response.transactions.map((_, i) => i)));
         setStage("preview");
       } catch (err: any) {
+        // Always log the underlying error so we can see what really failed
+        // when a user hits this — "An unexpected error occurred" from the
+        // generic API error mapper used to swallow the actual cause.
+        console.error(
+          `[ImportStatement] parseFromUri failed at step=${step}:`,
+          err
+        );
+
+        const friendlyByStep: Record<typeof step, string> = {
+          info: "Couldn't access the shared file. Try opening the PDF directly in Expenzez instead of sharing.",
+          copy: "Couldn't copy the shared file into the app. Try opening the PDF directly in Expenzez instead.",
+          read: "Couldn't read the shared file. Try opening the PDF directly in Expenzez instead of sharing.",
+          upload: "Failed to parse the statement. Please try again in a moment.",
+        };
+        const backendMessage =
+          err?.response?.data?.message || err?.response?.data?.error;
         const message =
-          err?.response?.data?.message ||
+          backendMessage ||
+          friendlyByStep[step] ||
           err?.message ||
           "Failed to parse statement. Please try again.";
+
         Alert.alert("Parse failed", message);
         setStage("idle");
       }

@@ -91,10 +91,13 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         return;
       }
 
-      // Check for bullet list item (- or * or •)
-      const bulletListMatch = trimmedLine.match(/^[-*•]\s*(.+)/);
+      // Check for bullet list item (- or * or •).
+      // Require at least one whitespace after the marker so that bold lines
+      // like **While I'm down:** aren't mistaken for `*` bullets (which was
+      // rendering "*While I'm down:*" as italic + a trailing literal "*").
+      const bulletListMatch = trimmedLine.match(/^([-•]|\*(?!\*))\s+(.+)/);
       if (bulletListMatch) {
-        const [, text] = bulletListMatch;
+        const text = bulletListMatch[2];
         elements.push(
           <View key={`bullet-${index}`} style={{ 
             flexDirection: 'row', 

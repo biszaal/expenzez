@@ -41,6 +41,7 @@ import {
   CategoryMerchantSwitch,
   SpendingCategoryListClean,
   SpendingMerchantList,
+  SmartSuggestionCard,
 } from "../../components/spending";
 import { useRouter } from "expo-router";
 import { getSpendingInsight, getBudgetInsight, ChartInsightResponse } from "../../services/api/chartInsightsAPI";
@@ -1299,13 +1300,19 @@ export default function SpendingPage() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      // Always fetch data when logged in, regardless of bank connection status
+      // Initial / login fetch only. Month switching re-filters the
+      // already-loaded last-12-months transactions via the monthlyTransactions
+      // useMemo — refetching on every month change replaced the whole UI with
+      // the skeleton and hit the network needlessly.
       fetchData();
     }
-  }, [isLoggedIn, selectedMonth]);
+  }, [isLoggedIn]);
 
-  // Loading state - show loading during data fetch or bank check
-  if (loading || checkingBank) {
+  // Show the full-page skeleton only on the first load (when we have no
+  // transactions yet). Once data has arrived, subsequent fetches/refreshes
+  // update in place so the user can swipe between months without flicker.
+  const isInitialLoad = loading && transactions.length === 0;
+  if (isInitialLoad || checkingBank) {
     return (
       <SafeAreaView
         style={[
@@ -1590,6 +1597,13 @@ export default function SpendingPage() {
                 color={colors.text.secondary}
               />
             </TouchableOpacity>
+
+            {/* Smart suggestion — design parity with screens/budget.jsx */}
+            <SmartSuggestionCard
+              categoryData={sortedCategoryData}
+              formatAmount={formatAmount}
+              currency="GBP"
+            />
           </>
         )}
 
@@ -1606,6 +1620,7 @@ export default function SpendingPage() {
                 }
                 monthlyOverBudget={monthlyOverBudget}
                 dailySpendingData={dailySpendingData}
+                monthlyTransactions={monthlyData?.monthlyTransactions || []}
                 onPointSelect={handlePointSelect}
                 isPro={isPro}
                 aiInsight={aiInsight}

@@ -13,6 +13,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { notificationAPI, aiService } from "../../services/api";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../app/auth/AuthContext";
@@ -495,7 +496,7 @@ export default function AIAssistantScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.background.secondary }}
+      style={{ flex: 1, backgroundColor: colors.background.primary }}
     >
       {/* Enhanced Modern Header */}
       <View
@@ -540,14 +541,28 @@ export default function AIAssistantScreen() {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 6,
+                gap: 8,
               }}
             >
-              <Ionicons
-                name="sparkles"
-                size={14}
-                color={colors.primary[500]}
-              />
+              <LinearGradient
+                colors={[colors.primary[500], colors.primary[600]]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 8,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  shadowColor: colors.primary[500],
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.35,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
+              >
+                <Ionicons name="sparkles" size={12} color="#FFFFFF" />
+              </LinearGradient>
               <Text
                 style={{
                   fontSize: 16,
@@ -631,13 +646,10 @@ export default function AIAssistantScreen() {
                   marginHorizontal: spacing.lg,
                   marginBottom: spacing.lg,
                   padding: spacing.lg,
-                  backgroundColor: colors.background.secondary,
-                  borderRadius: 16,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 8,
-                  elevation: 4,
+                  backgroundColor: colors.card.background,
+                  borderRadius: 22,
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: colors.border.medium,
                 }}
               >
                 <TouchableOpacity
@@ -650,19 +662,26 @@ export default function AIAssistantScreen() {
                   }}
                 >
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <View
+                    <LinearGradient
+                      colors={[colors.primary[500], colors.primary[600]]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
                       style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 20,
-                        backgroundColor: colors.primary.main,
+                        width: 36,
+                        height: 36,
+                        borderRadius: 12,
                         alignItems: "center",
                         justifyContent: "center",
                         marginRight: 12,
+                        shadowColor: colors.primary[500],
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.35,
+                        shadowRadius: 10,
+                        elevation: 5,
                       }}
                     >
-                      <Ionicons name="analytics" size={20} color="#fff" />
-                    </View>
+                      <Ionicons name="analytics" size={18} color="#fff" />
+                    </LinearGradient>
                     <View>
                       <Text
                         style={{
@@ -761,8 +780,10 @@ export default function AIAssistantScreen() {
                     {/* AI Insights */}
                     <View
                       style={{
-                        backgroundColor: colors.primary.main + "10",
-                        borderRadius: borderRadius.lg,
+                        backgroundColor: colors.primary[500] + "1F",
+                        borderRadius: 14,
+                        borderWidth: StyleSheet.hairlineWidth,
+                        borderColor: colors.primary[500] + "33",
                         padding: 12,
                         marginBottom: 12,
                       }}
@@ -861,17 +882,18 @@ export default function AIAssistantScreen() {
                         <TouchableOpacity
                           key={insight.id}
                           style={{
-                            backgroundColor: colors.background.secondary,
-                            borderRadius: 16,
+                            backgroundColor: colors.card.background,
+                            borderRadius: 18,
                             padding: spacing.lg,
                             marginBottom: spacing.lg,
-                            borderLeftWidth: 4,
+                            borderLeftWidth: 3,
                             borderLeftColor: typeColor,
-                            shadowColor: "#000",
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.1,
-                            shadowRadius: 8,
-                            elevation: 4,
+                            borderTopWidth: StyleSheet.hairlineWidth,
+                            borderRightWidth: StyleSheet.hairlineWidth,
+                            borderBottomWidth: StyleSheet.hairlineWidth,
+                            borderTopColor: colors.border.medium,
+                            borderRightColor: colors.border.medium,
+                            borderBottomColor: colors.border.medium,
                           }}
                           onPress={() => {
                             if (
@@ -979,13 +1001,13 @@ export default function AIAssistantScreen() {
                           <TouchableOpacity
                             key={index}
                             style={{
-                              backgroundColor: colors.primary.main + "15",
-                              borderRadius: borderRadius.xl,
+                              backgroundColor: colors.card.background,
+                              borderRadius: 14,
                               paddingHorizontal: 12,
                               paddingVertical: 8,
                               margin: 4,
-                              borderWidth: 1,
-                              borderColor: colors.primary.main + "30",
+                              borderWidth: StyleSheet.hairlineWidth,
+                              borderColor: colors.border.medium,
                               flexDirection: "row",
                               alignItems: "center",
                             }}
@@ -995,13 +1017,13 @@ export default function AIAssistantScreen() {
                             <Ionicons
                               name="chatbubble"
                               size={14}
-                              color={colors.primary.main}
+                              color={colors.primary[500]}
                             />
                             <Text
                               style={{
                                 fontSize: 14,
-                                fontWeight: "500",
-                                color: colors.primary.main,
+                                fontFamily: fontFamily.medium,
+                                color: colors.text.primary,
                                 marginLeft: 6,
                               }}
                             >
@@ -1028,20 +1050,27 @@ export default function AIAssistantScreen() {
               >
                 {/* AI Avatar */}
                 {msg.role === "assistant" && (
-                  <View
+                  <LinearGradient
+                    colors={[colors.primary[500], colors.primary[600]]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
                     style={{
                       width: 32,
                       height: 32,
-                      borderRadius: 16,
-                      backgroundColor: colors.primary.main,
+                      borderRadius: 11,
                       alignItems: "center",
                       justifyContent: "center",
                       marginRight: 8,
                       marginBottom: 4,
+                      shadowColor: colors.primary[500],
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.35,
+                      shadowRadius: 8,
+                      elevation: 4,
                     }}
                   >
                     <Ionicons name="sparkles" size={16} color="#fff" />
-                  </View>
+                  </LinearGradient>
                 )}
 
                 {/* Message Bubble */}
@@ -1053,15 +1082,15 @@ export default function AIAssistantScreen() {
                     borderRadius: 20,
                     backgroundColor:
                       msg.role === "user"
-                        ? colors.primary.main
-                        : colors.background.primary,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 3,
-                    elevation: 2,
-                    borderBottomLeftRadius: msg.role === "assistant" ? 4 : 20,
-                    borderBottomRightRadius: msg.role === "user" ? 4 : 20,
+                        ? colors.primary[500]
+                        : colors.card.background,
+                    borderWidth:
+                      msg.role === "assistant"
+                        ? StyleSheet.hairlineWidth
+                        : 0,
+                    borderColor: colors.border.medium,
+                    borderBottomLeftRadius: msg.role === "assistant" ? 6 : 20,
+                    borderBottomRightRadius: msg.role === "user" ? 6 : 20,
                   }}
                 >
                   {msg.role === "assistant" ? (
@@ -1094,8 +1123,10 @@ export default function AIAssistantScreen() {
                     style={{
                       width: 32,
                       height: 32,
-                      borderRadius: 16,
-                      backgroundColor: colors.background.tertiary,
+                      borderRadius: 11,
+                      backgroundColor: colors.card.background,
+                      borderWidth: StyleSheet.hairlineWidth,
+                      borderColor: colors.border.medium,
                       alignItems: "center",
                       justifyContent: "center",
                       marginLeft: 8,
@@ -1122,20 +1153,27 @@ export default function AIAssistantScreen() {
                 }}
               >
                 {/* AI Avatar */}
-                <View
+                <LinearGradient
+                  colors={[colors.primary[500], colors.primary[600]]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                   style={{
                     width: 32,
                     height: 32,
-                    borderRadius: 16,
-                    backgroundColor: colors.primary.main,
+                    borderRadius: 11,
                     alignItems: "center",
                     justifyContent: "center",
                     marginRight: 8,
                     marginBottom: 4,
+                    shadowColor: colors.primary[500],
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.35,
+                    shadowRadius: 8,
+                    elevation: 4,
                   }}
                 >
                   <Ionicons name="sparkles" size={16} color="#fff" />
-                </View>
+                </LinearGradient>
 
                 {/* Typing Indicator */}
                 <View
@@ -1143,27 +1181,24 @@ export default function AIAssistantScreen() {
                     paddingHorizontal: 16,
                     paddingVertical: 12,
                     borderRadius: 20,
-                    borderBottomLeftRadius: 4,
-                    backgroundColor: colors.background.primary,
+                    borderBottomLeftRadius: 6,
+                    backgroundColor: colors.card.background,
+                    borderWidth: StyleSheet.hairlineWidth,
+                    borderColor: colors.border.medium,
                     flexDirection: "row",
                     alignItems: "center",
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 3,
-                    elevation: 2,
                   }}
                 >
-                  <ActivityIndicator size="small" color={colors.primary.main} />
+                  <ActivityIndicator size="small" color={colors.primary[500]} />
                   <Text
                     style={{
                       marginLeft: 8,
                       color: colors.text.secondary,
-                      fontSize: 16,
-                      fontStyle: "italic",
+                      fontSize: 14,
+                      fontFamily: fontFamily.medium,
                     }}
                   >
-                    AI is thinking...
+                    AI is thinking…
                   </Text>
                 </View>
               </Animated.View>
@@ -1177,24 +1212,21 @@ export default function AIAssistantScreen() {
                 bottom: 80,
                 left: 16,
                 right: 16,
-                backgroundColor: colors.warning.main,
-                borderRadius: 12,
+                backgroundColor: "rgba(245,179,66,0.16)",
+                borderWidth: StyleSheet.hairlineWidth,
+                borderColor: "rgba(245,179,66,0.4)",
+                borderRadius: 14,
                 padding: 12,
                 flexDirection: "row",
                 alignItems: "center",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 3,
               }}
             >
-              <Ionicons name="time-outline" size={20} color="#fff" />
+              <Ionicons name="time-outline" size={20} color={colors.amber[500]} />
               <Text
                 style={{
-                  color: "#fff",
-                  fontSize: 14,
-                  fontWeight: "500",
+                  color: colors.text.primary,
+                  fontSize: 13,
+                  fontFamily: fontFamily.medium,
                   marginLeft: 8,
                   flex: 1,
                 }}
@@ -1223,29 +1255,26 @@ export default function AIAssistantScreen() {
               style={{
                 flexDirection: "row",
                 alignItems: "flex-end",
-                backgroundColor: colors.background.primary,
-                borderRadius: 24,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.15,
-                shadowRadius: 8,
-                elevation: 5,
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                borderWidth: 1,
-                borderColor: colors.border.light,
+                backgroundColor: colors.card.background,
+                borderRadius: 22,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                borderWidth: StyleSheet.hairlineWidth,
+                borderColor: colors.border.medium,
               }}
             >
               <TextInput
                 style={{
                   flex: 1,
                   maxHeight: 100,
-                  fontSize: 16,
-                  lineHeight: 22,
+                  fontSize: 15,
+                  lineHeight: 20,
                   color: colors.text.primary,
-                  paddingVertical: 4,
+                  paddingVertical: 8,
+                  fontFamily: fontFamily.medium,
                 }}
-                placeholder="Ask me about your spending, budgets, or goals..."
+                placeholder="Ask me about your spending, budgets, or goals…"
+                placeholderTextColor={colors.text.tertiary}
                 value={input}
                 onChangeText={setInput}
                 editable={!loading && !isRateLimited}
@@ -1254,39 +1283,59 @@ export default function AIAssistantScreen() {
                 multiline
                 textAlignVertical="center"
               />
-              <TouchableOpacity
-                style={{
-                  marginLeft: 12,
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor:
-                    !input.trim() || loading
-                      ? colors.background.tertiary
-                      : colors.primary.main,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 2,
-                }}
-                onPress={() => !isRateLimited && sendMessage()}
-                disabled={!input.trim() || loading || isRateLimited}
-              >
-                {loading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Ionicons
-                    name="arrow-up"
-                    size={20}
-                    color={
-                      !input.trim() || loading ? colors.text.tertiary : "#fff"
-                    }
-                  />
-                )}
-              </TouchableOpacity>
+              {!input.trim() || loading || isRateLimited ? (
+                <View
+                  style={{
+                    marginLeft: 10,
+                    width: 38,
+                    height: 38,
+                    borderRadius: 13,
+                    backgroundColor: colors.background.tertiary,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: 0.6,
+                  }}
+                >
+                  {loading ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.text.tertiary}
+                    />
+                  ) : (
+                    <Ionicons
+                      name="arrow-up"
+                      size={18}
+                      color={colors.text.tertiary}
+                    />
+                  )}
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => sendMessage()}
+                  activeOpacity={0.85}
+                  style={{ marginLeft: 10 }}
+                >
+                  <LinearGradient
+                    colors={[colors.primary[500], colors.primary[600]]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 13,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      shadowColor: colors.primary[500],
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.4,
+                      shadowRadius: 10,
+                      elevation: 5,
+                    }}
+                  >
+                    <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+                  </LinearGradient>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>

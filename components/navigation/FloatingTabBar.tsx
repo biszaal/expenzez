@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -112,14 +113,21 @@ export const FloatingTabBar: React.FC<BottomTabBarProps> = ({
             style={({ pressed }) => [
               styles.fab,
               {
-                backgroundColor: colors.primary[500],
                 shadowColor: colors.primary[500],
                 opacity: pressed ? 0.9 : 1,
                 transform: [{ scale: pressed ? 0.96 : 1 }],
               },
             ]}
           >
-            <Ionicons name="add" size={26} color="#FFFFFF" />
+            <LinearGradient
+              colors={[colors.primary[500], colors.primary[600]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.fabGradient}
+            >
+              <View style={styles.fabHighlight} pointerEvents="none" />
+              <Ionicons name="add" size={26} color="#FFFFFF" />
+            </LinearGradient>
           </Pressable>
 
           {rightTabs.map((tab) => (
@@ -141,9 +149,13 @@ const TabButton: React.FC<{
   focused: boolean;
   onPress: () => void;
 }> = ({ tab, focused, onPress }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const meta = TAB_META[tab];
-  const tint = focused ? colors.text.primary : colors.text.tertiary;
+  // Match design's TabBar: active uses textPrimary, inactive uses textFaint.
+  const inactive = isDark
+    ? "rgba(244,241,250,0.38)"
+    : "rgba(26,20,48,0.42)";
+  const tint = focused ? colors.text.primary : inactive;
 
   return (
     <Pressable
@@ -156,7 +168,7 @@ const TabButton: React.FC<{
     >
       <Ionicons
         name={focused ? meta.iconActive : meta.icon}
-        size={22}
+        size={20}
         color={tint}
       />
       <Text
@@ -216,12 +228,25 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 14,
     elevation: 10,
+  },
+  fabGradient: {
+    flex: 1,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  fabHighlight: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.2)",
   },
 });
 
