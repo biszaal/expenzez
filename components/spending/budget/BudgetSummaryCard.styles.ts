@@ -1,92 +1,139 @@
 import { StyleSheet } from "react-native";
 
-// v1.5 redesign — rounded 22 card, soft hairline border, no heavy shadows.
-// Card chrome inherits theme background through inline style at the
-// component, so colours auto-update with the theme.
+// v1.5 redesign — hero ring card with horizontal layout.
+// Ring on the left, REMAINING + ledger rows on the right. Card has a soft
+// primary glow tucked into the top-right corner for depth.
 export const budgetSummaryCardStyles = StyleSheet.create({
   simpleBudgetContainer: {
     paddingHorizontal: 22,
     paddingTop: 14,
   },
   simpleBudgetCard: {
-    padding: 18,
+    padding: 20,
     borderRadius: 22,
     borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+    position: "relative",
+  },
+
+  // Header row above the hero ring layout.
+  heroHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
   },
   simpleBudgetTitle: {
-    fontSize: 16,
-    textAlign: "left",
-    marginBottom: 12,
+    fontSize: 15,
+    letterSpacing: -0.2,
   },
 
-  // Stat tiles below the donut.
-  budgetGridContainer: {
-    marginTop: 4,
-  },
-  budgetRow: {
+  // Hero layout: ring (left) + stats (right).
+  heroLayout: {
     flexDirection: "row",
-    marginTop: 10,
-    gap: 10,
-  },
-  budgetCard: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    alignItems: "flex-start",
-    minHeight: 76,
-    justifyContent: "center",
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  budgetCardPrimary: {},
-  budgetCardSecondary: {},
-  budgetCardAccent: {},
-  budgetCardWarning: {},
-  budgetCardAmount: {
-    fontSize: 18,
-    textAlign: "left",
-    marginBottom: 4,
-    letterSpacing: -0.4,
-  },
-  budgetCardLabel: {
-    fontSize: 11.5,
-    textAlign: "left",
-    letterSpacing: 0.4,
-  },
-
-  // Donut chart container.
-  donutChartContainer: {
     alignItems: "center",
-    marginVertical: 8,
+    gap: 18,
   },
-  donutChart: {
-    width: 240,
-    height: 240,
+  ringWrapper: {
+    width: 180,
+    height: 180,
+    flexShrink: 0,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
   },
-  donutCenter: {
-    width: 144,
-    height: 144,
-    borderRadius: 72,
+  ringCenter: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: "center",
     justifyContent: "center",
   },
-  donutCenterPercentage: {
-    fontSize: 38,
-    textAlign: "center",
-    letterSpacing: -1.4,
+  ringCenterCaption: {
+    fontSize: 10.5,
+    letterSpacing: 1,
   },
-  donutCenterLabel: {
-    fontSize: 10,
-    textAlign: "center",
+  ringCenterPercent: {
+    fontSize: 32,
+    letterSpacing: -1.2,
+    lineHeight: 34,
     marginTop: 2,
-    letterSpacing: 1.4,
   },
-  donutCenterAmount: {
-    fontSize: 14,
-    textAlign: "center",
+  ringCenterPercentSign: {
+    fontSize: 16,
+    opacity: 0.5,
+  },
+  ringCenterStatus: {
+    fontSize: 10.5,
+    letterSpacing: 0.6,
+    marginTop: 4,
+  },
+
+  // Stats column (right of ring).
+  statsCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  statsCaption: {
+    fontSize: 10.5,
+    letterSpacing: 1,
+  },
+  statsRemaining: {
+    fontSize: 30,
+    letterSpacing: -1.2,
+    lineHeight: 34,
+    marginTop: 2,
+  },
+  statsDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: 14,
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 6,
+  },
+  statsRowFirst: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  statsRowLabel: {
+    fontSize: 12,
+  },
+  statsRowValue: {
+    fontSize: 12,
+    letterSpacing: -0.2,
+  },
+
+  // Soft primary glow that anchors the top-right of the card.
+  glow: {
+    position: "absolute",
+    top: -40,
+    right: -40,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    opacity: 0.85,
+  },
+
+  // Warning banner (over-budget / at-risk).
+  warningBanner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 16,
+    gap: 12,
+  },
+  warningTitle: {
+    fontSize: 13,
+    letterSpacing: 0.2,
+    marginBottom: 2,
+  },
+  warningBody: {
+    fontSize: 12.5,
+    lineHeight: 17,
   },
 });

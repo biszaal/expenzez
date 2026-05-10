@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
   ScrollView,
   Text,
@@ -9,6 +9,9 @@ import {
   StyleSheet,
   RefreshControl,
   TextInput,
+  ActivityIndicator,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../auth/AuthContext";
@@ -19,10 +22,13 @@ import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { TransactionSkeleton } from "../../components/ui/SkeletonLoader";
 import { transactionAPI } from "../../services/api/transactionAPI";
-import MonthFilter from "../../components/ui/MonthFilter";
 import { MerchantLogo } from "../../components/ui/MerchantLogo";
 import EditTransactionModal from "../../components/EditTransactionModal";
 import dayjs from "dayjs";
+
+const INITIAL_MONTHS = 6;
+const LOAD_MORE_INCREMENT = 6;
+const MAX_MONTHS = 60;
 
 interface Transaction {
   id: string;
@@ -40,11 +46,6 @@ interface Transaction {
   isPending?: boolean;
 }
 
-interface GroupedTransaction {
-  date: string;
-  transactions: Transaction[];
-}
-
 export default function TransactionsScreen() {
   const router = useRouter();
   const { merchant } = useLocalSearchParams<{ merchant?: string }>();
@@ -57,13 +58,14 @@ export default function TransactionsScreen() {
   const { showSuccess, showError } = useAlert();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [allLoadedTransactions, setAllLoadedTransactions] = useState<Transaction[]>([]); // Cache all loaded transactions
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState<string>(dayjs().format("YYYY-MM")); // Default to current month
   const [lastUpdated, setLastUpdated] = useState(dayjs().format("HH:mm"));
-  const [loadMoreMonths, setLoadMoreMonths] = useState(false); // Tracks if user wants more months
+  const [monthsLoaded, setMonthsLoaded] = useState(INITIAL_MONTHS);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const isFetchingRef = useRef(false);
 
   // Edit modal state
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -115,123 +117,123 @@ export default function TransactionsScreen() {
     };
   };
 
-  const fetchTransactions = async (showRefresh = false, monthsToFetch = 1) => {
-    try {
-      if (showRefresh) setRefreshing(true);
-      else setLoading(true);
+  const fetchTransactions = useCallback(
+    async (
+      monthsToFetch: number,
+      mode: "initial" | "refresh" | "loadMore" = "initial"
+    ) => {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
 
-      // Fetch only specified months to reduce initial load
-      const startDate = dayjs()
-        .subtract(monthsToFetch - 1, "months")
-        .startOf("month")
-        .format("YYYY-MM-DD");
-      const endDate = dayjs().endOf("month").format("YYYY-MM-DD");
-      const limit = monthsToFetch * 300; // ~300 per month
+      try {
+        if (mode === "refresh") setRefreshing(true);
+        else if (mode === "loadMore") setLoadingMore(true);
+        else setLoading(true);
 
-      console.log(
-        `[Transactions] Fetching ${monthsToFetch} month(s) (${startDate} to ${endDate})...`
-      );
+        const startDate = dayjs()
+          .subtract(monthsToFetch - 1, "months")
+          .startOf("month")
+          .format("YYYY-MM-DD");
+        const endDate = dayjs().endOf("month").format("YYYY-MM-DD");
+        const limit = monthsToFetch * 300;
 
-      const transactionsResponse = await transactionAPI.getTransactions({
-        startDate,
-        endDate,
-        limit,
-      });
-      console.log(`[Transactions] API Response:`, transactionsResponse);
+        const transactionsResponse = await transactionAPI.getTransactions({
+          startDate,
+          endDate,
+          limit,
+        });
 
-      if (
-        transactionsResponse?.transactions &&
-        transactionsResponse.transactions.length > 0
-      ) {
-        const formattedTransactions: Transaction[] =
-          transactionsResponse.transactions.map((tx: any) => {
-            // Get the original amount (should be positive) - ensure it's a number
-            const originalAmount = Math.abs(
-              Number(tx.originalAmount || tx.amount || 0)
-            );
-
-            // Determine transaction type from amount
-            const rawAmount = tx.amount || 0;
-            let transactionType = tx.type;
-            if (!transactionType) {
-              transactionType = rawAmount < 0 ? "debit" : "credit";
-            }
-
-            const formatted = {
-              id:
-                tx.id ||
-                tx.transactionId ||
-                `tx_${Date.now()}_${Math.random()}`,
-              amount: rawAmount,
-              description: tx.description || "Unknown Transaction",
-              date: tx.date || new Date().toISOString(),
-              timestamp: tx.date || new Date().toISOString(),
-              merchant: tx.merchant || tx.description || "Manual Entry",
-              category: tx.category || "General",
-              accountId: tx.accountId || "manual",
-              bankName: tx.bankName || "Manual Entry",
-              type: transactionType,
-              originalAmount: originalAmount,
-              accountType: tx.accountType || "Manual Account",
-              isPending: tx.isPending || false,
-            };
-
-            return formatted;
-          });
-
-        console.log(
-          `[Transactions] Loaded ${formattedTransactions.length} transactions`
-        );
-
-        // Merge with previously loaded transactions to build full cache
-        const merged = [...allLoadedTransactions, ...formattedTransactions];
-        const uniqueTransactions = Array.from(
-          new Map(merged.map(tx => [tx.id, tx])).values()
-        );
-
-        setAllLoadedTransactions(uniqueTransactions);
-
-        // Filter to show selected month or all if in "load more" mode
-        const toDisplay = loadMoreMonths
-          ? uniqueTransactions
-          : uniqueTransactions.filter(tx => {
-              const txMonth = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
-              return selectedMonth ? txMonth === selectedMonth : true;
+        if (
+          transactionsResponse?.transactions &&
+          transactionsResponse.transactions.length > 0
+        ) {
+          const formatted: Transaction[] =
+            transactionsResponse.transactions.map((tx: any) => {
+              const originalAmount = Math.abs(
+                Number(tx.originalAmount || tx.amount || 0)
+              );
+              const rawAmount = tx.amount || 0;
+              let transactionType = tx.type;
+              if (!transactionType) {
+                transactionType = rawAmount < 0 ? "debit" : "credit";
+              }
+              return {
+                id:
+                  tx.id ||
+                  tx.transactionId ||
+                  `tx_${Date.now()}_${Math.random()}`,
+                amount: rawAmount,
+                description: tx.description || "Unknown Transaction",
+                date: tx.date || new Date().toISOString(),
+                timestamp: tx.date || new Date().toISOString(),
+                merchant: tx.merchant || tx.description || "Manual Entry",
+                category: tx.category || "General",
+                accountId: tx.accountId || "manual",
+                bankName: tx.bankName || "Manual Entry",
+                type: transactionType,
+                originalAmount,
+                accountType: tx.accountType || "Manual Account",
+                isPending: tx.isPending || false,
+              };
             });
 
-        setTransactions(toDisplay);
-        setLastUpdated(dayjs().format("HH:mm"));
+          setTransactions((prev) => {
+            const merged = new Map(prev.map((tx) => [tx.id, tx]));
+            formatted.forEach((tx) => merged.set(tx.id, tx));
+            return Array.from(merged.values());
+          });
+          setLastUpdated(dayjs().format("HH:mm"));
 
-        if (showRefresh) {
-          showSuccess(`Loaded ${formattedTransactions.length} transactions`);
+          if (mode === "loadMore" && formatted.length === 0) {
+            setHasMore(false);
+          }
+          if (mode === "refresh") {
+            showSuccess(`Loaded ${formatted.length} transactions`);
+          }
+        } else {
+          if (mode === "loadMore") setHasMore(false);
+          if (mode === "initial") setTransactions([]);
+          if (mode === "refresh") showError("No transaction data available");
         }
-      } else {
-        setTransactions([]);
-        if (showRefresh) {
-          showError("No transaction data available");
-        }
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+        showError("Failed to load transactions");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+        isFetchingRef.current = false;
       }
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-      showError("Failed to load transactions");
-      setTransactions([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+    },
+    [showSuccess, showError]
+  );
 
   const onRefresh = () => {
-    // When refreshing, fetch 3 months to populate more cache
-    fetchTransactions(true, 3);
+    fetchTransactions(monthsLoaded, "refresh");
   };
 
-  // Helper function to load all months (when user clicks "Load More" or similar)
-  const loadAllMonths = async () => {
-    setLoadMoreMonths(true);
-    // Fetch 12 months worth of data
-    await fetchTransactions(false, 12);
-  };
+  const handleLoadMore = useCallback(() => {
+    if (loadingMore || !hasMore || isFetchingRef.current) return;
+    if (monthsLoaded >= MAX_MONTHS) {
+      setHasMore(false);
+      return;
+    }
+    const next = Math.min(monthsLoaded + LOAD_MORE_INCREMENT, MAX_MONTHS);
+    setMonthsLoaded(next);
+    fetchTransactions(next, "loadMore");
+  }, [loadingMore, hasMore, monthsLoaded, fetchTransactions]);
+
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - (contentOffset.y + layoutMeasurement.height);
+      if (distanceFromBottom < 600) {
+        handleLoadMore();
+      }
+    },
+    [handleLoadMore]
+  );
 
   // Handle edit transaction
   const handleEditTransaction = (transaction: Transaction) => {
@@ -283,7 +285,6 @@ export default function TransactionsScreen() {
   };
 
   useEffect(() => {
-    console.log("Transactions", transactions);
     if (!authLoggedIn) {
       router.replace("/auth/login");
     }
@@ -291,11 +292,9 @@ export default function TransactionsScreen() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      // Fetch 6 months on initial load to populate month filter and improve UX
-      // This is still much faster than loading all 12 months
-      fetchTransactions(false, 6);
+      fetchTransactions(INITIAL_MONTHS, "initial");
     }
-  }, [isLoggedIn]); // Only fetch on login, filter client-side when month changes
+  }, [isLoggedIn]);
 
   useEffect(() => {
     if (merchant) {
@@ -303,141 +302,10 @@ export default function TransactionsScreen() {
     }
   }, [merchant]);
 
-  // Handle month selection - fetch more months if needed or filter from cache
-  useEffect(() => {
-    if (selectedMonth && allLoadedTransactions.length > 0) {
-      const monthTransactions = allLoadedTransactions.filter(tx => {
-        const txMonth = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
-        return txMonth === selectedMonth;
-      });
-
-      if (monthTransactions.length > 0) {
-        // Already have data for this month
-        setTransactions(monthTransactions);
-      } else {
-        // Need to fetch this month
-        const monthIndex = dayjs(selectedMonth).diff(dayjs().startOf("month"), "month", true);
-        const monthsToFetch = Math.abs(Math.ceil(monthIndex)) + 1;
-        console.log(`[Transactions] Selected month not loaded, fetching ${monthsToFetch} months...`);
-        fetchTransactions(false, monthsToFetch);
-      }
-    }
-  }, [selectedMonth]);
-
-  // Auto-select the most recent month when transactions are loaded - but don't auto-filter
-  useEffect(() => {
-    console.log(
-      `[Transactions] useEffect triggered - selectedMonth: ${selectedMonth}, transactions: ${transactions.length}`
-    );
-
-    if (transactions.length > 0) {
-      console.log(
-        `[Transactions] Sample transactions:`,
-        transactions.slice(0, 5).map((tx) => ({
-          date: tx.date,
-          timestamp: tx.timestamp,
-          description: tx.description,
-        }))
-      );
-
-      // Test date parsing for specific dates like the ones in DynamoDB
-      console.log(`[Transactions] Testing date parsing:`);
-      console.log(`  2025-08-22 → ${dayjs("2025-08-22").format("YYYY-MM")}`);
-      console.log(
-        `  2025-08-23T10:30:14.816Z → ${dayjs("2025-08-23T10:30:14.816Z").format("YYYY-MM")}`
-      );
-      console.log(`  Current date → ${dayjs().format("YYYY-MM")}`);
-    }
-
-    // Don't auto-select a month - show all transactions by default
-    // Users can manually select a month to filter if needed
-    if (!selectedMonth && transactions.length > 0) {
-      const monthsSet = new Set<string>();
-      transactions.forEach((tx) => {
-        const month = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
-        monthsSet.add(month);
-      });
-      const sortedMonths = Array.from(monthsSet).sort().reverse();
-      console.log(
-        `[Transactions] Available months found (but not auto-selecting):`,
-        sortedMonths
-      );
-
-      // Don't auto-select any month - let users see all transactions
-      // setSelectedMonth("");  // Keep empty to show all
-    }
-  }, [transactions]);
-
-  // Generate available months from ALL loaded transactions (cache), not just filtered view
-  const availableMonths = useMemo(() => {
-    const monthsSet = new Set<string>();
-
-    // Always include current month
-    const currentMonth = dayjs().format("YYYY-MM");
-    monthsSet.add(currentMonth);
-
-    // Use allLoadedTransactions to show all months that have been fetched
-    allLoadedTransactions.forEach((tx) => {
-      const month = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
-      monthsSet.add(month);
-    });
-
-    console.log(
-      `[Transactions] Available months for filter:`,
-      Array.from(monthsSet).sort().reverse()
-    );
-
-    // Show all available months sorted by most recent first
-    const months = Array.from(monthsSet).sort().reverse();
-    return months.map((month) => ({
-      key: month,
-      label: dayjs(month).format("MMMM"), // Full month name for clarity
-      isActive: true,
-    }));
-  }, [allLoadedTransactions]);
-
-  // Filter and group transactions
+  // Filter (search) and split pending vs completed
   const { filteredTransactions, pendingTransactions } = useMemo(() => {
     let filtered = transactions;
-    console.log(
-      `[Transactions] Starting filter with ${transactions.length} transactions, selectedMonth: ${selectedMonth}`
-    );
 
-    if (transactions.length > 0) {
-      console.log(
-        `[Transactions] Sample transaction dates:`,
-        transactions.slice(0, 3).map((tx) => ({
-          description: tx.description,
-          date: tx.date,
-          timestamp: tx.timestamp,
-          parsedMonth: dayjs(tx.date || tx.timestamp).format("YYYY-MM"),
-        }))
-      );
-    }
-
-    // Month filter - only apply if selectedMonth is set and not empty
-    if (selectedMonth && selectedMonth.trim() !== "") {
-      console.log(`[Transactions] Applying month filter for: ${selectedMonth}`);
-      const beforeFilterCount = filtered.length;
-      filtered = filtered.filter((tx) => {
-        const txMonth = dayjs(tx.date || tx.timestamp).format("YYYY-MM");
-        const matches = txMonth === selectedMonth;
-        return matches;
-      });
-      console.log(
-        `[Transactions] Month filter: ${beforeFilterCount} → ${filtered.length} transactions`
-      );
-    } else {
-      console.log(
-        `[Transactions] No month filter applied, showing all ${transactions.length} transactions`
-      );
-    }
-
-    console.log(
-      `[Transactions] After month filter: ${filtered.length} transactions (selectedMonth: "${selectedMonth}")`
-    );
-
-    // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -448,7 +316,6 @@ export default function TransactionsScreen() {
       );
     }
 
-    // Separate pending and completed transactions
     const pending = filtered.filter((tx) => tx.isPending);
     const completed = filtered.filter((tx) => !tx.isPending);
 
@@ -460,31 +327,70 @@ export default function TransactionsScreen() {
         (a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf()
       ),
     };
-  }, [transactions, selectedMonth, searchQuery]);
+  }, [transactions, searchQuery]);
 
-  // Group transactions by date
-  const groupedTransactions = useMemo(() => {
-    const groups: GroupedTransaction[] = [];
-    const dateGroups = new Map<string, Transaction[]>();
+  // Group: Month -> Date -> Transactions, sorted newest first
+  const monthSections = useMemo(() => {
+    type DateBucket = {
+      date: string;
+      transactions: Transaction[];
+      total: number;
+    };
+    type MonthBucket = {
+      monthKey: string;
+      monthLabel: string;
+      total: number;
+      dateGroups: DateBucket[];
+    };
+
+    const monthMap = new Map<
+      string,
+      { dateMap: Map<string, Transaction[]>; total: number }
+    >();
 
     filteredTransactions.forEach((tx) => {
-      const dateKey = dayjs(tx.date).format("YYYY-MM-DD");
-      if (!dateGroups.has(dateKey)) {
-        dateGroups.set(dateKey, []);
+      const d = dayjs(tx.date || tx.timestamp);
+      const monthKey = d.format("YYYY-MM");
+      const dateKey = d.format("YYYY-MM-DD");
+
+      if (!monthMap.has(monthKey)) {
+        monthMap.set(monthKey, { dateMap: new Map(), total: 0 });
       }
-      dateGroups.get(dateKey)!.push(tx);
+      const bucket = monthMap.get(monthKey)!;
+      if (!bucket.dateMap.has(dateKey)) {
+        bucket.dateMap.set(dateKey, []);
+      }
+      bucket.dateMap.get(dateKey)!.push(tx);
+      if (tx.type === "debit") {
+        bucket.total += Math.abs(tx.originalAmount);
+      }
     });
 
-    dateGroups.forEach((txs, date) => {
-      groups.push({
-        date,
-        transactions: txs,
+    const sections: MonthBucket[] = [];
+    monthMap.forEach((bucket, monthKey) => {
+      const dateGroups: DateBucket[] = [];
+      bucket.dateMap.forEach((txs, date) => {
+        dateGroups.push({
+          date,
+          transactions: txs,
+          total: txs.reduce((sum, tx) => sum + Math.abs(tx.originalAmount), 0),
+        });
+      });
+      dateGroups.sort(
+        (a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf()
+      );
+      sections.push({
+        monthKey,
+        monthLabel: dayjs(monthKey).format("MMMM YYYY"),
+        total: bucket.total,
+        dateGroups,
       });
     });
 
-    return groups.sort(
-      (a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf()
+    sections.sort(
+      (a, b) => dayjs(b.monthKey).valueOf() - dayjs(a.monthKey).valueOf()
     );
+    return sections;
   }, [filteredTransactions]);
 
   const formatDateHeader = (date: string) => {
@@ -547,6 +453,8 @@ export default function TransactionsScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={200}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -616,15 +524,6 @@ export default function TransactionsScreen() {
             />
           </View>
         </View>
-
-        {/* Month Filter */}
-        {availableMonths.length > 0 && (
-          <MonthFilter
-            selectedMonth={selectedMonth}
-            onMonthSelect={setSelectedMonth}
-            availableMonths={availableMonths}
-          />
-        )}
 
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -724,90 +623,143 @@ export default function TransactionsScreen() {
               </View>
             )}
 
-            {/* Grouped Transactions */}
-            {groupedTransactions.map((group) => (
-              <View key={group.date} style={styles.dateGroup}>
-                <View style={styles.dateHeaderContainer}>
+            {/* Grouped by Month -> Date */}
+            {monthSections.map((section) => (
+              <View key={section.monthKey} style={styles.monthSection}>
+                <View
+                  style={[
+                    styles.monthHeader,
+                    { backgroundColor: colors.background.primary },
+                  ]}
+                >
                   <Text
-                    style={[styles.dateHeader, { color: colors.text.secondary }]}
+                    style={[styles.monthTitle, { color: colors.text.primary }]}
                   >
-                    {formatDateHeader(group.date)}
+                    {section.monthLabel}
                   </Text>
                   <Text
-                    style={[styles.dateAmount, { color: colors.text.secondary }]}
+                    style={[
+                      styles.monthTotal,
+                      { color: colors.text.secondary },
+                    ]}
                   >
-                    £
-                    {group.transactions
-                      .reduce((sum, tx) => sum + Math.abs(tx.originalAmount), 0)
-                      .toFixed(2)}
+                    £{section.total.toFixed(2)}
                   </Text>
                 </View>
 
-                {group.transactions.map((transaction) => (
-                  <TouchableOpacity
-                    key={transaction.id}
-                    style={[
-                      styles.transactionCard,
-                      { backgroundColor: colors.background.secondary },
-                    ]}
-                    onPress={() => handleEditTransaction(transaction)}
-                  >
-                    <MerchantLogo
-                      merchant={transaction.merchant}
-                      description={transaction.description}
-                      category={transaction.category}
-                      size={52}
-                      style={{ marginRight: spacing.md }}
-                    />
-
-                    <View style={styles.transactionDetails}>
+                {section.dateGroups.map((group) => (
+                  <View key={group.date} style={styles.dateGroup}>
+                    <View style={styles.dateHeaderContainer}>
                       <Text
                         style={[
-                          styles.merchantName,
-                          { color: colors.text.primary },
+                          styles.dateHeader,
+                          { color: colors.text.secondary },
                         ]}
                       >
-                        {transaction.merchant}
+                        {formatDateHeader(group.date)}
                       </Text>
                       <Text
                         style={[
-                          styles.categoryLabel,
-                          { color: colors.text.tertiary },
+                          styles.dateAmount,
+                          { color: colors.text.secondary },
                         ]}
                       >
-                        {transaction.category || 'General'}
+                        £{group.total.toFixed(2)}
                       </Text>
                     </View>
 
-                    <View style={styles.amountContainer}>
-                      <Text
+                    {group.transactions.map((transaction) => (
+                      <TouchableOpacity
+                        key={transaction.id}
                         style={[
-                          styles.amount,
-                          {
-                            color:
-                              transaction.type === "credit"
-                                ? colors.success.main
-                                : colors.error.main,
-                          },
+                          styles.transactionCard,
+                          { backgroundColor: colors.background.secondary },
                         ]}
+                        onPress={() => handleEditTransaction(transaction)}
                       >
-                        {transaction.type === "credit" ? "+" : "-"}£
-                        {Math.abs(transaction.originalAmount).toFixed(2)}
-                      </Text>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={18}
-                        color={colors.text.tertiary}
-                        style={styles.chevronIcon}
-                      />
-                    </View>
-                  </TouchableOpacity>
+                        <MerchantLogo
+                          merchant={transaction.merchant}
+                          description={transaction.description}
+                          category={transaction.category}
+                          size={52}
+                          style={{ marginRight: spacing.md }}
+                        />
+
+                        <View style={styles.transactionDetails}>
+                          <Text
+                            style={[
+                              styles.merchantName,
+                              { color: colors.text.primary },
+                            ]}
+                          >
+                            {transaction.merchant}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.categoryLabel,
+                              { color: colors.text.tertiary },
+                            ]}
+                          >
+                            {transaction.category || "General"}
+                          </Text>
+                        </View>
+
+                        <View style={styles.amountContainer}>
+                          <Text
+                            style={[
+                              styles.amount,
+                              {
+                                color:
+                                  transaction.type === "credit"
+                                    ? colors.success.main
+                                    : colors.error.main,
+                              },
+                            ]}
+                          >
+                            {transaction.type === "credit" ? "+" : "-"}£
+                            {Math.abs(transaction.originalAmount).toFixed(2)}
+                          </Text>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={18}
+                            color={colors.text.tertiary}
+                            style={styles.chevronIcon}
+                          />
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 ))}
               </View>
             ))}
 
+            {/* Load-more footer */}
+            {loadingMore && (
+              <View style={styles.loadMoreFooter}>
+                <ActivityIndicator
+                  size="small"
+                  color={colors.primary.main}
+                />
+                <Text
+                  style={[
+                    styles.loadMoreText,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  Loading older transactions…
+                </Text>
+              </View>
+            )}
+            {!loadingMore && !hasMore && monthSections.length > 0 && (
+              <Text
+                style={[styles.endOfList, { color: colors.text.tertiary }]}
+              >
+                You've reached the end
+              </Text>
+            )}
+
             {/* Empty State */}
-            {groupedTransactions.length === 0 &&
+            {monthSections.length === 0 &&
               pendingTransactions.length === 0 && (
                 <EmptyState
                   type="transactions"
@@ -815,9 +767,7 @@ export default function TransactionsScreen() {
                   description={
                     searchQuery
                       ? "Try adjusting your search or filter criteria"
-                      : selectedMonth
-                      ? `No transactions for ${dayjs(selectedMonth).format("MMMM YYYY")}`
-                      : "No transactions for this period"
+                      : "Pull down to refresh, or add a transaction"
                   }
                 />
               )}
@@ -1142,9 +1092,47 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
+  // Month Sections
+  monthSection: {
+    marginBottom: spacing.xl,
+  },
+  monthHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  monthTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  monthTotal: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  // Load more / end of list
+  loadMoreFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
+  },
+  loadMoreText: {
+    fontSize: 14,
+  },
+  endOfList: {
+    textAlign: "center",
+    fontSize: 13,
+    paddingVertical: spacing.lg,
+  },
+
   // Date Groups
   dateGroup: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   dateHeaderContainer: {
     flexDirection: "row",
