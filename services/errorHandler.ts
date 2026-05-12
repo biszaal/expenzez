@@ -353,6 +353,32 @@ class ErrorHandlerService {
         return transformedError;
       }
 
+      if (status === 422) {
+        // Validation / business-rule error. Preserve the raw backend body
+        // on the transformed error so callers can read err.response.data.message
+        // (and .code, .reason) directly — same shape as the original axios error.
+        const backendMessage =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Request couldn't be processed";
+        const backendCode =
+          error.response?.data?.code || FrontendErrorCodes.API_ERROR;
+        const transformedError = new ExpenzezFrontendError(
+          backendCode,
+          backendMessage,
+          422,
+          {
+            originalError: error.message,
+            backendResponse: error.response?.data,
+          },
+          context,
+          false,
+          false
+        );
+        transformedError.response = error.response;
+        return transformedError;
+      }
+
       if (status === 429) {
         // Check if it's an AI-specific rate limit
         const isAIEndpoint =

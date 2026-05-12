@@ -205,6 +205,16 @@ export const LineChart: React.FC<LineChartProps> = ({
     [comparisonProcessedData, curveType]
   );
 
+  // Closed area path used to fill the region under the line with a
+  // vertical purple→transparent gradient (matches screens/spending.jsx).
+  const areaPath = useMemo(() => {
+    if (!svgPath || processedData.length < 2) return null;
+    const firstX = processedData[0].x;
+    const lastX = processedData[processedData.length - 1].x;
+    const bottomY = dimensions.height - dimensions.paddingVertical;
+    return `${svgPath} L${lastX.toFixed(2)},${bottomY.toFixed(2)} L${firstX.toFixed(2)},${bottomY.toFixed(2)} Z`;
+  }, [svgPath, processedData, dimensions]);
+
   // Find closest point to gesture
   const findClosestPoint = (x: number): number => {
     let closestIndex = 0;
@@ -435,6 +445,12 @@ export const LineChart: React.FC<LineChartProps> = ({
                 ))}
               </LinearGradient>
 
+              {/* Vertical area-fill gradient (screens/spending.jsx parity). */}
+              <LinearGradient id="lineAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor={lineColor} stopOpacity={0.35} />
+                <Stop offset="1" stopColor={lineColor} stopOpacity={0} />
+              </LinearGradient>
+
               {/* Mask for line animation */}
               <Mask id="lineMask">
                 <AnimatedRect
@@ -448,6 +464,18 @@ export const LineChart: React.FC<LineChartProps> = ({
             </Defs>
 
             {/* Grid lines - removed for cleaner look */}
+
+            {/* Soft area fill under the curve. Drawn first so the line and
+                end-dot sit on top. Reuses the same horizontal sweep mask so
+                the fill animates in alongside the stroke. */}
+            {areaPath && (
+              <Path
+                d={areaPath}
+                fill="url(#lineAreaGradient)"
+                stroke="none"
+                mask={animated ? "url(#lineMask)" : undefined}
+              />
+            )}
 
             {/* Main line path with mask animation */}
             <Path
@@ -476,16 +504,23 @@ export const LineChart: React.FC<LineChartProps> = ({
 
             {/* Data points - disabled to reduce clutter */}
 
-            {/* Today's date dot at end of line - animated */}
+            {/* Today's date dot at end of line - animated, with glow halo
+                behind it (design parity with screens/spending.jsx). */}
             {processedData.length > 0 && (
               <G>
                 <AnimatedCircle
                   cx={processedData[processedData.length - 1].x}
                   cy={processedData[processedData.length - 1].y}
-                  r={6}
+                  r={10}
                   fill={lineColor}
-                  stroke="white"
-                  strokeWidth={2}
+                  opacity={0.25}
+                  animatedProps={animatedEndDotStyle as any}
+                />
+                <AnimatedCircle
+                  cx={processedData[processedData.length - 1].x}
+                  cy={processedData[processedData.length - 1].y}
+                  r={5}
+                  fill={lineColor}
                   animatedProps={animatedEndDotStyle as any}
                 />
               </G>

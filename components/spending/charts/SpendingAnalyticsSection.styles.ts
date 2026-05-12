@@ -1,180 +1,152 @@
 import { StyleSheet } from "react-native";
 import { spacing, borderRadius } from "../../../constants/theme";
 
+// v1.5 redesign — Spending sub-tab analytics card.
+// Matches screens/spending.jsx: TOTAL SPENT eyebrow + big mono number with
+// delta chip on the left, vertical "This month / {prev}" legend on the right;
+// chart fills the bottom of the card; 3 stat tiles render as a separate row
+// of compact cards below the chart card.
 export const spendingAnalyticsSectionStyles = StyleSheet.create({
   premiumSpendingCardWrapper: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+    paddingHorizontal: 22,
+    paddingTop: 14,
   },
   premiumSpendingCard: {
     borderRadius: 22,
-    padding: spacing.lg,
+    padding: 18,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
-  premiumSpendingHeader: {
+
+  // Header row: TOTAL SPENT + value + delta chip on left, legend on right.
+  headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.sm,
+    alignItems: "flex-start",
   },
-  premiumSpendingHeaderLeft: {
+  headerLeft: {
+    flex: 1,
+    minWidth: 0,
+  },
+  headerEyebrow: {
+    fontSize: 11,
+    letterSpacing: 1,
+  },
+  headerAmountRow: {
     flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
+    alignItems: "baseline",
+    marginTop: 4,
   },
-  premiumAnalyticsIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.md,
+  headerAmountWhole: {
+    fontSize: 36,
+    letterSpacing: -1.6,
+    lineHeight: 40,
   },
-  premiumSpendingHeaderText: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  premiumSpendingTitle: {
+  headerAmountDec: {
     fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 4,
-    lineHeight: 24,
+    letterSpacing: -0.6,
   },
-  premiumSpendingSubtitle: {
-    fontSize: 14,
-    fontWeight: "500",
-    lineHeight: 18,
-    opacity: 0.7,
-  },
-
-  // Chart Section Styles
-  premiumChartSection: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-  },
-  premiumCustomChartContainer: {
-    borderRadius: borderRadius.xl,
-    padding: spacing.sm,
-    paddingTop: spacing.xs,
-  },
-  premiumChartLegend: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: spacing.lg,
-    marginBottom: spacing.lg,
-    paddingHorizontal: spacing.sm,
-  },
-  premiumChartLegendItem: {
+  headerDeltaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 6,
+    marginTop: 8,
   },
-  premiumChartLegendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  premiumChartLegendText: {
-    fontSize: 13,
-    fontWeight: "600",
-    opacity: 0.8,
-  },
-
-  // Mini Stats Cards
-  miniStatsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
-    paddingHorizontal: spacing.xs,
-  },
-  miniStatCard: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    borderRadius: 16,
-    marginHorizontal: 1,
-    minHeight: 76,
-    justifyContent: "center",
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  miniStatIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.xs,
-  },
-  miniStatContent: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  miniStatValue: {
-    fontSize: 14,
-    marginBottom: 2,
-    lineHeight: 18,
-    textAlign: "center",
-    letterSpacing: -0.4,
-  },
-  miniStatLabel: {
-    fontSize: 10,
-    lineHeight: 12,
-    textAlign: "center",
-    letterSpacing: 0.5,
-  },
-
-  // Current Value Display Styles
-  currentValueContainer: {
-    alignItems: "center",
-    marginVertical: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  currentValue: {
-    fontSize: 32,
-    marginBottom: spacing.xs,
-    letterSpacing: -1,
-  },
-  currentValueMeta: {
+  headerDeltaChip: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    gap: 4,
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 7,
   },
-  currentValueLabel: {
-    fontSize: 11.5,
-    marginLeft: 0,
-    letterSpacing: 0.3,
+  headerDeltaChipText: {
+    fontSize: 11,
+    letterSpacing: 0.2,
+  },
+  headerDeltaSub: {
+    fontSize: 11,
   },
 
-  // Enhanced Chart Styles
-  enhancedChartContainer: {
-    borderRadius: borderRadius.lg,
-    padding: spacing.sm,
+  // Right-side legend stack.
+  legendCol: {
+    alignItems: "flex-end",
+    gap: 6,
+    paddingTop: 2,
+    minWidth: 72,
+  },
+  legendRow: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 6,
+  },
+  legendDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  legendText: {
+    fontSize: 11,
   },
 
-  animatedChartWrapper: {
-    paddingLeft: spacing.sm,
+  // Chart section.
+  chartSection: {
+    marginTop: 6,
+  },
+  chartArea: {
     width: "100%",
     alignItems: "center",
   },
 
-  // Empty Chart Styles
+  // X-axis labels under the chart.
+  xAxisRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingTop: 4,
+    paddingHorizontal: 4,
+  },
+  xAxisLabel: {
+    fontSize: 10.5,
+    letterSpacing: 0.4,
+  },
+
+  // 3-up stat row below the chart card.
+  statsRow: {
+    flexDirection: "row",
+    paddingHorizontal: 22,
+    paddingTop: 10,
+    gap: 8,
+  },
+  statCard: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  statLabel: {
+    fontSize: 10.5,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  statValue: {
+    fontSize: 16,
+    letterSpacing: -0.4,
+    marginTop: 6,
+  },
+  statSub: {
+    fontSize: 10.5,
+    marginTop: 2,
+  },
+
+  // Empty chart state.
   premiumEmptyChart: {
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: spacing["2xl"],
     borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
+    marginTop: 14,
   },
   premiumEmptyChartIcon: {
     width: 56,
@@ -195,10 +167,9 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // AI Insight Separate Container - Outside Chart
+  // AI insight container (outside chart card).
   aiInsightSeparateContainer: {
-    marginTop: spacing.xl,  // More space above AI insight
-    marginBottom: spacing.md,
-    paddingHorizontal: 0,  // AIInsightCard has its own horizontal margins
+    marginTop: spacing.lg,
+    paddingHorizontal: 0,
   },
 });

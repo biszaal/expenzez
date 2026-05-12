@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, Dimensions, Alert } from "react-native";
+import React, { useMemo, useState } from "react";
+import { View, Text, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import dayjs from "dayjs";
@@ -7,9 +7,18 @@ import { LineChart, ChartData } from "../../charts";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { spendingAnalyticsSectionStyles } from "./SpendingAnalyticsSection.styles";
 import { AIInsightCard } from "../../ai/AIInsightCard";
-import { AIButton } from "../../ai/AIButton";
 import { ChartInsightResponse } from "../../../services/api/chartInsightsAPI";
 import { fontFamily } from "../../../constants/theme";
+import { getMerchantInfo } from "../../../services/merchantService";
+
+interface Transaction {
+  date?: string;
+  amount: number;
+  category?: string;
+  description?: string;
+  merchant?: string;
+  type?: string;
+}
 
 interface SpendingAnalyticsSectionProps {
   selectedMonth: string;
@@ -21,13 +30,21 @@ interface SpendingAnalyticsSectionProps {
     labels: string[];
     prevMonthData: number[];
   };
+  monthlyTransactions?: Transaction[];
   onPointSelect?: (point: any) => void;
-  // AI insight props
   isPro?: boolean;
   aiInsight?: ChartInsightResponse | null;
   aiInsightLoading?: boolean;
   onRequestAIInsight?: () => void;
   canRequestInsight?: boolean;
+}
+
+function formatGBP(amount: number, decimals = false): string {
+  const abs = Math.abs(amount);
+  const fixed = decimals ? abs.toFixed(2) : abs.toFixed(0);
+  const [whole, dec] = fixed.split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return decimals ? `${grouped}.${dec}` : grouped;
 }
 
 export const SpendingAnalyticsSection: React.FC<
@@ -38,462 +55,529 @@ export const SpendingAnalyticsSection: React.FC<
   hasTransactions,
   monthlyOverBudget,
   dailySpendingData,
+  monthlyTransactions,
   onPointSelect,
   isPro,
   aiInsight,
   aiInsightLoading,
-  onRequestAIInsight,
-  canRequestInsight = true,
 }) => {
   const { colors, isDark } = useTheme();
   const styles = spendingAnalyticsSectionStyles;
   const { width } = Dimensions.get("window");
   const [showAIInsight, setShowAIInsight] = useState(false);
 
-  // Auto-show insight if it exists (from cache)
   React.useEffect(() => {
     if (aiInsight && !showAIInsight) {
       setShowAIInsight(true);
     }
   }, [aiInsight]);
 
-  const handleAIButtonPress = () => {
-    // Check if user can request a new insight
-    if (!canRequestInsight) {
-      Alert.alert(
-        "AI Limit Reached",
-        "You've reached your daily AI insight limit. Your insights will be available again in 24 hours.\n\nUpgrade to Premium for unlimited AI insights!",
-        [{ text: "OK" }]
-      );
-      return;
-    }
+  const prevMonthLabel = dayjs(selectedMonth)
+    .subtract(1, "month")
+    .format("MMM");
+  const monthShort = dayjs(selectedMonth).format("MMM");
 
-    if (!showAIInsight && onRequestAIInsight) {
-      onRequestAIInsight();
-    }
-    setShowAIInsight(!showAIInsight);
-  };
+  // Derived figures shown in the header + 3 stat tiles.
+  const stats = useMemo(() => {
+    const data = dailySpendingData?.data || [];
+    const prev = dailySpendingData?.prevMonthData || [];
+
+    const total = data.reduce((s, v) => s + v, 0);
+    const prevTotal = prev.reduce((s, v) => s + v, 0);
+
+    const daysWithData = data.filter((v) => v > 0).length;
+    const dailyAvg = daysWithData > 0 ? total / daysWithData : 0;
+    const prevDaysWithData = prev.filter((v) => v > 0).length;
+    const prevDailyAvg =
+      prevDaysWithData > 0 ? prevTotal / prevDaysWithData : 0;
+    const dailyDelta = dailyAvg - prevDailyAvg;
+
+    const deltaPct = prevTotal > 0 ? ((total - prevTotal) / prevTotal) * 100 : 0;
+
+    // Largest single expense + merchant.
+    const expenses = (monthlyTransactions || []).filter((t) => {
+      const amt = Number(t.amount) || 0;
+      return t.type === "debit" || amt < 0;
+    });
+    let largestTx: Transaction | null = null;
+    expenses.forEach((t) => {
+      const a = Math.abs(Number(t.amount) || 0);
+      if (!largestTx || a > Math.abs(Number(largestTx.amount) || 0)) {
+        largestTx = t;
+      }
+    });
+    const largestAmount = largestTx
+      ? Math.abs(Number(largestTx.amount) || 0)
+      : 0;
+    const largestMerchant = largestTx
+      ? getMerchantInfo(
+          largestTx.description || largestTx.merchant || "Unknown"
+        ).name
+      : null;
+
+    // Most-used category by transaction count.
+    const counts: Record<string, number> = {};
+    expenses.forEach((t) => {
+      const cat = (t.category || "Other").replace(/^.*?[&]\s*/, "").trim();
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const topCat = ranked[0]?.[0] || null;
+    const topCount = ranked[0]?.[1] || 0;
+
+    return {
+      total,
+      prevTotal,
+      dailyAvg,
+      dailyDelta,
+      deltaPct,
+      deltaIsUp: total >= prevTotal,
+      largestAmount,
+      largestMerchant,
+      mostUsed: topCat,
+      mostUsedCount: topCount,
+    };
+  }, [dailySpendingData, monthlyTransactions]);
+
+  const chartLineColor = monthlyOverBudget
+    ? colors.rose[500]
+    : colors.primary[500];
+  const hasPrevData = (dailySpendingData?.prevMonthData || []).some(
+    (v) => v > 0
+  );
+
+  // Format the big total — use the chart sum so it tracks the visible curve.
+  const totalFormatted = formatGBP(stats.total, true);
+  const [totalWhole, totalDec] = totalFormatted.split(".");
 
   return (
-    <View style={styles.premiumSpendingCardWrapper}>
-      <View
-        style={[
-          styles.premiumSpendingCard,
-          {
-            backgroundColor: colors.card.background,
-            borderColor: colors.border.medium,
-          },
-        ]}
-      >
-        {/* Improved Analytics Header */}
-        <View style={styles.premiumSpendingHeader}>
-          <View style={styles.premiumSpendingHeaderLeft}>
-            <View
-              style={[
-                styles.premiumAnalyticsIcon,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(157,91,255,0.16)"
-                    : "rgba(123,63,228,0.12)",
-                },
-              ]}
-            >
-              <Ionicons name="analytics" size={18} color={colors.primary[500]} />
-            </View>
-            <View style={styles.premiumSpendingHeaderText}>
+    <>
+      <View style={styles.premiumSpendingCardWrapper}>
+        <View
+          style={[
+            styles.premiumSpendingCard,
+            {
+              backgroundColor: colors.card.background,
+              borderColor: colors.border.medium,
+            },
+          ]}
+        >
+          {/* Header — design parity with screens/spending.jsx */}
+          <View style={styles.headerRow}>
+            <View style={styles.headerLeft}>
               <Text
                 style={[
-                  styles.premiumSpendingTitle,
-                  { color: colors.text.primary, fontFamily: fontFamily.semibold },
-                ]}
-              >
-                {dayjs(selectedMonth).format("MMMM")} Analytics
-              </Text>
-              <Text
-                style={[
-                  styles.premiumSpendingSubtitle,
-                  { color: colors.text.secondary, fontFamily: fontFamily.medium },
-                ]}
-              >
-                Spending overview
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Premium Custom Chart Section */}
-        <View style={styles.premiumChartSection}>
-          <View style={[styles.premiumCustomChartContainer]}>
-            {hasTransactions ||
-            dayjs(selectedMonth).isSame(dayjs(), "month") ? (
-              <>
-                {/* Enhanced Comparison Chart - MOVED UP */}
-                <View
-                  style={[
-                    styles.enhancedChartContainer,
-                    {
-                      backgroundColor: 'transparent',
-                    },
-                  ]}
-                >
-                  {/* Modern Interactive Line Chart */}
-                  <GestureHandlerRootView style={styles.animatedChartWrapper}>
-                    <LineChart
-                      data={chartData}
-                      width={width - 16}
-                      height={180}
-                      animated={true}
-                      interactive={true}
-                      gradientColors={
-                        monthlyOverBudget
-                          ? [colors.rose[500], colors.rose[600]]
-                          : [colors.primary[500], colors.lime[500]]
-                      }
-                      lineColor={
-                        monthlyOverBudget ? colors.rose[500] : colors.primary[500]
-                      }
-                      pointColor={
-                        monthlyOverBudget ? colors.rose[500] : colors.primary[500]
-                      }
-                      backgroundColor="transparent"
-                      onPointSelect={onPointSelect}
-                      showGrid={true}
-                      showPoints={true}
-                      curveType="bezier"
-                      gridColor={colors.text.tertiary}
-                      labelColor={colors.text.secondary}
-                    />
-                  </GestureHandlerRootView>
-                </View>
-
-                {/* Chart Legend - MOVED BELOW CHART */}
-                <View style={styles.premiumChartLegend}>
-                  <View style={styles.premiumChartLegendItem}>
-                    <View
-                      style={[
-                        styles.premiumChartLegendDot,
-                        {
-                          backgroundColor: monthlyOverBudget
-                            ? colors.rose[500]
-                            : colors.primary[500],
-                        },
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.premiumChartLegendText,
-                        { color: colors.text.secondary, fontFamily: fontFamily.medium },
-                      ]}
-                    >
-                      This Month
-                    </Text>
-                  </View>
-                  {/* Previous month legend */}
-                  {dailySpendingData?.prevMonthData &&
-                    dailySpendingData.prevMonthData.some(
-                      (value) => value > 0
-                    ) && (
-                      <View style={styles.premiumChartLegendItem}>
-                        <View
-                          style={[
-                            styles.premiumChartLegendDot,
-                            {
-                              backgroundColor: colors.text.tertiary,
-                              opacity: 0.6,
-                            },
-                          ]}
-                        />
-                        <Text
-                          style={[
-                            styles.premiumChartLegendText,
-                            { color: colors.text.secondary, fontFamily: fontFamily.medium },
-                          ]}
-                        >
-                          {dayjs(selectedMonth)
-                            .subtract(1, "month")
-                            .format("MMM")}
-                        </Text>
-                      </View>
-                    )}
-                </View>
-
-                {/* Current Day Value Display */}
-                {dailySpendingData && dailySpendingData.data.length > 0 && (() => {
-                  // Calculate comparison for arrow direction and color
-                  const daysToCompare = Math.min(
-                    dailySpendingData.data.length,
-                    dailySpendingData.prevMonthData?.length || 0
-                  );
-
-                  const thisMonthTotal = dailySpendingData.data
-                    .slice(0, daysToCompare)
-                    .reduce((a, b) => a + b, 0);
-                  const lastMonthTotal = dailySpendingData.prevMonthData
-                    ?.slice(0, daysToCompare)
-                    .reduce((a, b) => a + b, 0) || 0;
-
-                  const isIncrease = thisMonthTotal > lastMonthTotal;
-                  const arrowName = isIncrease ? "arrow-up" : "arrow-down";
-                  const arrowColor = isIncrease ? colors.rose[500] : colors.lime[500];
-                  const backgroundColor = isIncrease ? colors.negBg : colors.posBg;
-
-                  return (
-                    <View style={styles.currentValueContainer}>
-                      <Text
-                        style={[
-                          styles.currentValue,
-                          { color: colors.text.primary, fontFamily: fontFamily.monoMedium },
-                        ]}
-                      >
-                        £
-                        {dailySpendingData.data[
-                          dailySpendingData.data.length - 1
-                        ]?.toFixed(2) || "0.00"}
-                      </Text>
-                      <View style={[
-                        styles.currentValueMeta,
-                        { backgroundColor }
-                      ]}>
-                        <Ionicons
-                          name={arrowName}
-                          size={13}
-                          color={arrowColor}
-                        />
-                        <Text
-                          style={[
-                            styles.currentValueLabel,
-                            { color: arrowColor, fontFamily: fontFamily.semibold },
-                          ]}
-                        >
-                          vs. {daysToCompare}{" "}
-                          {dayjs(selectedMonth)
-                            .subtract(1, "month")
-                            .format("MMM")}
-                        </Text>
-                      </View>
-                    </View>
-                  );
-                })()}
-
-                {/* Mini Stat Cards - IMPROVED LAYOUT */}
-                {dailySpendingData && dailySpendingData.data.length > 0 && (() => {
-                  const tileBg = isDark
-                    ? "rgba(255,255,255,0.03)"
-                    : "rgba(40,20,80,0.03)";
-                  const primaryTint = isDark
-                    ? "rgba(157,91,255,0.16)"
-                    : "rgba(123,63,228,0.12)";
-                  return (
-                    <View style={styles.miniStatsContainer}>
-                      {/* Peak Day Card */}
-                      <View
-                        style={[
-                          styles.miniStatCard,
-                          { backgroundColor: tileBg, borderColor: colors.border.medium },
-                        ]}
-                      >
-                        <View
-                          style={[
-                            styles.miniStatIcon,
-                            { backgroundColor: primaryTint },
-                          ]}
-                        >
-                          <Ionicons
-                            name="trending-up"
-                            size={16}
-                            color={colors.primary[500]}
-                          />
-                        </View>
-                        <View style={styles.miniStatContent}>
-                          <Text
-                            style={[
-                              styles.miniStatValue,
-                              { color: colors.text.primary, fontFamily: fontFamily.monoMedium },
-                            ]}
-                          >
-                            £{Math.max(...dailySpendingData.data).toFixed(0)}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.miniStatLabel,
-                              { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
-                            ]}
-                          >
-                            PEAK DAY
-                          </Text>
-                        </View>
-                      </View>
-
-                      {/* Daily Average Card */}
-                      <View
-                        style={[
-                          styles.miniStatCard,
-                          { backgroundColor: tileBg, borderColor: colors.border.medium },
-                        ]}
-                      >
-                        <View
-                          style={[
-                            styles.miniStatIcon,
-                            { backgroundColor: colors.posBg },
-                          ]}
-                        >
-                          <Ionicons
-                            name="bar-chart-outline"
-                            size={16}
-                            color={colors.lime[500]}
-                          />
-                        </View>
-                        <View style={styles.miniStatContent}>
-                          <Text
-                            style={[
-                              styles.miniStatValue,
-                              { color: colors.text.primary, fontFamily: fontFamily.monoMedium },
-                            ]}
-                          >
-                            £
-                            {(
-                              dailySpendingData.data.reduce((a, b) => a + b, 0) /
-                              Math.max(
-                                dailySpendingData.data.filter((v) => v > 0).length,
-                                1
-                              )
-                            ).toFixed(0)}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.miniStatLabel,
-                              { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
-                            ]}
-                          >
-                            DAILY AVG
-                          </Text>
-                        </View>
-                      </View>
-
-                      {/* vs Last Month Card */}
-                      {dailySpendingData.prevMonthData &&
-                        dailySpendingData.prevMonthData.some((v) => v > 0) &&
-                        (() => {
-                          const daysToCompare = Math.min(
-                            dailySpendingData.data.length,
-                            dailySpendingData.prevMonthData.length
-                          );
-                          const thisMonthTotal = dailySpendingData.data
-                            .slice(0, daysToCompare)
-                            .reduce((a, b) => a + b, 0);
-                          const lastMonthTotal =
-                            dailySpendingData.prevMonthData
-                              .slice(0, daysToCompare)
-                              .reduce((a, b) => a + b, 0);
-                          const diff = thisMonthTotal - lastMonthTotal;
-                          const percentChange =
-                            lastMonthTotal > 0
-                              ? (diff / lastMonthTotal) * 100
-                              : 0;
-                          const isIncrease = diff > 0;
-                          const accent = isIncrease
-                            ? colors.rose[500]
-                            : colors.lime[500];
-                          const accentBg = isIncrease
-                            ? colors.negBg
-                            : colors.posBg;
-                          return (
-                            <View
-                              style={[
-                                styles.miniStatCard,
-                                { backgroundColor: tileBg, borderColor: colors.border.medium },
-                              ]}
-                            >
-                              <View
-                                style={[
-                                  styles.miniStatIcon,
-                                  { backgroundColor: accentBg },
-                                ]}
-                              >
-                                <Ionicons
-                                  name={isIncrease ? "arrow-up" : "arrow-down"}
-                                  size={16}
-                                  color={accent}
-                                />
-                              </View>
-                              <View style={styles.miniStatContent}>
-                                <Text
-                                  style={[
-                                    styles.miniStatValue,
-                                    { color: accent, fontFamily: fontFamily.monoMedium },
-                                  ]}
-                                >
-                                  {isIncrease ? "+" : ""}
-                                  {Math.abs(percentChange).toFixed(0)}%
-                                </Text>
-                                <Text
-                                  style={[
-                                    styles.miniStatLabel,
-                                    { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
-                                  ]}
-                                >
-                                  VS LAST MO
-                                </Text>
-                              </View>
-                            </View>
-                          );
-                        })()}
-                    </View>
-                  );
-                })()}
-              </>
-            ) : (
-              /* Empty Chart State */
-              <View
-                style={[
-                  styles.premiumEmptyChart,
+                  styles.headerEyebrow,
                   {
-                    backgroundColor: isDark
-                      ? "rgba(255,255,255,0.03)"
-                      : "rgba(40,20,80,0.03)",
-                    borderColor: colors.border.medium,
+                    color: colors.text.tertiary,
+                    fontFamily: fontFamily.semibold,
                   },
                 ]}
               >
-                <View
+                TOTAL SPENT
+              </Text>
+              <View style={styles.headerAmountRow}>
+                <Text
                   style={[
-                    styles.premiumEmptyChartIcon,
+                    styles.headerAmountWhole,
                     {
-                      backgroundColor: isDark
-                        ? "rgba(157,91,255,0.16)"
-                        : "rgba(123,63,228,0.12)",
+                      color: colors.text.primary,
+                      fontFamily: fontFamily.monoMedium,
                     },
                   ]}
                 >
-                  <Ionicons
-                    name="analytics-outline"
-                    size={28}
-                    color={colors.primary[500]}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.premiumEmptyChartTitle,
-                    { color: colors.text.primary, fontFamily: fontFamily.semibold },
-                  ]}
-                >
-                  No spending data
+                  £{totalWhole}
                 </Text>
                 <Text
                   style={[
-                    styles.premiumEmptyChartSubtitle,
-                    { color: colors.text.secondary, fontFamily: fontFamily.medium },
+                    styles.headerAmountDec,
+                    {
+                      color: colors.text.tertiary,
+                      fontFamily: fontFamily.mono,
+                    },
                   ]}
                 >
-                  Start spending to see your analytics
+                  .{totalDec}
                 </Text>
               </View>
-            )}
+              {hasPrevData && stats.prevTotal > 0 && (
+                <View style={styles.headerDeltaRow}>
+                  <View
+                    style={[
+                      styles.headerDeltaChip,
+                      {
+                        backgroundColor: stats.deltaIsUp
+                          ? colors.negBg
+                          : colors.posBg,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={stats.deltaIsUp ? "arrow-up" : "arrow-down"}
+                      size={10}
+                      color={
+                        stats.deltaIsUp ? colors.rose[500] : colors.lime[500]
+                      }
+                    />
+                    <Text
+                      style={[
+                        styles.headerDeltaChipText,
+                        {
+                          color: stats.deltaIsUp
+                            ? colors.rose[500]
+                            : colors.lime[500],
+                          fontFamily: fontFamily.semibold,
+                        },
+                      ]}
+                    >
+                      {stats.deltaIsUp ? "+" : "−"}
+                      {Math.abs(stats.deltaPct).toFixed(1)}%
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.headerDeltaSub,
+                      {
+                        color: colors.text.secondary,
+                        fontFamily: fontFamily.medium,
+                      },
+                    ]}
+                  >
+                    vs {prevMonthLabel}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Right-side legend */}
+            <View style={styles.legendCol}>
+              <View style={styles.legendRow}>
+                <View
+                  style={[
+                    styles.legendDot,
+                    { backgroundColor: chartLineColor },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.legendText,
+                    {
+                      color: colors.text.secondary,
+                      fontFamily: fontFamily.medium,
+                    },
+                  ]}
+                >
+                  {monthShort}
+                </Text>
+              </View>
+              {hasPrevData && (
+                <View style={styles.legendRow}>
+                  <View
+                    style={[
+                      styles.legendDot,
+                      {
+                        backgroundColor: colors.text.tertiary,
+                        opacity: 0.5,
+                      },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.legendText,
+                      {
+                        color: colors.text.tertiary,
+                        fontFamily: fontFamily.medium,
+                      },
+                    ]}
+                  >
+                    {prevMonthLabel}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
+
+          {/* Chart */}
+          {hasTransactions ||
+          dayjs(selectedMonth).isSame(dayjs(), "month") ? (
+            <View style={styles.chartSection}>
+              <GestureHandlerRootView style={styles.chartArea}>
+                <LineChart
+                  data={chartData}
+                  width={width - 84}
+                  height={150}
+                  animated={true}
+                  interactive={true}
+                  gradientColors={
+                    monthlyOverBudget
+                      ? [colors.rose[500], colors.rose[600]]
+                      : [colors.primary[500], colors.lime[500]]
+                  }
+                  lineColor={chartLineColor}
+                  pointColor={chartLineColor}
+                  backgroundColor="transparent"
+                  onPointSelect={onPointSelect}
+                  showGrid={false}
+                  showPoints={true}
+                  curveType="bezier"
+                  gridColor={colors.text.tertiary}
+                  labelColor={colors.text.secondary}
+                />
+              </GestureHandlerRootView>
+              <View style={styles.xAxisRow}>
+                <Text
+                  style={[
+                    styles.xAxisLabel,
+                    {
+                      color: colors.text.tertiary,
+                      fontFamily: fontFamily.medium,
+                    },
+                  ]}
+                >
+                  1 {monthShort}
+                </Text>
+                <Text
+                  style={[
+                    styles.xAxisLabel,
+                    {
+                      color: colors.text.tertiary,
+                      fontFamily: fontFamily.medium,
+                    },
+                  ]}
+                >
+                  10 {monthShort}
+                </Text>
+                <Text
+                  style={[
+                    styles.xAxisLabel,
+                    {
+                      color: colors.text.tertiary,
+                      fontFamily: fontFamily.medium,
+                    },
+                  ]}
+                >
+                  20 {monthShort}
+                </Text>
+                <Text
+                  style={[
+                    styles.xAxisLabel,
+                    {
+                      color: colors.text.tertiary,
+                      fontFamily: fontFamily.medium,
+                    },
+                  ]}
+                >
+                  {dayjs(selectedMonth).daysInMonth()} {monthShort}
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <View
+              style={[
+                styles.premiumEmptyChart,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.03)"
+                    : "rgba(40,20,80,0.03)",
+                  borderColor: colors.border.medium,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.premiumEmptyChartIcon,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(157,91,255,0.16)"
+                      : "rgba(123,63,228,0.12)",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="analytics-outline"
+                  size={28}
+                  color={colors.primary[500]}
+                />
+              </View>
+              <Text
+                style={[
+                  styles.premiumEmptyChartTitle,
+                  {
+                    color: colors.text.primary,
+                    fontFamily: fontFamily.semibold,
+                  },
+                ]}
+              >
+                No spending data
+              </Text>
+              <Text
+                style={[
+                  styles.premiumEmptyChartSubtitle,
+                  {
+                    color: colors.text.secondary,
+                    fontFamily: fontFamily.medium,
+                  },
+                ]}
+              >
+                Start spending to see your analytics
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
-      {/* AI Spending Insight - Separate Container */}
+      {/* 3 stat tiles below the chart card */}
+      {hasTransactions && (
+        <View style={styles.statsRow}>
+          <View
+            style={[
+              styles.statCard,
+              {
+                backgroundColor: colors.card.background,
+                borderColor: colors.border.medium,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.statLabel,
+                {
+                  color: colors.text.tertiary,
+                  fontFamily: fontFamily.semibold,
+                },
+              ]}
+            >
+              Daily avg
+            </Text>
+            <Text
+              style={[
+                styles.statValue,
+                {
+                  color: colors.text.primary,
+                  fontFamily: fontFamily.monoSemibold,
+                },
+              ]}
+            >
+              £{formatGBP(stats.dailyAvg, true)}
+            </Text>
+            {Math.abs(stats.dailyDelta) >= 0.01 && (
+              <Text
+                style={[
+                  styles.statSub,
+                  {
+                    color:
+                      stats.dailyDelta > 0
+                        ? colors.rose[500]
+                        : colors.lime[500],
+                    fontFamily: fontFamily.medium,
+                  },
+                ]}
+              >
+                {stats.dailyDelta > 0 ? "+" : "−"}£
+                {formatGBP(stats.dailyDelta, true)}
+              </Text>
+            )}
+          </View>
+
+          <View
+            style={[
+              styles.statCard,
+              {
+                backgroundColor: colors.card.background,
+                borderColor: colors.border.medium,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.statLabel,
+                {
+                  color: colors.text.tertiary,
+                  fontFamily: fontFamily.semibold,
+                },
+              ]}
+            >
+              Largest
+            </Text>
+            <Text
+              style={[
+                styles.statValue,
+                {
+                  color: colors.text.primary,
+                  fontFamily: fontFamily.monoSemibold,
+                },
+              ]}
+            >
+              £{formatGBP(stats.largestAmount)}
+            </Text>
+            {stats.largestMerchant && (
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.statSub,
+                  {
+                    color: colors.text.tertiary,
+                    fontFamily: fontFamily.medium,
+                  },
+                ]}
+              >
+                {stats.largestMerchant}
+              </Text>
+            )}
+          </View>
+
+          <View
+            style={[
+              styles.statCard,
+              {
+                backgroundColor: colors.card.background,
+                borderColor: colors.border.medium,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.statLabel,
+                {
+                  color: colors.text.tertiary,
+                  fontFamily: fontFamily.semibold,
+                },
+              ]}
+            >
+              Most-used
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.statValue,
+                {
+                  color: colors.text.primary,
+                  fontFamily: fontFamily.semibold,
+                  fontSize: 14,
+                  letterSpacing: -0.2,
+                },
+              ]}
+            >
+              {stats.mostUsed || "—"}
+            </Text>
+            {stats.mostUsedCount > 0 && (
+              <Text
+                style={[
+                  styles.statSub,
+                  {
+                    color: colors.text.tertiary,
+                    fontFamily: fontFamily.medium,
+                  },
+                ]}
+              >
+                {stats.mostUsedCount}×
+              </Text>
+            )}
+          </View>
+        </View>
+      )}
+
+      {/* AI Spending Insight */}
       {isPro && showAIInsight && aiInsight && (
         <View style={styles.aiInsightSeparateContainer}>
           <AIInsightCard
@@ -506,6 +590,6 @@ export const SpendingAnalyticsSection: React.FC<
           />
         </View>
       )}
-    </View>
+    </>
   );
 };

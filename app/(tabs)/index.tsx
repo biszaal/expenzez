@@ -501,6 +501,90 @@ export default function HomeScreen() {
           </View>
         </Pressable>
 
+        {/* Import transactions — CSV / PDF statement */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              Import transactions
+            </Text>
+          </View>
+          <View style={styles.importGrid}>
+            <Pressable
+              onPress={() => router.push("/import-csv" as any)}
+              style={({ pressed }) => [
+                styles.importCard,
+                {
+                  backgroundColor: colors.card.background,
+                  borderColor: colors.border.medium,
+                  opacity: pressed ? 0.85 : 1,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.importIcon,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(157,91,255,0.16)"
+                      : "rgba(123,63,228,0.12)",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="document-text-outline"
+                  size={18}
+                  color={colors.primary[500]}
+                />
+              </View>
+              <Text
+                style={[styles.importTitle, { color: colors.text.primary }]}
+              >
+                CSV
+              </Text>
+              <Text
+                style={[styles.importSub, { color: colors.text.tertiary }]}
+              >
+                Spreadsheet upload
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push("/import-statement" as any)}
+              style={({ pressed }) => [
+                styles.importCard,
+                {
+                  backgroundColor: colors.card.background,
+                  borderColor: colors.border.medium,
+                  opacity: pressed ? 0.85 : 1,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.importIcon,
+                  { backgroundColor: colors.posBg },
+                ]}
+              >
+                <Ionicons
+                  name="document-attach-outline"
+                  size={18}
+                  color={colors.lime[500]}
+                />
+              </View>
+              <Text
+                style={[styles.importTitle, { color: colors.text.primary }]}
+              >
+                PDF
+              </Text>
+              <Text
+                style={[styles.importSub, { color: colors.text.tertiary }]}
+              >
+                Bank statement
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
         {/* Top categories */}
         {monthAggregates.topCategories.length > 0 && (
           <View style={styles.section}>
@@ -594,7 +678,7 @@ export default function HomeScreen() {
               >
                 Recent transactions
               </Text>
-              <Pressable onPress={() => router.push("/(tabs)/spending" as any)}>
+              <Pressable onPress={() => router.push("/transactions" as any)}>
                 <Text
                   style={[styles.sectionLink, { color: colors.primary[500] }]}
                 >
@@ -1264,6 +1348,36 @@ const styles = StyleSheet.create({
   sectionLink: {
     fontSize: 12,
     fontFamily: fontFamily.medium,
+  },
+
+  // Import CSV / PDF cards
+  importGrid: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  importCard: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  importIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  importTitle: {
+    fontSize: 15,
+    fontFamily: fontFamily.semibold,
+    letterSpacing: -0.2,
+  },
+  importSub: {
+    fontSize: 11.5,
+    fontFamily: fontFamily.medium,
+    marginTop: 2,
   },
 
   // Category rows
