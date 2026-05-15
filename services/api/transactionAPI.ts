@@ -115,6 +115,19 @@ export interface StatementImportResponse {
   errors?: string[];
 }
 
+// Returned by GET /transactions/import-usage. Covers CSV + PDF imports
+// against a single shared monthly quota.
+export interface ImportUsageResponse {
+  tier: "FREE" | "PREMIUM";
+  period: string; // YYYY-MM
+  used: number;
+  limit: number;
+  remaining: number;
+  allowed: boolean;
+  freeLimit: number;
+  premiumLimit: number;
+}
+
 export const transactionAPI = {
   createTransaction: async (
     data: TransactionCreateData
@@ -154,6 +167,13 @@ export const transactionAPI = {
     const response = await api.post("/transactions/import-csv", {
       transactions,
     });
+    return response.data;
+  },
+
+  // Returns the caller's CSV+PDF import quota for the current calendar month.
+  // Used by the import screens to show "3/4 remaining" and gate uploads.
+  getImportUsage: async (): Promise<ImportUsageResponse> => {
+    const response = await api.get("/transactions/import-usage");
     return response.data;
   },
 

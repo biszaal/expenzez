@@ -14,11 +14,10 @@ import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { useTheme } from "../contexts/ThemeContext";
-import { useSubscription } from "../hooks/useSubscription";
-import { PremiumFeature } from "../services/subscriptionService";
-import { CSVImportPaywall } from "../components/paywalls/CSVImportPaywall";
 import { transactionAPI } from "../services/api";
+import { ImportQuotaCard } from "../components/imports/ImportQuotaCard";
 import type {
+  ImportUsageResponse,
   ParsedStatementTransaction,
   StatementMetadata,
   StatementImportResponse,
@@ -30,8 +29,6 @@ type Stage = "idle" | "parsing" | "preview" | "importing" | "done";
 
 export default function ImportStatementScreen() {
   const { colors } = useTheme();
-  const { hasFeatureAccess } = useSubscription();
-  const access = hasFeatureAccess(PremiumFeature.CSV_IMPORT);
   const { sharedUri, sharedName } = useLocalSearchParams<{
     sharedUri?: string;
     sharedName?: string;
@@ -44,7 +41,24 @@ export default function ImportStatementScreen() {
   );
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [result, setResult] = useState<StatementImportResponse | null>(null);
+  const [usage, setUsage] = useState<ImportUsageResponse | null>(null);
+  const [usageLoading, setUsageLoading] = useState(true);
   const autoUploadedRef = useRef<string | null>(null);
+
+  const refreshUsage = useCallback(async () => {
+    try {
+      const u = await transactionAPI.getImportUsage();
+      setUsage(u);
+    } catch (err) {
+      console.warn("[ImportStatement] usage fetch failed", err);
+    } finally {
+      setUsageLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshUsage();
+  }, [refreshUsage]);
 
   const parseFromUri = useCallback(
     async (uri: string, filename?: string) => {
@@ -147,6 +161,20 @@ export default function ImportStatementScreen() {
         };
         const backendMessage =
           err?.response?.data?.message || err?.response?.data?.error;
+        const code = err?.response?.data?.code;
+        // Refresh quota card on any backend error from the upload step —
+        // IMPORT_LIMIT_REACHED in particular changes the visible state.
+        if (step === "upload") refreshUsage();
+        // Quota-exhausted gets a distinct title + matches the card CTA.
+        if (code === "IMPORT_LIMIT_REACHED") {
+          Alert.alert(
+            "Monthly import limit reached",
+            backendMessage ||
+              "You've used all your imports this month. Upgrade for more."
+          );
+          setStage("idle");
+          return;
+        }
         const message =
           backendMessage ||
           friendlyByStep[step] ||
@@ -162,15 +190,10 @@ export default function ImportStatementScreen() {
 
   // Auto-parse when arriving via share intent.
   useEffect(() => {
-    if (!access.hasAccess) return;
     if (!sharedUri || autoUploadedRef.current === sharedUri) return;
     autoUploadedRef.current = sharedUri;
     parseFromUri(sharedUri, sharedName);
-  }, [access.hasAccess, sharedUri, sharedName, parseFromUri]);
-
-  if (!access.hasAccess) {
-    return <CSVImportPaywall />;
-  }
+  }, [sharedUri, sharedName, parseFromUri]);
 
   const handlePickAndParse = async () => {
     try {
@@ -229,6 +252,8 @@ export default function ImportStatementScreen() {
       );
       setResult(response);
       setStage("done");
+      // Pull the new used/remaining numbers so the quota card reflects the save.
+      refreshUsage();
     } catch (err: any) {
       const message =
         err?.response?.data?.message ||
@@ -236,6 +261,9 @@ export default function ImportStatementScreen() {
         "Failed to import. Please try again.";
       Alert.alert("Import failed", message);
       setStage("preview");
+      // Quota may have changed (e.g. 403 IMPORT_LIMIT_REACHED) — refresh
+      // so the card is accurate even on failure paths.
+      refreshUsage();
     }
   };
 
@@ -267,6 +295,10 @@ export default function ImportStatementScreen() {
           colors={colors}
           parsing={stage === "parsing"}
           onPick={handlePickAndParse}
+          quotaCard={
+            <ImportQuotaCard usage={usage} loading={usageLoading} />
+          }
+          quotaExhausted={!!usage && usage.remaining === 0}
         />
       )}
 
@@ -309,8 +341,12 @@ const IdleView: React.FC<{
   colors: any;
   parsing: boolean;
   onPick: () => void;
-}> = ({ colors, parsing, onPick }) => (
+  quotaCard?: React.ReactNode;
+  quotaExhausted?: boolean;
+}> = ({ colors, parsing, onPick, quotaCard, quotaExhausted }) => (
   <ScrollView contentContainerStyle={styles.content}>
+    {quotaCard}
+
     <View
       style={[
         styles.heroCard,
@@ -332,17 +368,19 @@ const IdleView: React.FC<{
       style={[
         styles.primaryButton,
         { backgroundColor: colors.primary[500] },
-        parsing && styles.buttonDisabled,
+        (parsing || quotaExhausted) && styles.buttonDisabled,
       ]}
       onPress={onPick}
-      disabled={parsing}
+      disabled={parsing || quotaExhausted}
     >
       {parsing ? (
         <ActivityIndicator color="#fff" />
       ) : (
         <>
           <Ionicons name="cloud-upload" size={20} color="#fff" />
-          <Text style={styles.primaryButtonText}>Choose PDF</Text>
+          <Text style={styles.primaryButtonText}>
+            {quotaExhausted ? "Quota reached" : "Choose PDF"}
+          </Text>
         </>
       )}
     </TouchableOpacity>
