@@ -19,7 +19,7 @@
     "description": "Smart expense tracking with AI insights and comprehensive financial management for users.",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "41",
+      "buildNumber": "42",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -74,7 +74,7 @@
         "android.permission.POST_NOTIFICATIONS"
       ],
       "package": "com.biszaaltech.expenzez",
-      "versionCode": 19
+      "versionCode": 20
     },
     "web": {
       "bundler": "metro",
