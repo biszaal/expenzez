@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,13 +14,14 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { useTheme } from "../contexts/ThemeContext";
-import { useSubscription } from "../hooks/useSubscription";
-import { PremiumFeature } from "../services/subscriptionService";
-import { CSVImportPaywall } from "../components/paywalls/CSVImportPaywall";
 import { transactionAPI } from "../services/api";
+import { ImportQuotaCard } from "../components/imports/ImportQuotaCard";
 import { autoBillDetection } from "../services/automaticBillDetection";
 import { ExpenseCategory, ImportPreview } from "../types/expense";
-import type { CSVTransaction } from "../services/api/transactionAPI";
+import type {
+  CSVTransaction,
+  ImportUsageResponse,
+} from "../services/api/transactionAPI";
 import { CSVDetector, ParsedCSVRow } from "../services/csvDetector";
 import { CategorizeTransaction } from "../services/categorizeTransaction";
 import { BankSelector } from "../components/import/BankSelector";
@@ -103,7 +104,6 @@ const CSV_EXPENSE_CATEGORIES: ExpenseCategory[] = [
 
 export default function CSVImportScreen() {
   const { colors } = useTheme();
-  const { isPremium, hasFeatureAccess } = useSubscription();
 
   // All hooks must be declared before any conditional returns
   const [loading, setLoading] = useState(false);
@@ -116,19 +116,28 @@ export default function CSVImportScreen() {
   const [previewTransactions, setPreviewTransactions] = useState<
     CSVTransactionPreview[]
   >([]);
+  const [usage, setUsage] = useState<ImportUsageResponse | null>(null);
+  const [usageLoading, setUsageLoading] = useState(true);
 
   // Bank selection state
   const [selectedBank, setSelectedBank] = useState<BankFormat | null>(null);
   const [showExportGuide, setShowExportGuide] = useState(false);
   const [showBankSelector, setShowBankSelector] = useState(true);
 
-  // Check if user has access to CSV import feature
-  const featureAccess = hasFeatureAccess(PremiumFeature.CSV_IMPORT);
+  const refreshUsage = useCallback(async () => {
+    try {
+      const u = await transactionAPI.getImportUsage();
+      setUsage(u);
+    } catch (err) {
+      console.warn("[ImportCSV] usage fetch failed", err);
+    } finally {
+      setUsageLoading(false);
+    }
+  }, []);
 
-  // Show paywall if user doesn't have access
-  if (!isPremium || !featureAccess.hasAccess) {
-    return <CSVImportPaywall />;
-  }
+  useEffect(() => {
+    refreshUsage();
+  }, [refreshUsage]);
 
   const handleBankSelect = (bank: BankFormat | null) => {
     setSelectedBank(bank);
@@ -981,12 +990,26 @@ export default function CSVImportScreen() {
             : []),
         ]
       );
+      // Quota counter updated server-side after a successful import;
+      // refresh the card so "X / 15 remaining" reflects the save.
+      refreshUsage();
     } catch (error: any) {
       console.error("Error importing CSV:", error);
-      Alert.alert(
-        "Error",
-        `Failed to import transactions: ${error.message || "Please check your connection and try again."}`
-      );
+      const backendMessage = error?.response?.data?.message;
+      const code = error?.response?.data?.code;
+      if (code === "IMPORT_LIMIT_REACHED") {
+        Alert.alert(
+          "Monthly import limit reached",
+          backendMessage ||
+            "You've used all your imports this month. Upgrade for more."
+        );
+        refreshUsage();
+      } else {
+        Alert.alert(
+          "Error",
+          `Failed to import transactions: ${backendMessage || error.message || "Please check your connection and try again."}`
+        );
+      }
     } finally {
       setImporting(false);
     }
@@ -1021,6 +1044,9 @@ export default function CSVImportScreen() {
           </Text>
           <View style={{ width: 24 }} />
         </View>
+
+        {/* Monthly quota — shared with PDF imports */}
+        <ImportQuotaCard usage={usage} loading={usageLoading} />
 
         {/* Bank Selector View */}
         {showBankSelector ? (
