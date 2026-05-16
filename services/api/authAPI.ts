@@ -323,30 +323,14 @@ export const authAPI = {
   },
 
   forgotPassword: async (data: { username: string }) => {
-    try {
-      // Use new custom password reset email endpoint for beautiful emails
-      const response = await api.post("/auth/forgot-password-custom", data);
-      return response.data;
-    } catch (error: any) {
-      // Fallback to old Cognito endpoint if custom one fails
-      console.log("Custom password reset email failed, trying fallback:", error.message);
-      try {
-        const authResponse = await axios.post(
-          `${CURRENT_API_CONFIG.baseURL}/auth/forgot-password`,
-          data,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        return authResponse.data;
-      } catch (fallbackError: any) {
-        // Final fallback to main API
-        const response = await api.post("/auth/forgot-password", data);
-        return response.data;
-      }
-    }
+    // Use Cognito's native forgot-password flow. The /auth/forgot-password-custom
+    // endpoint generates its own Math.random code and stores it in a per-Lambda
+    // in-memory Map, but /auth/confirm-forgot-password then verifies via Cognito's
+    // ConfirmForgotPasswordCommand which doesn't know about that custom code —
+    // so the user's email arrives with code X but verification rejects every X
+    // as "code expired". Single Cognito-managed code keeps both ends in sync.
+    const response = await api.post("/auth/forgot-password", data);
+    return response.data;
   },
 
   forgotUsername: async (data: { email: string }) => {
