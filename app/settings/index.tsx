@@ -130,28 +130,80 @@ export default function SettingsPage() {
   };
 
   const handleDeleteData = () => {
+    // First confirmation: explain exactly what will and won't be deleted.
     Alert.alert(
       "Delete All Data",
-      "This will permanently delete all your financial data, including transactions, accounts, and budgets. This action cannot be undone.",
+      "Before you continue, here's what will happen:\n\n" +
+        "WILL BE DELETED PERMANENTLY:\n" +
+        "• Every transaction (manual + imported)\n" +
+        "• Budgets, goals, and recurring bills\n" +
+        "• AI chat history, memory, and insights\n" +
+        "• Categorization rules and overrides\n" +
+        "• Notifications, alerts, and daily briefs\n" +
+        "• Spending patterns and analytics history\n" +
+        "• Connected bank accounts and PINs\n" +
+        "• CSV/PDF import history\n\n" +
+        "WILL BE KEPT:\n" +
+        "• Your account and login\n" +
+        "• Your Premium subscription (if active)\n" +
+        "• Your profile name and email\n\n" +
+        "This cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Delete",
+          text: "Continue",
           style: "destructive",
-          onPress: async () => {
-            try {
-              // TODO: Implement actual data deletion
-              Alert.alert(
-                "Data Deleted",
-                "All your data has been permanently deleted."
-              );
-            } catch (error) {
-              Alert.alert("Error", "Failed to delete data. Please try again.");
-            }
+          onPress: () => {
+            // Second confirmation: final "are you absolutely sure" gate.
+            Alert.alert(
+              "Final Confirmation",
+              "Are you absolutely sure you want to delete all your data?\n\nEverything except your account and subscription will be erased. You will not be able to recover any of it.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Yes, Delete Everything",
+                  style: "destructive",
+                  onPress: deleteUserDataConfirmed,
+                },
+              ]
+            );
           },
         },
       ]
     );
+  };
+
+  const deleteUserDataConfirmed = async () => {
+    try {
+      const { api } = await import("../../services/config/apiClient");
+      const response = await api.delete("/user/data", {
+        data: { confirm: "DELETE_ALL_DATA" },
+      });
+
+      if (response.status === 200) {
+        const { rowsDeleted } = response.data || {};
+
+        Alert.alert(
+          "Data Deleted",
+          `${rowsDeleted ?? "All"} record${rowsDeleted === 1 ? "" : "s"} removed. Your account and subscription are still intact. The app will reload from a clean slate.`,
+          [
+            {
+              text: "OK",
+              onPress: () => router.replace("/(tabs)"),
+            },
+          ]
+        );
+      } else {
+        throw new Error("Unexpected response from server");
+      }
+    } catch (error: any) {
+      console.error("[Settings] Delete user data failed:", error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to delete data. Please try again.";
+      Alert.alert("Delete failed", message);
+    }
   };
 
   const handleDeleteAccount = () => {
