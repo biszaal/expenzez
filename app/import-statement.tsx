@@ -72,36 +72,37 @@ export default function ImportStatementScreen() {
         setResult(null);
 
         // iOS share-intent (e.g. "Share PDF" from PayPal) hands us a URI in
-        // the source app's sandbox. FileSystem.readAsStringAsync can fail
-        // because of security-scoped resource access. Copying to our own
-        // cache directory first is the canonical workaround and is cheap.
+        // the source app's sandbox / an app-group container. Reading it
+        // directly can fail (security-scoped access) or the file may be
+        // cleaned up out from under us. Copy anything that isn't already in
+        // our own cache/document dir into cache first — the canonical
+        // workaround and cheap. (The share-intent router usually copies it
+        // already, but this is a defensive fallback.)
         let workingUri = uri;
-        const isShareUri =
-          typeof uri === "string" &&
-          (uri.includes("/tmp/") ||
-            uri.includes("Inbox") ||
-            uri.startsWith("ph://") ||
-            uri.startsWith("content://"));
+        const cacheDir = (FileSystem as any).cacheDirectory as
+          | string
+          | undefined;
+        const docDir = (FileSystem as any).documentDirectory as
+          | string
+          | undefined;
+        const alreadyInSandbox =
+          (cacheDir && uri.startsWith(cacheDir)) ||
+          (docDir && uri.startsWith(docDir));
 
-        if (isShareUri) {
+        if (!alreadyInSandbox && cacheDir) {
           step = "copy";
-          const cacheDir = (FileSystem as any).cacheDirectory as
-            | string
-            | undefined;
-          if (cacheDir) {
-            const safeName =
-              (filename && filename.replace(/[^\w.\-]/g, "_")) ||
-              `share-${Date.now()}.pdf`;
-            const dest = `${cacheDir}${safeName}`;
-            try {
-              await FileSystem.copyAsync({ from: uri, to: dest });
-              workingUri = dest;
-            } catch (copyErr: any) {
-              console.warn(
-                "[ImportStatement] copyAsync failed, falling back to original URI",
-                copyErr?.message
-              );
-            }
+          const safeName =
+            (filename && filename.replace(/[^\w.\-]/g, "_")) ||
+            `share-${Date.now()}.pdf`;
+          const dest = `${cacheDir}import-${Date.now()}-${safeName}`;
+          try {
+            await FileSystem.copyAsync({ from: uri, to: dest });
+            workingUri = dest;
+          } catch (copyErr: any) {
+            console.warn(
+              "[ImportStatement] copyAsync failed, falling back to original URI",
+              copyErr?.message
+            );
           }
         }
 

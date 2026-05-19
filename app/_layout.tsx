@@ -1,5 +1,6 @@
 import { Stack, router, useSegments } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import * as FileSystem from "expo-file-system/legacy";
 import React, { useEffect, useState, useCallback } from "react";
 import {
   ShareIntentProvider,
@@ -739,14 +740,44 @@ function ShareIntentRouter() {
       return;
     }
 
-    router.push({
-      pathname: "/import-statement",
-      params: {
-        sharedUri: pdf.path,
-        sharedName: pdf.fileName ?? "statement.pdf",
-      },
-    });
-    resetShareIntent();
+    // The shared file lives in a transient share-extension/app-group
+    // location that resetShareIntent() can clean up — and which is often
+    // security-scoped, so reading it later from the import screen fails
+    // (the bug where "share from PayPal" did nothing while a downloaded
+    // file worked). Copy it into our own cache FIRST, then navigate with
+    // the stable path, then reset.
+    (async () => {
+      const name = (pdf.fileName ?? "statement.pdf").replace(
+        /[^\w.\-]/g,
+        "_"
+      );
+      let sharedUri = pdf.path;
+      try {
+        const cacheDir = (FileSystem as any).cacheDirectory as
+          | string
+          | undefined;
+        if (cacheDir) {
+          const dest = `${cacheDir}shared-${Date.now()}-${name}`;
+          await FileSystem.copyAsync({ from: pdf.path, to: dest });
+          sharedUri = dest;
+        }
+      } catch (copyErr: any) {
+        // Fall back to the original path; import screen will retry a copy.
+        console.warn(
+          "[ShareIntent] cache copy failed, passing original path",
+          copyErr?.message
+        );
+      }
+
+      router.push({
+        pathname: "/import-statement",
+        params: {
+          sharedUri,
+          sharedName: pdf.fileName ?? "statement.pdf",
+        },
+      });
+      resetShareIntent();
+    })();
   }, [hasShareIntent, shareIntent, resetShareIntent]);
 
   return null;
