@@ -501,6 +501,56 @@ export default function HomeScreen() {
           </View>
         </Pressable>
 
+        {/* Expenzez AI — chat entry (all users; free tier has a daily limit) */}
+        <Pressable
+          onPress={() => router.push("/ai-assistant")}
+          style={[
+            styles.aiCard,
+            {
+              borderColor: isDark
+                ? "rgba(157,91,255,0.25)"
+                : "rgba(123,63,228,0.20)",
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={
+              isDark
+                ? ["rgba(157,91,255,0.16)", "rgba(197,242,92,0.06)"]
+                : ["rgba(123,63,228,0.12)", "rgba(92,133,25,0.06)"]
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <LinearGradient
+            colors={[colors.primary[500], colors.primary[600]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.aiIcon,
+              {
+                shadowColor: colors.primary[500],
+              },
+            ]}
+          >
+            <Ionicons name="sparkles" size={18} color="#FFFFFF" />
+          </LinearGradient>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.aiEyebrow, { color: colors.primary[500] }]}>
+              EXPENZEZ AI
+            </Text>
+            <Text style={[styles.aiBody, { color: colors.text.primary }]}>
+              Tap to chat about your spending, budgets and goals.
+            </Text>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={colors.text.tertiary}
+          />
+        </Pressable>
+
         {/* Import transactions — CSV / PDF statement */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -929,60 +979,6 @@ export default function HomeScreen() {
               })}
             </View>
           </View>
-        )}
-
-        {/* AI insight strip — link to AI assistant */}
-        {isPro && (
-          <Pressable
-            onPress={() => router.push("/ai-assistant")}
-            style={[
-              styles.aiCard,
-              {
-                borderColor: isDark
-                  ? "rgba(157,91,255,0.25)"
-                  : "rgba(123,63,228,0.20)",
-              },
-            ]}
-          >
-            <LinearGradient
-              colors={
-                isDark
-                  ? ["rgba(157,91,255,0.16)", "rgba(197,242,92,0.06)"]
-                  : ["rgba(123,63,228,0.12)", "rgba(92,133,25,0.06)"]
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <LinearGradient
-              colors={[colors.primary[500], colors.primary[600]]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[
-                styles.aiIcon,
-                {
-                  shadowColor: colors.primary[500],
-                },
-              ]}
-            >
-              <Ionicons name="sparkles" size={18} color="#FFFFFF" />
-            </LinearGradient>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[styles.aiEyebrow, { color: colors.primary[500] }]}
-              >
-                EXPENZEZ AI
-              </Text>
-              <Text style={[styles.aiBody, { color: colors.text.primary }]}>
-                Tap to chat about your spending, budgets and goals.
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={colors.text.tertiary}
-            />
-          </Pressable>
         )}
 
         {/* Upgrade Banner — keep existing flow for non-premium */}
