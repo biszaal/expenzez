@@ -23,6 +23,7 @@ import { budgetAPI } from "../../services/api";
 import { fontFamily } from "../../constants/theme";
 import { DashboardSkeleton } from "../../components/ui/SkeletonLoader";
 import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
+import { FREE_TIER_LIMITS } from "../../services/subscriptionService";
 import { useDashboardData } from "../../hooks/useDashboardData";
 import { BillsAPI, type SavedBill } from "../../services/api/billsAPI";
 
@@ -543,6 +544,11 @@ export default function HomeScreen() {
             <Text style={[styles.aiBody, { color: colors.text.primary }]}>
               Tap to chat about your spending, budgets and goals.
             </Text>
+            {!revenueCatLoading && !isPro && (
+              <Text style={[styles.aiHint, { color: colors.text.tertiary }]}>
+                {FREE_TIER_LIMITS.MAX_AI_QUERIES_PER_DAY} free chats a day
+              </Text>
+            )}
           </View>
           <Ionicons
             name="chevron-forward"
@@ -1501,5 +1507,10 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.medium,
     lineHeight: 19,
     marginTop: 2,
+  },
+  aiHint: {
+    fontSize: 11.5,
+    fontFamily: fontFamily.medium,
+    marginTop: 5,
   },
 });
