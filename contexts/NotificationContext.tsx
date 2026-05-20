@@ -110,7 +110,8 @@ interface NotificationContextType {
 
   // Status
   loading: boolean;
-  error: string | null;
+  error: string | null; // Feed-load failures only (blocks the Activity screen)
+  registrationError: string | null; // Push-token setup failures (non-fatal)
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -140,6 +141,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [registrationError, setRegistrationError] = useState<string | null>(
+    null
+  );
 
   // Initialize notification system when user logs in
   useEffect(() => {
@@ -197,6 +201,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       setLoading(true);
       setError(null);
+      setRegistrationError(null);
 
       // Short delay to ensure auth tokens are ready
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -286,11 +291,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       if (finalStatus !== "granted") {
-        console.error(
-          "[NotificationContext] ❌ Notification permissions not granted:",
+        console.warn(
+          "[NotificationContext] ⚠️ Notification permissions not granted:",
           finalStatus
         );
-        setError(
+        setRegistrationError(
           Platform.OS === "ios"
             ? "Notification permissions not granted. Please enable in iOS Settings."
             : "Notification permissions not granted. Please enable in Android Settings."
@@ -303,7 +308,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       const projectId = Constants.expoConfig?.extra?.eas?.projectId;
       if (!projectId) {
         console.error("[NotificationContext] No project ID found in app config");
-        setError("Push notification configuration missing");
+        setRegistrationError("Push notification configuration missing");
         return false;
       }
       const tokenData = await Notifications.getExpoPushTokenAsync({
@@ -342,18 +347,23 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         console.error(
           "[NotificationContext] ❌ Failed to register token after retry"
         );
-        setError(
+        setRegistrationError(
           "Failed to register notification token with server. Notifications may not work."
         );
         return false;
       }
     } catch (error: any) {
-      console.error(
-        "[NotificationContext] ❌ Error registering for push notifications:",
-        error
+      // Non-fatal: push registration can legitimately fail on platforms where
+      // it isn't supported (e.g. iOS apps running on Apple Silicon Macs return
+      // UNErrorDomain Code=1 "Notifications are not allowed"). The in-app
+      // activity feed does not depend on push, so never block the screen.
+      console.warn(
+        "[NotificationContext] ⚠️ Push registration unavailable:",
+        error?.message || error
       );
-      console.error("[NotificationContext] ❌ Error stack:", error.stack);
-      setError("Failed to register for push notifications: " + error.message);
+      setRegistrationError(
+        "Failed to register for push notifications: " + error.message
+      );
       return false;
     }
   };
@@ -427,11 +437,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         console.log(
           "[NotificationContext] ⚠️ Authentication error during token registration. Will retry after login."
         );
-        setError(
+        setRegistrationError(
           "Authentication required for notifications. Please log in again."
         );
       } else {
-        setError(`Failed to register push token: ${error.message}`);
+        setRegistrationError(`Failed to register push token: ${error.message}`);
       }
 
       return false;
@@ -746,6 +756,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     retryNotificationSetup,
     loading,
     error,
+    registrationError,
   };
 
   return (
