@@ -77,6 +77,29 @@ export interface CSVImportResponse {
   };
 }
 
+export interface SimilarTransaction {
+  id: string;
+  merchant: string;
+  description?: string;
+  amount: number;
+  date: string;
+  category: string;
+}
+
+export interface SimilarTransactionsResponse {
+  message: string;
+  merchant: string;
+  count: number;
+  transactions: SimilarTransaction[];
+}
+
+export interface BulkCategorizeResponse {
+  message: string;
+  updated: number;
+  failed: number;
+  category: string;
+}
+
 export interface ParsedStatementTransaction {
   date: string;
   merchant: string;
@@ -160,12 +183,43 @@ export const transactionAPI = {
     return response.data;
   },
 
-  // CSV Import with auto-categorization
+  // CSV Import with auto-categorization. `bank` (selected or auto-detected)
+  // attributes every imported row to the right account instead of a generic
+  // "CSV Import" label.
   importCsvTransactions: async (
-    transactions: CSVTransaction[]
+    transactions: CSVTransaction[],
+    bank?: { name: string; id: string } | null
   ): Promise<CSVImportResponse> => {
     const response = await api.post("/transactions/import-csv", {
       transactions,
+      ...(bank ? { bank } : {}),
+    });
+    return response.data;
+  },
+
+  // Find the user's other transactions with the same merchant whose category
+  // differs from `newCategory` — candidates for the "apply to similar" prompt.
+  findSimilarTransactions: async (
+    merchant: string,
+    newCategory: string,
+    excludeId?: string
+  ): Promise<SimilarTransactionsResponse> => {
+    const params = new URLSearchParams({ merchant, newCategory });
+    if (excludeId) params.append("excludeId", excludeId);
+    const response = await api.get(
+      `/transactions/similar?${params.toString()}`
+    );
+    return response.data;
+  },
+
+  // Apply one category to many transactions at once.
+  bulkCategorize: async (
+    transactionIds: string[],
+    category: string
+  ): Promise<BulkCategorizeResponse> => {
+    const response = await api.post("/transactions/bulk-categorize", {
+      transactionIds,
+      category,
     });
     return response.data;
   },

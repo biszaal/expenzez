@@ -86,6 +86,7 @@ export default function AddTransaction() {
   );
   const [loading, setLoading] = useState(false);
   const [autoDetectedCategory, setAutoDetectedCategory] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"bank" | "cash">("bank");
 
   // Numeric validation regex (allows numbers with up to 2 decimal places)
   const numericRegex = /^\d*\.?\d{0,2}$/;
@@ -198,6 +199,13 @@ export default function AddTransaction() {
         date: new Date().toISOString(),
         merchant: name.trim(),
         currency: "GBP",
+        ...(paymentMethod === "cash"
+          ? { accountId: "cash", bankName: "Cash", accountType: "Cash" }
+          : {
+              accountId: "manual",
+              bankName: "Manual Entry",
+              accountType: "Manual Account",
+            }),
       };
 
       console.log(`💰 Saving ${transactionType}:`, transactionData);
@@ -425,6 +433,53 @@ export default function AddTransaction() {
                       </Text>
                     </View>
                   )}
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Payment method toggle (Bank/Manual vs Cash) */}
+          <View
+            style={[
+              styles.typeToggle,
+              {
+                backgroundColor: colors.card.background,
+                borderColor: colors.border.medium,
+                marginTop: 10,
+              },
+            ]}
+          >
+            {(["bank", "cash"] as const).map((pm) => {
+              const active = paymentMethod === pm;
+              return (
+                <Pressable
+                  key={pm}
+                  onPress={() => setPaymentMethod(pm)}
+                  style={{ flex: 1, borderRadius: 12, overflow: "hidden" }}
+                >
+                  <View
+                    style={[
+                      styles.typePill,
+                      active && { backgroundColor: colors.primary.main },
+                    ]}
+                  >
+                    <Ionicons
+                      name={pm === "cash" ? "cash-outline" : "card-outline"}
+                      size={13}
+                      color={active ? "#fff" : colors.text.tertiary}
+                    />
+                    <Text
+                      style={[
+                        active ? styles.typePillTextActive : styles.typePillText,
+                        !active && {
+                          color: colors.text.secondary,
+                          fontFamily: fontFamily.semibold,
+                        },
+                      ]}
+                    >
+                      {pm === "cash" ? "Cash" : "Bank / Manual"}
+                    </Text>
+                  </View>
                 </Pressable>
               );
             })}

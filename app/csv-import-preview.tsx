@@ -36,7 +36,16 @@ export default function CSVImportPreviewScreen() {
     transactions?: string;
     fileName?: string;
     formatDetected?: string;
+    bank?: string;
   }>();
+
+  const importBank = (() => {
+    try {
+      return params.bank ? JSON.parse(params.bank) : null;
+    } catch {
+      return null;
+    }
+  })();
 
   const [transactions, setTransactions] = useState<EditableTransaction[]>(() => {
     try {
@@ -93,8 +102,11 @@ export default function CSVImportPreviewScreen() {
         type: t.type,
       }));
 
-      // Call import API
-      const result = await transactionAPI.importCsvTransactions(apiTransactions);
+      // Call import API (attributing rows to the selected/detected bank)
+      const result = await transactionAPI.importCsvTransactions(
+        apiTransactions,
+        importBank
+      );
 
       const summary = result.summary || {
         imported: result.imported,

@@ -24,6 +24,8 @@ import { TransactionSkeleton } from "../../components/ui/SkeletonLoader";
 import { transactionAPI } from "../../services/api/transactionAPI";
 import { MerchantLogo } from "../../components/ui/MerchantLogo";
 import EditTransactionModal from "../../components/EditTransactionModal";
+import SimilarTransactionsModal from "../../components/transactions/SimilarTransactionsModal";
+import type { SimilarTransaction } from "../../services/api/transactionAPI";
 import dayjs from "dayjs";
 
 const INITIAL_MONTHS = 6;
@@ -74,6 +76,13 @@ export default function TransactionsScreen() {
 
   // Spending summary modal state
   const [summaryModalVisible, setSummaryModalVisible] = useState(false);
+
+  // "Apply category to similar transactions" prompt state
+  const [similarVisible, setSimilarVisible] = useState(false);
+  const [similarTxns, setSimilarTxns] = useState<SimilarTransaction[]>([]);
+  const [similarMerchant, setSimilarMerchant] = useState("");
+  const [similarCategory, setSimilarCategory] = useState("");
+  const [applyingSimilar, setApplyingSimilar] = useState(false);
 
   // Calculate spending summary
   const getSpendingSummary = () => {
@@ -258,10 +267,57 @@ export default function TransactionsScreen() {
 
       showSuccess("Transaction updated successfully");
       setEditModalVisible(false);
+
+      // If the category changed, learn it (backend) and offer to apply the
+      // same category to other transactions from the same merchant.
+      const newCategory = updates.category;
+      const prevCategory = selectedTransaction?.category;
+      const merchant = selectedTransaction?.merchant;
+      if (newCategory && merchant && newCategory !== prevCategory) {
+        try {
+          const res = await transactionAPI.findSimilarTransactions(
+            merchant,
+            newCategory,
+            transactionId
+          );
+          if (res.count > 0) {
+            setSimilarTxns(res.transactions);
+            setSimilarMerchant(merchant);
+            setSimilarCategory(newCategory);
+            setSimilarVisible(true);
+          }
+        } catch (e) {
+          console.warn("[Transactions] findSimilar failed:", e);
+        }
+      }
     } catch (error) {
       console.error("Error updating transaction:", error);
       showError("Failed to update transaction");
       throw error;
+    }
+  };
+
+  // Apply the chosen category to the selected similar transactions.
+  const handleApplySimilar = async (ids: string[]) => {
+    try {
+      setApplyingSimilar(true);
+      await transactionAPI.bulkCategorize(ids, similarCategory);
+      setTransactions((prev) =>
+        prev.map((tx) =>
+          ids.includes(tx.id) ? { ...tx, category: similarCategory } : tx
+        )
+      );
+      showSuccess(
+        `Updated ${ids.length} similar ${
+          ids.length === 1 ? "transaction" : "transactions"
+        }`
+      );
+      setSimilarVisible(false);
+    } catch (error) {
+      console.error("Error applying to similar transactions:", error);
+      showError("Failed to update similar transactions");
+    } finally {
+      setApplyingSimilar(false);
     }
   };
 
@@ -785,6 +841,16 @@ export default function TransactionsScreen() {
         }}
         onSave={handleSaveTransaction}
         onDelete={handleDeleteTransaction}
+      />
+
+      <SimilarTransactionsModal
+        visible={similarVisible}
+        merchant={similarMerchant}
+        category={similarCategory}
+        transactions={similarTxns}
+        applying={applyingSimilar}
+        onClose={() => setSimilarVisible(false)}
+        onApply={handleApplySimilar}
       />
 
       {/* Spending Summary Modal */}

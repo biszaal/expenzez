@@ -871,6 +871,10 @@ export default function CSVImportScreen() {
         );
       }
 
+      // Resolve which bank to attribute the import to: the one the user picked,
+      // else the format auto-detected from the CSV content.
+      const importBank = selectedBank || parseResult.detectedBank || null;
+
       // Navigate to preview screen with transactions
       router.push({
         pathname: "/csv-import-preview",
@@ -878,6 +882,9 @@ export default function CSVImportScreen() {
           transactions: JSON.stringify(categorizedTransactions),
           fileName: file.name,
           formatDetected: parseResult.formatDetected,
+          bank: importBank
+            ? JSON.stringify({ id: importBank.id, name: importBank.name })
+            : "",
         },
       });
     } catch (error) {
@@ -895,8 +902,10 @@ export default function CSVImportScreen() {
       setImporting(true);
 
       // Use backend CSV import with auto-categorization
-      const result =
-        await transactionAPI.importCsvTransactions(allTransactions);
+      const result = await transactionAPI.importCsvTransactions(
+        allTransactions,
+        selectedBank ? { id: selectedBank.id, name: selectedBank.name } : null
+      );
 
       // Use summary if available, otherwise fallback to direct properties
       const summary = result.summary || {
