@@ -20,6 +20,7 @@ import { useAuth } from "../auth/AuthContext";
 import { spacing, borderRadius, shadows, fontFamily } from "../../constants/theme";
 import { useSubscription } from "../../hooks/useSubscription";
 import { useRevenueCat } from "../../contexts/RevenueCatContext";
+import { analyticsService } from "../../services/analytics";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -38,6 +39,7 @@ export default function SettingsPage() {
   const [restoringPurchases, setRestoringPurchases] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
+  const [analyticsConsent, setAnalyticsConsent] = useState(false);
 
   // Load userId from AsyncStorage on mount
   useEffect(() => {
@@ -91,6 +93,19 @@ export default function SettingsPage() {
     };
     loadUserId();
   }, []);
+
+  // Load the stored analytics-consent decision so the toggle reflects reality.
+  useEffect(() => {
+    (async () => {
+      const consent = await analyticsService.getConsent();
+      setAnalyticsConsent(consent === "granted");
+    })();
+  }, []);
+
+  const handleAnalyticsToggle = async (value: boolean) => {
+    setAnalyticsConsent(value);
+    await analyticsService.setConsent(value ? "granted" : "denied");
+  };
 
   const themeOptions = [
     {
@@ -879,6 +894,52 @@ export default function SettingsPage() {
                 color={colors.text.tertiary}
               />
             </TouchableOpacity>
+          </View>
+
+          {/* Data & Privacy */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              Data & Privacy
+            </Text>
+
+            <View
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+            >
+              <Ionicons
+                name="bar-chart-outline"
+                size={22}
+                color={colors.primary.main}
+                style={{ marginRight: 14 }}
+              />
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text
+                  style={[styles.settingText, { color: colors.text.primary }]}
+                >
+                  Share anonymous analytics
+                </Text>
+                <Text
+                  style={{
+                    color: colors.text.tertiary,
+                    fontSize: 12,
+                    marginTop: 2,
+                  }}
+                >
+                  Helps us improve Expenzez. Off by default — turn on only if you're happy to share usage data.
+                </Text>
+              </View>
+              <Switch
+                value={analyticsConsent}
+                onValueChange={handleAnalyticsToggle}
+                trackColor={{ false: colors.border.light, true: colors.primary.main }}
+              />
+            </View>
           </View>
 
           {/* Legal */}

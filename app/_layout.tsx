@@ -178,9 +178,13 @@ function RootLayoutNav() {
     quickSessionCheck();
   }, []);
 
-  // Track app open on startup
+  // Track app open on startup — but only after applying the user's stored
+  // analytics consent. With no decision yet, analytics stays disabled.
   useEffect(() => {
-    analyticsService.logAppOpen();
+    (async () => {
+      await analyticsService.loadConsent();
+      analyticsService.logAppOpen();
+    })();
   }, []);
 
   // Set user ID when logged in

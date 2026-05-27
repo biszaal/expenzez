@@ -4,12 +4,16 @@ import * as Sentry from '@sentry/react-native';
 class CrashReporting {
   private initialized = false;
 
-  public initialize(): void {
+  public initialize(hasConsent: boolean = false): void {
     if (this.initialized) return;
 
+    // Crash reporting sends device/diagnostic data to a third-party processor
+    // (Sentry), so it must not start without the user's consent.
+    if (!hasConsent) return;
+
     // Only initialize in production or when explicitly enabled
-    const shouldInitialize = 
-      !__DEV__ || 
+    const shouldInitialize =
+      !__DEV__ ||
       process.env.EXPO_PUBLIC_ENABLE_CRASH_REPORTING === 'true';
 
     if (shouldInitialize) {

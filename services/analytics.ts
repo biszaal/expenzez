@@ -7,6 +7,8 @@
  * work in production builds.
  */
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 let analytics: any = null;
 let isFirebaseAvailable = false;
 
@@ -20,8 +22,15 @@ try {
   isFirebaseAvailable = false;
 }
 
+export type AnalyticsConsent = "granted" | "denied";
+
+// Persisted consent decision. Native auto-collection is disabled by default
+// (see firebase.json), so nothing is collected until the user opts in.
+const CONSENT_KEY = "analytics_consent";
+
 class AnalyticsService {
-  private enabled: boolean = true;
+  // Off until the user explicitly consents (privacy by default / PECR).
+  private enabled: boolean = false;
 
   /**
    * Check if analytics is available
@@ -31,13 +40,52 @@ class AnalyticsService {
   }
 
   /**
-   * Enable/disable analytics (for user opt-out)
+   * Enable/disable analytics collection. Toggles native collection regardless
+   * of the current flag so opting out always takes effect.
    */
   setEnabled(enabled: boolean) {
     this.enabled = enabled;
-    if (this.isAvailable()) {
-      analytics().setAnalyticsCollectionEnabled(enabled);
+    if (isFirebaseAvailable && analytics) {
+      try {
+        analytics().setAnalyticsCollectionEnabled(enabled);
+      } catch (e) {
+        console.log("[Analytics] setAnalyticsCollectionEnabled error:", e);
+      }
     }
+  }
+
+  /**
+   * Reads the stored consent decision. Returns null if the user hasn't decided.
+   */
+  async getConsent(): Promise<AnalyticsConsent | null> {
+    try {
+      const value = await AsyncStorage.getItem(CONSENT_KEY);
+      return value === "granted" || value === "denied" ? value : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Applies the stored consent decision on startup. With no stored decision,
+   * analytics stays disabled (no tracking without consent).
+   */
+  async loadConsent(): Promise<AnalyticsConsent | null> {
+    const consent = await this.getConsent();
+    this.setEnabled(consent === "granted");
+    return consent;
+  }
+
+  /**
+   * Records the user's consent decision and applies it immediately.
+   */
+  async setConsent(consent: AnalyticsConsent) {
+    try {
+      await AsyncStorage.setItem(CONSENT_KEY, consent);
+    } catch (e) {
+      console.log("[Analytics] setConsent persist error:", e);
+    }
+    this.setEnabled(consent === "granted");
   }
 
   /**

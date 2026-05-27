@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import {
   View,
+  Text,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
   StyleSheet,
   TextInput,
+  Linking,
 } from "react-native";
 import { Button, Typography } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -141,6 +143,10 @@ export default function RegisterStep5({
   const [phoneNumber, setPhoneNumber] = useState(values.phone_number || "");
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [phoneError, setPhoneError] = useState("");
+  // Explicit, unbundled agreement to the Terms & Privacy Policy is required
+  // before an account can be created (UK GDPR consent / contract formation).
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [consentError, setConsentError] = useState("");
 
   // Sync phone number with parent form state (only on initial load)
   useEffect(() => {
@@ -165,6 +171,14 @@ export default function RegisterStep5({
   const handleSubmit = () => {
     // Clear previous errors
     setPhoneError("");
+
+    // Require explicit agreement to the Terms & Privacy Policy.
+    if (!consentChecked) {
+      setConsentError(
+        "Please agree to the Terms of Service and Privacy Policy to continue."
+      );
+      return;
+    }
 
     // Phone number is now optional per App Store guidelines
     // Only validate if user entered a phone number
@@ -236,6 +250,15 @@ export default function RegisterStep5({
   };
 
   const handleSkip = () => {
+    // Require explicit agreement to the Terms & Privacy Policy, even when the
+    // optional phone-number step is skipped.
+    if (!consentChecked) {
+      setConsentError(
+        "Please agree to the Terms of Service and Privacy Policy to continue."
+      );
+      return;
+    }
+
     // Clear phone number and proceed
     setPhoneNumber("");
     onChange("phone_number", "");
@@ -426,6 +449,57 @@ export default function RegisterStep5({
               </Typography>
             </View>
           </View>
+
+          {/* Terms & Privacy consent (required) */}
+          <TouchableOpacity
+            style={styles.consentRow}
+            activeOpacity={0.7}
+            onPress={() => {
+              setConsentChecked((prev) => !prev);
+              setConsentError("");
+            }}
+          >
+            <Ionicons
+              name={consentChecked ? "checkbox" : "square-outline"}
+              size={22}
+              color={
+                consentChecked
+                  ? colors.primary.main
+                  : consentError
+                  ? colors.error.main
+                  : colors.text.secondary
+              }
+              style={{ marginTop: 2 }}
+            />
+            <Typography
+              variant="caption"
+              style={[styles.consentText, { color: colors.text.secondary }]}
+            >
+              I confirm I am 18 or over and agree to Expenzez's{" "}
+              <Text
+                style={{ color: colors.primary.main }}
+                onPress={() => Linking.openURL("https://expenzez.com/terms")}
+              >
+                Terms of Service
+              </Text>{" "}
+              and{" "}
+              <Text
+                style={{ color: colors.primary.main }}
+                onPress={() => Linking.openURL("https://expenzez.com/privacy")}
+              >
+                Privacy Policy
+              </Text>
+              .
+            </Typography>
+          </TouchableOpacity>
+          {consentError ? (
+            <Typography
+              variant="caption"
+              style={{ color: colors.error.main, marginTop: 6 }}
+            >
+              {consentError}
+            </Typography>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -494,6 +568,18 @@ const styles = StyleSheet.create({
   },
   formFields: {
     paddingBottom: spacing.lg,
+  },
+  consentRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.xs,
+  },
+  consentText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
   },
   inputContainer: {
     marginBottom: 16,

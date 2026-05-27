@@ -17,6 +17,29 @@ const genderOptions = [
   { label: "Other", value: "other", icon: "person" },
 ];
 
+// Expenzez is an 18+ service (see Terms of Service). Date of birth is required
+// so we can confirm eligibility and stay out of scope of the ICO Children's Code.
+const MINIMUM_AGE = 18;
+
+// Whole years between a date and today.
+const getAge = (date: Date): number => {
+  const now = new Date();
+  let age = now.getFullYear() - date.getFullYear();
+  const monthDiff = now.getMonth() - date.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < date.getDate())) {
+    age--;
+  }
+  return age;
+};
+
+// The most recent date of birth that still qualifies as 18+. Also used as the
+// date picker's default and maximum so an under-age date can't be selected.
+const latestAllowedDob = (): Date => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - MINIMUM_AGE);
+  return d;
+};
+
 // Helper function to format date as YYYY-MM-DD (EXACTLY 10 characters for AWS Cognito)
 const formatDateForCognito = (date: Date): string => {
   const year = date.getFullYear();
@@ -39,6 +62,7 @@ export default function RegisterStep2({
 }: any) {
   const { colors } = useTheme();
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dobError, setDobError] = useState("");
 
   // Parse date from string format - handles both ISO (YYYY-MM-DD) and MM/DD/YYYY
   const parseDate = (dateString: string) => {
@@ -65,7 +89,7 @@ export default function RegisterStep2({
   };
 
   const [tempDate, setTempDate] = useState(
-    values.dob ? parseDate(values.dob) : new Date()
+    values.dob ? parseDate(values.dob) : latestAllowedDob()
   );
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -76,15 +100,12 @@ export default function RegisterStep2({
       // Format as YYYY-MM-DD (EXACTLY 10 characters for AWS Cognito)
       const formattedDate = formatDateForCognito(currentDate);
       console.log("📅 [RegisterStep2] Android - Setting date:", formattedDate);
-      console.log(
-        "📅 [RegisterStep2] Android - Date length:",
-        formattedDate.length
-      );
-      console.log(
-        "📅 [RegisterStep2] Android - Date type:",
-        typeof formattedDate
-      );
       onChange("dob", formattedDate);
+      setDobError(
+        getAge(currentDate) < MINIMUM_AGE
+          ? `You must be at least ${MINIMUM_AGE} to use Expenzez.`
+          : ""
+      );
     } else {
       // On iOS, just update the temp date, don't close picker
       if (selectedDate) {
@@ -97,9 +118,12 @@ export default function RegisterStep2({
     // Format as YYYY-MM-DD (EXACTLY 10 characters for AWS Cognito)
     const formattedDate = formatDateForCognito(tempDate);
     console.log("📅 [RegisterStep2] iOS - Setting date:", formattedDate);
-    console.log("📅 [RegisterStep2] iOS - Date length:", formattedDate.length);
-    console.log("📅 [RegisterStep2] iOS - Date type:", typeof formattedDate);
     onChange("dob", formattedDate);
+    setDobError(
+      getAge(tempDate) < MINIMUM_AGE
+        ? `You must be at least ${MINIMUM_AGE} to use Expenzez.`
+        : ""
+    );
     setShowDatePicker(false);
   };
 
@@ -110,27 +134,29 @@ export default function RegisterStep2({
   };
 
   const handleNext = () => {
-    // Personal information is now optional per App Store guidelines
-    onNext();
-  };
-
-  const handleSkip = () => {
-    // Clear any partial selections and skip this step
-    onChange("dob", "");
-    onChange("gender", "");
+    // Date of birth is required: Expenzez is an 18+ service and we must verify
+    // age before creating an account.
+    if (!values.dob) {
+      setDobError("Please enter your date of birth to continue.");
+      return;
+    }
+    if (getAge(parseDate(values.dob)) < MINIMUM_AGE) {
+      setDobError(`You must be at least ${MINIMUM_AGE} to use Expenzez.`);
+      return;
+    }
+    setDobError("");
     onNext();
   };
 
   // Parse date from MM/DD/YYYY format or fallback to ISO format for backward compatibility
-  const selectedDate = values.dob ? parseDate(values.dob) : new Date();
-  const maxDate = new Date();
-  maxDate.setFullYear(maxDate.getFullYear() - 13); // Minimum age 13
+  const selectedDate = values.dob ? parseDate(values.dob) : latestAllowedDob();
+  const maxDate = latestAllowedDob(); // Can't pick a date younger than the minimum age
   const minDate = new Date();
   minDate.setFullYear(minDate.getFullYear() - 120); // Maximum age 120
 
   // Update tempDate when showDatePicker is opened
   const openDatePicker = () => {
-    setTempDate(values.dob ? parseDate(values.dob) : new Date());
+    setTempDate(values.dob ? parseDate(values.dob) : latestAllowedDob());
     setShowDatePicker(true);
   };
 
@@ -139,10 +165,10 @@ export default function RegisterStep2({
       {/* Header */}
       <View style={styles.header}>
         <Typography variant="h2" style={[styles.title, { color: colors.text.primary }]}>
-          Personal Details (Optional)
+          Personal Details
         </Typography>
         <Typography variant="body" style={[styles.subtitle, { color: colors.text.secondary }]}>
-          Help us personalize your experience - you can skip this step
+          We need your date of birth to confirm you're old enough to use Expenzez (18+)
         </Typography>
       </View>
 
@@ -151,13 +177,13 @@ export default function RegisterStep2({
         {/* Date of Birth */}
         <View style={styles.inputContainer}>
           <Typography variant="body" style={[styles.inputLabel, { color: colors.text.primary }]} weight="medium">
-            Date of Birth (Optional)
+            Date of Birth <Typography style={{ color: colors.error.main }}>*</Typography>
           </Typography>
           <TouchableOpacity
             onPress={openDatePicker}
             style={[styles.dateInput, {
               backgroundColor: colors.background.primary,
-              borderColor: colors.border.light
+              borderColor: dobError ? colors.error.main : colors.border.light
             }]}
           >
             <Typography
@@ -172,6 +198,11 @@ export default function RegisterStep2({
             </Typography>
             <Ionicons name="calendar-outline" size={20} color={colors.text.secondary} />
           </TouchableOpacity>
+          {dobError ? (
+            <Typography variant="caption" style={{ color: colors.error.main, marginTop: 6 }}>
+              {dobError}
+            </Typography>
+          ) : null}
         </View>
 
         {/* Gender Selection */}
@@ -221,22 +252,12 @@ export default function RegisterStep2({
 
       {/* Navigation Buttons */}
       <View style={styles.buttonContainer}>
-        {/* Top row: Back and Skip */}
-        <View style={styles.topButtonRow}>
-          <Button
-            title="Back"
-            onPress={onBack}
-            style={StyleSheet.flatten([styles.backButton, { borderColor: colors.primary.main, backgroundColor: 'transparent' }])}
-            textStyle={{ color: colors.primary.main, fontWeight: '600' }}
-          />
-          <Button
-            title="Skip →"
-            onPress={handleSkip}
-            style={StyleSheet.flatten([styles.skipButton, { backgroundColor: colors.primary.main + '20', borderColor: colors.primary.main + '40' }])}
-            textStyle={{ color: colors.primary.main, fontWeight: '600' }}
-          />
-        </View>
-        {/* Bottom row: Continue (full width) */}
+        <Button
+          title="Back"
+          onPress={onBack}
+          style={StyleSheet.flatten([styles.backButton, { borderColor: colors.primary.main, backgroundColor: 'transparent' }])}
+          textStyle={{ color: colors.primary.main, fontWeight: '600' }}
+        />
         <Button
           title="Continue"
           onPress={handleNext}
