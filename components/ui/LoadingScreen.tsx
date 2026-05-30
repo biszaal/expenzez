@@ -114,8 +114,8 @@ export default function LoadingScreen({ message = "Loading...", variant = 'defau
     <>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <LinearGradient
-        colors={variant === 'login' 
-          ? ['#4F46E5', '#7C3AED', '#EC4899'] 
+        colors={variant === 'login'
+          ? ['#7DA0FF', '#4E7CFF', '#1A33B8']
           : [colors.primary[400], colors.primary[600], colors.primary[800]]}
         style={styles.container}
         start={{ x: 0, y: 0 }}

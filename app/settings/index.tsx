@@ -430,8 +430,8 @@ export default function SettingsPage() {
                     },
                     colorScheme === option.key && {
                       backgroundColor: isDark
-                        ? "rgba(157,91,255,0.10)"
-                        : "rgba(123,63,228,0.06)",
+                        ? "rgba(78,124,255,0.10)"
+                        : "rgba(37,71,240,0.06)",
                     },
                   ]}
                   onPress={() => setColorScheme(option.key)}
@@ -606,8 +606,8 @@ export default function SettingsPage() {
                 {
                   backgroundColor: isPremium
                     ? isDark
-                      ? "rgba(157,91,255,0.10)"
-                      : "rgba(123,63,228,0.06)"
+                      ? "rgba(78,124,255,0.10)"
+                      : "rgba(37,71,240,0.06)"
                     : colors.card.background,
                   borderColor: isPremium
                     ? colors.primary[500]

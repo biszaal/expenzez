@@ -213,7 +213,7 @@ export default function ProfileScreen() {
               icon="person-outline"
               iconColor={colors.primary[500]}
               iconTint={
-                isDark ? "rgba(157,91,255,0.16)" : "rgba(123,63,228,0.12)"
+                isDark ? "rgba(78,124,255,0.16)" : "rgba(37,71,240,0.12)"
               }
               title="Personal information"
               subtitle="Update your profile details"
@@ -274,7 +274,7 @@ export default function ProfileScreen() {
               icon="shield-checkmark-outline"
               iconColor={colors.primary[500]}
               iconTint={
-                isDark ? "rgba(157,91,255,0.16)" : "rgba(123,63,228,0.12)"
+                isDark ? "rgba(78,124,255,0.16)" : "rgba(37,71,240,0.12)"
               }
               title="Security settings"
               subtitle="Manage your account security"
@@ -343,7 +343,7 @@ export default function ProfileScreen() {
               icon="document-text-outline"
               iconColor={colors.primary[500]}
               iconTint={
-                isDark ? "rgba(157,91,255,0.16)" : "rgba(123,63,228,0.12)"
+                isDark ? "rgba(78,124,255,0.16)" : "rgba(37,71,240,0.12)"
               }
               title="Terms & privacy"
               subtitle="Read our terms and privacy policy"

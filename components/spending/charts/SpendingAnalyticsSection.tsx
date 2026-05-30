@@ -388,8 +388,8 @@ export const SpendingAnalyticsSection: React.FC<
                   styles.premiumEmptyChartIcon,
                   {
                     backgroundColor: isDark
-                      ? "rgba(157,91,255,0.16)"
-                      : "rgba(123,63,228,0.12)",
+                      ? "rgba(78,124,255,0.16)"
+                      : "rgba(37,71,240,0.12)",
                   },
                 ]}
               >

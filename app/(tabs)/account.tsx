@@ -397,8 +397,8 @@ export default function AccountScreen() {
             <LinearGradient
               colors={
                 isDark
-                  ? ["rgba(157,91,255,0.18)", "rgba(197,242,92,0.06)"]
-                  : ["rgba(123,63,228,0.12)", "rgba(92,133,25,0.06)"]
+                  ? ["rgba(78,124,255,0.18)", "rgba(95,227,161,0.06)"]
+                  : ["rgba(37,71,240,0.12)", "rgba(19,160,107,0.06)"]
               }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -468,7 +468,7 @@ export default function AccountScreen() {
                     paddingVertical: 3,
                     borderRadius: 7,
                     backgroundColor: isPro
-                      ? "rgba(197,242,92,0.16)"
+                      ? "rgba(95,227,161,0.16)"
                       : isDark
                         ? "rgba(255,255,255,0.06)"
                         : "rgba(40,20,80,0.06)",

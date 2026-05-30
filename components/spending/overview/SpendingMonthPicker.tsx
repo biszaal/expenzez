@@ -37,8 +37,8 @@ export const SpendingMonthPicker: React.FC<SpendingMonthPickerProps> = ({
   );
 
   const activeBg = isDark
-    ? "rgba(157,91,255,0.16)"
-    : "rgba(123,63,228,0.10)";
+    ? "rgba(78,124,255,0.16)"
+    : "rgba(37,71,240,0.10)";
 
   return (
     <View style={styles.container}>

@@ -806,12 +806,12 @@ function FontGate({ children }: { children: React.ReactNode }) {
       <View
         style={{
           flex: 1,
-          backgroundColor: "#0A0712",
+          backgroundColor: "#0A1226",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <ActivityIndicator color="#9D5BFF" />
+        <ActivityIndicator color="#4E7CFF" />
       </View>
     );
   }

@@ -35,25 +35,25 @@ try {
       Notifications.setNotificationChannelAsync("default", {
         name: "General",
         importance: DEFAULT,
-        lightColor: "#6B2D7B",
+        lightColor: "#4E7CFF",
       }),
       Notifications.setNotificationChannelAsync("transactions", {
         name: "Transactions",
         description: "New transactions and account activity",
         importance: HIGH,
-        lightColor: "#6B2D7B",
+        lightColor: "#4E7CFF",
       }),
       Notifications.setNotificationChannelAsync("budgets", {
         name: "Budgets & Goals",
         description: "Budget warnings and goal progress",
         importance: DEFAULT,
-        lightColor: "#6B2D7B",
+        lightColor: "#4E7CFF",
       }),
       Notifications.setNotificationChannelAsync("security", {
         name: "Security",
         description: "Security alerts and sign-in notifications",
         importance: HIGH,
-        lightColor: "#6B2D7B",
+        lightColor: "#4E7CFF",
       }),
     ]).catch((e) => {
       console.warn("[NotificationContext] Failed to register Android channels", e);

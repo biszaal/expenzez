@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#6B2D7B"
+      "backgroundColor": "#0A1226"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -19,7 +19,7 @@
     "description": "Smart expense tracking with AI insights and comprehensive financial management for users.",
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "47",
+      "buildNumber": "48",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -63,7 +63,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#6B2D7B"
+        "backgroundColor": "#3559CC"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
@@ -90,14 +90,14 @@
           "image": "./assets/images/icon.png",
           "imageWidth": 300,
           "resizeMode": "contain",
-          "backgroundColor": "#6B2D7B"
+          "backgroundColor": "#0A1226"
         }
       ],
       [
         "expo-notifications",
         {
           "icon": "./assets/images/icon.png",
-          "color": "#6B2D7B",
+          "color": "#4E7CFF",
           "defaultChannel": "default"
         }
       ],

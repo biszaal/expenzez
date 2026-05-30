@@ -86,7 +86,7 @@ export const SpendingItemCard: React.FC<SpendingItemCardProps> = ({
   // Resolve category palette from the new theme tokens.
   const palette =
     colors.category[categoryKey(item.category || item.name)] ?? {
-      bg: "rgba(157,91,255,0.18)",
+      bg: "rgba(78,124,255,0.18)",
       fg: colors.primary[500],
     };
 

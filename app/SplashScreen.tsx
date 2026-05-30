@@ -1,12 +1,11 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Animated, StatusBar } from "react-native";
+import { View, Text, StyleSheet, Animated, StatusBar, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Path } from "react-native-svg";
 import { useTheme } from "../contexts/ThemeContext";
 import { fontFamily } from "../constants/theme";
 
-// v1.5 redesign — branded launch screen with primary radial glow,
-// gradient brand mark, and animated dots.
+// v1.6 redesign — branded launch screen with cobalt radial glow,
+// the Expenzez Spark mark, and animated dots.
 export default function SplashScreen() {
   const { colors, isDark } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -59,12 +58,12 @@ export default function SplashScreen() {
     >
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-      {/* Ambient primary glow */}
+      {/* Ambient cobalt glow */}
       <LinearGradient
         colors={
           isDark
-            ? ["rgba(157,91,255,0.45)", "rgba(157,91,255,0)"]
-            : ["rgba(123,63,228,0.20)", "rgba(123,63,228,0)"]
+            ? ["rgba(78,124,255,0.45)", "rgba(78,124,255,0)"]
+            : ["rgba(37,71,240,0.20)", "rgba(37,71,240,0)"]
         }
         style={[StyleSheet.absoluteFillObject]}
         start={{ x: 0.5, y: 0.3 }}
@@ -78,36 +77,11 @@ export default function SplashScreen() {
           { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
         ]}
       >
-        <LinearGradient
-          colors={[colors.primary[500], colors.primary[600]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[
-            styles.brandMark,
-            {
-              shadowColor: colors.primary[500],
-            },
-          ]}
-        >
-          <Svg width={56} height={56} viewBox="0 0 32 32">
-            <Path
-              d="M5 24 L13 14 L18 18 L27 8"
-              stroke="#fff"
-              strokeWidth={3}
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <Path
-              d="M22 8 L27 8 L27 13"
-              stroke="#fff"
-              strokeWidth={3}
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </Svg>
-        </LinearGradient>
+        <Image
+          source={require("../assets/images/icon.png")}
+          style={[styles.brandMark, { shadowColor: colors.primary[500] }]}
+          resizeMode="contain"
+        />
 
         <Text
           style={[

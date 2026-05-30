@@ -381,7 +381,7 @@ const createStyles = (colors: any) =>
       padding: 18,
       borderRadius: 22,
       borderWidth: StyleSheet.hairlineWidth,
-      backgroundColor: "rgba(157,91,255,0.06)",
+      backgroundColor: "rgba(78,124,255,0.06)",
     },
     markAllChip: {
       paddingHorizontal: 12,

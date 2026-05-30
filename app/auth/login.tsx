@@ -10,10 +10,10 @@ import {
   ScrollView,
   Pressable,
   TextInput,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Path, Text as SvgText } from "react-native-svg";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { jwtDecode } from "jwt-decode";
@@ -30,22 +30,14 @@ import { fontFamily } from "../../constants/theme";
 // v1.5 redesign — wordmark + tagline header, hairline inputs,
 // gradient primary button, segmented social row.
 
-const BrandLogo: React.FC<{ size?: number; primary: string; primaryDim: string }> = ({
+// The Expenzez "Spark" mark — uses the real app icon asset.
+const BrandLogo: React.FC<{ size?: number; primary: string; primaryDim?: string }> = ({
   size = 64,
   primary,
-  primaryDim,
 }) => {
   return (
-    <LinearGradient
-      colors={[primary, primaryDim]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+    <View
       style={{
-        width: size,
-        height: size,
-        borderRadius: size * 0.28,
-        alignItems: "center",
-        justifyContent: "center",
         shadowColor: primary,
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.4,
@@ -53,28 +45,12 @@ const BrandLogo: React.FC<{ size?: number; primary: string; primaryDim: string }
         elevation: 10,
       }}
     >
-      <Svg width={size * 0.55} height={size * 0.55} viewBox="0 0 32 32">
-        <Path
-          d="M5 24 L13 14 L18 18 L27 8"
-          stroke="#fff"
-          strokeWidth={3}
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <Path
-          d="M22 8 L27 8 L27 13"
-          stroke="#fff"
-          strokeWidth={3}
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <SvgText x="6" y="14" fontSize="10" fontWeight="800" fill="#fff">
-          £
-        </SvgText>
-      </Svg>
-    </LinearGradient>
+      <Image
+        source={require("../../assets/images/icon.png")}
+        resizeMode="contain"
+        style={{ width: size, height: size, borderRadius: size * 0.2235 }}
+      />
+    </View>
   );
 };
 
@@ -394,8 +370,8 @@ export default function Login() {
       <LinearGradient
         colors={
           isDark
-            ? ["rgba(157,91,255,0.28)", "rgba(157,91,255,0)"]
-            : ["rgba(123,63,228,0.16)", "rgba(123,63,228,0)"]
+            ? ["rgba(78,124,255,0.28)", "rgba(78,124,255,0)"]
+            : ["rgba(37,71,240,0.16)", "rgba(37,71,240,0)"]
         }
         style={StyleSheet.absoluteFill}
         start={{ x: 0.5, y: 0 }}

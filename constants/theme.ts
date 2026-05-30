@@ -1,35 +1,36 @@
-// Expenzez v1.5 — electric purple + lime, dark/light variants.
-// Source: design handoff (Expenzez Redesign).
+// Expenzez v1.6 — Midnight Cobalt, dark/light variants.
+// Source: design handoff (Expenzez Logo Final + Color Recommendations).
+// Brand cobalt #4E7CFF is accent-only (<10% of screen); navy surfaces, never pure black.
 export const lightColors = {
-  // Primary colors - Electric purple
+  // Primary colors - Midnight Cobalt
   primary: {
-    50: "#F5EFFD",
-    100: "#E8DAFB",
-    200: "#D6BBF7",
-    300: "#B58BF0",
-    400: "#9461E9",
-    500: "#7B3FE4", // Main electric purple
-    600: "#5B23B8", // Dim variant for gradients
-    700: "#481B91",
-    800: "#36156D",
-    900: "#270F50",
-    main: "#7B3FE4",
-    glow: "rgba(123,63,228,0.24)", // Soft glow for shadows behind primary CTAs
+    50: "#EAEFFE",
+    100: "#D6E0FE",
+    200: "#B0C4FC",
+    300: "#7B9CF8",
+    400: "#4A6FF4",
+    500: "#2547F0", // Main cobalt (light mode contrast-safe)
+    600: "#1E3AC4", // Dim variant for hover/pressed/gradients
+    700: "#182F9C",
+    800: "#142578",
+    900: "#0F1C5C",
+    main: "#2547F0",
+    glow: "rgba(37,71,240,0.22)", // Soft glow for shadows behind primary CTAs
   },
 
-  // Secondary - lime accent (positive / income / savings)
+  // Secondary - cool mint (positive / income / savings) — harmonizes with cobalt
   secondary: {
-    50: "#F1F8E1",
-    100: "#E2F1C3",
-    200: "#C8E68A",
-    300: "#9FCB48",
-    400: "#7AA827",
-    500: "#5C8519", // Main lime (light mode contrast-safe)
-    600: "#496B14",
-    700: "#3F5B12",
-    800: "#33490E",
-    900: "#27370B",
-    main: "#5C8519",
+    50: "#E4F8EF",
+    100: "#C6F1DE",
+    200: "#94E6C2",
+    300: "#5FE3A1",
+    400: "#2EC988",
+    500: "#13A06B", // Main mint (light mode contrast-safe)
+    600: "#0F855A",
+    700: "#0C6B49",
+    800: "#095338",
+    900: "#063C28",
+    main: "#13A06B",
   },
 
   // Accent — kept as cyan for charts / informational badges
@@ -63,21 +64,21 @@ export const lightColors = {
 
   // Status colors — light mode tones
   success: {
-    50: "#F1F8E1",
-    100: "#E2F1C3",
-    500: "#5C8519", // Lime as success in light mode
-    600: "#496B14",
-    700: "#3F5B12",
-    main: "#5C8519",
+    50: "#E4F8EF",
+    100: "#C6F1DE",
+    500: "#13A06B", // Mint as success in light mode
+    600: "#0F855A",
+    700: "#0C6B49",
+    main: "#13A06B",
   },
 
   error: {
-    50: "#FBE4EB",
-    100: "#F4BCCC",
-    500: "#D63A66", // Rose
-    600: "#A8294F",
-    700: "#7E1F3B",
-    main: "#D63A66",
+    50: "#FCE7EA",
+    100: "#F8C2CA",
+    500: "#E0455A", // Coral (light mode contrast-safe)
+    600: "#B83345",
+    700: "#8C2735",
+    main: "#E0455A",
   },
 
   warning: {
@@ -91,69 +92,69 @@ export const lightColors = {
 
   // Backgrounds (light)
   background: {
-    primary: "#FAF8FF", // bg
-    secondary: "#F3EFFB", // bgSoft
-    tertiary: "#F7F4FE", // cardSoft
-    overlay: "rgba(123,63,228,0.08)",
+    primary: "#F7F9FF", // bg
+    secondary: "#EEF2FE", // bgSoft
+    tertiary: "#F2F5FE", // cardSoft
+    overlay: "rgba(37,71,240,0.06)",
   },
 
   // Text hierarchy (light)
   text: {
-    primary: "#1A1430",
-    secondary: "rgba(26,20,48,0.62)",
-    tertiary: "rgba(26,20,48,0.42)",
+    primary: "#0A1226",
+    secondary: "rgba(10,18,38,0.62)",
+    tertiary: "rgba(10,18,38,0.42)",
     inverse: "#FFFFFF",
-    muted: "rgba(26,20,48,0.30)",
-    textSecondary: "rgba(26,20,48,0.62)",
+    muted: "rgba(10,18,38,0.30)",
+    textSecondary: "rgba(10,18,38,0.62)",
   },
 
-  divider: "rgba(40,20,80,0.05)",
+  divider: "rgba(10,18,38,0.05)",
 
   // Borders (light)
   border: {
-    light: "rgba(40,20,80,0.05)",
-    medium: "rgba(40,20,80,0.08)",
-    dark: "rgba(40,20,80,0.14)",
-    focus: "#7B3FE4",
+    light: "rgba(10,18,38,0.05)",
+    medium: "rgba(10,18,38,0.08)",
+    dark: "rgba(10,18,38,0.14)",
+    focus: "#2547F0",
   },
 
   shadow: {
-    subtle: "rgba(40,20,80,0.04)",
-    soft: "rgba(40,20,80,0.08)",
-    medium: "rgba(40,20,80,0.12)",
-    strong: "rgba(40,20,80,0.18)",
+    subtle: "rgba(10,18,38,0.04)",
+    soft: "rgba(10,18,38,0.08)",
+    medium: "rgba(10,18,38,0.12)",
+    strong: "rgba(10,18,38,0.18)",
   },
 
   // Cards (light)
   card: {
     background: "#FFFFFF",
-    border: "rgba(40,20,80,0.08)",
-    shadow: "rgba(40,20,80,0.04)",
+    border: "rgba(10,18,38,0.08)",
+    shadow: "rgba(10,18,38,0.04)",
   },
 
-  // New v1.5 accent palettes — used directly via colors.lime, colors.rose, etc.
-  lime: { 500: "#5C8519", 600: "#496B14", main: "#5C8519" },
-  rose: { 500: "#D63A66", 600: "#A8294F", main: "#D63A66" },
+  // Accent palettes — mint (positive), coral (negative), cobalt-light, cyan (data).
+  lime: { 500: "#13A06B", 600: "#0F855A", main: "#13A06B" },
+  rose: { 500: "#E0455A", 600: "#B83345", main: "#E0455A" },
   amber: { 500: "#B8761A", 600: "#8C5A14", main: "#B8761A" },
   cyan: { 500: "#2D7DB8", 600: "#256594", main: "#2D7DB8" },
 
   // Soft positive / negative tints (used for cashflow chips / badges)
-  posBg: "rgba(92,133,25,0.14)",
-  posFg: "#3F5B12",
-  negBg: "rgba(214,58,102,0.10)",
-  negFg: "#A8294F",
+  posBg: "rgba(19,160,107,0.12)",
+  posFg: "#0F855A",
+  negBg: "rgba(224,69,90,0.10)",
+  negFg: "#B83345",
 
   // Category color pairs (light)
   category: {
     food: { bg: "rgba(200,90,30,0.10)", fg: "#8C4515" },
     transport: { bg: "rgba(45,125,184,0.10)", fg: "#1F5680" },
     shopping: { bg: "rgba(190,55,90,0.10)", fg: "#8C2A4A" },
-    entertainment: { bg: "rgba(92,133,25,0.12)", fg: "#3F5B12" },
-    bills: { bg: "rgba(123,63,228,0.10)", fg: "#5B23B8" },
+    entertainment: { bg: "rgba(19,160,107,0.12)", fg: "#0C6B49" },
+    bills: { bg: "rgba(37,71,240,0.10)", fg: "#1E3AC4" },
     healthcare: { bg: "rgba(50,130,90,0.10)", fg: "#1F5638" },
     travel: { bg: "rgba(80,90,180,0.10)", fg: "#2F3A8A" },
     groceries: { bg: "rgba(184,118,26,0.12)", fg: "#7A4F12" },
-    income: { bg: "rgba(92,133,25,0.14)", fg: "#3F5B12" },
+    income: { bg: "rgba(19,160,107,0.14)", fg: "#0C6B49" },
   },
 
   // Additional utility colors for components
@@ -224,35 +225,35 @@ export const lightColors = {
 };
 
 export const darkColors = {
-  // Primary - electric purple in dark mode
+  // Primary - Midnight Cobalt in dark mode
   primary: {
-    50: "#1F0F36",
-    100: "#311854",
-    200: "#492279",
-    300: "#5B23B8",
-    400: "#7E40D6",
-    500: "#9D5BFF", // Main electric purple (dark mode)
-    600: "#6B2EB8", // Dim variant for gradients
-    700: "#5B23B8",
-    800: "#481B91",
-    900: "#36156D",
-    main: "#9D5BFF",
-    glow: "rgba(157,91,255,0.35)",
+    50: "#0E1A3D",
+    100: "#16245A",
+    200: "#1F347F",
+    300: "#2F4FB8",
+    400: "#3E66E0",
+    500: "#4E7CFF", // Main cobalt (dark mode)
+    600: "#3559CC", // Dim variant for hover/pressed/gradients
+    700: "#2B47A6",
+    800: "#1F347F",
+    900: "#16245A",
+    main: "#4E7CFF",
+    glow: "rgba(78,124,255,0.35)",
   },
 
-  // Secondary - lime accent (dark mode)
+  // Secondary - cool mint accent (dark mode)
   secondary: {
-    50: "#27370B",
-    100: "#33490E",
-    200: "#3F5B12",
-    300: "#496B14",
-    400: "#5C8519",
-    500: "#C5F25C", // Lime (dark mode contrast-safe)
-    600: "#A8D848",
-    700: "#8FB83C",
-    800: "#769830",
-    900: "#5C7826",
-    main: "#C5F25C",
+    50: "#063C28",
+    100: "#095338",
+    200: "#0C6B49",
+    300: "#13A06B",
+    400: "#2EC988",
+    500: "#5FE3A1", // Mint (dark mode contrast-safe)
+    600: "#7CEBB5",
+    700: "#98F0C7",
+    800: "#B6F5D9",
+    900: "#D4FAEB",
+    main: "#5FE3A1",
   },
 
   // Accent - cyan
@@ -286,21 +287,21 @@ export const darkColors = {
 
   // Status colors — dark mode
   success: {
-    50: "#27370B",
-    100: "#33490E",
-    500: "#C5F25C", // Lime as success in dark mode
-    600: "#A8D848",
-    700: "#8FB83C",
-    main: "#C5F25C",
+    50: "#063C28",
+    100: "#095338",
+    500: "#5FE3A1", // Mint as success in dark mode
+    600: "#7CEBB5",
+    700: "#98F0C7",
+    main: "#5FE3A1",
   },
 
   error: {
-    50: "#3D0E1B",
-    100: "#5E1729",
-    500: "#FF6B8A", // Rose
-    600: "#E54E72",
-    700: "#C0395B",
-    main: "#FF6B8A",
+    50: "#3D0E15",
+    100: "#5E1722",
+    500: "#FF6B7A", // Coral
+    600: "#E5505F",
+    700: "#C03B49",
+    main: "#FF6B7A",
   },
 
   warning: {
@@ -312,32 +313,32 @@ export const darkColors = {
     main: "#F5B342",
   },
 
-  // Backgrounds (dark)
+  // Backgrounds (dark) — deep navy, never pure black
   background: {
-    primary: "#0A0712", // bg
-    secondary: "#100B1B", // bgSoft
-    tertiary: "#1B1428", // cardSoft
-    overlay: "rgba(157,91,255,0.10)",
+    primary: "#0A1226", // bg
+    secondary: "#10193A", // bgSoft
+    tertiary: "#16224D", // cardSoft
+    overlay: "rgba(78,124,255,0.10)",
   },
 
   // Text hierarchy (dark)
   text: {
-    primary: "#F4F1FA",
-    secondary: "rgba(244,241,250,0.62)",
-    tertiary: "rgba(244,241,250,0.38)",
-    inverse: "#1A1430",
-    muted: "rgba(244,241,250,0.30)",
-    textSecondary: "rgba(244,241,250,0.62)",
+    primary: "#EEF1FA",
+    secondary: "rgba(238,241,250,0.62)",
+    tertiary: "rgba(238,241,250,0.38)",
+    inverse: "#0A1226",
+    muted: "rgba(238,241,250,0.30)",
+    textSecondary: "rgba(238,241,250,0.62)",
   },
 
-  divider: "rgba(255,255,255,0.04)",
+  divider: "rgba(180,200,255,0.06)",
 
   // Borders (dark)
   border: {
-    light: "rgba(255,255,255,0.04)",
-    medium: "rgba(255,255,255,0.06)",
-    dark: "rgba(255,255,255,0.10)",
-    focus: "#9D5BFF",
+    light: "rgba(180,200,255,0.06)",
+    medium: "rgba(180,200,255,0.09)",
+    dark: "rgba(180,200,255,0.14)",
+    focus: "#4E7CFF",
   },
 
   shadow: {
@@ -348,33 +349,33 @@ export const darkColors = {
   },
 
   card: {
-    background: "#161122", // card
-    border: "rgba(255,255,255,0.06)",
+    background: "#10193A", // card
+    border: "rgba(180,200,255,0.09)",
     shadow: "rgba(0,0,0,0.55)",
   },
 
-  // New v1.5 accent palettes
-  lime: { 500: "#C5F25C", 600: "#A8D848", main: "#C5F25C" },
-  rose: { 500: "#FF6B8A", 600: "#E54E72", main: "#FF6B8A" },
+  // Accent palettes — mint (positive), coral (negative), cobalt-light, cyan (data).
+  lime: { 500: "#5FE3A1", 600: "#7CEBB5", main: "#5FE3A1" },
+  rose: { 500: "#FF6B7A", 600: "#E5505F", main: "#FF6B7A" },
   amber: { 500: "#F5B342", 600: "#D89A2E", main: "#F5B342" },
   cyan: { 500: "#5BC8FF", 600: "#7AD4FF", main: "#5BC8FF" },
 
-  posBg: "rgba(197,242,92,0.16)",
-  posFg: "#C5F25C",
-  negBg: "rgba(255,107,138,0.14)",
-  negFg: "#FF6B8A",
+  posBg: "rgba(95,227,161,0.16)",
+  posFg: "#5FE3A1",
+  negBg: "rgba(255,107,122,0.14)",
+  negFg: "#FF6B7A",
 
   // Category color pairs (dark)
   category: {
     food: { bg: "rgba(255,143,90,0.16)", fg: "#FFB48A" },
     transport: { bg: "rgba(91,200,255,0.16)", fg: "#7AD4FF" },
-    shopping: { bg: "rgba(255,107,138,0.16)", fg: "#FF95B0" },
-    entertainment: { bg: "rgba(197,242,92,0.16)", fg: "#C5F25C" },
-    bills: { bg: "rgba(157,91,255,0.18)", fg: "#C29CFF" },
+    shopping: { bg: "rgba(255,107,122,0.16)", fg: "#FF95A0" },
+    entertainment: { bg: "rgba(95,227,161,0.16)", fg: "#5FE3A1" },
+    bills: { bg: "rgba(78,124,255,0.18)", fg: "#9CB4FF" },
     healthcare: { bg: "rgba(112,221,165,0.16)", fg: "#7BE5B0" },
     travel: { bg: "rgba(120,140,255,0.16)", fg: "#9FAFFF" },
     groceries: { bg: "rgba(245,179,66,0.16)", fg: "#F5C77A" },
-    income: { bg: "rgba(197,242,92,0.18)", fg: "#C5F25C" },
+    income: { bg: "rgba(95,227,161,0.18)", fg: "#5FE3A1" },
   },
 
   // Additional utility colors for components (same as light theme)

@@ -97,8 +97,8 @@ export const SmartSuggestionCard: React.FC<Props> = ({
   if (!suggestion || dismissed) return null;
 
   const surface = isDark
-    ? (["rgba(157,91,255,0.14)", "rgba(197,242,92,0.08)"] as const)
-    : (["rgba(123,63,228,0.10)", "rgba(92,133,25,0.06)"] as const);
+    ? (["rgba(78,124,255,0.14)", "rgba(95,227,161,0.08)"] as const)
+    : (["rgba(37,71,240,0.10)", "rgba(19,160,107,0.06)"] as const);
   const borderColor = isDark
     ? "rgba(255,255,255,0.10)"
     : "rgba(40,20,80,0.14)";

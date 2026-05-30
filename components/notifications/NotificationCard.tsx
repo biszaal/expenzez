@@ -85,8 +85,8 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
           backgroundColor: colors.card.background,
           borderColor: !notification.read
             ? isDark
-              ? 'rgba(157,91,255,0.28)'
-              : 'rgba(123,63,228,0.22)'
+              ? 'rgba(78,124,255,0.28)'
+              : 'rgba(37,71,240,0.22)'
             : colors.border.medium,
         },
         isLast && { marginBottom: 24 },

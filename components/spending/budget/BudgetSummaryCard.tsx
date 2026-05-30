@@ -127,7 +127,7 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
     displayLeftToSpend < 0 ? colors.rose[500] : colors.posFg;
 
   // Glow color at the top-right of the card; matches design's primary glow.
-  const glowColor = isDark ? "rgba(157,91,255,0.35)" : "rgba(123,63,228,0.24)";
+  const glowColor = isDark ? "rgba(78,124,255,0.35)" : "rgba(37,71,240,0.24)";
 
   return (
     <View style={styles.simpleBudgetContainer}>

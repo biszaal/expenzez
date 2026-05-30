@@ -238,7 +238,7 @@ export default function EmailVerification() {
     }
   };
 
-  const themedIsDark = colors.background.primary === "#0A0712";
+  const themedIsDark = colors.background.primary === "#0A1226";
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background.primary }]}
@@ -248,8 +248,8 @@ export default function EmailVerification() {
       <LinearGradient
         colors={
           themedIsDark
-            ? ["rgba(157,91,255,0.18)", "rgba(157,91,255,0)"]
-            : ["rgba(123,63,228,0.10)", "rgba(123,63,228,0)"]
+            ? ["rgba(78,124,255,0.18)", "rgba(78,124,255,0)"]
+            : ["rgba(37,71,240,0.10)", "rgba(37,71,240,0)"]
         }
         style={[StyleSheet.absoluteFillObject, { height: 280 }]}
         start={{ x: 0.5, y: 0 }}
@@ -474,8 +474,8 @@ export default function EmailVerification() {
                 styles.helpContainer,
                 {
                   backgroundColor: themedIsDark
-                    ? "rgba(157,91,255,0.10)"
-                    : "rgba(123,63,228,0.06)",
+                    ? "rgba(78,124,255,0.10)"
+                    : "rgba(37,71,240,0.06)",
                   borderColor: colors.border.medium,
                 },
               ]}

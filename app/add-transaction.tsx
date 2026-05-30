@@ -617,7 +617,7 @@ export default function AddTransaction() {
                       styles.catTile,
                       {
                         backgroundColor: active
-                          ? "rgba(157,91,255,0.12)"
+                          ? "rgba(78,124,255,0.12)"
                           : colors.card.background,
                         borderColor: active
                           ? colors.primary[500]

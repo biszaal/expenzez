@@ -655,13 +655,13 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderRadius: 2
   },
   motivationalContainer: {
-    backgroundColor: 'rgba(157,91,255,0.10)',
+    backgroundColor: 'rgba(78,124,255,0.10)',
     marginHorizontal: 22,
     marginBottom: 14,
     padding: 18,
     borderRadius: 22,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(157,91,255,0.28)'
+    borderColor: 'rgba(78,124,255,0.28)'
   },
   motivationalHeader: {
     flexDirection: 'row',
@@ -827,13 +827,13 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(157,91,255,0.08)',
+    backgroundColor: 'rgba(78,124,255,0.08)',
     paddingVertical: 12,
     paddingHorizontal: 18,
     borderRadius: 14,
     marginTop: 8,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(157,91,255,0.20)'
+    borderColor: 'rgba(78,124,255,0.20)'
   },
   viewMoreText: {
     fontSize: 14,
@@ -958,13 +958,13 @@ const createStyles = (colors: any) => StyleSheet.create({
   xpReward: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(157,91,255,0.12)',
+    backgroundColor: 'rgba(78,124,255,0.12)',
     paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: 10,
     gap: 5,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(157,91,255,0.22)'
+    borderColor: 'rgba(78,124,255,0.22)'
   },
   xpRewardText: {
     fontSize: 12,
