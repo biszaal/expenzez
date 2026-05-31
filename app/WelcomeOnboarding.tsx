@@ -19,7 +19,8 @@ import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width, height } = Dimensions.get("window");
-const CARD_HEIGHT = height * 0.7;
+// Leaves room for the top bar (back/close) and the bottom CTA block.
+const CARD_HEIGHT = height * 0.64;
 
 export default function WelcomeOnboarding() {
   const router = useRouter();
@@ -132,11 +133,63 @@ export default function WelcomeOnboarding() {
     setCurrentIndex(index);
   };
 
+  const handleBack = () => {
+    if (currentIndex === 0) return;
+    if (Platform.OS === "ios") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    scrollViewRef.current?.scrollTo({
+      x: (currentIndex - 1) * width,
+      animated: true,
+    });
+  };
+
+  const isLast = currentIndex === onboardingData.length - 1;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       <SafeAreaView style={styles.safeArea}>
+        {/* Top bar — back (left) + close (right) */}
+        <View style={styles.topBar}>
+          {currentIndex > 0 ? (
+            <TouchableOpacity
+              onPress={handleBack}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={[
+                styles.navBtn,
+                {
+                  backgroundColor: colors.background.secondary,
+                  borderColor: colors.border.medium,
+                },
+              ]}
+              accessibilityLabel="Go back"
+            >
+              <Ionicons name="chevron-back" size={22} color={colors.text.primary} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.navSpacer} />
+          )}
+
+          <TouchableOpacity
+            onPress={handleSkip}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={[
+              styles.navBtn,
+              {
+                backgroundColor: colors.background.secondary,
+                borderColor: colors.border.medium,
+              },
+            ]}
+            accessibilityLabel="Skip onboarding"
+          >
+            <Ionicons name="close" size={22} color={colors.text.primary} />
+          </TouchableOpacity>
+        </View>
+
         {/* Animated Scrollable Cards */}
         <Animated.ScrollView
           ref={scrollViewRef}
@@ -251,38 +304,19 @@ export default function WelcomeOnboarding() {
             })}
           </View>
 
-          {/* Action Buttons */}
-          <View style={styles.actionRow}>
-            {currentIndex < onboardingData.length - 1 && (
-              <TouchableOpacity
-                style={styles.skipButton}
-                onPress={handleSkip}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.skipText, { color: colors.text.tertiary }]}>
-                  Skip
-                </Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                currentIndex === onboardingData.length - 1 &&
-                  styles.actionButtonFull,
-              ]}
-              onPress={handleNext}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.buttonContent, { backgroundColor: accent }]}>
-                <Text style={styles.buttonText}>
-                  {currentIndex === onboardingData.length - 1
-                    ? "Get Started"
-                    : "Continue"}
-                </Text>
-                <Ionicons name="arrow-forward" size={20} color="white" />
-              </View>
-            </TouchableOpacity>
-          </View>
+          {/* Primary CTA — full width */}
+          <TouchableOpacity
+            style={[styles.actionButton, { shadowColor: accent }]}
+            onPress={handleNext}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.buttonContent, { backgroundColor: accent }]}>
+              <Text style={styles.buttonText}>
+                {isLast ? "Get Started" : "Continue"}
+              </Text>
+              <Ionicons name="arrow-forward" size={20} color="#fff" />
+            </View>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     </View>
@@ -296,18 +330,24 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  actionRow: {
+  topBar: {
+    height: 56,
+    paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    justifyContent: "space-between",
   },
-  skipButton: {
-    paddingVertical: 18,
-    paddingHorizontal: 24,
+  navBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  skipText: {
-    fontSize: 17,
-    fontWeight: "600",
+  navSpacer: {
+    width: 40,
+    height: 40,
   },
   cardContainer: {
     width,
@@ -371,24 +411,22 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   actionButton: {
-    flex: 1,
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-  actionButtonFull: {
-    flex: 0,
-    alignSelf: "stretch",
+    borderRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.32,
+    shadowRadius: 20,
+    elevation: 8,
   },
   buttonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
+    height: 56,
+    borderRadius: 16,
     gap: 10,
   },
   buttonText: {
-    color: "white",
+    color: "#fff",
     fontSize: 16,
     fontWeight: "700",
     letterSpacing: 0.3,
