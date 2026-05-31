@@ -29,43 +29,51 @@ export default function WelcomeOnboarding() {
   // Single scroll animation value
   const scrollX = useRef(new Animated.Value(0)).current;
 
+  // Each slide ships a light + dark illustration; we pick by theme at render.
   const onboardingData = [
     {
       id: "1",
       title: "Welcome to Expenzez",
       description:
-        "Your intelligent financial companion for smarter money management",
-      icon: "wallet-outline",
-      illustration: require("../assets/images/onboarding/welcome.png"),
-      accentColor: colors.primary.main,
+        "Your intelligent money companion — clarity over your spending, all in one place.",
+      light: require("../assets/images/onboarding/light/welcome-light.png"),
+      dark: require("../assets/images/onboarding/dark/welcome-dark.png"),
     },
     {
       id: "2",
-      title: "Smart Analytics",
-      description: "AI-powered insights to understand your spending patterns",
-      icon: "analytics-outline",
-      illustration: require("../assets/images/onboarding/analytics.png"),
-      accentColor: colors.success.main,
+      title: "See your whole journey",
+      description:
+        "Bring every account and statement together and watch your money story take shape.",
+      light: require("../assets/images/onboarding/light/journey-light.png"),
+      dark: require("../assets/images/onboarding/dark/journey-dark.png"),
     },
     {
       id: "3",
-      title: "Bank-Level Security",
+      title: "Smart analytics",
       description:
-        "Enterprise-grade encryption keeps your data safe and private",
-      icon: "shield-checkmark-outline",
-      illustration: require("../assets/images/onboarding/security.png"),
-      accentColor: colors.warning.main,
+        "AI-powered insights that reveal your spending patterns at a glance.",
+      light: require("../assets/images/onboarding/light/analytics-light.png"),
+      dark: require("../assets/images/onboarding/dark/analytics-dark.png"),
     },
     {
       id: "4",
-      title: "Stay in Control",
+      title: "Private by design",
       description:
-        "Real-time notifications and budget tracking at your fingertips",
-      icon: "notifications-outline",
-      illustration: require("../assets/images/onboarding/notifications.png"),
-      accentColor: colors.primary.main,
+        "Bank-level encryption keeps your data safe — no bank login ever required.",
+      light: require("../assets/images/onboarding/light/security-light.png"),
+      dark: require("../assets/images/onboarding/dark/security-dark.png"),
+    },
+    {
+      id: "5",
+      title: "Stay in control",
+      description:
+        "Budgets and timely notifications keep you on track, right at your fingertips.",
+      light: require("../assets/images/onboarding/light/notifications-light.png"),
+      dark: require("../assets/images/onboarding/dark/notifications-dark.png"),
     },
   ];
+
+  const accent = colors.primary.main;
 
   const handleNext = async () => {
     if (Platform.OS === "ios") {
@@ -125,8 +133,8 @@ export default function WelcomeOnboarding() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: "#ffffff" }]}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       <SafeAreaView style={styles.safeArea}>
         {/* Animated Scrollable Cards */}
@@ -176,36 +184,27 @@ export default function WelcomeOnboarding() {
                   },
                 ]}
               >
-                {/* Simple Card */}
+                {/* Simple Card — transparent so the illustration floats on the themed bg */}
                 <View style={styles.card}>
                   {/* Illustration Container */}
                   <View style={styles.illustrationContainer}>
-                    {item.illustration ? (
-                      <Image
-                        source={item.illustration}
-                        style={styles.illustration}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <View
-                        style={[
-                          styles.iconCircle,
-                          { backgroundColor: item.accentColor + "15" },
-                        ]}
-                      >
-                        <Ionicons
-                          name={item.icon as any}
-                          size={80}
-                          color="white"
-                        />
-                      </View>
-                    )}
+                    <Image
+                      source={isDark ? item.dark : item.light}
+                      style={styles.illustration}
+                      resizeMode="contain"
+                    />
                   </View>
 
                   {/* Content */}
                   <View style={styles.contentContainer}>
-                    <Text style={styles.title}>{item.title}</Text>
-                    <Text style={styles.description}>{item.description}</Text>
+                    <Text style={[styles.title, { color: colors.text.primary }]}>
+                      {item.title}
+                    </Text>
+                    <Text
+                      style={[styles.description, { color: colors.text.secondary }]}
+                    >
+                      {item.description}
+                    </Text>
                   </View>
                 </View>
               </Animated.View>
@@ -244,6 +243,7 @@ export default function WelcomeOnboarding() {
                     {
                       width: dotWidth,
                       opacity,
+                      backgroundColor: accent,
                     },
                   ]}
                 />
@@ -259,7 +259,9 @@ export default function WelcomeOnboarding() {
                 onPress={handleSkip}
                 activeOpacity={0.7}
               >
-                <Text style={styles.skipText}>Skip</Text>
+                <Text style={[styles.skipText, { color: colors.text.tertiary }]}>
+                  Skip
+                </Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
@@ -271,7 +273,7 @@ export default function WelcomeOnboarding() {
               onPress={handleNext}
               activeOpacity={0.8}
             >
-              <View style={[styles.buttonContent, { backgroundColor: onboardingData[currentIndex].accentColor }]}>
+              <View style={[styles.buttonContent, { backgroundColor: accent }]}>
                 <Text style={styles.buttonText}>
                   {currentIndex === onboardingData.length - 1
                     ? "Get Started"
@@ -304,7 +306,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   skipText: {
-    color: "#6b7280",
     fontSize: 17,
     fontWeight: "600",
   },
@@ -318,7 +319,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: CARD_HEIGHT,
     borderRadius: 20,
-    backgroundColor: "#f9fafb",
+    backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -329,15 +330,8 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   illustration: {
-    width: 280,
-    height: 280,
-  },
-  iconCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    justifyContent: "center",
-    alignItems: "center",
+    width: 300,
+    height: 300,
   },
   contentContainer: {
     flex: 1,
@@ -349,7 +343,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "800",
-    color: "#1f2937",
     textAlign: "center",
     marginBottom: 12,
     lineHeight: 40,
@@ -357,7 +350,6 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 15,
-    color: "#6b7280",
     textAlign: "center",
     lineHeight: 24,
     fontWeight: "400",
@@ -377,7 +369,6 @@ const styles = StyleSheet.create({
   dot: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#d1d5db",
   },
   actionButton: {
     flex: 1,
