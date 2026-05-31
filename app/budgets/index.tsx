@@ -18,7 +18,7 @@ import { useSubscription } from "../../hooks/useSubscription";
 import { PremiumFeature } from "../../services/subscriptionService";
 import { budgetService, BudgetProgress } from "../../services/budgetService";
 import { EXPENSE_CATEGORIES } from "../../services/expenseStorage";
-import { spacing, borderRadius, typography } from "../../constants/theme";
+import { spacing, borderRadius, typography, fontFamily } from "../../constants/theme";
 import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
 import { LimitReachedPrompt } from "../../components/premium/LimitReachedPrompt";
 import { FeatureShowcase } from "../../components/premium/FeatureShowcase";
@@ -270,104 +270,117 @@ export default function BudgetsScreen() {
     return categoryMap[categoryName] || "pricetag-outline";
   };
 
-  const renderBudgetCard = (progress: BudgetProgress) => {
-    const categoryInfo = EXPENSE_CATEGORIES.find(
-      (cat) => cat.id === progress.budget.category
-    );
+  // The overall monthly budget, shown as one clear summary at the top.
+  const renderMonthlyHero = (progress: BudgetProgress) => {
     const statusColor = getBudgetStatusColor(progress.status);
-    const statusIcon = getBudgetStatusIcon(progress.status);
-    const categoryIcon = getCategoryIcon(progress.budget.name);
-
+    const over = progress.remaining < 0;
     return (
-      <View
-        key={progress.budget.id}
-        ref={(ref) => {
-          budgetCardRefs.current[progress.budget.id] = ref;
-        }}
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => router.push(`/budgets/edit?id=${progress.budget.id}`)}
         style={[
-          styles.budgetCard,
-          { backgroundColor: colors.background.secondary },
+          styles.heroCard,
+          {
+            backgroundColor: colors.background.secondary,
+            borderColor: colors.border.medium,
+          },
         ]}
       >
-        <View style={styles.budgetHeader}>
-          <View style={styles.budgetTitle}>
-            <View
-              style={[
-                styles.budgetIconChip,
-                { backgroundColor: colors.primary.main + "1F" },
-              ]}
-            >
-              <Ionicons name={categoryIcon} size={18} color={colors.primary.main} />
-            </View>
-            <View style={styles.budgetTitleText}>
-              <Text style={[styles.budgetName, { color: colors.text.primary }]}>
-                {progress.budget.name}
-              </Text>
-              <Text
-                style={[styles.budgetPeriod, { color: colors.text.secondary }]}
-              >
-                {progress.budget.period} • {progress.daysLeft} days left
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.budgetActions}>
-            <Ionicons name={statusIcon as any} size={20} color={statusColor} />
-            <TouchableOpacity
-              onPress={() =>
-                router.push(`/budgets/edit?id=${progress.budget.id}`)
-              }
-              style={[
-                styles.actionButton,
-                { backgroundColor: colors.background.primary },
-              ]}
-            >
-              <Ionicons name="pencil" size={16} color={colors.text.secondary} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() =>
-                handleDeleteBudget(progress.budget.id, progress.budget.name)
-              }
-              style={[
-                styles.actionButton,
-                { backgroundColor: colors.background.primary },
-              ]}
-            >
-              <Ionicons name="trash" size={16} color="#EF4444" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.budgetAmount}>
-          <View style={styles.amountRow}>
-            <Text style={[styles.spent, { color: colors.text.primary }]}>
-              {formatCurrency(progress.spent)}
-            </Text>
-            <Text style={[styles.total, { color: colors.text.secondary }]}>
-              of {formatCurrency(progress.budget.amount)}
-            </Text>
-          </View>
-          <Text
-            style={[
-              styles.remaining,
-              {
-                color:
-                  progress.remaining >= 0 ? colors.text.secondary : "#EF4444",
-              },
-            ]}
-          >
-            {progress.remaining >= 0
-              ? formatCurrency(progress.remaining)
-              : formatCurrency(Math.abs(progress.remaining))}{" "}
-            {progress.remaining >= 0 ? "remaining" : "over budget"}
+        <View style={styles.heroTopRow}>
+          <Text style={[styles.heroLabel, { color: colors.text.secondary }]}>
+            This month
+          </Text>
+          <Text style={[styles.heroDays, { color: colors.text.tertiary }]}>
+            {progress.daysLeft} {progress.daysLeft === 1 ? "day" : "days"} left
           </Text>
         </View>
 
-        <View style={styles.progressContainer}>
+        <View style={styles.heroAmountRow}>
+          <Text style={[styles.heroSpent, { color: colors.text.primary }]}>
+            {formatCurrency(progress.spent)}
+          </Text>
+          <Text style={[styles.heroLimit, { color: colors.text.tertiary }]}>
+            of {formatCurrency(progress.budget.amount)}
+          </Text>
+        </View>
+        <Text
+          style={[
+            styles.heroRemaining,
+            { color: over ? colors.error.main : colors.text.secondary },
+          ]}
+        >
+          {over
+            ? `${formatCurrency(Math.abs(progress.remaining))} over budget`
+            : `${formatCurrency(progress.remaining)} left to spend`}
+        </Text>
+
+        <View
+          style={[
+            styles.progressBar,
+            { backgroundColor: colors.border.light, marginTop: spacing.md },
+          ]}
+        >
+          <View
+            style={[
+              styles.progressFill,
+              {
+                backgroundColor: statusColor,
+                width: `${Math.min(progress.percentage, 100)}%`,
+              },
+            ]}
+          />
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // A single category cap — minimal row, tap to edit.
+  const renderCategoryRow = (progress: BudgetProgress, isLast: boolean) => {
+    const statusColor = getBudgetStatusColor(progress.status);
+    const categoryIcon = getCategoryIcon(progress.budget.name);
+    const over = progress.remaining < 0;
+    return (
+      <TouchableOpacity
+        key={progress.budget.id}
+        activeOpacity={0.7}
+        onPress={() => router.push(`/budgets/edit?id=${progress.budget.id}`)}
+        style={[
+          styles.catRow,
+          !isLast && {
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: colors.border.light,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.budgetIconChip,
+            { backgroundColor: colors.primary.main + "1F" },
+          ]}
+        >
+          <Ionicons name={categoryIcon} size={18} color={colors.primary.main} />
+        </View>
+        <View style={styles.catBody}>
+          <View style={styles.catTopRow}>
+            <Text
+              style={[styles.catName, { color: colors.text.primary }]}
+              numberOfLines={1}
+            >
+              {progress.budget.name}
+            </Text>
+            <Text
+              style={[
+                styles.catAmount,
+                { color: over ? colors.error.main : colors.text.secondary },
+              ]}
+            >
+              {formatCurrency(progress.spent)} / {formatCurrency(progress.budget.amount)}
+            </Text>
+          </View>
           <View
             style={[
               styles.progressBar,
-              { backgroundColor: colors.border.light },
+              { backgroundColor: colors.border.light, marginTop: 8 },
             ]}
           >
             <View
@@ -379,40 +392,9 @@ export default function BudgetsScreen() {
                 },
               ]}
             />
-            {progress.percentage > 100 && (
-              <View
-                style={[
-                  styles.progressOverflow,
-                  {
-                    backgroundColor: "#EF4444",
-                    width: `${Math.min(progress.percentage - 100, 50)}%`,
-                  },
-                ]}
-              />
-            )}
           </View>
-          <Text style={[styles.progressText, { color: colors.text.secondary }]}>
-            {Math.round(progress.percentage)}%
-          </Text>
         </View>
-
-        {/* AI Budget Insight - Premium Feature */}
-        {isPremium && (
-          <View style={{ marginTop: spacing.md }}>
-            {/* AI Insight Card */}
-            {showAIInsight[progress.budget.id] && budgetInsights[progress.budget.id] && (
-              <AIInsightCard
-                insight={budgetInsights[progress.budget.id].insight}
-                expandedInsight={budgetInsights[progress.budget.id].expandedInsight}
-                priority={budgetInsights[progress.budget.id].priority}
-                actionable={budgetInsights[progress.budget.id].actionable}
-                loading={insightLoading[progress.budget.id]}
-                collapsedByDefault={true}
-              />
-            )}
-          </View>
-        )}
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -434,14 +416,12 @@ export default function BudgetsScreen() {
     );
   }
 
-  const { onTrack, atRisk, exceeded } = (() => {
-    const onTrack = budgetProgress.filter(
-      (b) => b.status === "on_track"
-    ).length;
-    const atRisk = budgetProgress.filter((b) => b.status === "warning").length;
-    const exceeded = budgetProgress.filter((b) => b.status === "danger").length;
-    return { onTrack, atRisk, exceeded };
-  })();
+  const mainBudgetProgress = budgetProgress.find(
+    (b) => b.budget.id === "main-budget"
+  );
+  const categoryProgress = budgetProgress.filter(
+    (b) => b.budget.id !== "main-budget"
+  );
 
   return (
     <SafeAreaView
@@ -495,71 +475,6 @@ export default function BudgetsScreen() {
           />
         }
       >
-        {budgetProgress.length > 0 && (
-          <View
-            style={[
-              styles.summarySection,
-              { backgroundColor: colors.background.secondary },
-            ]}
-          >
-            <View style={styles.summaryItem}>
-              <View
-                style={[styles.summaryIcon, { backgroundColor: "#10B98120" }]}
-              >
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color="#10B981"
-                />
-              </View>
-              <Text style={[styles.summaryValue, { color: "#10B981" }]}>
-                {onTrack}
-              </Text>
-              <Text
-                style={[styles.summaryLabel, { color: colors.text.secondary }]}
-              >
-                On Track
-              </Text>
-            </View>
-
-            <View style={styles.summaryItem}>
-              <View
-                style={[styles.summaryIcon, { backgroundColor: "#F59E0B20" }]}
-              >
-                <Ionicons name="warning" size={20} color="#F59E0B" />
-              </View>
-              <Text style={[styles.summaryValue, { color: "#F59E0B" }]}>
-                {atRisk}
-              </Text>
-              <Text
-                style={[styles.summaryLabel, { color: colors.text.secondary }]}
-              >
-                At Risk
-              </Text>
-            </View>
-
-            <View style={styles.summaryItem}>
-              <View
-                style={[styles.summaryIcon, { backgroundColor: "#EF444420" }]}
-              >
-                <Ionicons
-                  name="alert-circle"
-                  size={20}
-                  color="#EF4444"
-                />
-              </View>
-              <Text style={[styles.summaryValue, { color: "#EF4444" }]}>
-                {exceeded}
-              </Text>
-              <Text
-                style={[styles.summaryLabel, { color: colors.text.secondary }]}
-              >
-                Exceeded
-              </Text>
-            </View>
-          </View>
-        )}
-
         {budgetProgress.length === 0 ? (
           <View style={styles.emptyState}>
             {/* Feature Showcase for Empty State */}
@@ -617,7 +532,30 @@ export default function BudgetsScreen() {
           </View>
         ) : (
           <View style={styles.budgetList}>
-            {budgetProgress.map(renderBudgetCard)}
+            {mainBudgetProgress && renderMonthlyHero(mainBudgetProgress)}
+
+            {categoryProgress.length > 0 && (
+              <>
+                <Text
+                  style={[styles.sectionLabel, { color: colors.text.secondary }]}
+                >
+                  Categories
+                </Text>
+                <View
+                  style={[
+                    styles.catGroup,
+                    {
+                      backgroundColor: colors.background.secondary,
+                      borderColor: colors.border.medium,
+                    },
+                  ]}
+                >
+                  {categoryProgress.map((p, i) =>
+                    renderCategoryRow(p, i === categoryProgress.length - 1)
+                  )}
+                </View>
+              </>
+            )}
           </View>
         )}
 
@@ -745,6 +683,86 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginHorizontal: spacing.md,
     marginBottom: spacing.lg,
+  },
+  // Monthly total hero
+  heroCard: {
+    padding: spacing.lg,
+    borderRadius: borderRadius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  heroTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  heroLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+  },
+  heroDays: {
+    fontSize: 12,
+    fontFamily: fontFamily.mono,
+  },
+  heroAmountRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 8,
+  },
+  heroSpent: {
+    fontSize: 34,
+    fontFamily: fontFamily.monoSemibold,
+    letterSpacing: -0.5,
+  },
+  heroLimit: {
+    fontSize: 15,
+    fontFamily: fontFamily.mono,
+  },
+  heroRemaining: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginTop: 4,
+  },
+  // Category rows
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+    marginTop: spacing.sm,
+    marginBottom: 2,
+    marginLeft: 4,
+  },
+  catGroup: {
+    borderRadius: borderRadius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.md,
+  },
+  catRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  catBody: {
+    flex: 1,
+  },
+  catTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  catName: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  catAmount: {
+    fontSize: 13,
+    fontFamily: fontFamily.mono,
   },
   budgetCard: {
     padding: spacing.lg,
