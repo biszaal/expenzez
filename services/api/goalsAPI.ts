@@ -1,5 +1,4 @@
 import { api } from '../config/apiClient';
-import { GamificationEngine } from '../gamificationEngine';
 
 export interface FinancialGoal {
   userId: string;
@@ -109,153 +108,21 @@ export const goalsAPI = {
         console.error('❌ [GoalsAPI] Error fetching user goals:', error);
       }
 
-      // Provide fallback data for development
-      const fallbackData: GoalsResponse = {
+      // Production app: never fabricate goals. Return an empty, valid response
+      // so the screen shows a real empty state instead of demo data.
+      return {
         userId,
-        activeGoals: [
-          {
-            userId,
-            goalId: 'emergency-fund-001',
-            title: 'Emergency Fund',
-            description: '6 months of expenses for financial security',
-            type: 'emergency_fund',
-            targetAmount: 15000,
-            currentAmount: 3750,
-            targetDate: new Date(Date.now() + 18 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-            priority: 'high',
-            category: 'security',
-            isActive: true,
-            createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-            updatedAt: new Date().toISOString(),
-            milestones: [
-              {
-                milestoneId: 'milestone-001',
-                goalId: 'emergency-fund-001',
-                title: '25% Complete',
-                targetAmount: 3750,
-                achievedAt: new Date().toISOString(),
-                celebrationShown: false,
-                rewardPoints: 100
-              },
-              {
-                milestoneId: 'milestone-002',
-                goalId: 'emergency-fund-001',
-                title: '50% Complete',
-                targetAmount: 7500,
-                celebrationShown: false,
-                rewardPoints: 150
-              }
-            ],
-            linkedSavingsOpportunityIds: ['subscription_optimization'],
-            autoSaveSettings: {
-              enabled: true,
-              amount: 250,
-              frequency: 'monthly',
-              roundUpEnabled: true
-            }
-          },
-          {
-            userId,
-            goalId: 'vacation-001',
-            title: 'Summer Vacation',
-            description: 'Trip to Italy for 2 weeks',
-            type: 'vacation',
-            targetAmount: 4500,
-            currentAmount: 1200,
-            targetDate: new Date(Date.now() + 8 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-            priority: 'medium',
-            category: 'lifestyle',
-            isActive: true,
-            createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            updatedAt: new Date().toISOString(),
-            milestones: [
-              {
-                milestoneId: 'milestone-003',
-                goalId: 'vacation-001',
-                title: '25% Complete',
-                targetAmount: 1125,
-                achievedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-                celebrationShown: true,
-                rewardPoints: 75
-              }
-            ],
-            linkedSavingsOpportunityIds: ['category_reduction'],
-            autoSaveSettings: {
-              enabled: true,
-              amount: 150,
-              frequency: 'weekly',
-              roundUpEnabled: false
-            }
-          }
-        ],
+        activeGoals: [],
         completedGoals: [],
-        goalProgress: [
-          {
-            goalId: 'emergency-fund-001',
-            progressPercentage: 25,
-            amountRemaining: 11250,
-            daysRemaining: 540,
-            isOnTrack: true,
-            projectedCompletionDate: new Date(Date.now() + 16 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-            recommendedMonthlySavings: 625,
-            nextMilestone: {
-              milestoneId: 'milestone-002',
-              goalId: 'emergency-fund-001',
-              title: '50% Complete',
-              targetAmount: 7500,
-              celebrationShown: false,
-              rewardPoints: 150
-            }
-          },
-          {
-            goalId: 'vacation-001',
-            progressPercentage: 27,
-            amountRemaining: 3300,
-            daysRemaining: 240,
-            isOnTrack: true,
-            projectedCompletionDate: new Date(Date.now() + 7 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-            recommendedMonthlySavings: 550
-          }
-        ],
-        totalSavedTowardsGoals: 4950,
-        totalGoalAmount: 19500,
-        averageMonthlyProgress: 412,
-        recommendations: [], // Will be populated dynamically below
-        motivationalMessage: "Great progress! You're 25.4% of the way to achieving your financial goals. Keep up the momentum!",
-        lastUpdated: new Date().toISOString()
+        goalProgress: [],
+        totalSavedTowardsGoals: 0,
+        totalGoalAmount: 0,
+        averageMonthlyProgress: 0,
+        recommendations: [],
+        motivationalMessage:
+          "Set your first goal to start tracking your savings.",
+        lastUpdated: new Date().toISOString(),
       };
-
-      // Generate dynamic recommendations based on current goals and user behavior
-      const userFinancialData = {
-        userId,
-        goals: fallbackData.activeGoals.concat(fallbackData.completedGoals),
-        goalProgress: fallbackData.goalProgress,
-        totalTransactions: 45, // This would come from transaction API in real implementation
-        monthsActive: 3, // This would be calculated from user registration
-        totalSaved: fallbackData.totalSavedTowardsGoals,
-        currentStreaks: {
-          savings: 14, // This would come from transaction patterns
-          budgetCompliance: 21 // This would come from budget API
-        }
-      };
-
-      const dynamicRecommendations = GamificationEngine.generateGoalRecommendations(userFinancialData);
-
-      // Convert to the expected format
-      fallbackData.recommendations = dynamicRecommendations.map(rec => ({
-        type: rec.type,
-        title: rec.title,
-        description: rec.description,
-        suggestedAmount: rec.suggestedAmount,
-        suggestedTimeframe: rec.suggestedTimeframe,
-        priority: rec.priority,
-        reasoning: rec.reasoning,
-        basedOnSpending: rec.type === 'debt_payoff' || rec.type === 'emergency_fund',
-        basedOnIncome: rec.type === 'retirement' || rec.type === 'major_purchase'
-      }));
-
-      console.log('🔄 [GoalsAPI] Generated dynamic goals data with', fallbackData.recommendations.length, 'recommendations');
-      return fallbackData;
     }
   },
 
@@ -274,54 +141,7 @@ export const goalsAPI = {
       return response.data;
     } catch (error: any) {
       console.error('❌ [GoalsAPI] Error creating goal:', error);
-
-      // Return demo created goal for development
-      const demoGoal: FinancialGoal = {
-        userId,
-        goalId: `goal-${Date.now()}`,
-        ...goalData,
-        currentAmount: 0,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        milestones: [
-          {
-            milestoneId: `milestone-${Date.now()}-1`,
-            goalId: `goal-${Date.now()}`,
-            title: '25% Complete',
-            targetAmount: goalData.targetAmount * 0.25,
-            celebrationShown: false,
-            rewardPoints: 100
-          },
-          {
-            milestoneId: `milestone-${Date.now()}-2`,
-            goalId: `goal-${Date.now()}`,
-            title: '50% Complete',
-            targetAmount: goalData.targetAmount * 0.5,
-            celebrationShown: false,
-            rewardPoints: 150
-          },
-          {
-            milestoneId: `milestone-${Date.now()}-3`,
-            goalId: `goal-${Date.now()}`,
-            title: '75% Complete',
-            targetAmount: goalData.targetAmount * 0.75,
-            celebrationShown: false,
-            rewardPoints: 200
-          },
-          {
-            milestoneId: `milestone-${Date.now()}-4`,
-            goalId: `goal-${Date.now()}`,
-            title: 'Goal Complete!',
-            targetAmount: goalData.targetAmount,
-            celebrationShown: false,
-            rewardPoints: 500
-          }
-        ],
-        linkedSavingsOpportunityIds: []
-      };
-
-      return demoGoal;
+      throw error;
     }
   },
 

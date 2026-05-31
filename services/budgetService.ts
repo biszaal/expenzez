@@ -159,7 +159,32 @@ export class BudgetService {
 
   static async deleteBudget(id: string): Promise<boolean> {
     try {
-      console.log("Deleting budget:", id);
+      // Budgets are stored as preferences (one monthly limit + a category map),
+      // so "delete" means rewriting preferences — not a no-op.
+      const { budgetAPI } = await import("./api");
+      const prefs = await budgetAPI.getBudgetPreferences();
+      const categoryBudgets = { ...(prefs.categoryBudgets || {}) };
+
+      if (id === "main-budget") {
+        await budgetAPI.updateBudgetPreferences({
+          monthlySpendingLimit: 0,
+          categoryBudgets,
+        });
+        return true;
+      }
+
+      // Category budget ids look like `category-<name kebab-cased>`.
+      const keyToRemove = Object.keys(categoryBudgets).find(
+        (name) => `category-${name.toLowerCase().replace(/\s+/g, "-")}` === id
+      );
+      if (!keyToRemove) {
+        return false;
+      }
+      delete categoryBudgets[keyToRemove];
+      await budgetAPI.updateBudgetPreferences({
+        monthlySpendingLimit: prefs.monthlySpendingLimit,
+        categoryBudgets,
+      });
       return true;
     } catch (error) {
       console.error("Error deleting budget:", error);
@@ -195,20 +220,20 @@ export class BudgetService {
       const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
       const isOver = spent > budget.amount;
 
-      // Calculate days left in period
+      // Calculate days left in period (end-of-day so the final day counts as 1, not 0)
       let periodEnd: Date;
       switch (budget.period) {
         case "weekly":
           periodEnd = new Date(periodStart.getTime() + 7 * 24 * 60 * 60 * 1000);
           break;
         case "monthly":
-          periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
           break;
         case "yearly":
-          periodEnd = new Date(now.getFullYear(), 11, 31);
+          periodEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
           break;
         default:
-          periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
       }
 
       const daysLeft = Math.max(

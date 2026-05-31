@@ -249,23 +249,25 @@ export default function BudgetsScreen() {
     return `£${amount.toFixed(2)}`;
   };
 
-  const getCategoryIcon = (categoryName: string) => {
-    const categoryMap: { [key: string]: string } = {
-      "Monthly Budget": "💰",
-      General: "💰",
-      Shopping: "🛍️",
-      Utilities: "💡",
-      Entertainment: "🎬",
-      "Food & Dining": "🍔",
-      Transportation: "🚗",
-      "Health & Fitness": "💊",
-      Travel: "✈️",
-      "Bills & Utilities": "💡",
-      "Banking & Finance": "🏦",
-      Other: "📦",
+  const getCategoryIcon = (categoryName: string): keyof typeof Ionicons.glyphMap => {
+    const categoryMap: { [key: string]: keyof typeof Ionicons.glyphMap } = {
+      "Monthly Budget": "wallet-outline",
+      General: "wallet-outline",
+      Shopping: "bag-handle-outline",
+      Utilities: "bulb-outline",
+      Entertainment: "film-outline",
+      "Food & Dining": "restaurant-outline",
+      Transportation: "car-outline",
+      Transport: "car-outline",
+      "Health & Fitness": "fitness-outline",
+      Travel: "airplane-outline",
+      "Bills & Utilities": "receipt-outline",
+      "Banking & Finance": "card-outline",
+      Groceries: "basket-outline",
+      Other: "ellipsis-horizontal-circle-outline",
     };
 
-    return categoryMap[categoryName] || "📊";
+    return categoryMap[categoryName] || "pricetag-outline";
   };
 
   const renderBudgetCard = (progress: BudgetProgress) => {
@@ -289,7 +291,14 @@ export default function BudgetsScreen() {
       >
         <View style={styles.budgetHeader}>
           <View style={styles.budgetTitle}>
-            <Text style={styles.budgetEmoji}>{categoryIcon}</Text>
+            <View
+              style={[
+                styles.budgetIconChip,
+                { backgroundColor: colors.primary.main + "1F" },
+              ]}
+            >
+              <Ionicons name={categoryIcon} size={18} color={colors.primary.main} />
+            </View>
             <View style={styles.budgetTitleText}>
               <Text style={[styles.budgetName, { color: colors.text.primary }]}>
                 {progress.budget.name}
@@ -387,39 +396,6 @@ export default function BudgetsScreen() {
           </Text>
         </View>
 
-        <View style={styles.budgetInsights}>
-          <View style={styles.insightItem}>
-            <Text
-              style={[styles.insightLabel, { color: colors.text.secondary }]}
-            >
-              Daily Budget
-            </Text>
-            <Text style={[styles.insightValue, { color: colors.text.primary }]}>
-              {formatCurrency(progress.dailyBudget)}
-            </Text>
-          </View>
-          <View style={styles.insightItem}>
-            <Text
-              style={[styles.insightLabel, { color: colors.text.secondary }]}
-            >
-              Projected
-            </Text>
-            <Text
-              style={[
-                styles.insightValue,
-                {
-                  color:
-                    progress.projectedSpend > progress.budget.amount
-                      ? "#EF4444"
-                      : colors.text.primary,
-                },
-              ]}
-            >
-              {formatCurrency(progress.projectedSpend)}
-            </Text>
-          </View>
-        </View>
-
         {/* AI Budget Insight - Premium Feature */}
         {isPremium && (
           <View style={{ marginTop: spacing.md }}>
@@ -482,7 +458,7 @@ export default function BudgetsScreen() {
           </TouchableOpacity>
           <View>
             <Text style={[styles.title, { color: colors.text.primary }]}>
-              💰 Budgets
+              Budgets
             </Text>
             <Text
               style={[styles.subtitle, { color: colors.text.secondary }]}
@@ -611,9 +587,14 @@ export default function BudgetsScreen() {
               ]}
             />
 
-            <Text style={styles.emptyIcon}>💰</Text>
+            <Ionicons
+              name="wallet-outline"
+              size={48}
+              color={colors.text.tertiary}
+              style={styles.emptyIcon}
+            />
             <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>
-              No Budgets Yet
+              No budgets yet
             </Text>
             <Text
               style={[
@@ -786,8 +767,12 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     flex: 1,
   },
-  budgetEmoji: {
-    fontSize: 28,
+  budgetIconChip: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   budgetTitleText: {
     flex: 1,
