@@ -1567,6 +1567,24 @@ export default function SpendingPage() {
               />
             </View>
 
+            {/* Manage Budgets — clear path to set up / edit budgets */}
+            <TouchableOpacity
+              style={[
+                styles.viewAllBudgetsButton,
+                { backgroundColor: colors.primary.main },
+              ]}
+              onPress={() => router.push("/budgets")}
+              activeOpacity={0.85}
+            >
+              <View style={styles.viewAllBudgetsContent}>
+                <Ionicons name="wallet-outline" size={20} color="#fff" />
+                <Text style={[styles.viewAllBudgetsText, { color: "#fff" }]}>
+                  {totalBudget > 0 ? "Manage budgets" : "Set up your budget"}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#fff" />
+            </TouchableOpacity>
+
             {/* Advanced Analytics Button */}
             <TouchableOpacity
               style={[

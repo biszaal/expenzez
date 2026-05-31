@@ -144,12 +144,14 @@ export default function EditBudgetPage() {
     setBudgets(newBudgets);
   };
 
-  // Auto-fill budgets when main budget or categories change
+  // Auto-fill once when there are no category caps yet — never overwrite edits.
   useEffect(() => {
     const budgetAmount = parseFloat(mainBudget) || 0;
-    if (budgetAmount > 0 && categories.length > 0) {
+    const hasCaps = Object.values(budgets).some((v) => (parseFloat(v) || 0) > 0);
+    if (budgetAmount > 0 && categories.length > 0 && !hasCaps) {
       autoFillBudgets(budgetAmount);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mainBudget, categories.length]);
 
   // Save budget to database
@@ -276,17 +278,12 @@ export default function EditBudgetPage() {
   const overBudget = totalAssigned > mainBudgetNum;
 
   const handleSave = async () => {
-    if (overBudget) {
-      Alert.alert("Over Budget", "Assigned budgets exceed the main budget.");
-      return;
-    }
-
     try {
       setSaving(true);
 
       const budgetAmount = parseFloat(mainBudget);
       if (isNaN(budgetAmount) || budgetAmount <= 0) {
-        Alert.alert("Invalid Amount", "Please enter a valid budget amount.");
+        Alert.alert("Invalid amount", "Please enter your monthly budget.");
         return;
       }
 
@@ -518,26 +515,33 @@ export default function EditBudgetPage() {
               styles.statusContainer,
               {
                 backgroundColor: overBudget
-                  ? colors.error[50]
-                  : colors.success[50],
+                  ? colors.warning[50]
+                  : colors.background.tertiary,
                 borderColor: overBudget
-                  ? colors.error[200]
-                  : colors.success[200],
+                  ? colors.warning[100]
+                  : colors.border.light,
               },
             ]}
           >
             <Text
               style={[
                 styles.statusText,
-                { color: overBudget ? colors.error[700] : colors.success[700] },
+                {
+                  color: overBudget
+                    ? colors.warning[700]
+                    : colors.text.secondary,
+                },
               ]}
             >
-              {overBudget
-                ? `⚠️ Over budget by £${(totalAssigned - mainBudgetNum).toFixed(2)}`
-                : `Assigned: £${totalAssigned.toFixed(2)} / £${mainBudgetNum.toFixed(2)}` +
-                  (remaining > 0
-                    ? ` (£${remaining.toFixed(2)} remaining)`
-                    : "")}
+              {totalAssigned === 0
+                ? "Category caps are optional — set any you like below."
+                : overBudget
+                ? `£${totalAssigned.toFixed(0)} in category caps · £${(
+                    totalAssigned - mainBudgetNum
+                  ).toFixed(0)} over your monthly budget`
+                : `£${totalAssigned.toFixed(0)} budgeted · £${remaining.toFixed(
+                    0
+                  )} unallocated`}
             </Text>
           </View>
         </View>
@@ -563,7 +567,7 @@ export default function EditBudgetPage() {
                 <Text
                   style={[styles.cardTitle, { color: colors.text.primary }]}
                 >
-                  Category Budgets
+                  Category caps
                 </Text>
                 <Text
                   style={[
@@ -571,9 +575,36 @@ export default function EditBudgetPage() {
                     { color: colors.text.secondary },
                   ]}
                 >
-                  Auto-filled based on your spending
+                  Optional — set your own or auto-fill
                 </Text>
               </View>
+              {mainBudgetNum > 0 && (
+                <TouchableOpacity
+                  onPress={() => autoFillBudgets(mainBudgetNum)}
+                  activeOpacity={0.7}
+                  style={[
+                    styles.autoFillButton,
+                    {
+                      backgroundColor: colors.primary.main + "1F",
+                      borderColor: colors.primary.main + "40",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="sparkles-outline"
+                    size={15}
+                    color={colors.primary.main}
+                  />
+                  <Text
+                    style={[
+                      styles.autoFillButtonText,
+                      { color: colors.primary.main },
+                    ]}
+                  >
+                    Auto-fill
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {categories.map((category) => (
@@ -752,6 +783,19 @@ const styles = StyleSheet.create({
   cardSubtitle: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  autoFillButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  autoFillButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   inputSection: {
     borderRadius: borderRadius.lg,
