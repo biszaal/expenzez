@@ -556,24 +556,31 @@ export default function AccountScreen() {
             <TouchableOpacity
               style={[
                 styles.quickActionCard,
-                { backgroundColor: colors.background.primary },
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.medium,
+                },
               ]}
               onPress={() => router.push("/transactions")}
             >
               <LinearGradient
                 colors={[
-                  colors.primary.main + "20",
-                  colors.primary.main + "10",
+                  colors.background.tertiary,
+                  colors.card.background,
                 ]}
                 style={[styles.quickActionGradient, shadows.sm]}
               >
                 <View
                   style={[
                     styles.quickActionIcon,
-                    { backgroundColor: colors.primary.main },
+                    { backgroundColor: colors.primary.main + "1F" },
                   ]}
                 >
-                  <Ionicons name="receipt-outline" size={20} color="white" />
+                  <Ionicons
+                    name="receipt-outline"
+                    size={20}
+                    color={colors.primary.main}
+                  />
                 </View>
                 <Text
                   style={[
@@ -597,26 +604,31 @@ export default function AccountScreen() {
             <TouchableOpacity
               style={[
                 styles.quickActionCard,
-                { backgroundColor: colors.background.primary },
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.medium,
+                },
               ]}
               onPress={openExport}
             >
               <LinearGradient
                 colors={[
-                  colors.success.main + "20",
-                  colors.success.main + "10",
+                  colors.background.tertiary,
+                  colors.card.background,
                 ]}
                 style={[styles.quickActionGradient, shadows.sm]}
               >
                 <View
                   style={[
                     styles.quickActionIcon,
-                    {
-                      backgroundColor: colors.success.main,
-                    },
+                    { backgroundColor: colors.primary.main + "1F" },
                   ]}
                 >
-                  <Ionicons name="download-outline" size={20} color="white" />
+                  <Ionicons
+                    name="download-outline"
+                    size={20}
+                    color={colors.primary.main}
+                  />
                 </View>
                 <Text
                   style={[
@@ -640,29 +652,30 @@ export default function AccountScreen() {
             <TouchableOpacity
               style={[
                 styles.quickActionCard,
-                { backgroundColor: colors.background.primary },
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.medium,
+                },
               ]}
               onPress={openSupport}
             >
               <LinearGradient
                 colors={[
-                  colors.warning.main + "20",
-                  colors.warning.main + "10",
+                  colors.background.tertiary,
+                  colors.card.background,
                 ]}
                 style={[styles.quickActionGradient, shadows.sm]}
               >
                 <View
                   style={[
                     styles.quickActionIcon,
-                    {
-                      backgroundColor: colors.warning.main,
-                    },
+                    { backgroundColor: colors.primary.main + "1F" },
                   ]}
                 >
                   <Ionicons
                     name="help-circle-outline"
                     size={20}
-                    color="white"
+                    color={colors.primary.main}
                   />
                 </View>
                 <Text
@@ -687,26 +700,31 @@ export default function AccountScreen() {
             <TouchableOpacity
               style={[
                 styles.quickActionCard,
-                { backgroundColor: colors.background.primary },
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.medium,
+                },
               ]}
               onPress={() => router.push("/settings")}
             >
               <LinearGradient
                 colors={[
-                  colors.secondary.main + "20",
-                  colors.secondary.main + "10",
+                  colors.background.tertiary,
+                  colors.card.background,
                 ]}
                 style={[styles.quickActionGradient, shadows.sm]}
               >
                 <View
                   style={[
                     styles.quickActionIcon,
-                    {
-                      backgroundColor: colors.secondary.main,
-                    },
+                    { backgroundColor: colors.primary.main + "1F" },
                   ]}
                 >
-                  <Ionicons name="settings-outline" size={20} color="white" />
+                  <Ionicons
+                    name="settings-outline"
+                    size={20}
+                    color={colors.primary.main}
+                  />
                 </View>
                 <Text
                   style={[
@@ -1592,14 +1610,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginHorizontal: 2,
     shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
     position: "relative",
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
+    borderWidth: StyleSheet.hairlineWidth,
   },
   quickActionGradient: {
     borderRadius: 20,
