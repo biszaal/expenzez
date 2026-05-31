@@ -511,7 +511,10 @@ export default function AccountScreen() {
           <TouchableOpacity
             style={[
               styles.statCard,
-              { backgroundColor: colors.background.primary },
+              {
+                backgroundColor: colors.background.primary,
+                borderColor: colors.border.medium,
+              },
             ]}
             onPress={openSavingsGoals}
             activeOpacity={0.8}
@@ -705,7 +708,7 @@ export default function AccountScreen() {
                   borderColor: colors.border.medium,
                 },
               ]}
-              onPress={() => router.push("/settings")}
+              onPress={() => router.push("/security")}
             >
               <LinearGradient
                 colors={[
@@ -721,7 +724,7 @@ export default function AccountScreen() {
                   ]}
                 >
                   <Ionicons
-                    name="settings-outline"
+                    name="shield-checkmark-outline"
                     size={20}
                     color={colors.primary.main}
                   />
@@ -732,7 +735,7 @@ export default function AccountScreen() {
                     { color: colors.text.primary },
                   ]}
                 >
-                  Settings
+                  Security
                 </Text>
                 <Text
                   style={[
@@ -740,7 +743,7 @@ export default function AccountScreen() {
                     { color: colors.text.secondary },
                   ]}
                 >
-                  Preferences & more
+                  PIN, biometrics & devices
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -1175,15 +1178,14 @@ const styles = StyleSheet.create({
   profileCard: {
     borderRadius: 20,
     padding: 20,
-    marginHorizontal: 4,
     shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
     position: "relative",
     overflow: "hidden",
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(0, 0, 0, 0.05)",
   },
   profileGradient: {
@@ -1297,21 +1299,18 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     borderRadius: 20,
-    padding: 16,
-    marginHorizontal: 4,
     shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
     position: "relative",
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
+    borderWidth: StyleSheet.hairlineWidth,
   },
   statGradient: {
     borderRadius: 20,
-    paddingVertical: 16,
+    paddingVertical: 22,
     paddingHorizontal: 16,
     alignItems: "center",
   },
@@ -1355,15 +1354,14 @@ const styles = StyleSheet.create({
   },
   menuCard: {
     borderRadius: 20,
-    marginHorizontal: 4,
     shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
     position: "relative",
     overflow: "hidden",
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(0, 0, 0, 0.05)",
   },
   menuItem: {
@@ -1602,13 +1600,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+    rowGap: 12,
     marginBottom: 20,
   },
   quickActionCard: {
-    width: "47%",
+    width: "48.5%",
     minHeight: 100,
     borderRadius: 20,
-    marginHorizontal: 2,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
