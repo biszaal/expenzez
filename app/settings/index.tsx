@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import Constants from "expo-constants";
 import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
@@ -18,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme, ColorScheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../auth/AuthContext";
 import { spacing, borderRadius, shadows, fontFamily } from "../../constants/theme";
+import { APP_VERSION } from "../../constants/version";
 import { useSubscription } from "../../hooks/useSubscription";
 import { useRevenueCat } from "../../contexts/RevenueCatContext";
 import { analyticsService } from "../../services/analytics";
@@ -1031,7 +1031,7 @@ export default function SettingsPage() {
                 <Text
                   style={[styles.aboutValue, { color: colors.text.primary }]}
                 >
-                  1.0.0
+                  {APP_VERSION}
                 </Text>
               </View>
               <View

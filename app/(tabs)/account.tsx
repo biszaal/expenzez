@@ -25,6 +25,7 @@ import {
   typography,
   fontFamily,
 } from "../../constants/theme";
+import { APP_VERSION } from "../../constants/version";
 import {
   getProfile,
   getCreditScore,
@@ -862,7 +863,7 @@ export default function AccountScreen() {
               { color: colors.text.tertiary, fontFamily: fontFamily.medium, letterSpacing: 0.5 },
             ]}
           >
-            EXPENZEZ · v1.5.0
+            EXPENZEZ · v{APP_VERSION}
           </Text>
         </View>
       </ScrollView>

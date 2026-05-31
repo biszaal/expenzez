@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated, StatusBar, Image } from "react-native
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../contexts/ThemeContext";
 import { fontFamily } from "../constants/theme";
+import { APP_VERSION } from "../constants/version";
 
 // v1.6 redesign — branded launch screen with cobalt radial glow,
 // the Expenzez Spark mark, and animated dots.
@@ -90,7 +91,6 @@ export default function SplashScreen() {
           ]}
         >
           expenzez
-          <Text style={{ color: colors.lime[500] }}>.</Text>
         </Text>
         <Text
           style={[
@@ -131,7 +131,7 @@ export default function SplashScreen() {
             { color: colors.text.tertiary, fontFamily: fontFamily.medium },
           ]}
         >
-          v1.5 · Made in London
+          v{APP_VERSION} · Made in London
         </Text>
       </View>
     </View>
