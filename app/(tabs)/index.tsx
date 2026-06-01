@@ -477,6 +477,49 @@ export default function HomeScreen() {
             </View>
           </View>
 
+          {userBudget > 0 && budgetUsed >= 0.7 && (
+            <View
+              style={[
+                styles.budgetAlert,
+                {
+                  backgroundColor:
+                    monthAggregates.spent > userBudget
+                      ? colors.negBg
+                      : "rgba(245,179,66,0.14)",
+                },
+              ]}
+            >
+              <Ionicons
+                name={
+                  monthAggregates.spent > userBudget
+                    ? "alert-circle"
+                    : "warning-outline"
+                }
+                size={16}
+                color={
+                  monthAggregates.spent > userBudget
+                    ? colors.negFg
+                    : colors.amber[500]
+                }
+              />
+              <Text
+                style={[
+                  styles.budgetAlertText,
+                  {
+                    color:
+                      monthAggregates.spent > userBudget
+                        ? colors.negFg
+                        : colors.amber[500],
+                  },
+                ]}
+              >
+                {monthAggregates.spent > userBudget
+                  ? `£${formatGBP(monthAggregates.spent - userBudget).whole} over your monthly budget`
+                  : `£${formatGBP(userBudget - monthAggregates.spent).whole} left — you're close to your limit`}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.ringRow}>
             <BudgetRing percent={budgetUsed} colors={colors} isDark={isDark} />
             <View style={styles.ringStats}>
@@ -1284,6 +1327,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: fontFamily.semibold,
     letterSpacing: 0.5,
+  },
+  budgetAlert: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  budgetAlertText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: fontFamily.medium,
   },
   ringRow: {
     flexDirection: "row",

@@ -25,7 +25,11 @@ import {
   CreateGoalRequest,
 } from "../services/api/goalsAPI";
 import { GoalsOverview, GoalCard, CreateGoalForm } from "../components/goals";
-import { createSavingsGoal, updateSavingsGoal } from "../services/dataSource";
+import {
+  createSavingsGoal,
+  updateSavingsGoal,
+  deleteSavingsGoal,
+} from "../services/dataSource";
 import { SPACING } from "../constants/Colors";
 import { fontFamily } from "../constants/theme";
 
@@ -48,6 +52,7 @@ export default function GoalsScreen() {
   const [contributeGoal, setContributeGoal] = useState<FinancialGoal | null>(null);
   const [contributeAmount, setContributeAmount] = useState("");
   const [contributing, setContributing] = useState(false);
+  const [detailGoal, setDetailGoal] = useState<FinancialGoal | null>(null);
 
   // Load goals data
   const loadGoalsData = useCallback(
@@ -137,10 +142,33 @@ export default function GoalsScreen() {
     goalsData?.completedGoals.find((g) => g.goalId === goalId) ||
     null;
 
-  // Tapping a goal opens the contribute sheet (the most common action).
+  // Tapping a goal opens its detail sheet.
   const handleGoalPress = (goal: FinancialGoal) => {
-    setContributeAmount("");
-    setContributeGoal(goal);
+    setDetailGoal(goal);
+  };
+
+  const handleDeleteGoal = (goal: FinancialGoal) => {
+    Alert.alert(
+      "Delete goal",
+      `Delete "${goal.title}"? This can't be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteSavingsGoal(goal.goalId);
+              setDetailGoal(null);
+              await loadGoalsData();
+            } catch (error) {
+              console.error("❌ [Goals] Error deleting goal:", error);
+              Alert.alert("Error", "Could not delete your goal.");
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Add money to a goal: bump currentAmount via the real update endpoint.
@@ -557,6 +585,153 @@ export default function GoalsScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Goal detail sheet */}
+      <Modal
+        visible={!!detailGoal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setDetailGoal(null)}
+      >
+        <View style={styles.modalOverlay}>
+          {detailGoal &&
+            (() => {
+              const g = detailGoal;
+              const progress = goalsAPI.calculateGoalProgress(g);
+              const pct = Math.min(progress.progressPercentage, 100);
+              return (
+                <View style={styles.detailCard}>
+                  <View style={styles.detailHeader}>
+                    <Text style={styles.detailTitle} numberOfLines={1}>
+                      {g.title}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setDetailGoal(null)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Ionicons
+                        name="close"
+                        size={22}
+                        color={colors.text.secondary}
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.detailAmount}>
+                    {goalsAPI.formatCurrency(g.currentAmount)}
+                    <Text style={styles.detailAmountTotal}>
+                      {"  of "}
+                      {goalsAPI.formatCurrency(g.targetAmount)}
+                    </Text>
+                  </Text>
+
+                  <View style={styles.detailProgressBar}>
+                    <View
+                      style={[
+                        styles.detailProgressFill,
+                        {
+                          width: `${pct}%`,
+                          backgroundColor: g.isActive
+                            ? colors.primary.main
+                            : colors.text.tertiary,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <View style={styles.detailMetaRow}>
+                    <Text style={styles.detailMeta}>{pct}% saved</Text>
+                    <Text style={styles.detailMeta}>
+                      {goalsAPI.formatCurrency(progress.amountRemaining)} to go
+                    </Text>
+                  </View>
+
+                  <View style={styles.detailInfoRow}>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={16}
+                      color={colors.text.tertiary}
+                    />
+                    <Text style={styles.detailInfoText}>
+                      {progress.daysRemaining > 0
+                        ? `${goalsAPI.formatTimeRemaining(progress.daysRemaining)} left`
+                        : "Past target date"}
+                    </Text>
+                    {!g.isActive && (
+                      <View style={styles.pausedPill}>
+                        <Text style={styles.pausedPillText}>Paused</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.detailPrimaryBtn}
+                    activeOpacity={0.85}
+                    onPress={() => {
+                      setDetailGoal(null);
+                      setContributeAmount("");
+                      setContributeGoal(g);
+                    }}
+                  >
+                    <Ionicons name="add" size={20} color="#fff" />
+                    <Text style={styles.detailPrimaryText}>Add money</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.detailActions}>
+                    <TouchableOpacity
+                      style={styles.detailActionBtn}
+                      onPress={() => {
+                        setDetailGoal(null);
+                        setEditingGoal(g);
+                        setShowCreateForm(true);
+                      }}
+                    >
+                      <Ionicons
+                        name="create-outline"
+                        size={18}
+                        color={colors.text.primary}
+                      />
+                      <Text style={styles.detailActionText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.detailActionBtn}
+                      onPress={async () => {
+                        setDetailGoal(null);
+                        await togglePause(g);
+                      }}
+                    >
+                      <Ionicons
+                        name={g.isActive ? "pause-outline" : "play-outline"}
+                        size={18}
+                        color={colors.text.primary}
+                      />
+                      <Text style={styles.detailActionText}>
+                        {g.isActive ? "Pause" : "Resume"}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.detailActionBtn}
+                      onPress={() => handleDeleteGoal(g)}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={18}
+                        color={colors.error.main}
+                      />
+                      <Text
+                        style={[
+                          styles.detailActionText,
+                          { color: colors.error.main },
+                        ]}
+                      >
+                        Delete
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })()}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -828,5 +1003,120 @@ const createStyles = (colors: any) =>
       fontSize: 16,
       fontWeight: "700",
       color: "#fff",
+    },
+    detailCard: {
+      backgroundColor: colors.background.primary,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: SPACING.lg,
+      paddingBottom: SPACING.xl,
+      borderTopWidth: 1,
+      borderColor: colors.border.medium,
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+    },
+    detailHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: SPACING.md,
+    },
+    detailTitle: {
+      flex: 1,
+      fontSize: 20,
+      fontWeight: "700",
+      color: colors.text.primary,
+      marginRight: SPACING.md,
+    },
+    detailAmount: {
+      fontSize: 28,
+      fontFamily: fontFamily.monoSemibold,
+      color: colors.text.primary,
+    },
+    detailAmountTotal: {
+      fontSize: 15,
+      fontFamily: fontFamily.mono,
+      color: colors.text.tertiary,
+    },
+    detailProgressBar: {
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.border.light,
+      overflow: "hidden",
+      marginTop: SPACING.md,
+    },
+    detailProgressFill: {
+      height: "100%",
+      borderRadius: 5,
+    },
+    detailMetaRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: SPACING.sm,
+    },
+    detailMeta: {
+      fontSize: 13,
+      color: colors.text.secondary,
+      fontFamily: fontFamily.mono,
+    },
+    detailInfoRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: SPACING.md,
+    },
+    detailInfoText: {
+      fontSize: 14,
+      color: colors.text.secondary,
+    },
+    pausedPill: {
+      marginLeft: "auto",
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      borderRadius: 999,
+      backgroundColor: colors.background.secondary,
+    },
+    pausedPillText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.text.secondary,
+      letterSpacing: 0.5,
+    },
+    detailPrimaryBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: colors.primary.main,
+      borderRadius: 16,
+      paddingVertical: 16,
+      marginTop: SPACING.lg,
+    },
+    detailPrimaryText: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: "#fff",
+    },
+    detailActions: {
+      flexDirection: "row",
+      gap: SPACING.sm,
+      marginTop: SPACING.md,
+    },
+    detailActionBtn: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      paddingVertical: 12,
+      borderRadius: 14,
+      backgroundColor: colors.background.secondary,
+    },
+    detailActionText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.text.primary,
     },
   });

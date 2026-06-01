@@ -31,11 +31,7 @@ import {
   getCreditScore,
   getGoals,
   getSavingsGoals,
-  createSavingsGoal,
-  updateSavingsGoal,
-  deleteSavingsGoal,
 } from "../../services/dataSource";
-import SavingsGoals, { SavingsGoal } from "../../components/SavingsGoals";
 import SupportSystem from "../../components/SupportSystem";
 import ExportSystem from "../../components/ExportSystem";
 
@@ -49,8 +45,7 @@ export default function AccountScreen() {
   const [profile, setProfile] = useState<any>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
-  const [showSavingsGoals, setShowSavingsGoals] = useState(false);
+  const [savingsGoals, setSavingsGoals] = useState<any[]>([]);
   const [showSupport, setShowSupport] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -125,6 +120,7 @@ export default function AccountScreen() {
       // Fetch new data
       console.log("🔄 [Account] User detected, fetching data for:", user.email);
       fetchUserData();
+      fetchSavingsGoals();
     }
   }, [isLoggedIn, user?.id, user?.email, user?.username, showError]);
 
@@ -230,45 +226,9 @@ export default function AccountScreen() {
     }
   };
 
-  // Handle savings goals actions
-  const handleCreateGoal = async (
-    goalData: Omit<SavingsGoal, "id" | "createdAt" | "updatedAt">
-  ) => {
-    try {
-      await createSavingsGoal(goalData);
-      await fetchSavingsGoals(); // Refresh the list
-    } catch (error) {
-      throw error; // Let the component handle the error
-    }
-  };
-
-  const handleUpdateGoal = async (
-    goalId: string,
-    updates: Partial<SavingsGoal>
-  ) => {
-    try {
-      await updateSavingsGoal(goalId, updates);
-      await fetchSavingsGoals(); // Refresh the list
-    } catch (error) {
-      throw error; // Let the component handle the error
-    }
-  };
-
-  const handleDeleteGoal = async (goalId: string) => {
-    try {
-      await deleteSavingsGoal(goalId);
-      await fetchSavingsGoals(); // Refresh the list
-    } catch (error) {
-      throw error; // Let the component handle the error
-    }
-  };
-
-  // Open savings goals modal
+  // Open the unified Goals screen
   const openSavingsGoals = () => {
-    if (savingsGoals.length === 0 && !savingsGoalsLoading) {
-      fetchSavingsGoals();
-    }
-    setShowSavingsGoals(true);
+    router.push("/goals");
   };
 
   const profileOptions = [
@@ -888,42 +848,6 @@ export default function AccountScreen() {
           </Text>
         </View>
       </ScrollView>
-
-      {/* Savings Goals Modal */}
-      <Modal
-        visible={showSavingsGoals}
-        animationType="slide"
-        presentationStyle="formSheet"
-        onRequestClose={() => setShowSavingsGoals(false)}
-      >
-        <View
-          style={[
-            styles.modalContainer,
-            { backgroundColor: colors.background.secondary },
-          ]}
-        >
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowSavingsGoals(false)}>
-              <Text
-                style={[styles.modalClose, { color: colors.text.secondary }]}
-              >
-                Close
-              </Text>
-            </TouchableOpacity>
-            <Text style={[styles.modalTitle, { color: colors.text.primary }]}>
-              Savings Goals
-            </Text>
-            <View style={{ width: 50 }} />
-          </View>
-          <SavingsGoals
-            goals={savingsGoals}
-            onGoalCreate={handleCreateGoal}
-            onGoalUpdate={handleUpdateGoal}
-            onGoalDelete={handleDeleteGoal}
-            loading={savingsGoalsLoading}
-          />
-        </View>
-      </Modal>
 
       {/* Support System Modal */}
       <SupportSystem
