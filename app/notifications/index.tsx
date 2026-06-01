@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ScrollView,
   RefreshControl,
@@ -35,6 +35,14 @@ export default function NotificationsScreen() {
   } = useNotifications();
 
   const [refreshing, setRefreshing] = useState(false);
+
+  // Always load the latest notifications when the screen opens. The list used
+  // to rely only on a one-time context init (which can run before data is
+  // ready), so opening it often showed an empty list despite stored history.
+  useEffect(() => {
+    refreshNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
