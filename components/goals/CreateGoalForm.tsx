@@ -9,6 +9,7 @@ interface CreateGoalFormProps {
   onSubmit: (goalData: CreateGoalRequest) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
+  initialGoal?: FinancialGoal; // when set, the form edits this goal
 }
 
 const GOAL_TYPES: { type: FinancialGoal['type']; title: string; description: string }[] = [
@@ -53,24 +54,31 @@ const PRIORITIES: { priority: FinancialGoal['priority']; title: string }[] = [
 export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
   onSubmit,
   onCancel,
-  isLoading = false
+  isLoading = false,
+  initialGoal
 }) => {
   const { colors } = useTheme();
+  const isEditing = !!initialGoal;
 
-  // Form state
-  const [selectedType, setSelectedType] = useState<FinancialGoal['type']>('emergency_fund');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [targetAmount, setTargetAmount] = useState('');
-  const [targetDate, setTargetDate] = useState('');
-  const [priority, setPriority] = useState<FinancialGoal['priority']>('medium');
-  const [category, setCategory] = useState('');
+  // Form state (pre-filled when editing an existing goal)
+  const [selectedType, setSelectedType] = useState<FinancialGoal['type']>(initialGoal?.type ?? 'emergency_fund');
+  const [title, setTitle] = useState(initialGoal?.title ?? '');
+  const [description, setDescription] = useState(initialGoal?.description ?? '');
+  const [targetAmount, setTargetAmount] = useState(
+    initialGoal ? String(initialGoal.targetAmount) : ''
+  );
+  const [targetDate, setTargetDate] = useState(
+    initialGoal?.targetDate ? initialGoal.targetDate.split('T')[0] : ''
+  );
+  const [priority, setPriority] = useState<FinancialGoal['priority']>(initialGoal?.priority ?? 'medium');
+  const [category, setCategory] = useState(initialGoal?.category ?? '');
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const [autoSaveAmount, setAutoSaveAmount] = useState('');
   const [autoSaveFrequency, setAutoSaveFrequency] = useState<'weekly' | 'monthly'>('monthly');
 
-  // Auto-populate title and description based on type
+  // Auto-populate title and description based on type (only when creating)
   React.useEffect(() => {
+    if (isEditing) return;
     const goalType = GOAL_TYPES.find(t => t.type === selectedType);
     if (goalType && !title) {
       setTitle(goalType.title);
@@ -127,7 +135,7 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Create New Goal</Text>
+        <Text style={styles.headerTitle}>{isEditing ? 'Edit Goal' : 'Create New Goal'}</Text>
         <TouchableOpacity onPress={onCancel} style={styles.cancelButton}>
           <Ionicons name="close" size={24} color={colors.text.secondary} />
         </TouchableOpacity>
@@ -307,7 +315,13 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
           disabled={isLoading}
         >
           <Text style={styles.submitButtonText}>
-            {isLoading ? 'Creating...' : 'Create Goal'}
+            {isLoading
+              ? isEditing
+                ? 'Saving...'
+                : 'Creating...'
+              : isEditing
+              ? 'Save Goal'
+              : 'Create Goal'}
           </Text>
         </TouchableOpacity>
       </View>

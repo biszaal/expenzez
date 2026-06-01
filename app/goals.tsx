@@ -7,6 +7,10 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,7 +25,9 @@ import {
   CreateGoalRequest,
 } from "../services/api/goalsAPI";
 import { GoalsOverview, GoalCard, CreateGoalForm } from "../components/goals";
+import { createSavingsGoal, updateSavingsGoal } from "../services/dataSource";
 import { SPACING } from "../constants/Colors";
+import { fontFamily } from "../constants/theme";
 
 export default function GoalsScreen() {
   const { colors } = useTheme();
@@ -38,6 +44,10 @@ export default function GoalsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null);
+  const [contributeGoal, setContributeGoal] = useState<FinancialGoal | null>(null);
+  const [contributeAmount, setContributeAmount] = useState("");
+  const [contributing, setContributing] = useState(false);
 
   // Load goals data
   const loadGoalsData = useCallback(
@@ -84,86 +94,123 @@ export default function GoalsScreen() {
     loadGoalsData();
   }, [loadGoalsData]);
 
-  // Handle create goal
-  const handleCreateGoal = async (goalData: CreateGoalRequest) => {
-    const userId = user?.sub || user?.id || user?.username;
-    if (!userId) return;
-
+  // Create a new goal, or save edits to an existing one — both persist for real.
+  const handleSaveGoal = async (goalData: CreateGoalRequest) => {
     try {
       setIsCreating(true);
-      console.log("🎯 [Goals] Creating new goal:", goalData.title);
 
-      await goalsAPI.createGoal(userId, goalData);
+      if (editingGoal) {
+        await updateSavingsGoal(editingGoal.goalId, {
+          title: goalData.title,
+          description: goalData.description,
+          targetAmount: goalData.targetAmount,
+          targetDate: goalData.targetDate,
+          category: goalData.category,
+        });
+      } else {
+        await createSavingsGoal({
+          title: goalData.title,
+          description: goalData.description,
+          targetAmount: goalData.targetAmount,
+          currentAmount: 0,
+          targetDate: goalData.targetDate,
+          category: goalData.category,
+        });
+      }
 
-      // Refresh goals data
       await loadGoalsData();
       setShowCreateForm(false);
-
-      Alert.alert(
-        "Goal Created!",
-        `Your goal "${goalData.title}" has been created successfully.`,
-        [{ text: "OK" }]
-      );
+      setEditingGoal(null);
     } catch (error: any) {
-      console.error("❌ [Goals] Error creating goal:", error);
-      Alert.alert("Error", "Failed to create goal. Please try again.", [
-        { text: "OK" },
-      ]);
+      console.error("❌ [Goals] Error saving goal:", error);
+      Alert.alert(
+        "Error",
+        `Could not ${editingGoal ? "update" : "create"} your goal. Please try again.`
+      );
     } finally {
       setIsCreating(false);
     }
   };
 
-  // Handle goal press
+  const findGoal = (goalId: string) =>
+    goalsData?.activeGoals.find((g) => g.goalId === goalId) ||
+    goalsData?.completedGoals.find((g) => g.goalId === goalId) ||
+    null;
+
+  // Tapping a goal opens the contribute sheet (the most common action).
   const handleGoalPress = (goal: FinancialGoal) => {
-    console.log("🎯 [Goals] Goal pressed:", goal.title);
-    // TODO: Navigate to goal details screen
-    Alert.alert(
-      goal.title,
-      `Progress: ${goalsAPI.formatCurrency(goal.currentAmount)} of ${goalsAPI.formatCurrency(goal.targetAmount)}`,
-      [{ text: "OK" }]
-    );
+    setContributeAmount("");
+    setContributeGoal(goal);
   };
 
-  // Handle quick actions
+  // Add money to a goal: bump currentAmount via the real update endpoint.
+  const handleContribute = async () => {
+    if (!contributeGoal) return;
+    const amount = parseFloat(contributeAmount);
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert("Enter an amount", "Please enter how much to add.");
+      return;
+    }
+    try {
+      setContributing(true);
+      await updateSavingsGoal(contributeGoal.goalId, {
+        currentAmount: contributeGoal.currentAmount + amount,
+      });
+      setContributeGoal(null);
+      setContributeAmount("");
+      await loadGoalsData();
+    } catch (error) {
+      console.error("❌ [Goals] Error adding contribution:", error);
+      Alert.alert("Error", "Could not add to your goal. Please try again.");
+    } finally {
+      setContributing(false);
+    }
+  };
+
+  const togglePause = async (goal: FinancialGoal) => {
+    try {
+      await updateSavingsGoal(goal.goalId, { isActive: !goal.isActive });
+      await loadGoalsData();
+    } catch (error) {
+      console.error("❌ [Goals] Error pausing goal:", error);
+      Alert.alert("Error", "Could not update your goal. Please try again.");
+    }
+  };
+
+  // Quick actions from a goal card — all real now.
   const handleQuickAction = (
     goalId: string,
     action: "contribute" | "edit" | "pause"
   ) => {
-    console.log("🎯 [Goals] Quick action:", action, "for goal:", goalId);
+    const goal = findGoal(goalId);
+    if (!goal) return;
 
     switch (action) {
       case "contribute":
-        Alert.alert(
-          "Add Contribution",
-          "This feature will allow you to add money to your goal.",
-          [{ text: "OK" }]
-        );
+        setContributeAmount("");
+        setContributeGoal(goal);
         break;
       case "edit":
-        Alert.alert(
-          "Edit Goal",
-          "This feature will allow you to modify your goal.",
-          [{ text: "OK" }]
-        );
+        setEditingGoal(goal);
+        setShowCreateForm(true);
         break;
       case "pause":
-        Alert.alert(
-          "Pause Goal",
-          "This feature will allow you to pause your goal.",
-          [{ text: "OK" }]
-        );
+        togglePause(goal);
         break;
     }
   };
 
-  // Show create form
+  // Show create / edit form
   if (showCreateForm) {
     return (
       <CreateGoalForm
-        onSubmit={handleCreateGoal}
-        onCancel={() => setShowCreateForm(false)}
+        onSubmit={handleSaveGoal}
+        onCancel={() => {
+          setShowCreateForm(false);
+          setEditingGoal(null);
+        }}
         isLoading={isCreating}
+        initialGoal={editingGoal ?? undefined}
       />
     );
   }
@@ -228,7 +275,10 @@ export default function GoalsScreen() {
         <Text style={styles.headerTitle}>Financial Goals</Text>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => setShowCreateForm(true)}
+          onPress={() => {
+            setEditingGoal(null);
+            setShowCreateForm(true);
+          }}
         >
           <Ionicons name="add" size={24} color={colors.primary.main} />
         </TouchableOpacity>
@@ -288,7 +338,10 @@ export default function GoalsScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.createFirstGoalButton}
-                onPress={() => setShowCreateForm(true)}
+                onPress={() => {
+            setEditingGoal(null);
+            setShowCreateForm(true);
+          }}
               >
                 <Ionicons
                   name="add"
@@ -427,7 +480,7 @@ export default function GoalsScreen() {
                         { backgroundColor: typeColor },
                       ]}
                       onPress={() => {
-                        // Pre-fill create form with recommendation data
+                        setEditingGoal(null);
                         setShowCreateForm(true);
                       }}
                     >
@@ -445,6 +498,65 @@ export default function GoalsScreen() {
         {/* Bottom spacing */}
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* Contribute sheet */}
+      <Modal
+        visible={!!contributeGoal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setContributeGoal(null)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
+              Add to {contributeGoal?.title}
+            </Text>
+            {contributeGoal && (
+              <Text style={styles.modalSub}>
+                {goalsAPI.formatCurrency(contributeGoal.currentAmount)} of{" "}
+                {goalsAPI.formatCurrency(contributeGoal.targetAmount)}
+              </Text>
+            )}
+
+            <View style={styles.amountInputRow}>
+              <Text style={styles.currencyPrefix}>£</Text>
+              <TextInput
+                style={styles.amountInput}
+                value={contributeAmount}
+                onChangeText={(t) =>
+                  setContributeAmount(t.replace(/[^0-9.]/g, ""))
+                }
+                placeholder="0"
+                placeholderTextColor={colors.text.tertiary}
+                keyboardType="decimal-pad"
+                autoFocus
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => setContributeGoal(null)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalConfirm}
+                onPress={handleContribute}
+                disabled={contributing}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.modalConfirmText}>
+                  {contributing ? "Adding..." : "Add"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -638,5 +750,83 @@ const createStyles = (colors: any) =>
     retryButtonText: {
       fontSize: 16,
       fontWeight: "600",
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      justifyContent: "center",
+      paddingHorizontal: SPACING.lg,
+    },
+    modalCard: {
+      backgroundColor: colors.background.primary,
+      borderRadius: 20,
+      padding: SPACING.lg,
+      borderWidth: 1,
+      borderColor: colors.border.medium,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: colors.text.primary,
+    },
+    modalSub: {
+      fontSize: 14,
+      color: colors.text.secondary,
+      marginTop: 4,
+      fontFamily: fontFamily.mono,
+    },
+    amountInputRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: SPACING.lg,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: 4,
+      borderRadius: 14,
+      backgroundColor: colors.background.secondary,
+      borderWidth: 1,
+      borderColor: colors.border.medium,
+    },
+    currencyPrefix: {
+      fontSize: 24,
+      fontWeight: "700",
+      color: colors.text.secondary,
+      marginRight: 6,
+    },
+    amountInput: {
+      flex: 1,
+      fontSize: 28,
+      fontWeight: "700",
+      color: colors.text.primary,
+      paddingVertical: SPACING.md,
+      fontFamily: fontFamily.monoSemibold,
+    },
+    modalActions: {
+      flexDirection: "row",
+      gap: SPACING.md,
+      marginTop: SPACING.lg,
+    },
+    modalCancel: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 14,
+      alignItems: "center",
+      backgroundColor: colors.background.secondary,
+    },
+    modalCancelText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.text.secondary,
+    },
+    modalConfirm: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 14,
+      alignItems: "center",
+      backgroundColor: colors.primary.main,
+    },
+    modalConfirmText: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: "#fff",
     },
   });
