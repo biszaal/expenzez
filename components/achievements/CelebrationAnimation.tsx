@@ -170,7 +170,7 @@ export const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
             ]}
           >
             <Text style={styles.celebrationTitle}>
-              🎉 Achievement Unlocked! 🎉
+              Achievement unlocked
             </Text>
 
             <Text style={styles.achievementTitle}>

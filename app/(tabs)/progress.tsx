@@ -9,6 +9,7 @@ import { TabLoadingScreen } from '../../components/ui';
 import { achievementAPI, AchievementResponse } from '../../services/api/achievementAPI';
 import { AchievementCalculator } from '../../services/achievementCalculator';
 import { XPService, UserXPData } from '../../services/xpService';
+import { StreakService } from '../../services/streakService';
 import { useXP } from '../../hooks/useXP';
 import {
   AchievementCard,
@@ -35,6 +36,7 @@ export default function ProgressScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationAchievement, setCelebrationAchievement] = useState(null);
+  const [dayStreak, setDayStreak] = useState(0);
 
   // Load achievement data
   const loadAchievementData = useCallback(async (isRefresh = false) => {
@@ -47,6 +49,11 @@ export default function ProgressScreen() {
         setLoading(true);
       }
       setError(null);
+
+      // Load the active-day streak (recorded on app open) for the streak card.
+      StreakService.getStreak()
+        .then((s) => setDayStreak(s.currentStreak))
+        .catch(() => {});
 
       // Use user ID if available, otherwise use fallback for logged in users
       let userId = user?.id;
@@ -307,12 +314,9 @@ export default function ProgressScreen() {
               <View style={styles.statIconContainer}>
                 <Ionicons name="flame" size={24} color="#FF6B6B" />
               </View>
-              <View style={styles.statStreakIndicator}>
-                <Text style={styles.statStreakText}>🔥</Text>
-              </View>
             </View>
             <Text style={styles.statValue}>
-              {achievementData?.streaks.currentSavingsStreak || 0}
+              {dayStreak}
             </Text>
             <Text style={styles.statLabel}>Day Streak</Text>
             <View style={styles.statProgress}>
@@ -504,21 +508,21 @@ export default function ProgressScreen() {
             </View>
           </View>
 
-          {/* Level Up Benefits */}
+          {/* What levels mean — honest recognition, not prizes */}
           <View style={styles.levelBenefitsContainer}>
-            <Text style={styles.levelBenefitsTitle}>Level Up Benefits</Text>
+            <Text style={styles.levelBenefitsTitle}>How levels work</Text>
             <View style={styles.benefitsList}>
               <View style={styles.benefitItem}>
-                <Ionicons name="gift" size={16} color={colors.accent.main} />
-                <Text style={styles.benefitText}>Unlock new achievement badges</Text>
+                <Ionicons name="ribbon-outline" size={16} color={colors.accent.main} />
+                <Text style={styles.benefitText}>Recognition for building good money habits</Text>
               </View>
               <View style={styles.benefitItem}>
-                <Ionicons name="analytics" size={16} color={colors.accent.main} />
-                <Text style={styles.benefitText}>Access advanced insights</Text>
+                <Ionicons name="medal-outline" size={16} color={colors.accent.main} />
+                <Text style={styles.benefitText}>Earn achievement badges as you progress</Text>
               </View>
               <View style={styles.benefitItem}>
-                <Ionicons name="star" size={16} color={colors.accent.main} />
-                <Text style={styles.benefitText}>Earn exclusive rewards</Text>
+                <Ionicons name="flame-outline" size={16} color={colors.accent.main} />
+                <Text style={styles.benefitText}>Keep your daily streak alive</Text>
               </View>
             </View>
           </View>

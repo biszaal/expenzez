@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useSecurity } from "../../contexts/SecurityContext";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { StreakService } from "../../services/streakService";
 import { useAuth } from "../auth/AuthContext";
 import { useRevenueCat } from "../../contexts/RevenueCatContext";
 import { budgetAPI } from "../../services/api";
@@ -124,6 +125,13 @@ export default function HomeScreen() {
 
   const [userBudget, setUserBudget] = useState<number>(2000);
   const [bills, setBills] = useState<SavedBill[]>([]);
+  const [dayStreak, setDayStreak] = useState(0);
+
+  useEffect(() => {
+    StreakService.getStreak()
+      .then((s) => setDayStreak(s.currentStreak))
+      .catch(() => {});
+  }, []);
 
   // Aggregate the current calendar month's transactions for the hero + cards.
   const monthAggregates = useMemo(() => {
@@ -305,6 +313,23 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={styles.headerActions}>
+            {dayStreak > 0 && (
+              <Pressable
+                onPress={() => router.push("/(tabs)/progress" as any)}
+                style={[
+                  styles.streakChip,
+                  {
+                    backgroundColor: colors.card.background,
+                    borderColor: colors.border.medium,
+                  },
+                ]}
+              >
+                <Ionicons name="flame" size={15} color="#FF6B7A" />
+                <Text style={[styles.streakChipText, { color: colors.text.primary }]}>
+                  {dayStreak}
+                </Text>
+              </Pressable>
+            )}
             <Pressable
               onPress={() => router.push("/notifications" as any)}
               style={[
@@ -1174,7 +1199,20 @@ const styles = StyleSheet.create({
     marginTop: 2,
     letterSpacing: -0.4,
   },
-  headerActions: { flexDirection: "row", gap: 10 },
+  headerActions: { flexDirection: "row", gap: 10, alignItems: "center" },
+  streakChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    height: 40,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  streakChipText: {
+    fontSize: 14,
+    fontFamily: fontFamily.monoSemibold,
+  },
   headerIcon: {
     width: 40,
     height: 40,

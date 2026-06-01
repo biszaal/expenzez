@@ -99,12 +99,12 @@ export const achievementAPI = {
           userId,
           goals: activeGoals.concat(completedGoals),
           goalProgress: goalsData.goalProgress || [],
-          totalTransactions: 45, // This would come from transaction API
-          monthsActive: 3, // This would be calculated from user registration date
+          totalTransactions: 0,
+          monthsActive: 0,
           totalSaved: goalsData.totalSavedTowardsGoals || 0,
           currentStreaks: {
-            savings: 14, // This would come from transaction patterns
-            budgetCompliance: 21 // This would come from budget API
+            savings: 0,
+            budgetCompliance: 0
           }
         };
 
@@ -122,15 +122,15 @@ export const achievementAPI = {
           achievements: gamificationResult.achievements,
           streaks: {
             currentSavingsStreak: userFinancialData.currentStreaks.savings,
-            longestSavingsStreak: Math.max(userFinancialData.currentStreaks.savings, 30),
+            longestSavingsStreak: userFinancialData.currentStreaks.savings,
             currentBudgetStreak: userFinancialData.currentStreaks.budgetCompliance,
-            longestBudgetStreak: Math.max(userFinancialData.currentStreaks.budgetCompliance, 45)
+            longestBudgetStreak: userFinancialData.currentStreaks.budgetCompliance
           },
           milestones: {
             totalSaved: userFinancialData.totalSaved,
             goalsCompleted: completedGoals.length,
             transactionsLogged: userFinancialData.totalTransactions,
-            categoriesUsed: 8 // This would come from transaction categorization
+            categoriesUsed: 0
           },
           newAchievements: gamificationResult.newAchievements,
           celebration: gamificationResult.newAchievements.length > 0 ? {

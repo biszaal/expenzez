@@ -191,7 +191,7 @@ export const LevelUpCelebration: React.FC<LevelUpCelebrationProps> = ({
             ]}
           >
             <Text style={styles.levelUpTitle}>
-              🎉 LEVEL UP! 🎉
+              Level up
             </Text>
 
             <Text style={styles.newLevelText}>
@@ -199,20 +199,20 @@ export const LevelUpCelebration: React.FC<LevelUpCelebrationProps> = ({
             </Text>
 
             <Text style={styles.achievedText}>
-              Congratulations! You&apos;ve reached a new level in your financial journey.
+              Nice work — your money habits just reached a new level.
             </Text>
 
             {pointsEarned > 0 && (
               <View style={styles.pointsContainer}>
                 <Ionicons name="star" size={24} color={colors.accent.main} />
                 <Text style={styles.pointsText}>
-                  +{pointsEarned} XP Bonus
+                  +{pointsEarned} XP
                 </Text>
               </View>
             )}
 
             <Text style={styles.motivationalText}>
-              Keep building those wealth habits! 💪
+              Keep the momentum going.
             </Text>
           </Animated.View>
         </View>

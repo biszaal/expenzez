@@ -3,9 +3,18 @@ import React from "react";
 import { useAuth } from "../auth/AuthContext";
 import { LoadingScreen } from "../../components/ui";
 import { FloatingTabBar } from "../../components/navigation/FloatingTabBar";
+import { StreakService } from "../../services/streakService";
 
 export default function TabLayout() {
   const { isLoggedIn, loading } = useAuth();
+
+  // Record an "active day" once per day when a logged-in user opens the app.
+  // recordDailyActivity is idempotent per day, so calling on mount is safe.
+  React.useEffect(() => {
+    if (isLoggedIn) {
+      StreakService.recordDailyActivity().catch(() => {});
+    }
+  }, [isLoggedIn]);
 
   // Show loading screen while checking authentication
   if (loading) {

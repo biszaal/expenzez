@@ -115,10 +115,6 @@ export const LevelProgressBar: React.FC<LevelProgressBarProps> = ({
         <View style={styles.nextLevelContent}>
           <Ionicons name="arrow-forward" size={16} color={colors.primary.main} />
           <Text style={styles.nextLevelText}>Level {currentLevel + 1}</Text>
-          <View style={styles.nextLevelReward}>
-            <Ionicons name="gift" size={14} color="#10B981" />
-            <Text style={styles.rewardText}>Reward!</Text>
-          </View>
         </View>
         <Text style={styles.remainingText}>
           {pointsToNextLevel} XP remaining
