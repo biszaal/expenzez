@@ -15,11 +15,12 @@ import { AIInsightCard } from "../../ai/AIInsightCard";
 import { ChartInsightResponse } from "../../../services/api/chartInsightsAPI";
 import { fontFamily } from "../../../constants/theme";
 
-// Note: we deliberately use a plain Circle (not AnimatedCircle) for the
-// progress arc. react-native-svg drops the url(#gradient) stroke ref when
-// the Circle is wrapped in Animated.createAnimatedComponent, which made the
-// ring render as flat purple instead of the purple→lime gradient. The
-// Animated.View scale wrapper still gives the card its entry animation.
+// The progress arc animates its strokeDashoffset via `animatedProgress`
+// (0 → 1) so the ring sweeps in. We animate only strokeDashoffset; the
+// gradient stroke ref (url(#budgetRingGrad)) is static and renders fine on
+// react-native-svg 15+ (the old gradient-drop bug that forced a plain Circle
+// is fixed). Mirrors the proven pattern in components/spending/charts/DonutChart.
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface BudgetSummaryCardProps {
   selectedMonth: string;
@@ -236,9 +237,9 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                 }
                 strokeWidth={RING_STROKE}
               />
-              {/* Progress ring (non-animated so url(#grad) renders) */}
+              {/* Progress ring — sweeps in via animatedProgress (0 → 1) */}
               {monthlySpentPercentage > 0 && (
-                <Circle
+                <AnimatedCircle
                   cx={RING_SIZE / 2}
                   cy={RING_SIZE / 2}
                   r={RING_RADIUS}
@@ -251,9 +252,13 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                   strokeWidth={RING_STROKE}
                   strokeLinecap="round"
                   strokeDasharray={`${RING_CIRC}`}
-                  strokeDashoffset={
-                    RING_CIRC * (1 - Math.min(monthlySpentPercentage / 100, 1))
-                  }
+                  strokeDashoffset={animatedProgress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [
+                      RING_CIRC,
+                      RING_CIRC * (1 - Math.min(monthlySpentPercentage / 100, 1)),
+                    ],
+                  })}
                   transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
                 />
               )}

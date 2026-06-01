@@ -1177,7 +1177,9 @@ export default function SpendingPage() {
       // Animate to the correct percentage
       Animated.parallel([
         Animated.timing(animatedProgress, {
-          toValue: Math.min(monthlySpentPercentage / 100, 1), // Cap at 1 (100%) to prevent double rotation
+          // Drives the ring's strokeDashoffset interpolation (0 -> 1 of the
+          // target arc). The arc's final fill encodes the percentage.
+          toValue: 1,
           duration: 1000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
