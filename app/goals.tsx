@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "./auth/AuthContext";
 import { TabLoadingScreen } from "../components/ui";
@@ -65,27 +66,39 @@ export default function GoalsScreen() {
         return;
       }
 
+      const cacheKey = `goals_cache_${userId}`;
+      let hydratedFromCache = false;
+
       try {
         if (isRefresh) {
           setRefreshing(true);
         } else {
-          setLoading(true);
+          // Stale-while-revalidate: render cached goals instantly, then refresh
+          // in the background — so the screen doesn't blank on every visit.
+          try {
+            const cached = await AsyncStorage.getItem(cacheKey);
+            if (cached) {
+              setGoalsData(JSON.parse(cached));
+              setLoading(false);
+              hydratedFromCache = true;
+            } else {
+              setLoading(true);
+            }
+          } catch {
+            setLoading(true);
+          }
         }
         setError(null);
 
-        console.log("🎯 [Goals] Loading goals data for user:", userId);
-
         const data = await goalsAPI.getUserGoals(userId);
         setGoalsData(data);
-
-        console.log("✅ [Goals] Goals data loaded successfully:", {
-          activeGoals: data.activeGoals?.length,
-          completedGoals: data.completedGoals?.length,
-          totalSaved: data.totalSavedTowardsGoals,
-        });
+        AsyncStorage.setItem(cacheKey, JSON.stringify(data)).catch(() => {});
       } catch (error: any) {
         console.error("❌ [Goals] Error loading goals data:", error);
-        setError(error.message || "Failed to load goals data");
+        // Only surface an error screen if we had nothing cached to show.
+        if (!hydratedFromCache && !isRefresh) {
+          setError(error.message || "Failed to load goals data");
+        }
       } finally {
         setLoading(false);
         setRefreshing(false);
