@@ -67,6 +67,7 @@ export default function GoalsScreen() {
       }
 
       const cacheKey = `goals_cache_${userId}`;
+      const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
       let hydratedFromCache = false;
 
       try {
@@ -75,10 +76,16 @@ export default function GoalsScreen() {
         } else {
           // Stale-while-revalidate: render cached goals instantly, then refresh
           // in the background — so the screen doesn't blank on every visit.
+          // Only trust the cache if it belongs to the current user and is fresh
+          // (guards against a stale closure showing another account's data).
           try {
             const cached = await AsyncStorage.getItem(cacheKey);
-            if (cached) {
-              setGoalsData(JSON.parse(cached));
+            const parsed = cached ? JSON.parse(cached) : null;
+            if (
+              parsed?.uid === userId &&
+              Date.now() - (parsed?.ts ?? 0) < CACHE_TTL_MS
+            ) {
+              setGoalsData(parsed.data);
               setLoading(false);
               hydratedFromCache = true;
             } else {
@@ -92,7 +99,10 @@ export default function GoalsScreen() {
 
         const data = await goalsAPI.getUserGoals(userId);
         setGoalsData(data);
-        AsyncStorage.setItem(cacheKey, JSON.stringify(data)).catch(() => {});
+        AsyncStorage.setItem(
+          cacheKey,
+          JSON.stringify({ uid: userId, ts: Date.now(), data })
+        ).catch(() => {});
       } catch (error: any) {
         console.error("❌ [Goals] Error loading goals data:", error);
         // Only surface an error screen if we had nothing cached to show.
@@ -104,7 +114,7 @@ export default function GoalsScreen() {
         setRefreshing(false);
       }
     },
-    [user?.id, user?.username]
+    [user?.sub, user?.id, user?.username]
   );
 
   // Initial load
