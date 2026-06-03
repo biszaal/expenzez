@@ -65,7 +65,7 @@ export default function ImportStatementScreen() {
       // Track the most recent step so we can surface a useful error message
       // when something fails — "An unexpected error occurred" was hiding the
       // real cause (typically iOS share-intent URI permissions).
-      let step: "info" | "copy" | "read" | "upload" = "info";
+      let step: "info" | "copy" | "upload" = "info";
 
       try {
         setStage("parsing");
@@ -121,16 +121,22 @@ export default function ImportStatementScreen() {
           return;
         }
 
-        step = "read";
-        const fileBase64 = await FileSystem.readAsStringAsync(workingUri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-
+        // Upload the raw PDF straight to S3 via a presigned URL. We no longer
+        // base64 the file into the request body — that hit API Gateway/Lambda
+        // payload limits and caused "Parse failed" on real statements.
         step = "upload";
-        const response = await transactionAPI.parseStatement(
-          fileBase64,
-          filename
-        );
+        const { uploadUrl, key } = await transactionAPI.getStatementUploadUrl();
+
+        const uploadRes = await FileSystem.uploadAsync(uploadUrl, workingUri, {
+          httpMethod: "PUT",
+          uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+          headers: { "Content-Type": "application/pdf" },
+        });
+        if (uploadRes.status < 200 || uploadRes.status >= 300) {
+          throw new Error(`Upload failed (status ${uploadRes.status})`);
+        }
+
+        const response = await transactionAPI.parseStatement(key, filename);
 
         if (!response.transactions || response.transactions.length === 0) {
           Alert.alert(
@@ -157,8 +163,7 @@ export default function ImportStatementScreen() {
         const friendlyByStep: Record<typeof step, string> = {
           info: "Couldn't access the shared file. Try opening the PDF directly in Expenzez instead of sharing.",
           copy: "Couldn't copy the shared file into the app. Try opening the PDF directly in Expenzez instead.",
-          read: "Couldn't read the shared file. Try opening the PDF directly in Expenzez instead of sharing.",
-          upload: "Failed to parse the statement. Please try again in a moment.",
+          upload: "Couldn't upload the statement for parsing. Please check your connection and try again.",
         };
         const backendMessage =
           err?.response?.data?.message || err?.response?.data?.error;

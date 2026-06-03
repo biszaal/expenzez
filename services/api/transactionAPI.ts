@@ -231,15 +231,32 @@ export const transactionAPI = {
     return response.data;
   },
 
-  // Parse a PDF statement (no save). Backend extracts and categorizes
-  // transactions and returns them for the user to review before importing.
+  // Get a short-lived presigned S3 URL to upload a statement PDF directly to
+  // S3. We upload the raw file there instead of base64-ing it into the parse
+  // request body, which API Gateway (10 MB) / Lambda (6 MB) would reject —
+  // that was the cause of the old "Parse failed" on real statements.
+  getStatementUploadUrl: async (): Promise<{
+    uploadUrl: string;
+    key: string;
+  }> => {
+    const response = await api.post(
+      "/transactions/statement-upload-url",
+      {},
+      { timeout: 20000 }
+    );
+    return response.data;
+  },
+
+  // Parse a PDF statement (no save). Takes the S3 key of an already-uploaded
+  // PDF; the backend reads it from S3, extracts and categorizes transactions,
+  // and returns them for the user to review before importing.
   parseStatement: async (
-    fileBase64: string,
+    s3Key: string,
     filename?: string
   ): Promise<StatementParseResponse> => {
     const response = await api.post(
       "/transactions/parse-statement",
-      { fileBase64, filename },
+      { s3Key, filename },
       { timeout: 90000 }
     );
     return response.data;
