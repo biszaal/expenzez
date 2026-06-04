@@ -178,6 +178,19 @@ function RootLayoutNav() {
     quickSessionCheck();
   }, []);
 
+  // The quick session check above only ever SETS hasValidSession=true (to bridge
+  // the startup gap before AuthContext restores the session) and never clears
+  // it. Once auth has finished loading and the user is logged out, drop the
+  // stale flag — otherwise shouldTreatAsLoggedIn (isLoggedIn || hasValidSession)
+  // stays true on a logged-out session and can open the app-lock gate while the
+  // lock component itself bails on !isLoggedIn, rendering a blank screen.
+  // Guarded on !loading so it doesn't fight the startup bridge.
+  useEffect(() => {
+    if (!loading && !isLoggedIn) {
+      setHasValidSession(false);
+    }
+  }, [loading, isLoggedIn]);
+
   // Track app open on startup — but only after applying the user's stored
   // analytics consent. With no decision yet, analytics stays disabled.
   useEffect(() => {

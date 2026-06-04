@@ -59,7 +59,6 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     initializeSecureSystem();
-    setupAppStateListener();
 
     // Cleanup debounce timeout on unmount
     return () => {
@@ -69,11 +68,33 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [isLoggedIn]); // Re-check security status when login state changes
 
+  // App-state (background/foreground) lock listener lives in its own effect so
+  // its unsubscribe actually runs. It used to be set up inside the init effect
+  // above with its cleanup discarded, leaking a listener — with a stale
+  // isSecurityEnabled/isLoggedIn closure — on every login/logout, which could
+  // fire spurious background locks. Re-created when the values its handler reads
+  // change so the closure stays fresh, and torn down properly each time.
+  useEffect(() => {
+    const cleanup = setupAppStateListener();
+    return cleanup;
+  }, [isLoggedIn, isSecurityEnabled]);
+
   const initializeSecureSystem = async () => {
     try {
       console.log(
         "🔐 [SecurityContext] Initializing secure security system..."
       );
+
+      // On (re)login, drop back to "not initialized" so the root layout shows
+      // the splash and WAITS for the lock state to be recomputed — exactly like
+      // a cold start. Without this, isInitialized stays true across a warm
+      // re-login (it's only ever set to true, never reset), so the UI renders
+      // mid-transition — a blank screen — before the async security check sets
+      // isLocked. Skipped when logged out so logout navigation (router.replace
+      // to /auth/login) isn't interrupted by unmounting the navigator.
+      if (isLoggedIn) {
+        setIsInitialized(false);
+      }
 
       // Step 1: Check if app should start in locked state
       const storedLockState = await AsyncStorage.getItem(APP_LOCKED_KEY);
