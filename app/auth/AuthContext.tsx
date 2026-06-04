@@ -1239,22 +1239,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error("❌ Storage cleanup error:", storageError);
       }
 
-      // Force clear any in-memory caches
-      try {
-        if ((global as any).__USER_CACHE__) {
-          (global as any).__USER_CACHE__ = null;
-        }
-        if ((global as any).__API_CACHE__) {
-          (global as any).__API_CACHE__ = null;
-        }
-        if ((global as any).__BANKING_CACHE__) {
-          (global as any).__BANKING_CACHE__ = null;
-        }
-        console.log("🧹 Cleared in-memory caches");
-      } catch (cacheError) {
-        console.warn("⚠️ Cache clear warning:", cacheError);
-      }
-
       // Clear API cache to ensure no data leaks between users
       try {
         const { clearAllCache } = await import(

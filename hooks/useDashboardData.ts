@@ -52,14 +52,9 @@ export const useDashboardData = () => {
       // Always invalidate caches to ensure fresh data
       try {
         await balanceAPI.invalidateCache();
-        console.log("🔄 [Home] Balance cache invalidated");
-
-        // Clear all local storage caches that might hold stale data
-        await AsyncStorage.removeItem("transaction_cache");
-        await AsyncStorage.removeItem("balance_cache");
-        await AsyncStorage.removeItem("@expenzez_api_cache_balance_summary");
+        // Drop manual balance adjustments so the dashboard reflects server data.
         await AsyncStorage.removeItem("manual_transactions");
-        console.log("🔄 [Home] All local caches cleared");
+        console.log("🔄 [Home] Balance cache invalidated");
       } catch (error) {
         console.warn("⚠️ [Home] Failed to invalidate caches:", error);
       }
@@ -262,8 +257,6 @@ export const useDashboardData = () => {
       // Clear all possible caches
       try {
         await balanceAPI.invalidateCache();
-        await AsyncStorage.removeItem("transaction_cache");
-        await AsyncStorage.removeItem("balance_cache");
         await AsyncStorage.removeItem("user_preferences");
         console.log("🔄 [Home] All caches cleared");
       } catch (error) {

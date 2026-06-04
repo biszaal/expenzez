@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { getMerchantInfo, MerchantInfo } from '../../services/merchantService';
 
@@ -147,7 +148,9 @@ export const MerchantLogo: React.FC<MerchantLogoProps> = ({
             borderRadius: 4,
           }}
           onError={() => setImageError(true)}
-          resizeMode="contain"
+          contentFit="contain"
+          cachePolicy="memory-disk"
+          transition={150}
         />
       </View>
     );

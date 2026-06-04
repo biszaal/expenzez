@@ -6,8 +6,8 @@ import {
   StyleSheet,
   ScrollView,
   Modal,
-  Image,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
 import { BankFormat } from '@/services/ukBankFormats';
@@ -29,7 +29,8 @@ const BankLogo: React.FC<BankLogoProps> = ({ bank, size = 64 }) => {
       source={{ uri: bank.logoUrl }}
       style={{ width: size, height: size, borderRadius: size / 4 }}
       onError={() => setHasError(true)}
-      resizeMode="contain"
+      contentFit="contain"
+      cachePolicy="memory-disk"
     />
   );
 };

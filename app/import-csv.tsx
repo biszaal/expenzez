@@ -7,8 +7,8 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  Image,
 } from "react-native";
+import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -64,7 +64,8 @@ const BankLogo: React.FC<{ bank: BankFormat; size?: number }> = ({ bank, size = 
         source={{ uri: bank.logoUrl }}
         style={{ width: size * 0.8, height: size * 0.8 }}
         onError={() => setHasError(true)}
-        resizeMode="contain"
+        contentFit="contain"
+        cachePolicy="memory-disk"
       />
     </View>
   );
