@@ -1,4 +1,5 @@
 import { api } from "../config/apiClient";
+import { balanceAPI } from "./balanceAPI";
 
 export interface Transaction {
   id: string;
@@ -156,6 +157,9 @@ export const transactionAPI = {
     data: TransactionCreateData
   ): Promise<TransactionCreateResponse> => {
     const response = await api.post("/transactions", data);
+    // A new transaction changes the balance/summary — drop the cached value so
+    // the dashboard reflects it immediately instead of after the TTL.
+    await balanceAPI.invalidateCache();
     return response.data;
   },
 
@@ -281,6 +285,8 @@ export const transactionAPI = {
     data: Partial<TransactionCreateData>
   ): Promise<TransactionCreateResponse> => {
     const response = await api.put(`/transactions/${transactionId}`, data);
+    // Editing an amount/type can change the balance — invalidate the cache.
+    await balanceAPI.invalidateCache();
     return response.data;
   },
 
@@ -289,6 +295,8 @@ export const transactionAPI = {
     transactionId: string
   ): Promise<{ message: string; success: boolean }> => {
     const response = await api.delete(`/transactions/${transactionId}`);
+    // Removing a transaction changes the balance — invalidate the cache.
+    await balanceAPI.invalidateCache();
     return response.data;
   },
 

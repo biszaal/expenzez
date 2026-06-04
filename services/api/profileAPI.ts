@@ -3,6 +3,7 @@ import {
   getCachedData,
   setCachedData,
   clearCachedData,
+  getCacheUserId,
 } from "../config/apiCache";
 
 export const profileAPI = {
@@ -73,6 +74,12 @@ export const profileAPI = {
     try {
       const response = await api.put("/profile", profileData);
       console.log("✅ [ProfileAPI] updateProfile success:", response.data);
+
+      // Invalidate the cached profile so the next read reflects the edit
+      // instead of serving the stale copy for up to the 5-minute TTL.
+      const userId = await getCacheUserId();
+      await clearCachedData(`user_profile_${userId}`);
+
       return response.data;
     } catch (error) {
       console.error("❌ [ProfileAPI] updateProfile error:", error);

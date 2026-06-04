@@ -1,5 +1,8 @@
 import { api } from '../config/apiClient';
-import { cachedApiCall, CACHE_TTL, clearCachedData } from '../config/apiCache';
+import { cachedApiCall, CACHE_TTL, clearCachedData, getCacheUserId } from '../config/apiCache';
+
+// Per-user balance cache key so one account's balance is never served to another.
+const balanceCacheKey = async () => `balance_summary_${await getCacheUserId()}`;
 
 export interface BalanceSummary {
   balance: number;
@@ -24,7 +27,7 @@ export const balanceAPI = {
   getSummary: async (
     options: { useCache?: boolean; forceRefresh?: boolean } = { useCache: true, forceRefresh: false }
   ): Promise<BalanceSummary> => {
-    const cacheKey = 'balance_summary';
+    const cacheKey = await balanceCacheKey();
 
     if (options.useCache) {
       return cachedApiCall(
@@ -50,7 +53,7 @@ export const balanceAPI = {
     const response = await api.post('/transactions/refresh-balance');
 
     // Invalidate local cache after refresh
-    await clearCachedData('balance_summary');
+    await clearCachedData(await balanceCacheKey());
 
     return {
       balance: response.data.balance,
@@ -63,6 +66,6 @@ export const balanceAPI = {
    * Invalidate balance cache - call this when a new transaction is created
    */
   invalidateCache: async (): Promise<void> => {
-    await clearCachedData('balance_summary');
+    await clearCachedData(await balanceCacheKey());
   },
 };

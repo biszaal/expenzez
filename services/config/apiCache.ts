@@ -13,6 +13,22 @@ export const CACHE_TTL = {
   VERY_LONG: 86400000 // 24 hours - static data (profile, settings)
 };
 
+// Stable per-user namespace for cache keys. Keying user-specific data (balances,
+// profile, etc.) by this prevents one account's cached data from being served to
+// another within the same app session. Falls back to "default" if unavailable.
+export const getCacheUserId = async (): Promise<string> => {
+  try {
+    const AsyncStorage = (
+      await import('@react-native-async-storage/async-storage')
+    ).default;
+    const userStr = await AsyncStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    return user?.sub || user?.id || user?.email || user?.username || 'default';
+  } catch {
+    return 'default';
+  }
+};
+
 // Enhanced cache retrieval with AsyncStorage fallback
 export const getCachedData = async (key: string): Promise<any | null> => {
   const now = Date.now();
