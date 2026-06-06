@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { useTheme } from "../contexts/ThemeContext";
+import { useAuth } from "./auth/AuthContext";
 import { transactionAPI } from "../services/api";
 import { ImportQuotaCard } from "../components/imports/ImportQuotaCard";
 import type {
@@ -29,6 +30,11 @@ type Stage = "idle" | "parsing" | "preview" | "importing" | "done";
 
 export default function ImportStatementScreen() {
   const { colors } = useTheme();
+  // Gate backend calls on auth: when opened via the share sheet the app
+  // cold-launches straight onto this screen, and firing authed requests before
+  // the session/token is restored gets them rejected at the API gateway (they
+  // never reach the Lambda), which surfaced as "Parse failed" + a stuck quota.
+  const { isLoggedIn, loading: authLoading } = useAuth();
   const { sharedUri, sharedName } = useLocalSearchParams<{
     sharedUri?: string;
     sharedName?: string;
@@ -57,8 +63,14 @@ export default function ImportStatementScreen() {
   }, []);
 
   useEffect(() => {
+    if (authLoading) return; // wait for the session to settle
+    if (!isLoggedIn) {
+      // Definitively logged out — don't leave the quota card spinning forever.
+      setUsageLoading(false);
+      return;
+    }
     refreshUsage();
-  }, [refreshUsage]);
+  }, [authLoading, isLoggedIn, refreshUsage]);
 
   const parseFromUri = useCallback(
     async (uri: string, filename?: string) => {
@@ -194,12 +206,14 @@ export default function ImportStatementScreen() {
     []
   );
 
-  // Auto-parse when arriving via share intent.
+  // Auto-parse when arriving via share intent — but only once auth is ready,
+  // otherwise the cold-launch upload races the session restore and fails.
   useEffect(() => {
+    if (authLoading || !isLoggedIn) return;
     if (!sharedUri || autoUploadedRef.current === sharedUri) return;
     autoUploadedRef.current = sharedUri;
     parseFromUri(sharedUri, sharedName);
-  }, [sharedUri, sharedName, parseFromUri]);
+  }, [authLoading, isLoggedIn, sharedUri, sharedName, parseFromUri]);
 
   const handlePickAndParse = async () => {
     try {
@@ -287,7 +301,14 @@ export default function ImportStatementScreen() {
       edges={["top"]}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() =>
+            // When opened via the share sheet there's no navigation history, so
+            // router.back() lands on a non-existent screen — fall back home.
+            router.canGoBack() ? router.back() : router.replace("/(tabs)")
+          }
+          style={styles.backButton}
+        >
           <Ionicons name="chevron-back" size={28} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
