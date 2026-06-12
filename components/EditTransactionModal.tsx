@@ -9,12 +9,14 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../contexts/ThemeContext";
 import { spacing, borderRadius } from "../constants/theme";
 import dayjs from "dayjs";
+import { detectNonSpend } from "../utils/nonSpendDetection";
 
 interface Transaction {
   id: string;
@@ -25,6 +27,7 @@ interface Transaction {
   category?: string;
   type: "debit" | "credit";
   originalAmount: number;
+  excludeFromSpend?: boolean;
 }
 
 interface EditTransactionModalProps {
@@ -66,6 +69,8 @@ export default function EditTransactionModal({
   const [category, setCategory] = useState("");
   const [date, setDate] = useState("");
   const [type, setType] = useState<"debit" | "credit">("debit");
+  const [excludeFromSpend, setExcludeFromSpend] = useState(false);
+  const [autoExcludeReason, setAutoExcludeReason] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -83,6 +88,15 @@ export default function EditTransactionModal({
       setCategory(transaction.category || "Other");
       setDate(dayjs(transaction.date).format("YYYY-MM-DD"));
       setType(transaction.type || "debit");
+
+      // Show the effective state: explicit override if set, else auto-detection.
+      const auto = detectNonSpend({
+        description: transaction.description,
+        merchant: transaction.merchant,
+        category: transaction.category,
+      });
+      setExcludeFromSpend(transaction.excludeFromSpend ?? auto.excluded);
+      setAutoExcludeReason(auto.excluded ? auto.reason : null);
     }
   }, [transaction]);
 
@@ -110,6 +124,8 @@ export default function EditTransactionModal({
         category,
         date: dayjs(date).toISOString(),
         type,
+        // Persist as an explicit choice so it wins over auto-detection.
+        excludeFromSpend,
       };
 
       await onSave(transaction.id, updates);
@@ -353,6 +369,28 @@ export default function EditTransactionModal({
             </ScrollView>
           </View>
 
+          {/* Exclude from spending */}
+          <View style={styles.section}>
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1, paddingRight: spacing.md }}>
+                <Text style={[styles.label, { color: colors.text.primary, marginBottom: 2 }]}>
+                  Exclude from spending
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.text.tertiary, lineHeight: 17 }}>
+                  {autoExcludeReason
+                    ? "Auto-detected as an internal transfer. "
+                    : ""}
+                  Excluded transactions don't count in your spending charts or totals.
+                </Text>
+              </View>
+              <Switch
+                value={excludeFromSpend}
+                onValueChange={setExcludeFromSpend}
+                trackColor={{ false: colors.background.secondary, true: colors.primary.main }}
+              />
+            </View>
+          </View>
+
           {/* Date */}
           <View style={styles.section}>
             <Text style={[styles.label, { color: colors.text.secondary }]}>
@@ -462,6 +500,11 @@ const styles = StyleSheet.create({
   typeContainer: {
     flexDirection: "row",
     gap: spacing.md,
+  },
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   typeButton: {
     flex: 1,

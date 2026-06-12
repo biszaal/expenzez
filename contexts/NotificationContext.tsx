@@ -528,7 +528,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       if (notificationData && notificationData.length > 0) {
         // Load persisted read states from AsyncStorage
         const persistedReadStates = await AsyncStorage.getItem(
-          `notification_read_states_${user?.id}`
+          `notification_read_states_${user?.username || user?.id}`
         );
         const readStates = persistedReadStates
           ? JSON.parse(persistedReadStates)
@@ -685,7 +685,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   // Helper function to persist read state
   const persistReadState = async (notificationId: string, isRead: boolean) => {
     try {
-      const storageKey = `notification_read_states_${user?.id}`;
+      // Key off username, not user.id: on a clean login user.id is the Cognito
+      // sub, but the token-refresh fallback restore path sets it to the username.
+      // Username is stable across both, so cached read-states survive a restart.
+      const storageKey = `notification_read_states_${user?.username || user?.id}`;
       const existingStates = await AsyncStorage.getItem(storageKey);
       const readStates = existingStates ? JSON.parse(existingStates) : {};
 
@@ -713,7 +716,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       );
 
       // Also clear local cache
-      const storageKey = `notification_read_states_${user?.id}`;
+      const storageKey = `notification_read_states_${user?.username || user?.id}`;
       await AsyncStorage.removeItem(storageKey);
     } catch (error: any) {
       console.error(
@@ -723,7 +726,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // If backend fails, still clear local cache
       try {
-        const storageKey = `notification_read_states_${user?.id}`;
+        const storageKey = `notification_read_states_${user?.username || user?.id}`;
         await AsyncStorage.removeItem(storageKey);
       } catch (localError) {
         console.error(

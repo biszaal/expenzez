@@ -150,6 +150,7 @@ export const authAPI = {
     birthdate: string;
     address: string;
     gender: string;
+    marketing_consent?: boolean;
   }) => {
     // Filter out empty optional fields to avoid backend validation errors
     // Backend requires that if phone_number, birthdate, address, or gender are sent, they must not be empty
@@ -175,6 +176,8 @@ export const authAPI = {
     if (userData.gender && userData.gender.trim()) {
       cleanedData.gender = userData.gender;
     }
+    // Always include the marketing consent choice (a boolean, recorded either way).
+    cleanedData.marketing_consent = userData.marketing_consent === true;
 
     const response = await api.post("/auth/register", cleanedData);
     return response.data;

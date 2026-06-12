@@ -31,6 +31,7 @@ import dayjs from "dayjs";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { ChartData, ChartDataPoint } from "../../components/charts";
 import { processTransactionExpense } from "../../utils/expenseDetection";
+import { isExcludedFromSpend } from "../../utils/nonSpendDetection";
 import { clearAllCache } from "../../services/config/apiCache";
 import { PerformanceMonitor } from "../../utils/performanceOptimizations";
 import {
@@ -464,7 +465,7 @@ export default function SpendingPage() {
         tx.amount < 0 ||
         (tx.amount > 0 && isExpenseCategory);
 
-      if (isExpense) {
+      if (isExpense && !isExcludedFromSpend(tx as any)) {
         const day = dayjs(tx.date).format("DD");
         currentMonthSpending[day] =
           (currentMonthSpending[day] || 0) + Math.abs(tx.amount);
@@ -528,7 +529,7 @@ export default function SpendingPage() {
         tx.amount < 0 ||
         (tx.amount > 0 && isExpenseCategory);
 
-      if (isExpense) {
+      if (isExpense && !isExcludedFromSpend(tx as any)) {
         const day = dayjs(tx.date).format("DD");
         previousMonthSpending[day] =
           (previousMonthSpending[day] || 0) + Math.abs(tx.amount);
@@ -945,6 +946,61 @@ export default function SpendingPage() {
 
     return result;
   }, [categoryData, monthlyData?.monthlySpentByCategory]);
+
+  // Apply a Smart Suggestion: move `amount` of budget from one category to
+  // another, persist to the backend (+ local cache, mirroring budgets/edit),
+  // then reload so the new budgets show. The overall monthly limit is left
+  // unchanged because the move is budget-neutral across categories.
+  const handleApplyBudgetSuggestion = useCallback(
+    async (s: { fromName: string; toName: string; amount: number }) => {
+      try {
+        const categoryBudgets: Record<string, number> = {};
+        sortedCategoryData.forEach((c: any) => {
+          categoryBudgets[c.name] = Math.round(c.defaultBudget || 0);
+        });
+        categoryBudgets[s.toName] = Math.round(
+          (categoryBudgets[s.toName] || 0) + s.amount
+        );
+        categoryBudgets[s.fromName] = Math.max(
+          0,
+          Math.round((categoryBudgets[s.fromName] || 0) - s.amount)
+        );
+
+        // Preserve the existing overall monthly limit.
+        let monthlySpendingLimit: number | undefined;
+        try {
+          const prefs = await budgetAPI.getBudgetPreferences();
+          monthlySpendingLimit =
+            prefs?.monthlySpendingLimit ?? prefs?.monthlyBudget;
+        } catch {
+          // Non-fatal: backend may not have prefs yet; category budgets still save.
+        }
+
+        await budgetAPI.updateBudgetPreferences({
+          ...(monthlySpendingLimit != null ? { monthlySpendingLimit } : {}),
+          categoryBudgets,
+        });
+        await AsyncStorage.setItem(
+          "categoryBudgets",
+          JSON.stringify(categoryBudgets)
+        );
+
+        await fetchData();
+
+        Alert.alert(
+          "Budget updated",
+          `Moved £${s.amount} from ${s.fromName} to ${s.toName}.`
+        );
+      } catch (err) {
+        console.error("[Spending] Failed to apply budget suggestion", err);
+        Alert.alert(
+          "Couldn't update budgets",
+          "Something went wrong applying that suggestion. Please try again."
+        );
+      }
+    },
+    [sortedCategoryData, fetchData]
+  );
 
   // Award XP once when categories are first loaded (not on every regeneration)
   useEffect(() => {
@@ -1623,6 +1679,7 @@ export default function SpendingPage() {
               categoryData={sortedCategoryData}
               formatAmount={formatAmount}
               currency="GBP"
+              onApply={handleApplyBudgetSuggestion}
             />
           </>
         )}

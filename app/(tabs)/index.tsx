@@ -23,6 +23,7 @@ import { useRevenueCat } from "../../contexts/RevenueCatContext";
 import { budgetAPI } from "../../services/api";
 import { fontFamily } from "../../constants/theme";
 import { DashboardSkeleton } from "../../components/ui/SkeletonLoader";
+import { MerchantLogo } from "../../components/ui/MerchantLogo";
 import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
 import { FREE_TIER_LIMITS } from "../../services/subscriptionService";
 import { useDashboardData } from "../../hooks/useDashboardData";
@@ -815,7 +816,6 @@ export default function HomeScreen() {
                 const amt = Number(tx.amount) || 0;
                 const isCredit = tx.type === "credit" || amt > 0;
                 const cat = normalizeCategory(tx.category);
-                const pal = colors.category[cat];
                 const formatted = formatGBP(amt);
                 const desc =
                   (tx as any).merchant ||
@@ -832,15 +832,12 @@ export default function HomeScreen() {
                       },
                     ]}
                   >
-                    <View
-                      style={[styles.txnIcon, { backgroundColor: pal.bg }]}
-                    >
-                      <Ionicons
-                        name={CATEGORY_ICON[cat]}
-                        size={16}
-                        color={pal.fg}
-                      />
-                    </View>
+                    <MerchantLogo
+                      merchant={(tx as any).merchant}
+                      description={tx.description}
+                      category={tx.category}
+                      size={36}
+                    />
                     <View style={{ flex: 1 }}>
                       <Text
                         numberOfLines={1}
@@ -883,7 +880,7 @@ export default function HomeScreen() {
               >
                 Upcoming bills
               </Text>
-              <Pressable onPress={() => router.push("/budgets" as any)}>
+              <Pressable onPress={() => router.push("/bills")}>
                 <Text
                   style={[styles.sectionLink, { color: colors.primary[500] }]}
                 >
@@ -908,7 +905,7 @@ export default function HomeScreen() {
                 return (
                   <Pressable
                     key={bill.id}
-                    onPress={() => router.push("/budgets" as any)}
+                    onPress={() => router.push("/bills")}
                     style={[
                       styles.txnRow,
                       {

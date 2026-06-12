@@ -12,8 +12,10 @@ import {
   ActivityIndicator,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { isExcludedFromSpend } from "../../utils/nonSpendDetection";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAlert } from "../../hooks/useAlert";
@@ -46,6 +48,7 @@ interface Transaction {
   originalAmount: number;
   accountType?: string;
   isPending?: boolean;
+  excludeFromSpend?: boolean;
 }
 
 export default function TransactionsScreen() {
@@ -288,6 +291,62 @@ export default function TransactionsScreen() {
           }
         } catch (e) {
           console.warn("[Transactions] findSimilar failed:", e);
+        }
+      }
+
+      // If the exclude-from-spend choice changed, offer to apply it to other
+      // transactions from the same merchant (and learn it for future ones).
+      const newExclude = updates.excludeFromSpend;
+      if (newExclude !== undefined && merchant) {
+        const prevEffective = selectedTransaction
+          ? isExcludedFromSpend(selectedTransaction as any)
+          : false;
+        if (newExclude !== prevEffective) {
+          const norm = (s?: string) =>
+            (s || "").toLowerCase().trim().replace(/\s+/g, " ");
+          const target = norm(merchant);
+          const similar = transactions.filter(
+            (t) =>
+              t.id !== transactionId &&
+              norm(t.merchant || t.description) === target &&
+              isExcludedFromSpend(t as any) !== newExclude
+          );
+          const ids = similar.map((t) => t.id);
+          const verb = newExclude ? "Exclude" : "Include";
+          Alert.alert(
+            `${verb} similar transactions?`,
+            similar.length > 0
+              ? `Also ${verb.toLowerCase()} ${similar.length} other "${merchant}" transaction${
+                  similar.length > 1 ? "s" : ""
+                } and future ones?`
+              : `Also ${verb.toLowerCase()} future "${merchant}" transactions automatically?`,
+            [
+              { text: "Just this one", style: "cancel" },
+              {
+                text: `${verb} all`,
+                onPress: async () => {
+                  try {
+                    await transactionAPI.bulkExclude(
+                      ids.length > 0 ? ids : [transactionId],
+                      newExclude,
+                      merchant
+                    );
+                    if (ids.length > 0) {
+                      setTransactions((prev) =>
+                        prev.map((t) =>
+                          ids.includes(t.id)
+                            ? { ...t, excludeFromSpend: newExclude }
+                            : t
+                        )
+                      );
+                    }
+                  } catch (e) {
+                    console.warn("[Transactions] bulkExclude failed:", e);
+                  }
+                },
+              },
+            ]
+          );
         }
       }
     } catch (error) {
@@ -648,7 +707,10 @@ export default function TransactionsScreen() {
                           { color: colors.text.tertiary },
                         ]}
                       >
-                        {transaction.category || 'General'}
+                        {(transaction.category || 'General') +
+                          (isExcludedFromSpend(transaction as any)
+                            ? '  ·  Not counted'
+                            : '')}
                       </Text>
                     </View>
 
@@ -756,7 +818,10 @@ export default function TransactionsScreen() {
                               { color: colors.text.tertiary },
                             ]}
                           >
-                            {transaction.category || "General"}
+                            {(transaction.category || "General") +
+                              (isExcludedFromSpend(transaction as any)
+                                ? "  ·  Not counted"
+                                : "")}
                           </Text>
                         </View>
 

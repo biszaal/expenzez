@@ -10,6 +10,10 @@ export interface Transaction {
   date: string;
   type: "debit" | "credit";
   currency?: string;
+  merchant?: string;
+  // When true/false the user has explicitly chosen whether this counts in spend
+  // analysis; when undefined it's decided by auto-detection (nonSpendDetection).
+  excludeFromSpend?: boolean;
 }
 
 export interface TransactionCreateData {
@@ -228,6 +232,21 @@ export const transactionAPI = {
     return response.data;
   },
 
+  // Set excludeFromSpend on many transactions at once, and (when a merchant is
+  // given) learn a rule so future similar transactions auto-apply the choice.
+  bulkExclude: async (
+    transactionIds: string[],
+    excludeFromSpend: boolean,
+    merchant?: string
+  ): Promise<{ updated: number; failed: number; excludeFromSpend: boolean }> => {
+    const response = await api.post("/transactions/bulk-exclude", {
+      transactionIds,
+      excludeFromSpend,
+      merchant,
+    });
+    return response.data;
+  },
+
   // Returns the caller's CSV+PDF import quota for the current calendar month.
   // Used by the import screens to show "3/4 remaining" and gate uploads.
   getImportUsage: async (): Promise<ImportUsageResponse> => {
@@ -282,7 +301,7 @@ export const transactionAPI = {
   // Update transaction
   updateTransaction: async (
     transactionId: string,
-    data: Partial<TransactionCreateData>
+    data: Partial<TransactionCreateData> & { excludeFromSpend?: boolean }
   ): Promise<TransactionCreateResponse> => {
     const response = await api.put(`/transactions/${transactionId}`, data);
     // Editing an amount/type can change the balance — invalidate the cache.

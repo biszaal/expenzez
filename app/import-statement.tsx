@@ -120,11 +120,17 @@ export default function ImportStatementScreen() {
 
         step = "info";
         const info = await FileSystem.getInfoAsync(workingUri);
-        if (
-          info.exists &&
-          (info as any).size &&
-          (info as any).size > MAX_PDF_BYTES
-        ) {
+        console.log(
+          `[ImportStatement] file size=${(info as any).size ?? "?"} exists=${info.exists} uri=${workingUri}`
+        );
+        // A missing or 0-byte file means we lost access to the shared URI
+        // (e.g. a security-scoped share that expired behind the App Lock PIN
+        // screen). Fail here with a clear message instead of uploading an
+        // empty file that the backend then reports as "pdf failed to parse".
+        if (!info.exists || !(info as any).size) {
+          throw new Error("Shared file is empty or could not be read");
+        }
+        if ((info as any).size > MAX_PDF_BYTES) {
           Alert.alert(
             "File too large",
             "Statements must be 8 MB or smaller. Try splitting it or contact support."

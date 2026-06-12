@@ -147,6 +147,9 @@ export default function RegisterStep5({
   // before an account can be created (UK GDPR consent / contract formation).
   const [consentChecked, setConsentChecked] = useState(false);
   const [consentError, setConsentError] = useState("");
+  // Optional marketing consent — opt-in, unticked by default (UK GDPR: marketing
+  // consent must be a separate, affirmative action, never pre-checked).
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   // Sync phone number with parent form state (only on initial load)
   useEffect(() => {
@@ -246,7 +249,7 @@ export default function RegisterStep5({
     onChange("name", fullName);
 
     // Pass the values directly to onSubmit to avoid React state timing issues
-    onSubmit({ phone_number: phoneNumber.trim() ? `${selectedCountryCode.code}${phoneNumber.replace(/[^\d]/g, "").replace(/^0+/, "")}` : "", name: fullName });
+    onSubmit({ phone_number: phoneNumber.trim() ? `${selectedCountryCode.code}${phoneNumber.replace(/[^\d]/g, "").replace(/^0+/, "")}` : "", name: fullName, marketing_consent: marketingConsent });
   };
 
   const handleSkip = () => {
@@ -268,7 +271,7 @@ export default function RegisterStep5({
     onChange("name", fullName);
 
     // Submit without phone number
-    onSubmit({ phone_number: "", name: fullName });
+    onSubmit({ phone_number: "", name: fullName, marketing_consent: marketingConsent });
   };
 
   return (
@@ -500,6 +503,29 @@ export default function RegisterStep5({
               {consentError}
             </Typography>
           ) : null}
+
+          {/* Marketing consent (optional) */}
+          <TouchableOpacity
+            style={[styles.consentRow, { marginTop: spacing.md }]}
+            activeOpacity={0.7}
+            onPress={() => setMarketingConsent((prev) => !prev)}
+          >
+            <Ionicons
+              name={marketingConsent ? "checkbox" : "square-outline"}
+              size={22}
+              color={
+                marketingConsent ? colors.primary.main : colors.text.secondary
+              }
+              style={{ marginTop: 2 }}
+            />
+            <Typography
+              variant="caption"
+              style={[styles.consentText, { color: colors.text.secondary }]}
+            >
+              Email me Expenzez product updates, tips and offers. You can
+              unsubscribe at any time. (Optional)
+            </Typography>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 

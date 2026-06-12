@@ -73,6 +73,7 @@ export default function Register() {
   const handleSubmit = async (overrideValues?: {
     phone_number?: string;
     name?: string;
+    marketing_consent?: boolean;
   }) => {
     // Merge override values with current state
     const submitValues = {
@@ -176,6 +177,7 @@ export default function Register() {
         birthdate: submitValues.dob,
         address: submitValues.address,
         gender: submitValues.gender,
+        marketing_consent: submitValues.marketing_consent ?? false,
       });
       if (result.success) {
         showSuccess("Registration successful! Please verify your email.");

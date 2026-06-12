@@ -1,6 +1,7 @@
 /**
  * Utility functions for expense detection and categorization
  */
+import { isExcludedFromSpend } from "./nonSpendDetection";
 
 export interface ExpenseDetectionResult {
   isExpense: boolean;
@@ -81,6 +82,14 @@ export const processTransactionExpense = (
   logDetails: boolean = false
 ): ExpenseDetectionResult => {
   const category = transaction.category || "Other";
+
+  // Non-spend money movement (internal transfers, savings moves, card payments,
+  // transfers to self) — explicit override or auto-detected — never counts as
+  // spend. This keeps it out of every chart/total that uses this gate.
+  if (isExcludedFromSpend(transaction)) {
+    return { isExpense: false, isIncomeCategory: false, isExpenseCategory: false };
+  }
+
   const detectionResult = detectExpense(transaction.amount, transaction.type, category);
 
   if (logDetails && index < 3) { // Log first 3 transactions for debugging

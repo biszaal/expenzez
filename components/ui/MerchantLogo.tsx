@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { getMerchantInfo, MerchantInfo } from '../../services/merchantService';
+import { BRANDFETCH_CLIENT_ID } from '../../config/logos';
+import { resolveMerchantDomain } from '../../services/merchantLogoResolver';
 
 interface MerchantLogoProps {
   merchant?: string;
@@ -101,10 +103,11 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 /**
- * MerchantLogo component with 3-tier fallback:
- * 1. DuckDuckGo icon (if domain exists) - free, no API key required
- * 2. Category icon via Ionicons
- * 3. First letter avatar with brand color
+ * MerchantLogo — shows the real brand logo (Clearbit, high-res) for merchants
+ * with a known curated domain. Anything without a known domain, or whose logo
+ * Clearbit doesn't have, falls back to a clean category icon — we never show a
+ * guessed/wrong or low-resolution logo. (Domains live in
+ * services/merchantService.ts MERCHANT_LOGOS.)
  */
 export const MerchantLogo: React.FC<MerchantLogoProps> = ({
   merchant,
@@ -113,45 +116,91 @@ export const MerchantLogo: React.FC<MerchantLogoProps> = ({
   size = 48,
   style,
 }) => {
-  const [imageError, setImageError] = useState(false);
-
   // Get merchant info from service
   const merchantInfo: MerchantInfo = getMerchantInfo(merchant || description || '');
   const effectiveCategory = (merchantInfo.category || category || 'other').toLowerCase();
   const brandColor = merchantInfo.color || CATEGORY_COLORS[effectiveCategory] || CATEGORY_COLORS.other;
+  // Domain comes from the curated map (instant), or for everything else is
+  // resolved by name via Brandfetch Search and cached (merchantLogoResolver) —
+  // so messy bank names like "ADIDASUKLIM7300.4386.603" still get a logo.
+  const curatedDomain = merchantInfo.domain || null;
+  const [resolvedDomain, setResolvedDomain] = useState<string | null>(null);
+  useEffect(() => {
+    if (curatedDomain) {
+      setResolvedDomain(null);
+      return undefined;
+    }
+    let active = true;
+    resolveMerchantDomain(merchant || description).then((d) => {
+      if (active) setResolvedDomain(d);
+    });
+    return () => {
+      active = false;
+    };
+  }, [curatedDomain, merchant, description]);
+  const domain = curatedDomain || resolvedDomain;
 
-  // Generate DuckDuckGo icon URL if domain exists (free, no API key required)
-  const logoUrl = merchantInfo.domain
-    ? `https://icons.duckduckgo.com/ip3/${merchantInfo.domain}.ico`
-    : null;
+  // High-res brand logo. Prefer Brandfetch (best quality) when a client ID is
+  // configured, falling back to Clearbit. If neither has it, the source list
+  // is exhausted and we show a clean category icon — never a wrong/blurry logo.
+  const sources = useMemo(() => {
+    if (!domain) return [];
+    const list: string[] = [];
+    if (BRANDFETCH_CLIENT_ID) {
+      // Brandfetch Logo Link — sized + explicit `icon` type (verified format).
+      list.push(
+        `https://cdn.brandfetch.io/${domain}/w/256/h/256/icon?c=${BRANDFETCH_CLIENT_ID}`
+      );
+    }
+    list.push(`https://logo.clearbit.com/${domain}?size=256`);
+    return list;
+  }, [domain]);
 
-  // Tier 1: Try DuckDuckGo icon - colored background with logo
-  if (logoUrl && !imageError) {
+  // Which source we're currently attempting. Advances on load error; reset when
+  // the domain changes (list rows get recycled across different merchants).
+  const [srcIndex, setSrcIndex] = useState(0);
+  useEffect(() => setSrcIndex(0), [domain]);
+
+  const logoUrl = srcIndex < sources.length ? sources[srcIndex] : null;
+
+  // Real brand logo on a clean white chip (logos read best on white, and it
+  // stays consistent across light/dark themes).
+  if (logoUrl) {
     return (
       <View
         style={[
           styles.container,
+          styles.logoShadow,
           {
             width: size,
             height: size,
             borderRadius: size / 2,
-            backgroundColor: `${brandColor}20`,
+            backgroundColor: '#FFFFFF',
           },
           style,
         ]}
       >
-        <Image
-          source={{ uri: logoUrl }}
+        <View
           style={{
-            width: size * 0.6,
-            height: size * 0.6,
-            borderRadius: 4,
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            overflow: 'hidden',
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: 'rgba(0,0,0,0.06)',
           }}
-          onError={() => setImageError(true)}
-          contentFit="contain"
-          cachePolicy="memory-disk"
-          transition={150}
-        />
+        >
+          <Image
+            source={{ uri: logoUrl }}
+            style={{ width: '100%', height: '100%' }}
+            // cover + circular clip → the logo fills the circle and any square/
+            // badge background on the icon is trimmed to the circle (no overflow).
+            onError={() => setSrcIndex((i) => i + 1)}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={150}
+          />
+        </View>
       </View>
     );
   }
@@ -185,6 +234,16 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  // Soft shadow for the circular logo tile. Kept separate from the clipping
+  // view because overflow:'hidden' (needed to clip the logo to the circle)
+  // would otherwise suppress the shadow on iOS.
+  logoShadow: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
 });
 

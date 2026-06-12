@@ -42,6 +42,7 @@ interface RegisterInput {
   birthdate: string;
   address: string;
   gender: string;
+  marketing_consent?: boolean;
 }
 
 interface AuthContextType {

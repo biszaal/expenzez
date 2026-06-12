@@ -111,9 +111,12 @@ export const notificationAPI = {
   // Mark notification as read
   markAsRead: async (notificationId: string) => {
     try {
-      const response = await api.post('/notifications/mark-read', {
-        notificationId,
-      });
+      // RESTful route deployed by the backend: PUT /notifications/{id}/read.
+      // (The notificationId is also sent in the body for backward compatibility.)
+      const response = await api.put(
+        `/notifications/${encodeURIComponent(notificationId)}/read`,
+        { notificationId }
+      );
       return response.data;
     } catch (error: any) {
       console.error('Error marking notification as read:', error);

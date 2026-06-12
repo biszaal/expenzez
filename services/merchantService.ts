@@ -373,7 +373,59 @@ const MERCHANT_LOGOS: Record<string, MerchantInfo> = {
     logo: '↩️',
     category: 'finance',
     color: '#4CAF50'
-  }
+  },
+
+  // ── Common brands (added for real-logo coverage). Keys are lowercase and
+  // matched as substrings of the cleaned description, so e.g. "UBERTRIP"
+  // resolves via "uber" and "ALIPAY UK" via "alipay". ──
+
+  // Ride-hailing / transport / travel
+  // (uber + tfl already defined above with domains.)
+  'ubereats': { name: 'Uber Eats', logo: '🥡', domain: 'ubereats.com', category: 'food', color: '#06C167' },
+  'bolt': { name: 'Bolt', logo: '🚕', domain: 'bolt.eu', category: 'transport', color: '#34D186' },
+  'trainline': { name: 'Trainline', logo: '🚆', domain: 'thetrainline.com', category: 'transport', color: '#00B0B9' },
+  'ryanair': { name: 'Ryanair', logo: '✈️', domain: 'ryanair.com', category: 'travel', color: '#073590' },
+  'easyjet': { name: 'easyJet', logo: '✈️', domain: 'easyjet.com', category: 'travel', color: '#FF6600' },
+  'airbnb': { name: 'Airbnb', logo: '🏠', domain: 'airbnb.com', category: 'travel', color: '#FF5A5F' },
+  'booking': { name: 'Booking.com', logo: '🏨', domain: 'booking.com', category: 'travel', color: '#003580' },
+
+  // Payments / finance  (paypal already defined above.)
+  'alipay': { name: 'Alipay', logo: '💳', domain: 'alipay.com', category: 'finance', color: '#1677FF' },
+  'klarna': { name: 'Klarna', logo: '💳', domain: 'klarna.com', category: 'finance', color: '#FFB3C7' },
+  'wise': { name: 'Wise', logo: '💳', domain: 'wise.com', category: 'finance', color: '#9FE870' },
+
+  // Streaming / subscriptions / gaming  (netflix + spotify already defined above.)
+  'disney': { name: 'Disney+', logo: '📺', domain: 'disneyplus.com', category: 'entertainment', color: '#113CCF' },
+  'youtube': { name: 'YouTube', logo: '📺', domain: 'youtube.com', category: 'entertainment', color: '#FF0000' },
+  'audible': { name: 'Audible', logo: '🎧', domain: 'audible.co.uk', category: 'entertainment', color: '#FF9900' },
+  'playstation': { name: 'PlayStation', logo: '🎮', domain: 'playstation.com', category: 'entertainment', color: '#003791' },
+  'xbox': { name: 'Xbox', logo: '🎮', domain: 'xbox.com', category: 'entertainment', color: '#107C10' },
+  'steam': { name: 'Steam', logo: '🎮', domain: 'steampowered.com', category: 'entertainment', color: '#1B2838' },
+
+  // Food delivery / restaurants
+  'deliveroo': { name: 'Deliveroo', logo: '🥡', domain: 'deliveroo.co.uk', category: 'food', color: '#00CCBC' },
+  'just eat': { name: 'Just Eat', logo: '🥡', domain: 'just-eat.co.uk', category: 'food', color: '#FF8000' },
+  'justeat': { name: 'Just Eat', logo: '🥡', domain: 'just-eat.co.uk', category: 'food', color: '#FF8000' },
+  'just-eat': { name: 'Just Eat', logo: '🥡', domain: 'just-eat.co.uk', category: 'food', color: '#FF8000' },
+  'nando': { name: "Nando's", logo: '🍗', domain: 'nandos.co.uk', category: 'food', color: '#DC241F' },
+  // Keyed on the full name so it doesn't false-match "PrettyLittleThing".
+  'pret a manger': { name: 'Pret A Manger', logo: '🥪', domain: 'pret.co.uk', category: 'food', color: '#7D2027' },
+  'burger king': { name: 'Burger King', logo: '🍔', domain: 'burgerking.co.uk', category: 'food', color: '#D62300' },
+
+  // Supermarkets / retail
+  'lidl': { name: 'Lidl', logo: '🛒', domain: 'lidl.co.uk', category: 'shopping', color: '#0050AA' },
+  'aldi': { name: 'Aldi', logo: '🛒', domain: 'aldi.co.uk', category: 'shopping', color: '#00559F' },
+  'waitrose': { name: 'Waitrose', logo: '🛒', domain: 'waitrose.com', category: 'shopping', color: '#5A8F3C' },
+  'boots': { name: 'Boots', logo: '💊', domain: 'boots.com', category: 'health', color: '#05054B' },
+  'argos': { name: 'Argos', logo: '🛍️', domain: 'argos.co.uk', category: 'shopping', color: '#ED1B24' },
+  'currys': { name: 'Currys', logo: '🛍️', domain: 'currys.co.uk', category: 'shopping', color: '#742D82' },
+  'primark': { name: 'Primark', logo: '🛍️', domain: 'primark.com', category: 'shopping', color: '#0094D9' },
+  'ikea': { name: 'IKEA', logo: '🛋️', domain: 'ikea.com', category: 'shopping', color: '#0058A3' },
+  'asos': { name: 'ASOS', logo: '🛍️', domain: 'asos.com', category: 'shopping', color: '#000000' },
+
+  // Tech / big brands  (apple already defined above.)
+  'google': { name: 'Google', logo: '🔍', domain: 'google.com', category: 'other', color: '#4285F4' },
+  'microsoft': { name: 'Microsoft', logo: '🪟', domain: 'microsoft.com', category: 'other', color: '#737373' }
 };
 
 // Default logos for categories

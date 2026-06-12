@@ -1,7 +1,7 @@
 import { Stack, router, useSegments } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import * as FileSystem from "expo-file-system/legacy";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   ShareIntentProvider,
   useShareIntentContext,
@@ -745,38 +745,53 @@ function RootLayoutNav() {
 function ShareIntentRouter() {
   const { hasShareIntent, shareIntent, resetShareIntent } =
     useShareIntentContext();
+  const { isLocked, isInitialized } = useSecurity();
+  const [pendingImport, setPendingImport] = useState<{
+    uri: string;
+    name: string;
+  } | null>(null);
+  const processedRef = useRef(false);
 
+  // STEP 1 — Capture the shared PDF immediately on launch.
+  // The shared file lives in a transient share-extension/app-group location
+  // that resetShareIntent() cleans up — and which is often security-scoped, so
+  // reading it later fails. Copy it into our own cache straight away while the
+  // source URI is still valid, verify the copy is non-empty, then reset.
+  //
+  // We deliberately DO NOT navigate here: when App Lock is on the navigator is
+  // unmounted behind the PIN screen and the session isn't restored yet, so a
+  // push now would race an unmounted navigator and the parse would run against
+  // an expired file ("pdf failed to parse"). Navigation is deferred to step 2.
   useEffect(() => {
     if (!hasShareIntent || !shareIntent?.files?.length) return;
+    if (processedRef.current) return;
 
-    const pdf = shareIntent.files.find(
-      (f) => f.mimeType === "application/pdf"
-    );
+    const pdf = shareIntent.files.find((f) => f.mimeType === "application/pdf");
     if (!pdf?.path) {
       resetShareIntent();
       return;
     }
+    processedRef.current = true;
 
-    // The shared file lives in a transient share-extension/app-group
-    // location that resetShareIntent() can clean up — and which is often
-    // security-scoped, so reading it later from the import screen fails
-    // (the bug where "share from PayPal" did nothing while a downloaded
-    // file worked). Copy it into our own cache FIRST, then navigate with
-    // the stable path, then reset.
     (async () => {
-      const name = (pdf.fileName ?? "statement.pdf").replace(
-        /[^\w.\-]/g,
-        "_"
-      );
+      const name = pdf.fileName ?? "statement.pdf";
       let sharedUri = pdf.path;
       try {
         const cacheDir = (FileSystem as any).cacheDirectory as
           | string
           | undefined;
         if (cacheDir) {
-          const dest = `${cacheDir}shared-${Date.now()}-${name}`;
+          const safeName = name.replace(/[^\w.\-]/g, "_");
+          const dest = `${cacheDir}shared-${Date.now()}-${safeName}`;
           await FileSystem.copyAsync({ from: pdf.path, to: dest });
-          sharedUri = dest;
+          const info = await FileSystem.getInfoAsync(dest);
+          if (info.exists && (info as any).size > 0) {
+            sharedUri = dest;
+          } else {
+            console.warn(
+              "[ShareIntent] cached copy missing/empty, passing original path"
+            );
+          }
         }
       } catch (copyErr: any) {
         // Fall back to the original path; import screen will retry a copy.
@@ -786,16 +801,25 @@ function ShareIntentRouter() {
         );
       }
 
-      router.push({
-        pathname: "/import-statement",
-        params: {
-          sharedUri,
-          sharedName: pdf.fileName ?? "statement.pdf",
-        },
-      });
+      setPendingImport({ uri: sharedUri, name });
       resetShareIntent();
     })();
   }, [hasShareIntent, shareIntent, resetShareIntent]);
+
+  // STEP 2 — Once the app is initialized AND unlocked (navigator mounted,
+  // session restored), route into the import flow with the durable cached file.
+  useEffect(() => {
+    if (!pendingImport) return;
+    if (!isInitialized || isLocked) return;
+
+    const { uri, name } = pendingImport;
+    setPendingImport(null);
+    processedRef.current = false;
+    router.push({
+      pathname: "/import-statement",
+      params: { sharedUri: uri, sharedName: name },
+    });
+  }, [pendingImport, isInitialized, isLocked]);
 
   return null;
 }
