@@ -42,7 +42,7 @@ function routeForPath(
   // Keep this list explicit so unknown paths can't side-route.
   const routes: Record<string, string> = {
     'auth/reset-password': '/auth/ResetPassword',
-    'auth/verify-email': '/auth/VerifyEmail',
+    'auth/verify-email': '/auth/EmailVerification',
     'auth/forgot-password': '/auth/ForgotPassword',
     'auth/login': '/auth/login',
     subscription: '/subscription',

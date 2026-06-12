@@ -524,6 +524,54 @@ export default function AccountScreen() {
                   borderColor: colors.border.medium,
                 },
               ]}
+              onPress={() => router.push("/health")}
+            >
+              <LinearGradient
+                colors={[
+                  colors.background.tertiary,
+                  colors.card.background,
+                ]}
+                style={[styles.quickActionGradient, shadows.sm]}
+              >
+                <View
+                  style={[
+                    styles.quickActionIcon,
+                    { backgroundColor: colors.primary.main + "1F" },
+                  ]}
+                >
+                  <Ionicons
+                    name="pulse-outline"
+                    size={20}
+                    color={colors.primary.main}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.quickActionTitle,
+                    { color: colors.text.primary },
+                  ]}
+                >
+                  Financial Health
+                </Text>
+                <Text
+                  style={[
+                    styles.quickActionSubtitle,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  Credit score & wellness
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.quickActionCard,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.medium,
+                },
+              ]}
               onPress={() => router.push("/transactions")}
             >
               <LinearGradient
@@ -660,53 +708,6 @@ export default function AccountScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.quickActionCard,
-                {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.medium,
-                },
-              ]}
-              onPress={() => router.push("/security")}
-            >
-              <LinearGradient
-                colors={[
-                  colors.background.tertiary,
-                  colors.card.background,
-                ]}
-                style={[styles.quickActionGradient, shadows.sm]}
-              >
-                <View
-                  style={[
-                    styles.quickActionIcon,
-                    { backgroundColor: colors.primary.main + "1F" },
-                  ]}
-                >
-                  <Ionicons
-                    name="shield-checkmark-outline"
-                    size={20}
-                    color={colors.primary.main}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.quickActionTitle,
-                    { color: colors.text.primary },
-                  ]}
-                >
-                  Security
-                </Text>
-                <Text
-                  style={[
-                    styles.quickActionSubtitle,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  PIN, biometrics & devices
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
           </View>
 
           {/* Settings Menu */}

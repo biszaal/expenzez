@@ -993,7 +993,7 @@ export default function CSVImportScreen() {
                 {
                   text: "View Bills",
                   onPress: () => {
-                    router.replace("/(tabs)/bills" as any);
+                    router.replace("/bills");
                   },
                 },
               ]

@@ -957,7 +957,7 @@ export default function SettingsPage() {
                 },
                 shadows.sm,
               ]}
-              onPress={() => Linking.openURL("https://expenzez.com/privacy")}
+              onPress={() => router.push("/terms")}
             >
               <Ionicons
                 name="shield-checkmark-outline"
@@ -971,7 +971,7 @@ export default function SettingsPage() {
                 Privacy Policy
               </Text>
               <Ionicons
-                name="open-outline"
+                name="chevron-forward"
                 size={20}
                 color={colors.text.tertiary}
               />
@@ -986,7 +986,7 @@ export default function SettingsPage() {
                 },
                 shadows.sm,
               ]}
-              onPress={() => Linking.openURL("https://expenzez.com/terms")}
+              onPress={() => router.push("/terms")}
             >
               <Ionicons
                 name="document-text-outline"
@@ -1000,7 +1000,7 @@ export default function SettingsPage() {
                 Terms of Use (EULA)
               </Text>
               <Ionicons
-                name="open-outline"
+                name="chevron-forward"
                 size={20}
                 color={colors.text.tertiary}
               />

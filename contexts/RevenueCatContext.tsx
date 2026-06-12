@@ -3,12 +3,13 @@
  * Manages subscription state and purchase flow across the app
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { api } from "../services/config/apiClient";
 import { ENV_CONFIG } from "../config/environment";
+import { hasActivePremiumEntitlement, resolveIsPro } from "../utils/premiumStatus";
 
 // RevenueCat module variables - will be set during initialization
 let Purchases: any = null;
@@ -77,6 +78,28 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
   const [activeProductIdentifier, setActiveProductIdentifier] = useState<
     string | null
   >(null);
+
+  // Two independent premium signals, tracked separately so neither can clobber
+  // the other:
+  //   - sdkPremiumRef:     RevenueCat SDK CustomerInfo — authoritative & immediate
+  //                        for on-device purchases.
+  //   - backendPremiumRef: our backend `isPremium` flag — secondary signal for
+  //                        cross-device state / webhook persistence.
+  // isPro = SDK OR backend, so a delayed, failed, or wrong-app_user_id backend
+  // can never revoke a purchase the SDK has already confirmed. This is the fix
+  // for "purchase succeeded but Pro never activated".
+  const sdkPremiumRef = useRef(isDevMode);
+  const backendPremiumRef = useRef(isDevMode);
+
+  const applyPremiumState = useCallback(() => {
+    const pro = resolveIsPro(sdkPremiumRef.current, backendPremiumRef.current);
+    console.log("[RevenueCat] 🧮 Resolving isPro:", pro, {
+      sdk: sdkPremiumRef.current,
+      backend: backendPremiumRef.current,
+    });
+    setIsPro(pro);
+    setHasActiveSubscription(pro);
+  }, []);
 
   // Initialize RevenueCat SDK
   useEffect(() => {
@@ -345,8 +368,8 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
           expiresAt,
         });
 
-        setIsPro(isPremium);
-        setHasActiveSubscription(isPremium);
+        backendPremiumRef.current = isPremium;
+        applyPremiumState();
 
         // Set expiry date if available
         if (expiresAt) {
@@ -383,8 +406,11 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (profile && profile.isPremium !== undefined) {
         console.log("[RevenueCat] ✅ Backend isPremium:", profile.isPremium);
-        setIsPro(profile.isPremium);
-        setHasActiveSubscription(profile.isPremium);
+        // Backend is a secondary signal. Because isPro = SDK OR backend, this
+        // can only ADD access — it can never revoke a purchase the SDK has
+        // already confirmed on-device.
+        backendPremiumRef.current = !!profile.isPremium;
+        applyPremiumState();
 
         console.log("[RevenueCat] 📊 Subscription details from backend:", {
           isPremium: profile.isPremium,
@@ -398,7 +424,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("[RevenueCat] ❌ Failed to sync from backend:", error);
       // Don't throw - allow RevenueCat SDK to be source of truth if backend fails
     }
-  }, []);
+  }, [applyPremiumState]);
 
   const processCustomerInfo = useCallback(async (info: any) => {
     // GUARD: Never process customer info in dev mode - keep premium access
@@ -413,10 +439,15 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!info || !info.entitlements || !info.entitlements.active) {
       console.log("[RevenueCat] ⚠️ No customer info or entitlements (logged out state)");
 
-      // Sync with backend to get persistent subscription status
-      await syncPremiumStatusFromBackend();
+      // SDK reports no active entitlement on this device.
+      sdkPremiumRef.current = false;
 
-      setHasActiveSubscription(false);
+      // Sync with backend to get persistent subscription status (may still
+      // grant Pro for a subscription bought on another device). This sets the
+      // backend ref and reconciles isPro via applyPremiumState().
+      await syncPremiumStatusFromBackend();
+      applyPremiumState();
+
       setIsInTrialPeriod(false);
       setSubscriptionExpiryDate(null);
       setActiveProductIdentifier(null);
@@ -427,50 +458,35 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
     console.log("[RevenueCat] Active entitlements:", Object.keys(info.entitlements.active));
     console.log("[RevenueCat] All entitlements:", info.entitlements);
 
-    // Check if user has active "premium" or "Premium" entitlement (case-insensitive check)
+    // Check if user has active "premium" or "Premium" entitlement
     const premiumEntitlement =
       info.entitlements.active["premium"] ||
       info.entitlements.active["Premium"];
 
-    // CRITICAL FIX: Validate expiration date before granting premium access
-    let hasPremium = premiumEntitlement !== undefined;
-    let isExpired = false;
+    // The SDK CustomerInfo is the authoritative, immediate source of truth for
+    // on-device purchases. hasActivePremiumEntitlement validates expiry too.
+    const sdkPro = hasActivePremiumEntitlement(info);
+    sdkPremiumRef.current = sdkPro;
 
-    if (hasPremium && premiumEntitlement.expirationDate) {
-      const expiryDate = new Date(premiumEntitlement.expirationDate);
-      const now = new Date();
-      isExpired = expiryDate < now;
-
-      if (isExpired) {
-        console.log("[RevenueCat] 🚨 SUBSCRIPTION EXPIRED!", {
-          expiryDate: expiryDate.toISOString(),
-          now: now.toISOString(),
-          daysSinceExpiry: Math.floor((now.getTime() - expiryDate.getTime()) / (1000 * 60 * 60 * 24))
-        });
-        hasPremium = false; // Override - subscription is expired
-      }
-    }
-
-    console.log("[RevenueCat] Has premium entitlement:", hasPremium);
-    console.log("[RevenueCat] Is expired:", isExpired);
+    console.log("[RevenueCat] Has active premium entitlement (SDK):", sdkPro);
     console.log("[RevenueCat] Premium entitlement object:", premiumEntitlement);
 
-    // Delay backend sync to give webhook time to process (webhook processes first)
-    // This ensures DynamoDB has the latest data before we read it
-    setTimeout(async () => {
-      try {
-        console.log("[RevenueCat] 🔄 Syncing with backend after webhook processing delay...");
-        await syncPremiumStatusFromBackend();
-      } catch (error) {
-        console.error("[RevenueCat] ❌ Failed to sync with backend after delay:", error);
-      }
-    }, 3000); // 3 second delay to allow webhook to process
+    // Grant/revoke Pro IMMEDIATELY from the SDK. Do NOT wait for the backend —
+    // its webhook can lag, fail, or land on a different app_user_id, which is
+    // exactly what caused "purchase succeeded but Pro never activated".
+    applyPremiumState();
 
-    // Set subscription state from RevenueCat SDK immediately
-    // CRITICAL: Only set to true if not expired
-    setHasActiveSubscription(hasPremium && !isExpired);
+    // Reconcile with the backend in the background (persistence / cross-device).
+    // Because isPro = SDK OR backend, this can only ADD access, never revoke a
+    // purchase the SDK has already confirmed.
+    setTimeout(() => {
+      console.log("[RevenueCat] 🔄 Background backend reconcile...");
+      syncPremiumStatusFromBackend().catch((error) =>
+        console.error("[RevenueCat] ❌ Background backend reconcile failed:", error)
+      );
+    }, 3000);
 
-    if (hasPremium && !isExpired) {
+    if (sdkPro) {
       // Check if in trial period
       const inTrial =
         premiumEntitlement.willRenew &&
@@ -486,7 +502,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       // Get active product identifier
       setActiveProductIdentifier(premiumEntitlement.productIdentifier);
 
-      console.log("[RevenueCat] ✅ User has premium access", {
+      console.log("[RevenueCat] ✅ User has premium access (SDK)", {
         inTrial,
         expiryDate: expiryDateString,
         productId: premiumEntitlement.productIdentifier,
@@ -494,12 +510,12 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
         periodType: premiumEntitlement.periodType,
       });
     } else {
-      console.log("[RevenueCat] ❌ User does NOT have premium access", { expired: isExpired });
+      console.log("[RevenueCat] ❌ SDK reports no active premium entitlement");
       setIsInTrialPeriod(false);
       setSubscriptionExpiryDate(null);
       setActiveProductIdentifier(null);
     }
-  }, [syncPremiumStatusFromBackend]);
+  }, [syncPremiumStatusFromBackend, applyPremiumState]);
 
   const updateCustomerInfo = useCallback(async () => {
     if (isDevMode) {
@@ -664,7 +680,8 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       await processCustomerInfo(info);
       setIsLoading(false);
 
-      const hasPremium = info.entitlements.active["premium"] !== undefined;
+      // Use the shared, expiry-aware check (also handles the "Premium" casing).
+      const hasPremium = hasActivePremiumEntitlement(info);
 
       if (hasPremium) {
         return { success: true };
@@ -757,15 +774,22 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
 
       console.log("[RevenueCat] ✅ User logged out successfully");
 
-      // Reset to anonymous user state
-      await processCustomerInfo(info);
-
-      // Clear offerings
+      // Hard-clear both premium signals on explicit logout so neither can keep
+      // the previous user as Pro.
+      sdkPremiumRef.current = false;
+      backendPremiumRef.current = false;
+      setCustomerInfo(info);
+      applyPremiumState();
+      setIsInTrialPeriod(false);
+      setSubscriptionExpiryDate(null);
+      setActiveProductIdentifier(null);
       setOfferings(null);
     } catch (error: any) {
       console.error("[RevenueCat] ❌ Logout failed:", error);
 
       // Force reset subscription state even if logout fails
+      sdkPremiumRef.current = false;
+      backendPremiumRef.current = false;
       setIsPro(false);
       setHasActiveSubscription(false);
       setIsInTrialPeriod(false);

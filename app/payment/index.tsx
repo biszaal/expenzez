@@ -207,30 +207,6 @@ export default function PaymentMethodsScreen() {
               />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.actionItem}
-              onPress={() => router.push("/banks/connect" as any)}
-            >
-              <View style={styles.actionIcon}>
-                <Ionicons
-                  name="business-outline"
-                  size={20}
-                  color={colors.primary.main}
-                />
-              </View>
-              <View style={styles.actionContent}>
-                <Text style={styles.actionTitle}>Connect Bank Account</Text>
-                <Text style={styles.actionSubtitle}>
-                  Link your bank account
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.primary.main}
-              />
-            </TouchableOpacity>
-
             <TouchableOpacity style={styles.actionItem}>
               <View style={styles.actionIcon}>
                 <Ionicons

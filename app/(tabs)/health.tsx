@@ -156,7 +156,15 @@ export default function FinancialHealthScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={styles.header}>
-        <View>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+          hitSlop={8}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
           <Text style={[styles.title, { color: colors.text.primary }]}>
             Financial health
             <Text style={{ color: colors.primary[500] }}>.</Text>
@@ -303,6 +311,29 @@ export default function FinancialHealthScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Cost of Living */}
+        <TouchableOpacity
+          style={[styles.section, { backgroundColor: colors.card.background, borderColor: colors.border.medium }]}
+          onPress={() => router.push('/cost-of-living')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.sectionHeader}>
+            <Ionicons name="globe-outline" size={24} color={colors.primary.main} />
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              Cost of Living
+            </Text>
+          </View>
+          <Text style={[styles.sectionDescription, { color: colors.text.secondary }]}>
+            See how the cost of living in your area compares and what it means for your budget.
+          </Text>
+          <View style={[styles.sectionButton, { borderColor: colors.primary.main }]}>
+            <Text style={[styles.sectionButtonText, { color: colors.primary.main }]}>
+              View Cost of Living
+            </Text>
+            <Ionicons name="arrow-forward" size={18} color={colors.primary.main} />
+          </View>
+        </TouchableOpacity>
+
         {/* Financial Overview */}
         <View style={[styles.section, { backgroundColor: colors.card.background, borderColor: colors.border.medium }]}>
           <View style={styles.sectionHeader}>
@@ -427,9 +458,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 22,
     paddingTop: 6,
     paddingBottom: 14,
+  },
+  backButton: {
+    width: 34,
+    height: 34,
+    marginLeft: -8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 28,
