@@ -1,31 +1,50 @@
-import { Link, Stack } from 'expo-router';
+import { Link, Stack, useRouter } from 'expo-router';
 import { useShareIntentContext } from 'expo-share-intent';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useSecurity } from '@/contexts/SecurityContext';
 
 // Share-extension deep links arrive as URLs that don't match any expo-router
 // route (e.g. expenzez://dataUrl=expenzezShareKey#file). expo-router renders
-// this not-found screen briefly before ShareIntentRouter has a chance to push
-// to /import-statement, causing a "this screen does not exist" flicker.
+// this not-found screen briefly before ShareIntentRouter pushes the user into
+// /import-statement, causing a "this screen does not exist" flicker.
 //
-// Mitigation: when this screen mounts, show a loading spinner for a moment.
-// If a share intent is being processed, ShareIntentRouter will navigate us
-// away. Otherwise we surface the real not-found UI after a short delay.
+// While a share is processing we show a spinner and let ShareIntentRouter take
+// over. But if the shared file is never delivered as a readable PDF (empty
+// files / iOS security-scoped URIs / source apps that share oddly), the router
+// can't navigate — previously this screen then spun FOREVER with no escape.
+// Mitigation: after a bounded grace period, clear the stale intent and drop the
+// user on the manual import screen so they can still pick the PDF themselves.
 export default function NotFoundScreen() {
-  const { hasShareIntent } = useShareIntentContext();
+  const { hasShareIntent, resetShareIntent } = useShareIntentContext();
+  const { isLocked } = useSecurity();
+  const router = useRouter();
   const [showError, setShowError] = useState(false);
 
   useEffect(() => {
     if (hasShareIntent) {
-      // ShareIntentRouter will navigate us away shortly.
-      return undefined;
+      // Behind App Lock the navigator is hidden behind the PIN screen, so the
+      // share router legitimately can't navigate yet — wait for unlock rather
+      // than firing the recovery prematurely (and losing the auto-parse).
+      if (isLocked) return undefined;
+
+      // Safety net: if ShareIntentRouter hasn't navigated us away within the
+      // grace window, the shared file couldn't be captured. Don't strand the
+      // user — reset the intent and fall back to the manual import screen.
+      const recover = setTimeout(() => {
+        resetShareIntent();
+        router.replace('/import-statement');
+      }, 6000);
+      return () => clearTimeout(recover);
     }
+
+    // Genuine not-found (no share in flight): surface the error UI shortly.
     const timer = setTimeout(() => setShowError(true), 1500);
     return () => clearTimeout(timer);
-  }, [hasShareIntent]);
+  }, [hasShareIntent, isLocked, resetShareIntent, router]);
 
   if (!showError) {
     return (
