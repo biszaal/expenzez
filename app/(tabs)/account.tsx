@@ -268,6 +268,18 @@ export default function AccountScreen() {
       ),
       route: "/notifications/preferences",
     },
+    {
+      title: "Bank Statements",
+      subtitle: "View your uploaded statements",
+      icon: (
+        <Ionicons
+          name="document-text-outline"
+          size={24}
+          color={colors?.primary?.main || "#3B82F6"}
+        />
+      ),
+      route: "/statements",
+    },
   ];
 
   if (!isLoggedIn) {

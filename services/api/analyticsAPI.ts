@@ -9,6 +9,7 @@
  */
 
 import { api } from '../config/apiClient';
+import { formatCurrency as formatCurrencyUtil } from '../../utils/formatters';
 
 export interface AnalyticsMetrics {
   forecast: ForecastResult[];
@@ -106,12 +107,7 @@ class AnalyticsAPI {
    * Format currency for display
    */
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
+    return formatCurrencyUtil(amount);
   }
 
   /**

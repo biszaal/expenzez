@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { isExcludedFromSpend } from "../../utils/nonSpendDetection";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAlert } from "../../hooks/useAlert";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
@@ -60,6 +61,7 @@ export default function TransactionsScreen() {
     true
   );
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const { showSuccess, showError } = useAlert();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -668,10 +670,12 @@ export default function TransactionsScreen() {
                       { color: colors.text.primary },
                     ]}
                   >
-                    £
-                    {pendingTransactions
-                      .reduce((sum, tx) => sum + Math.abs(tx.originalAmount), 0)
-                      .toFixed(2)}
+                    {formatAmount(
+                      pendingTransactions.reduce(
+                        (sum, tx) => sum + Math.abs(tx.originalAmount),
+                        0
+                      )
+                    )}
                   </Text>
                 </View>
 
@@ -726,8 +730,8 @@ export default function TransactionsScreen() {
                           },
                         ]}
                       >
-                        {transaction.type === "credit" ? "+" : "-"}£
-                        {Math.abs(transaction.originalAmount).toFixed(2)}
+                        {transaction.type === "credit" ? "+" : "-"}
+                        {formatAmount(Math.abs(transaction.originalAmount))}
                       </Text>
                       <Ionicons
                         name="chevron-forward"
@@ -761,7 +765,7 @@ export default function TransactionsScreen() {
                       { color: colors.text.secondary },
                     ]}
                   >
-                    £{section.total.toFixed(2)}
+                    {formatAmount(section.total)}
                   </Text>
                 </View>
 
@@ -782,7 +786,7 @@ export default function TransactionsScreen() {
                           { color: colors.text.secondary },
                         ]}
                       >
-                        £{group.total.toFixed(2)}
+                        {formatAmount(group.total)}
                       </Text>
                     </View>
 
@@ -837,8 +841,8 @@ export default function TransactionsScreen() {
                               },
                             ]}
                           >
-                            {transaction.type === "credit" ? "+" : "-"}£
-                            {Math.abs(transaction.originalAmount).toFixed(2)}
+                            {transaction.type === "credit" ? "+" : "-"}
+                            {formatAmount(Math.abs(transaction.originalAmount))}
                           </Text>
                           <Ionicons
                             name="chevron-forward"
@@ -973,7 +977,7 @@ export default function TransactionsScreen() {
                             { color: colors.text.primary },
                           ]}
                         >
-                          £{summary.totalSpending.toFixed(2)}
+                          {formatAmount(summary.totalSpending)}
                         </Text>
                       </View>
                       <View style={styles.metricRow}>
@@ -991,7 +995,7 @@ export default function TransactionsScreen() {
                             { color: colors.text.primary },
                           ]}
                         >
-                          £{summary.totalIncome.toFixed(2)}
+                          {formatAmount(summary.totalIncome)}
                         </Text>
                       </View>
                       <View style={styles.metricRow}>
@@ -1014,8 +1018,8 @@ export default function TransactionsScreen() {
                             },
                           ]}
                         >
-                          {summary.netFlow >= 0 ? "+" : ""}£
-                          {summary.netFlow.toFixed(2)}
+                          {summary.netFlow >= 0 ? "+" : ""}
+                          {formatAmount(summary.netFlow)}
                         </Text>
                       </View>
                       <View style={styles.metricRow}>
@@ -1051,7 +1055,7 @@ export default function TransactionsScreen() {
                             { color: colors.text.primary },
                           ]}
                         >
-                          £{summary.avgTransaction.toFixed(2)}
+                          {formatAmount(summary.avgTransaction)}
                         </Text>
                       </View>
                     </View>
@@ -1085,7 +1089,7 @@ export default function TransactionsScreen() {
                                     { color: colors.text.secondary },
                                   ]}
                                 >
-                                  £{amount.toFixed(2)}
+                                  {formatAmount(amount)}
                                 </Text>
                               </View>
                               <View

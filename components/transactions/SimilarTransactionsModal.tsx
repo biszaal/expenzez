@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/contexts/ThemeContext";
+import { formatCurrency } from "@/utils/formatters";
 import type { SimilarTransaction } from "@/services/api/transactionAPI";
 
 interface Props {
@@ -23,7 +24,7 @@ interface Props {
 }
 
 const fmtAmount = (n: number) =>
-  `${n < 0 ? "-" : ""}£${Math.abs(n).toFixed(2)}`;
+  `${n < 0 ? "-" : ""}${formatCurrency(Math.abs(n))}`;
 
 export const SimilarTransactionsModal: React.FC<Props> = ({
   visible,

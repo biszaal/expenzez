@@ -9,6 +9,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { budgetService, BudgetProgress } from "../services/budgetService";
 import { EXPENSE_CATEGORIES } from "../services/expenseStorage";
 import { spacing, borderRadius } from "../constants/theme";
@@ -33,9 +34,7 @@ export default function BudgetOverview() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return `£${amount.toFixed(2)}`;
-  };
+  const { formatAmount: formatCurrency } = useCurrency();
 
   const getBudgetStatusColor = (status: BudgetProgress["status"]) => {
     return budgetService.getBudgetStatusColor(status);

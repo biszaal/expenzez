@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import {
   costOfLivingService,
   CostOfLivingAnalysis,
@@ -79,7 +80,12 @@ export default function CostOfLivingDashboard() {
     await loadData();
   };
 
-  const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
+  const { formatAmount: formatCurrencyAmount } = useCurrency();
+  const formatCurrency = (amount: number) =>
+    formatCurrencyAmount(amount, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
 
   const getScoreColor = (score: number): string => {
     if (score >= 80) return "#22C55E";
@@ -378,7 +384,7 @@ export default function CostOfLivingDashboard() {
               Energy Price Cap
             </Text>
             <Text style={[styles.contextValue, { color: colors.text.primary }]}>
-              £{currentCap.monthlyCap}/mo
+              {formatCurrency(currentCap.monthlyCap)}/mo
             </Text>
             <Text style={[styles.contextSub, { color: colors.text.secondary }]}>
               {currentCap.quarter}

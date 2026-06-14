@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { budgetAPI } from "../../services/api";
 import { transactionAPI } from "../../services/api/transactionAPI";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -22,6 +23,7 @@ import { spacing, borderRadius } from "../../constants/theme";
 export default function EditBudgetPage() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { formatAmount, symbol } = useCurrency();
   const [categories, setCategories] = useState<any[]>([]);
   const [budgets, setBudgets] = useState<Record<string, string>>({});
   const [mainBudget, setMainBudget] = useState<string>("2000");
@@ -300,7 +302,11 @@ export default function EditBudgetPage() {
       await saveBudgetToDatabase(budgetAmount, categoryBudgetsByName);
 
       Alert.alert("Success", "Budgets saved successfully!", [
-        { text: "OK", onPress: () => router.replace("/budgets") },
+        {
+          text: "OK",
+          onPress: () =>
+            router.canGoBack() ? router.back() : router.replace("/budgets"),
+        },
       ]);
     } catch (error) {
       console.error("Error saving budget:", error);
@@ -437,7 +443,9 @@ export default function EditBudgetPage() {
         ]}
       >
         <TouchableOpacity
-          onPress={() => router.replace("/budgets")}
+          onPress={() =>
+            router.canGoBack() ? router.back() : router.replace("/budgets")
+          }
           style={styles.backButton}
           accessibilityRole="button"
           accessibilityLabel="Go back to budgets"
@@ -491,7 +499,7 @@ export default function EditBudgetPage() {
             ]}
           >
             <Text style={[styles.inputLabel, { color: colors.text.secondary }]}>
-              Budget Amount (£)
+              Budget Amount ({symbol})
             </Text>
             <TextInput
               style={[
@@ -536,12 +544,8 @@ export default function EditBudgetPage() {
               {totalAssigned === 0
                 ? "Category caps are optional — set any you like below."
                 : overBudget
-                ? `£${totalAssigned.toFixed(0)} in category caps · £${(
-                    totalAssigned - mainBudgetNum
-                  ).toFixed(0)} over your monthly budget`
-                : `£${totalAssigned.toFixed(0)} budgeted · £${remaining.toFixed(
-                    0
-                  )} unallocated`}
+                ? `${formatAmount(totalAssigned, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} in category caps · ${formatAmount(totalAssigned - mainBudgetNum, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} over your monthly budget`
+                : `${formatAmount(totalAssigned, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} budgeted · ${formatAmount(remaining, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} unallocated`}
             </Text>
           </View>
         </View>

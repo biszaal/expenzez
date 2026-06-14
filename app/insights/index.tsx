@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import {
   insightsEngine,
   SpendingInsight,
@@ -23,6 +24,7 @@ import { spacing, borderRadius } from "../../constants/theme";
 
 export default function InsightsScreen() {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const [insights, setInsights] = useState<SpendingInsight[]>([]);
   const [nudges, setNudges] = useState<SpendingNudge[]>([]);
   const [loading, setLoading] = useState(true);
@@ -197,7 +199,7 @@ export default function InsightsScreen() {
                 <Text
                   style={[styles.metricText, { color: colors.primary[700] }]}
                 >
-                  £{insight.amount.toFixed(0)}
+                  {formatAmount(insight.amount, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </Text>
               </View>
             )}

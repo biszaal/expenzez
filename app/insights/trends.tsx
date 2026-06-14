@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import { useAuth } from '../auth/AuthContext';
 import { insightsEngine, MonthlySpendingTrend } from '../../services/insightsEngine';
 import { spacing, borderRadius } from '../../constants/theme';
@@ -29,6 +30,7 @@ const { width } = Dimensions.get('window');
 
 export default function TrendsAnalysisScreen() {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const { user } = useAuth();
   const { isPremium } = useSubscription();
   const [trends, setTrends] = useState<MonthlySpendingTrend[]>([]);
@@ -224,13 +226,13 @@ export default function TrendsAnalysisScreen() {
         <View style={styles.chart}>
           <View style={styles.yAxis}>
             <Text style={[styles.axisLabel, { color: colors.text.secondary }]}>
-              £{(maxAmount).toFixed(0)}
+              {formatAmount(maxAmount, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </Text>
             <Text style={[styles.axisLabel, { color: colors.text.secondary }]}>
-              £{(maxAmount * 0.5).toFixed(0)}
+              {formatAmount(maxAmount * 0.5, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </Text>
             <Text style={[styles.axisLabel, { color: colors.text.secondary }]}>
-              £0
+              {formatAmount(0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </Text>
           </View>
 
@@ -477,7 +479,7 @@ export default function TrendsAnalysisScreen() {
                             Total Spent
                           </Text>
                           <Text style={[styles.statValue, { color: colors.text.primary }]}>
-                            £{trend.totalSpent.toFixed(2)}
+                            {formatAmount(trend.totalSpent)}
                           </Text>
                         </View>
 
@@ -486,7 +488,7 @@ export default function TrendsAnalysisScreen() {
                             Weekly Average
                           </Text>
                           <Text style={[styles.statValue, { color: colors.text.primary }]}>
-                            £{trend.weeklyAverage.toFixed(2)}
+                            {formatAmount(trend.weeklyAverage)}
                           </Text>
                         </View>
 
@@ -496,7 +498,7 @@ export default function TrendsAnalysisScreen() {
                               Top Category
                             </Text>
                             <Text style={[styles.statValue, { color: colors.text.primary }]}>
-                              {topCategory[0]} (£{topCategory[1].toFixed(2)})
+                              {topCategory[0]} ({formatAmount(topCategory[1])})
                             </Text>
                           </View>
                         )}
@@ -528,7 +530,7 @@ export default function TrendsAnalysisScreen() {
                         Average monthly
                       </Text>
                       <Text style={[styles.insightValue, { color: colors.text.primary }]}>
-                        £{(trends.reduce((sum, t) => sum + t.totalSpent, 0) / trends.length).toFixed(2)}
+                        {formatAmount(trends.reduce((sum, t) => sum + t.totalSpent, 0) / trends.length)}
                       </Text>
                     </View>
 

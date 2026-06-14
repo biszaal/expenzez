@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import {
   CategorizeTransaction,
   TRANSACTION_CATEGORIES,
@@ -31,6 +32,7 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
   onSelectMultiple,
 }) => {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<"date" | "amount" | "category">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -120,7 +122,7 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
             Total
           </Text>
           <Text style={[styles.statValue, { color: colors.text.primary }]}>
-            £{totalAmount.toFixed(2)}
+            {formatAmount(totalAmount)}
           </Text>
         </View>
         <View
@@ -317,7 +319,7 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
                 },
               ]}
             >
-              {item.type === "debit" ? "-" : "+"}£{item.amount.toFixed(2)}
+              {item.type === "debit" ? "-" : "+"}{formatAmount(item.amount)}
             </Text>
 
             <Text

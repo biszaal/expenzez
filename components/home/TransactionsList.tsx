@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { APP_STRINGS } from "../../constants/strings";
 import { styles } from "./TransactionsList.styles";
 import { MerchantLogo } from "../ui/MerchantLogo";
@@ -31,6 +32,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
   onRefreshTransactions,
 }) => {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const router = useRouter();
 
   return (
@@ -133,7 +135,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                   },
                 ]}
               >
-                £{Math.abs(tx.amount).toFixed(2)}
+                {formatAmount(Math.abs(tx.amount))}
               </Text>
             </View>
           </View>

@@ -14,6 +14,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { useTheme } from "../contexts/ThemeContext";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { transactionAPI } from "../services/api";
 import { ImportQuotaCard } from "../components/imports/ImportQuotaCard";
 import { autoBillDetection } from "../services/automaticBillDetection";
@@ -105,6 +106,7 @@ const CSV_EXPENSE_CATEGORIES: ExpenseCategory[] = [
 
 export default function CSVImportScreen() {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
 
   // All hooks must be declared before any conditional returns
   const [loading, setLoading] = useState(false);
@@ -1191,7 +1193,7 @@ export default function CSVImportScreen() {
                 <Text
                   style={[styles.statValue, { color: colors.text.primary }]}
                 >
-                  £{importPreview.totalAmount.toFixed(2)}
+                  {formatAmount(importPreview.totalAmount)}
                 </Text>
                 <Text
                   style={[styles.statLabel, { color: colors.text.secondary }]}
@@ -1231,8 +1233,8 @@ export default function CSVImportScreen() {
                         },
                       ]}
                     >
-                      {transaction.amount > 0 ? "+" : ""}£
-                      {Math.abs(transaction.amount).toFixed(2)}
+                      {transaction.amount > 0 ? "+" : ""}
+                      {formatAmount(Math.abs(transaction.amount))}
                     </Text>
                   </View>
                   <View style={styles.previewItemFooter}>

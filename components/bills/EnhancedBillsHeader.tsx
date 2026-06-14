@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../app/auth/AuthContext";
 
 // Number formatting utility
@@ -38,6 +39,7 @@ export const EnhancedBillsHeader: React.FC<EnhancedBillsHeaderProps> = ({
 }) => {
   const router = useRouter();
   const { colors } = useTheme();
+  const { symbol } = useCurrency();
   const { user } = useAuth();
 
   return (
@@ -51,7 +53,7 @@ export const EnhancedBillsHeader: React.FC<EnhancedBillsHeaderProps> = ({
             Bills
           </Text>
           <Text style={[styles.subtitle, { color: colors.text.tertiary }]}>
-            {totalBills} bills • £{formatAmount(monthlyTotal)}/month
+            {totalBills} bills • {symbol}{formatAmount(monthlyTotal)}/month
           </Text>
         </View>
 

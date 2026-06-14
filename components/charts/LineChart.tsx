@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, StyleSheet, Text } from "react-native";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -18,6 +19,7 @@ import Svg, {
   LinearGradient,
   Stop,
   G,
+  Line,
   Text as SvgText,
   Mask,
   Rect,
@@ -29,6 +31,7 @@ import {
   ChartDataPoint,
   GestureState,
 } from "./types";
+import { fontFamily } from "../../constants/theme";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -50,7 +53,9 @@ export const LineChart: React.FC<LineChartProps> = ({
   curveType = "bezier",
   gridColor = "#888",
   labelColor = "#888",
+  endDotRingColor = "#FFFFFF",
 }) => {
+  const { symbol, formatAmount } = useCurrency();
   // Animation values
   const pathAnimationProgress = useSharedValue(0);
   const gestureX = useSharedValue(0);
@@ -64,23 +69,28 @@ export const LineChart: React.FC<LineChartProps> = ({
     label: string;
   } | null>(null);
 
-  // Chart dimensions
+  // Chart dimensions. Left gutter is wider to seat the Y-axis labels; the right
+  // inset gives the animated end-dot breathing room so it never clips the edge.
   const dimensions: ChartDimensions = useMemo(
     () => ({
       width,
       height,
-      paddingHorizontal: 35,
+      paddingLeft: 36,
+      paddingRight: 18,
       paddingVertical: 20,
-      chartWidth: width - 70,
+      chartWidth: width - 36 - 18,
       chartHeight: height - 40,
     }),
     [width, height]
   );
 
-  // Calculate min/max values for scaling (including comparison data)
-  const { minValue, maxValue, valueRange } = useMemo(() => {
+  // Scale the data. `dataMax` is the true peak (used for the top axis label);
+  // `scaleMax` adds ~12% headroom above it so the curve and end-dot never touch
+  // the top edge. The baseline is pinned to 0 (or below, if values ever go
+  // negative) so the area fills to a meaningful £0 origin.
+  const { scaleMin, scaleRange, dataMax } = useMemo(() => {
     if (!data.values.length) {
-      return { minValue: 0, maxValue: 1, valueRange: 1 };
+      return { scaleMin: 0, scaleRange: 1, dataMax: 0 };
     }
 
     let allValues = [...data.values];
@@ -91,11 +101,22 @@ export const LineChart: React.FC<LineChartProps> = ({
     }
 
     const max = Math.max(...allValues);
-    const min = Math.min(...allValues);
-    const range = max - min || 1;
+    const min = Math.min(0, ...allValues);
+    const headroom = (max - min) * 0.12;
+    const ceiling = max + headroom || 1;
+    const range = ceiling - min || 1;
 
-    return { minValue: min, maxValue: max, valueRange: range };
+    return { scaleMin: min, scaleRange: range, dataMax: max };
   }, [data.values, data.comparisonData]);
+
+  // Map a data value to a Y pixel coordinate (SVG y grows downward).
+  const valueToY = useMemo(
+    () => (value: number) =>
+      dimensions.height -
+      dimensions.paddingVertical -
+      ((value - scaleMin) / scaleRange) * dimensions.chartHeight,
+    [dimensions, scaleMin, scaleRange]
+  );
 
   // Process data points with coordinates
   const processedData = useMemo(() => {
@@ -106,16 +127,11 @@ export const LineChart: React.FC<LineChartProps> = ({
     return data.values.map((value, index) => {
       // X coordinate: spread points evenly across chart width
       const x =
-        dimensions.paddingHorizontal +
+        dimensions.paddingLeft +
         (index / Math.max(1, data.values.length - 1)) * dimensions.chartWidth;
 
       // Y coordinate: map value to chart height (inverted because SVG y=0 is top)
-      const normalizedValue =
-        valueRange === 0 ? 0.5 : (value - minValue) / valueRange;
-      const y =
-        dimensions.height -
-        dimensions.paddingVertical -
-        normalizedValue * dimensions.chartHeight;
+      const y = valueToY(value);
 
       return {
         value,
@@ -125,7 +141,7 @@ export const LineChart: React.FC<LineChartProps> = ({
         y,
       } as ChartDataPoint;
     });
-  }, [data, dimensions, minValue, maxValue, valueRange]);
+  }, [data, dimensions, valueToY]);
 
   // Process comparison data points with coordinates
   const comparisonProcessedData = useMemo(() => {
@@ -136,17 +152,12 @@ export const LineChart: React.FC<LineChartProps> = ({
     return data.comparisonData.values.map((value, index) => {
       // X coordinate: spread points evenly across chart width
       const x =
-        dimensions.paddingHorizontal +
+        dimensions.paddingLeft +
         (index / Math.max(1, data.comparisonData!.values.length - 1)) *
           dimensions.chartWidth;
 
       // Y coordinate: map value to chart height using same scale as main data
-      const normalizedValue =
-        valueRange === 0 ? 0.5 : (value - minValue) / valueRange;
-      const y =
-        dimensions.height -
-        dimensions.paddingVertical -
-        normalizedValue * dimensions.chartHeight;
+      const y = valueToY(value);
 
       return {
         value,
@@ -156,21 +167,74 @@ export const LineChart: React.FC<LineChartProps> = ({
         y,
       } as ChartDataPoint;
     });
-  }, [
-    data.comparisonData,
-    data.labels,
-    dimensions,
-    minValue,
-    maxValue,
-    valueRange,
-  ]);
+  }, [data.comparisonData, data.labels, dimensions, valueToY]);
+
+  // Monotone cubic interpolation (Fritsch–Carlson). Unlike the naive bezier
+  // below, this guarantees the curve never overshoots or dips between points —
+  // essential for the step-like cumulative spend series, which is monotonic and
+  // would otherwise wobble. Tangents are clamped, then emitted as cubic-bezier
+  // `C` segments with control points a third of the way along each tangent.
+  const generateMonotonePath = (points: ChartDataPoint[]): string => {
+    const n = points.length;
+    if (n < 2) return n === 1 ? `M${points[0].x},${points[0].y}` : "";
+
+    // Secant slopes between consecutive points.
+    const dx: number[] = [];
+    const slope: number[] = [];
+    for (let i = 0; i < n - 1; i++) {
+      const h = points[i + 1].x - points[i].x || 1;
+      dx.push(h);
+      slope.push((points[i + 1].y - points[i].y) / h);
+    }
+
+    // Per-point tangents, then clamp to preserve monotonicity.
+    const m: number[] = new Array(n);
+    m[0] = slope[0];
+    m[n - 1] = slope[n - 2];
+    for (let i = 1; i < n - 1; i++) {
+      if (slope[i - 1] * slope[i] <= 0) {
+        m[i] = 0;
+      } else {
+        m[i] = (slope[i - 1] + slope[i]) / 2;
+      }
+    }
+    for (let i = 0; i < n - 1; i++) {
+      if (slope[i] === 0) {
+        m[i] = 0;
+        m[i + 1] = 0;
+      } else {
+        const a = m[i] / slope[i];
+        const b = m[i + 1] / slope[i];
+        const s = a * a + b * b;
+        if (s > 9) {
+          const t = 3 / Math.sqrt(s);
+          m[i] = t * a * slope[i];
+          m[i + 1] = t * b * slope[i];
+        }
+      }
+    }
+
+    let path = `M${points[0].x},${points[0].y}`;
+    for (let i = 0; i < n - 1; i++) {
+      const c1x = points[i].x + dx[i] / 3;
+      const c1y = points[i].y + (m[i] * dx[i]) / 3;
+      const c2x = points[i + 1].x - dx[i] / 3;
+      const c2y = points[i + 1].y - (m[i + 1] * dx[i]) / 3;
+      path += ` C${c1x},${c1y} ${c2x},${c2y} ${points[i + 1].x},${points[i + 1].y}`;
+    }
+    return path;
+  };
 
   // Generate SVG path
   const generatePath = (
     points: ChartDataPoint[],
-    type: "linear" | "bezier" = "bezier"
+    type: "linear" | "bezier" | "monotone" = "bezier"
   ): string => {
     if (points.length === 0) return "";
+
+    if (type === "monotone") {
+      return generateMonotonePath(points);
+    }
 
     let path = `M${points[0].x},${points[0].y}`;
 
@@ -245,8 +309,8 @@ export const LineChart: React.FC<LineChartProps> = ({
       const gestureYCoord = event.y;
 
       const clampedX = Math.max(
-        dimensions.paddingHorizontal,
-        Math.min(gestureXCoord, dimensions.width - dimensions.paddingHorizontal)
+        dimensions.paddingLeft,
+        Math.min(gestureXCoord, dimensions.width - dimensions.paddingRight)
       );
 
       // Find closest point inline for better performance
@@ -329,19 +393,11 @@ export const LineChart: React.FC<LineChartProps> = ({
 
   // Animated mask width for revealing line from left to right
   const animatedMaskStyle = useAnimatedStyle(() => {
-    // Calculate the actual line width based on data points for more precise masking
-    const lineWidth =
-      processedData.length > 0
-        ? processedData[processedData.length - 1].x -
-          processedData[0].x +
-          dimensions.paddingHorizontal
-        : dimensions.width;
-
     const revealWidth = interpolate(
       pathAnimationProgress.value,
       [0, 1],
       [
-        processedData[0]?.x || dimensions.paddingHorizontal,
+        processedData[0]?.x || dimensions.paddingLeft,
         processedData[processedData.length - 1]?.x || dimensions.width,
       ],
       Extrapolate.CLAMP
@@ -419,13 +475,17 @@ export const LineChart: React.FC<LineChartProps> = ({
     }
   }, [processedData, animated, pathAnimationProgress]);
 
+  // Compact GBP for axis ticks: £0, £659, £1.3k.
+  const formatAxisValue = (v: number) =>
+    v >= 1000 ? `${symbol}${(v / 1000).toFixed(1)}k` : `${symbol}${Math.round(v)}`;
+
   return (
     <View style={[styles.container, { backgroundColor, width, height }]}>
       {/* Value display overlay */}
       {selectedValue && (
         <Animated.View style={[styles.valueOverlay, animatedPointStyle]}>
           <Text style={styles.valueText}>
-            £{selectedValue.value.toFixed(2)}
+            {formatAmount(selectedValue.value)}
           </Text>
           <Text style={styles.labelText}>{selectedValue.label}</Text>
         </Animated.View>
@@ -445,9 +505,11 @@ export const LineChart: React.FC<LineChartProps> = ({
                 ))}
               </LinearGradient>
 
-              {/* Vertical area-fill gradient (screens/spending.jsx parity). */}
+              {/* Vertical area-fill gradient — kept light so the fill reads as
+                  a soft tint under the line rather than a heavy block. */}
               <LinearGradient id="lineAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={lineColor} stopOpacity={0.35} />
+                <Stop offset="0" stopColor={lineColor} stopOpacity={0.2} />
+                <Stop offset="0.55" stopColor={lineColor} stopOpacity={0.04} />
                 <Stop offset="1" stopColor={lineColor} stopOpacity={0} />
               </LinearGradient>
 
@@ -463,7 +525,28 @@ export const LineChart: React.FC<LineChartProps> = ({
               </Mask>
             </Defs>
 
-            {/* Grid lines - removed for cleaner look */}
+            {/* Faint horizontal gridlines at the 0 / mid / max levels. Drawn
+                first, behind everything, so they read as quiet guides. The
+                bottom line doubles as the £0 baseline. */}
+            {showGrid && dataMax > 0 && (
+              <G>
+                {[0, dataMax / 2, dataMax].map((level, index) => {
+                  const y = valueToY(level);
+                  return (
+                    <Line
+                      key={`grid-${index}`}
+                      x1={dimensions.paddingLeft}
+                      y1={y}
+                      x2={dimensions.width - dimensions.paddingRight}
+                      y2={y}
+                      stroke={gridColor}
+                      strokeWidth={1}
+                      opacity={0.07}
+                    />
+                  );
+                })}
+              </G>
+            )}
 
             {/* Soft area fill under the curve. Drawn first so the line and
                 end-dot sit on top. Reuses the same horizontal sweep mask so
@@ -477,81 +560,85 @@ export const LineChart: React.FC<LineChartProps> = ({
               />
             )}
 
+            {/* Comparison line (previous month) — a thin, soft dashed
+                reference. Drawn under the main line so the current month always
+                reads as the hero. */}
+            {comparisonSvgPath && (
+              <Path
+                d={comparisonSvgPath}
+                stroke={labelColor}
+                strokeWidth={1.5}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray="4,4"
+                opacity={0.4}
+              />
+            )}
+
             {/* Main line path with mask animation */}
             <Path
               d={svgPath}
               stroke={lineColor}
-              strokeWidth={3}
+              strokeWidth={2.5}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
               mask={animated ? "url(#lineMask)" : undefined}
             />
 
-            {/* Comparison line (previous month) */}
-            {comparisonSvgPath && (
-              <Path
-                d={comparisonSvgPath}
-                stroke="rgba(156, 163, 175, 0.6)" // Faded gray color
-                strokeWidth={2}
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeDasharray="6,4" // Dashed line to differentiate
-                opacity={0.8}
-              />
-            )}
-
             {/* Data points - disabled to reduce clutter */}
 
-            {/* Today's date dot at end of line - animated, with glow halo
-                behind it (design parity with screens/spending.jsx). */}
+            {/* End-of-line marker — soft halo, a ring punched in the card
+                colour, and a solid core. Follows the line as it animates in. */}
             {processedData.length > 0 && (
               <G>
                 <AnimatedCircle
                   cx={processedData[processedData.length - 1].x}
                   cy={processedData[processedData.length - 1].y}
-                  r={10}
+                  r={9}
                   fill={lineColor}
-                  opacity={0.25}
+                  opacity={0.15}
                   animatedProps={animatedEndDotStyle as any}
                 />
                 <AnimatedCircle
                   cx={processedData[processedData.length - 1].x}
                   cy={processedData[processedData.length - 1].y}
-                  r={5}
+                  r={5.5}
+                  fill={endDotRingColor}
+                  animatedProps={animatedEndDotStyle as any}
+                />
+                <AnimatedCircle
+                  cx={processedData[processedData.length - 1].x}
+                  cy={processedData[processedData.length - 1].y}
+                  r={3.5}
                   fill={lineColor}
                   animatedProps={animatedEndDotStyle as any}
                 />
               </G>
             )}
 
-            {/* Y-axis labels - only show 2 labels to prevent overlap */}
-            <G>
-              {[0, 1].map((ratio, index) => {
-                const value = minValue + ratio * (maxValue - minValue);
-                const y =
-                  dimensions.height -
-                  dimensions.paddingVertical -
-                  ratio * dimensions.chartHeight;
-                return (
+            {/* Y-axis labels at the £0 / mid / max levels, seated in the left
+                gutter and lifted just above each gridline so the £0 label
+                clears the X-axis row below. Mono font for tabular figures. */}
+            {dataMax > 0 && (
+              <G>
+                {[0, dataMax / 2, dataMax].map((level, index) => (
                   <SvgText
                     key={`ylabel-${index}`}
-                    x={dimensions.paddingHorizontal - 5}
-                    y={y + 3}
+                    x={dimensions.paddingLeft - 8}
+                    y={valueToY(level) - 4}
                     fontSize={9}
                     fill={labelColor}
                     textAnchor="end"
-                    fontWeight="500"
+                    fontFamily={fontFamily.mono}
+                    opacity={0.75}
                   >
-                    £
-                    {value >= 1000
-                      ? `${(value / 1000).toFixed(1)}k`
-                      : Math.round(value)}
+                    {formatAxisValue(level)}
                   </SvgText>
-                );
-              })}
-            </G>
+                ))}
+              </G>
+            )}
 
             {/* X-axis labels - only show non-empty labels */}
             <G>
@@ -561,11 +648,12 @@ export const LineChart: React.FC<LineChartProps> = ({
                     <SvgText
                       key={`xlabel-${index}`}
                       x={point.x}
-                      y={dimensions.height - 8}
-                      fontSize={10}
+                      y={dimensions.height - 6}
+                      fontSize={9.5}
                       fill={labelColor}
                       textAnchor="middle"
-                      fontWeight="500"
+                      fontFamily={fontFamily.medium}
+                      opacity={0.75}
                     >
                       {data.labels[index]}
                     </SvgText>

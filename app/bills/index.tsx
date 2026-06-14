@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAlert } from "../../hooks/useAlert";
 import { BillsSkeleton } from "../../components/ui/SkeletonLoader";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -43,6 +44,7 @@ export default function BillsScreen() {
   const { isLoggedIn } = useAuth();
   const { isLoggedIn: authLoggedIn } = useAuthGuard();
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const { showSuccess, showError } = useAlert();
 
   const [bills, setBills] = useState<DetectedBill[]>([]);
@@ -113,7 +115,7 @@ export default function BillsScreen() {
 
         console.log(
           `[Bills] Got ${detectedBills.length} bills:`,
-          detectedBills.map((b) => `${b.merchant}: £${Math.abs(b.amount)}`)
+          detectedBills.map((b) => `${b.merchant}: ${formatAmount(Math.abs(b.amount))}`)
         );
 
         let finalBills = detectedBills;
@@ -751,8 +753,8 @@ export default function BillsScreen() {
                   { color: colors.text.secondary },
                 ]}
               >
-                {billToExclude?.merchant} • £
-                {Math.abs(billToExclude?.amount || 0).toFixed(2)}
+                {billToExclude?.merchant} •{" "}
+                {formatAmount(Math.abs(billToExclude?.amount || 0))}
               </Text>
             </View>
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import { FinancialGoal, CreateGoalRequest, goalsAPI } from '../../services/api/goalsAPI';
 import { SHADOWS, SPACING, BORDER_RADIUS } from '../../constants/Colors';
 
@@ -58,6 +59,7 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
   initialGoal
 }) => {
   const { colors } = useTheme();
+  const { symbol } = useCurrency();
   const isEditing = !!initialGoal;
 
   // Form state (pre-filled when editing an existing goal)
@@ -198,7 +200,7 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Target Amount (£)</Text>
+          <Text style={styles.inputLabel}>Target Amount ({symbol})</Text>
           <TextInput
             style={styles.textInput}
             value={targetAmount}
@@ -263,7 +265,7 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
         {autoSaveEnabled && (
           <View style={styles.autoSaveSettings}>
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Amount (£)</Text>
+              <Text style={styles.inputLabel}>Amount ({symbol})</Text>
               <TextInput
                 style={styles.textInput}
                 value={autoSaveAmount}

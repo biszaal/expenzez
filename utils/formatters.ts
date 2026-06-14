@@ -2,25 +2,44 @@
  * Utility functions for formatting data consistently across the app
  */
 
+import { getActiveCurrency } from "./currencyStore";
+import { localeForCurrency, symbolForCurrency } from "../constants/currencies";
+
 /**
- * Format currency amount with proper symbol and decimal places
+ * Format a monetary amount using the user's active display currency.
+ *
+ * This formats only — it never converts. When `currency` is omitted it uses
+ * the active display currency from `currencyStore` (set by CurrencyContext),
+ * and the matching locale so each currency renders conventionally
+ * (e.g. "$1,234.56", "1.234,56 €", "¥1,235"). Decimal places follow the
+ * currency's own convention (2 for GBP/USD/EUR, 0 for JPY, etc.).
  *
  * @param amount - Amount to format
- * @param currency - Currency code (default: GBP)
- * @param locale - Locale for formatting (default: en-GB)
+ * @param currency - ISO 4217 code (default: active display currency)
+ * @param locale - Locale for formatting (default: derived from currency)
  * @returns Formatted currency string
  */
 export function formatCurrency(
   amount: number,
-  currency = "GBP",
-  locale = "en-GB"
+  currency: string = getActiveCurrency(),
+  locale: string = localeForCurrency(currency),
+  options?: {
+    minimumFractionDigits?: number;
+    maximumFractionDigits?: number;
+  }
 ): string {
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      ...(options || {}),
+    }).format(safeAmount);
+  } catch {
+    // Fallback if the runtime/locale/currency isn't supported by Intl.
+    const digits = options?.maximumFractionDigits ?? 2;
+    return `${symbolForCurrency(currency)}${safeAmount.toFixed(digits)}`;
+  }
 }
 
 /**

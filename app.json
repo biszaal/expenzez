@@ -2,7 +2,7 @@
   "expo": {
     "name": "Expenzez",
     "slug": "expenzez",
-    "version": "1.7.3",
+    "version": "1.7.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "expenzez",
@@ -115,6 +115,7 @@
       "expo-secure-store",
       "expo-web-browser",
       "expo-local-authentication",
+      "expo-localization",
       [
         "expo-share-intent",
         {

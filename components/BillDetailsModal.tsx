@@ -16,6 +16,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../contexts/ThemeContext";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { DetectedBill } from "../services/billTrackingAlgorithm";
 import { BillNotificationService } from "../services/billNotificationService";
 import dayjs from "dayjs";
@@ -45,6 +46,7 @@ const MonthlyChart: React.FC<{
   colors: any;
   maxAmount: number;
 }> = ({ monthlyData, colors, maxAmount }) => {
+  const { formatAmount } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [visibleData, setVisibleData] = useState<MonthlyData[]>([]);
 
@@ -76,7 +78,7 @@ const MonthlyChart: React.FC<{
       <View style={styles.monthlyBarContainer}>
         <View style={styles.barWrapper}>
           <Text style={[styles.barAmount, { color: colors.text.primary }]}>
-            £{item.amount.toFixed(0)}
+            {formatAmount(item.amount, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
           </Text>
           <View
             style={[
@@ -139,6 +141,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
   onManageBill,
 }) => {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [loadingNotification, setLoadingNotification] = useState(false);
 
@@ -298,7 +301,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
                 <Text
                   style={[styles.infoValue, { color: colors.text.primary }]}
                 >
-                  £{Math.abs(bill.amount).toFixed(2)}
+                  {formatAmount(Math.abs(bill.amount))}
                 </Text>
               </View>
               <View style={styles.infoItem}>
@@ -394,7 +397,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
                       { color: colors.text.primary },
                     ]}
                   >
-                    £{analysis.totalSpent.toFixed(2)}
+                    {formatAmount(analysis.totalSpent)}
                   </Text>
                 </View>
                 <View style={styles.summaryItem}>
@@ -412,7 +415,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
                       { color: colors.text.primary },
                     ]}
                   >
-                    £{analysis.averageMonthly.toFixed(2)}
+                    {formatAmount(analysis.averageMonthly)}
                   </Text>
                 </View>
               </View>
@@ -433,7 +436,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
                       { color: colors.text.primary },
                     ]}
                   >
-                    £{analysis.highestPayment.toFixed(2)}
+                    {formatAmount(analysis.highestPayment)}
                   </Text>
                 </View>
                 <View style={styles.summaryItem}>
@@ -451,7 +454,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
                       { color: colors.text.primary },
                     ]}
                   >
-                    £{analysis.lowestPayment.toFixed(2)}
+                    {formatAmount(analysis.lowestPayment)}
                   </Text>
                 </View>
               </View>

@@ -10,6 +10,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { TransactionService } from "../../services/transactionService";
 import { spacing, borderRadius } from "../../constants/theme";
 
@@ -76,9 +77,7 @@ export const CompactSpendingSummary: React.FC<CompactSpendingSummaryProps> = ({
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return `£${amount.toFixed(2)}`;
-  };
+  const { formatAmount: formatCurrency } = useCurrency();
 
   if (loading) {
     return (

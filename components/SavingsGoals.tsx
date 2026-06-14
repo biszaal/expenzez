@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { useAlert } from '../hooks/useAlert';
 import { EmptyState } from './ui/EmptyState';
 import {
@@ -176,7 +177,7 @@ export default function SavingsGoals({
         isCompleted: newAmount >= showAddAmountModal.targetAmount,
       });
       
-      showSuccess(`Added £${amount.toFixed(2)} to your goal!`);
+      showSuccess(`Added ${formatCurrency(amount)} to your goal!`);
       setShowAddAmountModal(null);
       setAddAmount('');
     } catch (error) {
@@ -216,9 +217,7 @@ export default function SavingsGoals({
     return goalCategories.find(cat => cat.id === category) || goalCategories[5];
   };
 
-  const formatCurrency = (amount: number) => {
-    return `£${amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
+  const { formatAmount: formatCurrency } = useCurrency();
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'No deadline';

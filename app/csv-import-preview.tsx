@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { transactionAPI } from "../services/api";
 import {
   TransactionEditModal,
@@ -32,6 +33,7 @@ interface CSVTransaction {
 
 export default function CSVImportPreviewScreen() {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const params = useLocalSearchParams<{
     transactions?: string;
     fileName?: string;
@@ -226,7 +228,7 @@ export default function CSVImportPreviewScreen() {
         >
           <View style={styles.summaryContent}>
             <Text style={[styles.summaryValue, { color: "#B45309" }]}>
-              £{totalAmount.toFixed(2)}
+              {formatAmount(totalAmount)}
             </Text>
             <Text style={[styles.summaryLabel, { color: "#D97706" }]}>
               Total Amount

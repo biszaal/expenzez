@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { BillPreferencesAPI } from "../../services/api/billPreferencesAPI";
 import dayjs from "dayjs";
 
@@ -238,6 +239,7 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
   onBillLongPress,
 }) => {
   const { colors } = useTheme();
+  const { symbol } = useCurrency();
   const [paidBills, setPaidBills] = React.useState<Set<string>>(new Set());
   const [loadingBillId, setLoadingBillId] = React.useState<string | null>(null);
 
@@ -531,7 +533,7 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
                               { color: colors.text.primary },
                             ]}
                           >
-                            £{formatAmount(bill.amount)}
+                            {symbol}{formatAmount(bill.amount)}
                           </Text>
                           <Text
                             style={[

@@ -14,6 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../contexts/ThemeContext";
+import { formatCurrency } from "../utils/formatters";
 import { expenseAPI, budgetAPI, profileAPI } from "../services/api";
 import { transactionAPI } from "../services/api/transactionAPI";
 import { spacing, borderRadius, typography } from "../constants/theme";
@@ -365,9 +366,9 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
       );
 
       report += `Total Transactions: ${totalTransactions}\n`;
-      report += `Total Income: £${totalIncome.toFixed(2)}\n`;
-      report += `Total Expenses: £${totalExpenses.toFixed(2)}\n`;
-      report += `Net Amount: £${(totalIncome - totalExpenses).toFixed(2)}\n\n`;
+      report += `Total Income: ${formatCurrency(totalIncome)}\n`;
+      report += `Total Expenses: ${formatCurrency(totalExpenses)}\n`;
+      report += `Net Amount: ${formatCurrency(totalIncome - totalExpenses)}\n\n`;
 
       // Category breakdown
       const categoryMap = new Map();
@@ -386,7 +387,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
           (a, b) => b[1] - a[1]
         );
         sortedCategories.forEach(([category, amount]) => {
-          report += `${category}: £${(amount as number).toFixed(2)}\n`;
+          report += `${category}: ${formatCurrency(amount as number)}\n`;
         });
         report += "\n";
       }
@@ -400,7 +401,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
         (sum: number, exp: any) => sum + parseFloat(exp.amount || 0),
         0
       );
-      report += `Total Manual Expenses: £${totalExpenses.toFixed(2)}\n`;
+      report += `Total Manual Expenses: ${formatCurrency(totalExpenses)}\n`;
       report += `Number of Expenses: ${data.expenses.length}\n\n`;
 
       // Category breakdown
@@ -418,7 +419,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
           (a, b) => b[1] - a[1]
         );
         sortedCategories.forEach(([category, amount]) => {
-          report += `${category}: £${(amount as number).toFixed(2)}\n`;
+          report += `${category}: ${formatCurrency(amount as number)}\n`;
         });
         report += "\n";
       }
@@ -441,15 +442,15 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
         (budget: any) => budget.isOverBudget
       ).length;
 
-      report += `Total Budget Amount: £${totalBudget.toFixed(2)}\n`;
-      report += `Total Spent: £${totalSpent.toFixed(2)}\n`;
-      report += `Remaining: £${(totalBudget - totalSpent).toFixed(2)}\n`;
+      report += `Total Budget Amount: ${formatCurrency(totalBudget)}\n`;
+      report += `Total Spent: ${formatCurrency(totalSpent)}\n`;
+      report += `Remaining: ${formatCurrency(totalBudget - totalSpent)}\n`;
       report += `Budgets Over Limit: ${overBudgetCount}/${data.budgets.length}\n\n`;
 
       report += "INDIVIDUAL BUDGETS\n";
       report += "-".repeat(30) + "\n";
       data.budgets.forEach((budget: any) => {
-        report += `${budget.name}: £${parseFloat(budget.currentSpent || 0).toFixed(2)} / £${parseFloat(budget.amount || 0).toFixed(2)} (${budget.progress || 0}%)\n`;
+        report += `${budget.name}: ${formatCurrency(parseFloat(budget.currentSpent || 0))} / ${formatCurrency(parseFloat(budget.amount || 0))} (${budget.progress || 0}%)\n`;
       });
       report += "\n";
     }
@@ -472,8 +473,8 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
 
       report += `Total Goals: ${data.savingsGoals.length}\n`;
       report += `Completed Goals: ${completedGoals}\n`;
-      report += `Total Target: £${totalTargetAmount.toFixed(2)}\n`;
-      report += `Total Saved: £${totalCurrentAmount.toFixed(2)}\n\n`;
+      report += `Total Target: ${formatCurrency(totalTargetAmount)}\n`;
+      report += `Total Saved: ${formatCurrency(totalCurrentAmount)}\n\n`;
 
       report += "INDIVIDUAL GOALS\n";
       report += "-".repeat(30) + "\n";
@@ -482,7 +483,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
           goal.targetAmount > 0
             ? (goal.currentAmount / goal.targetAmount) * 100
             : 0;
-        report += `${goal.title}: £${parseFloat(goal.currentAmount || 0).toFixed(2)} / £${parseFloat(goal.targetAmount || 0).toFixed(2)} (${Math.round(progress)}%)\n`;
+        report += `${goal.title}: ${formatCurrency(parseFloat(goal.currentAmount || 0))} / ${formatCurrency(parseFloat(goal.targetAmount || 0))} (${Math.round(progress)}%)\n`;
       });
       report += "\n";
     }

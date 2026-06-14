@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { alertsAPI, ProactiveAlert } from "../../services/api/alertsAPI";
 import { useRouter } from "expo-router";
 
@@ -30,6 +31,7 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
   onAcknowledge,
 }) => {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const router = useRouter();
   const [dismissing, setDismissing] = useState(false);
   const [acknowledging, setAcknowledging] = useState(false);
@@ -201,7 +203,7 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
               <Text
                 style={[styles.metadataValue, { color: colors.text.primary }]}
               >
-                £{alert.metadata.remaining.toFixed(2)}
+                {formatAmount(alert.metadata.remaining)}
               </Text>
             </View>
           )}
@@ -218,7 +220,7 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
               <Text
                 style={[styles.metadataValue, { color: colors.text.primary }]}
               >
-                £{alert.metadata.amount.toFixed(2)}
+                {formatAmount(alert.metadata.amount)}
               </Text>
             </View>
           )}

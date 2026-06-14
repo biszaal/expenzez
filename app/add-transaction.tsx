@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { fontFamily } from "../constants/theme";
 import { transactionAPI } from "../services/api";
 import { useXP } from "../hooks/useXP";
@@ -75,6 +76,7 @@ const incomeCategories: Category[] = [
 
 export default function AddTransaction() {
   const { colors } = useTheme();
+  const { symbol } = useCurrency();
   const { awardXP } = useXP();
   const [transactionType, setTransactionType] = useState<"expense" | "income">(
     "expense"
@@ -502,7 +504,7 @@ export default function AddTransaction() {
                   { color: colors.text.tertiary, fontFamily: fontFamily.mono },
                 ]}
               >
-                £
+                {symbol}
               </Text>
               <Text
                 style={[

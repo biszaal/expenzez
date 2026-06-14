@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { useTheme } from "../contexts/ThemeContext";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { useAuth } from "./auth/AuthContext";
 import { transactionAPI } from "../services/api";
 import { ImportQuotaCard } from "../components/imports/ImportQuotaCard";
@@ -320,7 +321,17 @@ export default function ImportStatementScreen() {
         <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
           Import Statement
         </Text>
-        <View style={{ width: 28 }} />
+        <TouchableOpacity
+          onPress={() => router.push("/statements")}
+          style={styles.backButton}
+          accessibilityLabel="View uploaded statements"
+        >
+          <Ionicons
+            name="documents-outline"
+            size={24}
+            color={colors.text.primary}
+          />
+        </TouchableOpacity>
       </View>
 
       {(stage === "idle" || stage === "parsing") && (
@@ -447,9 +458,10 @@ const PreviewView: React.FC<{
   onConfirm,
   onCancel,
 }) => {
+  const { formatAmount: formatCurrencyAmount } = useCurrency();
   const formatAmount = (t: ParsedStatementTransaction) => {
     const sign = t.type === "credit" ? "+" : "−";
-    return `${sign}£${Math.abs(t.amount).toFixed(2)}`;
+    return `${sign}${formatCurrencyAmount(Math.abs(t.amount))}`;
   };
   const allSelected = selected.size === transactions.length;
 

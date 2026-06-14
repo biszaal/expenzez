@@ -15,9 +15,11 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 export default function ManageBalanceScreen() {
   const { colors } = useTheme();
+  const { symbol, formatAmount } = useCurrency();
   const [currentBalance, setCurrentBalance] = useState('0.00');
   const [newBalance, setNewBalance] = useState('');
   const [loading, setLoading] = useState(true);
@@ -86,7 +88,7 @@ export default function ManageBalanceScreen() {
 
       Alert.alert(
         'Balance Updated!',
-        `Your balance has been updated to £${balanceValue.toFixed(2)}.`,
+        `Your balance has been updated to ${formatAmount(balanceValue)}.`,
         [
           {
             text: 'OK',
@@ -105,7 +107,7 @@ export default function ManageBalanceScreen() {
   const handleResetBalance = () => {
     Alert.alert(
       'Reset Balance',
-      'Are you sure you want to reset your balance to £0.00? This will also clear all transaction history.',
+      `Are you sure you want to reset your balance to ${formatAmount(0)}? This will also clear all transaction history.`,
       [
         {
           text: 'Cancel',
@@ -170,7 +172,7 @@ export default function ManageBalanceScreen() {
             <View style={styles.currentBalanceCard}>
               <Text style={styles.currentBalanceLabel}>Total Balance</Text>
               <Text style={[styles.currentBalanceAmount, { color: colors.primary.main }]}>
-                £{currentBalance}
+                {symbol}{currentBalance}
               </Text>
             </View>
           </View>
@@ -182,7 +184,7 @@ export default function ManageBalanceScreen() {
               Set your current account balance. This will create a balance adjustment transaction.
             </Text>
             <View style={styles.amountContainer}>
-              <Text style={styles.currencySymbol}>£</Text>
+              <Text style={styles.currencySymbol}>{symbol}</Text>
               <TextInput
                 style={styles.amountInput}
                 placeholder="Enter new balance"
@@ -202,25 +204,25 @@ export default function ManageBalanceScreen() {
                 style={styles.quickOptionButton}
                 onPress={() => setNewBalance('100')}
               >
-                <Text style={styles.quickOptionText}>£100</Text>
+                <Text style={styles.quickOptionText}>{symbol}100</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.quickOptionButton}
                 onPress={() => setNewBalance('500')}
               >
-                <Text style={styles.quickOptionText}>£500</Text>
+                <Text style={styles.quickOptionText}>{symbol}500</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.quickOptionButton}
                 onPress={() => setNewBalance('1000')}
               >
-                <Text style={styles.quickOptionText}>£1,000</Text>
+                <Text style={styles.quickOptionText}>{symbol}1,000</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.quickOptionButton}
                 onPress={() => setNewBalance('2000')}
               >
-                <Text style={styles.quickOptionText}>£2,000</Text>
+                <Text style={styles.quickOptionText}>{symbol}2,000</Text>
               </TouchableOpacity>
             </View>
           </View>

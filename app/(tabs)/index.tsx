@@ -15,9 +15,9 @@ import { useRouter } from "expo-router";
 import dayjs from "dayjs";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { useSecurity } from "../../contexts/SecurityContext";
 import { useNotifications } from "../../contexts/NotificationContext";
-import { StreakService } from "../../services/streakService";
 import { useAuth } from "../auth/AuthContext";
 import { useRevenueCat } from "../../contexts/RevenueCatContext";
 import { budgetAPI } from "../../services/api";
@@ -109,6 +109,7 @@ function formatGBP(amount: number): { whole: string; decimals: string } {
 
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
+  const { symbol } = useCurrency();
   const { isLocked } = useSecurity();
   const router = useRouter();
   const { unreadCount, notifications } = useNotifications();
@@ -126,13 +127,6 @@ export default function HomeScreen() {
 
   const [userBudget, setUserBudget] = useState<number>(2000);
   const [bills, setBills] = useState<SavedBill[]>([]);
-  const [dayStreak, setDayStreak] = useState(0);
-
-  useEffect(() => {
-    StreakService.getStreak()
-      .then((s) => setDayStreak(s.currentStreak))
-      .catch(() => {});
-  }, []);
 
   // Aggregate the current calendar month's transactions for the hero + cards.
   const monthAggregates = useMemo(() => {
@@ -314,23 +308,6 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={styles.headerActions}>
-            {dayStreak > 0 && (
-              <Pressable
-                onPress={() => router.push("/(tabs)/progress" as any)}
-                style={[
-                  styles.streakChip,
-                  {
-                    backgroundColor: colors.card.background,
-                    borderColor: colors.border.medium,
-                  },
-                ]}
-              >
-                <Ionicons name="flame" size={15} color="#FF6B7A" />
-                <Text style={[styles.streakChipText, { color: colors.text.primary }]}>
-                  {dayStreak}
-                </Text>
-              </Pressable>
-            )}
             <Pressable
               onPress={() => router.push("/notifications" as any)}
               style={[
@@ -380,7 +357,7 @@ export default function HomeScreen() {
             NET CASHFLOW · {monthLabel.toUpperCase()}
           </Text>
           <View style={styles.heroAmountRow}>
-            <Text style={[styles.heroCurrency, { color: colors.text.tertiary }]}>£</Text>
+            <Text style={[styles.heroCurrency, { color: colors.text.tertiary }]}>{symbol}</Text>
             <Text style={[styles.heroWhole, { color: colors.text.primary }]}>
               {net.whole}
             </Text>
@@ -430,7 +407,7 @@ export default function HomeScreen() {
             label="INCOME"
             tone={colors.lime[500]}
             tintBg={colors.posBg}
-            value={`£${formatGBP(monthAggregates.income).whole}`}
+            value={`${symbol}${formatGBP(monthAggregates.income).whole}`}
             sub={`${monthAggregates.depositCount} deposit${monthAggregates.depositCount === 1 ? "" : "s"}`}
             colors={colors}
           />
@@ -439,7 +416,7 @@ export default function HomeScreen() {
             label="SPENT"
             tone={colors.rose[500]}
             tintBg={colors.negBg}
-            value={`£${formatGBP(monthAggregates.spent).whole}`}
+            value={`${symbol}${formatGBP(monthAggregates.spent).whole}`}
             sub={`${monthAggregates.txnCount} transaction${monthAggregates.txnCount === 1 ? "" : "s"}`}
             colors={colors}
           />
@@ -464,7 +441,7 @@ export default function HomeScreen() {
               <Text
                 style={[styles.cardSubtitle, { color: colors.text.secondary }]}
               >
-                £{formatGBP(monthAggregates.spent).whole} of £
+                {symbol}{formatGBP(monthAggregates.spent).whole} of {symbol}
                 {formatGBP(userBudget).whole}
               </Text>
             </View>
@@ -540,8 +517,8 @@ export default function HomeScreen() {
                 ]}
               >
                 {monthAggregates.spent > userBudget
-                  ? `£${formatGBP(monthAggregates.spent - userBudget).whole} over your monthly budget`
-                  : `£${formatGBP(userBudget - monthAggregates.spent).whole} left — you're close to your limit`}
+                  ? `${symbol}${formatGBP(monthAggregates.spent - userBudget).whole} over your monthly budget`
+                  : `${symbol}${formatGBP(userBudget - monthAggregates.spent).whole} left — you're close to your limit`}
               </Text>
             </View>
           )}
@@ -563,7 +540,7 @@ export default function HomeScreen() {
               />
               <RingStatLine
                 tone={colors.primary[500]}
-                value={`£${formatGBP(Math.max(userBudget - monthAggregates.spent, 0)).whole}`}
+                value={`${symbol}${formatGBP(Math.max(userBudget - monthAggregates.spent, 0)).whole}`}
                 label="to spend"
                 colors={colors}
               />
@@ -768,7 +745,7 @@ export default function HomeScreen() {
                         <Text
                           style={[styles.catAmount, { color: colors.text.primary }]}
                         >
-                          £{formatGBP(cat.amount).whole}
+                          {symbol}{formatGBP(cat.amount).whole}
                         </Text>
                       </View>
                       <View
@@ -859,7 +836,7 @@ export default function HomeScreen() {
                         },
                       ]}
                     >
-                      {isCredit ? "+" : "−"}£{formatted.whole}
+                      {isCredit ? "+" : "−"}{symbol}{formatted.whole}
                       <Text style={{ color: colors.text.tertiary }}>
                         {formatted.decimals}
                       </Text>
@@ -951,7 +928,7 @@ export default function HomeScreen() {
                         { color: colors.text.primary },
                       ]}
                     >
-                      £{formatted.whole}
+                      {symbol}{formatted.whole}
                       <Text style={{ color: colors.text.tertiary }}>
                         {formatted.decimals}
                       </Text>

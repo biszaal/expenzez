@@ -5,6 +5,7 @@
  */
 
 import { api } from "../config/apiClient";
+import { formatCurrency as formatCurrencyUtil } from "../../utils/formatters";
 
 export interface DailyBrief {
   briefId: string;
@@ -227,13 +228,10 @@ export const briefsAPI = {
   /**
    * Format currency
    */
-  formatCurrency(amount: number, currency = "GBP"): string {
-    const formatter = new Intl.NumberFormat("en-GB", {
-      style: "currency",
-      currency: currency,
+  formatCurrency(amount: number, currency?: string): string {
+    return formatCurrencyUtil(amount, currency, undefined, {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     });
-    return formatter.format(amount);
   },
 };

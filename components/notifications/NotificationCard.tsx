@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import { NotificationHistoryItem } from '../../contexts/NotificationContext';
 import { fontFamily } from '../../constants/theme';
 
@@ -62,14 +63,13 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
     return isDark ? `${accent}26` : `${accent}1F`;
   };
 
+  const { formatAmount: formatCurrencyAmount } = useCurrency();
   const formatAmount = (amount?: number) => {
     if (!amount) return null;
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
+    return formatCurrencyAmount(Math.abs(amount), {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
-    }).format(Math.abs(amount));
+    });
   };
 
   const accent = getNotificationAccent(notification.type);

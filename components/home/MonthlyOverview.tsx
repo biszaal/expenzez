@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import { SHADOWS } from '../../constants/Colors';
 import { styles } from './MonthlyOverview.styles';
 
@@ -16,6 +17,7 @@ export const MonthlyOverview: React.FC<MonthlyOverviewProps> = ({
   userBudget,
 }) => {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const router = useRouter();
 
   return (
@@ -61,7 +63,7 @@ export const MonthlyOverview: React.FC<MonthlyOverviewProps> = ({
               )}
             </View>
             <Text style={[styles.professionalMonthlyStatValue, { color: colors.text.primary }]}>
-              £{thisMonthSpent.toFixed(2)}
+              {formatAmount(thisMonthSpent)}
             </Text>
             <View style={[styles.professionalMonthlyStatProgress, { backgroundColor: colors.background.secondary }]}>
               <View style={[styles.professionalMonthlyStatProgressFill, { 
@@ -88,7 +90,7 @@ export const MonthlyOverview: React.FC<MonthlyOverviewProps> = ({
               )}
             </View>
             <Text style={[styles.professionalMonthlyStatValue, { color: colors.text.primary }]}>
-              £{(userBudget || 0).toFixed(2)}
+              {formatAmount(userBudget || 0)}
             </Text>
             <View style={[styles.professionalMonthlyStatProgress, { backgroundColor: colors.background.secondary }]}>
               <View style={[styles.professionalMonthlyStatProgressFill, { 

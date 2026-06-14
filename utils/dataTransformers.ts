@@ -1,4 +1,5 @@
 // Centralized data transformation utilities to reduce code duplication
+import { formatCurrency as formatCurrencyUtil } from './formatters';
 
 export interface Transaction {
   id: string;
@@ -262,15 +263,12 @@ export class DataTransformers {
   /**
    * Format currency amount for display
    */
-  static formatAmount(amount: number, currency: string = 'GBP'): string {
+  static formatAmount(amount: number, currency?: string): string {
     try {
-      return new Intl.NumberFormat('en-GB', {
-        style: 'currency',
-        currency: currency,
-      }).format(amount);
+      return formatCurrencyUtil(amount, currency);
     } catch (error) {
       console.warn('[DataTransformers] Currency formatting error:', error);
-      return `${currency} ${amount.toFixed(2)}`;
+      return `${currency ?? ''} ${amount.toFixed(2)}`.trim();
     }
   }
 

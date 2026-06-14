@@ -11,8 +11,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../auth/AuthContext";
 import { useSubscription } from "../../hooks/useSubscription";
 import { PremiumFeature } from "../../services/subscriptionService";
@@ -61,9 +63,13 @@ export default function BudgetsScreen() {
     router.push("/budgets/edit");
   };
 
-  useEffect(() => {
-    loadBudgets();
-  }, []);
+  // Reload whenever the screen regains focus (e.g. returning from the
+  // add/edit budget page), so newly saved budgets show without a remount.
+  useFocusEffect(
+    useCallback(() => {
+      loadBudgets();
+    }, [])
+  );
 
   // Load cached AI insights for all budgets on mount
   useEffect(() => {
@@ -245,9 +251,7 @@ export default function BudgetsScreen() {
     return budgetService.getBudgetStatusIcon(status);
   };
 
-  const formatCurrency = (amount: number) => {
-    return `£${amount.toFixed(2)}`;
-  };
+  const { formatAmount: formatCurrency } = useCurrency();
 
   const getCategoryIcon = (categoryName: string): keyof typeof Ionicons.glyphMap => {
     const categoryMap: { [key: string]: keyof typeof Ionicons.glyphMap } = {
@@ -668,7 +672,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
   centerContainer: {
     flex: 1,
@@ -681,7 +686,6 @@ const styles = StyleSheet.create({
   },
   budgetList: {
     gap: spacing.md,
-    marginHorizontal: spacing.md,
     marginBottom: spacing.lg,
   },
   // Monthly total hero

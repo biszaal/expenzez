@@ -1,6 +1,19 @@
 import { api } from "../config/apiClient";
 import { balanceAPI } from "./balanceAPI";
 
+export interface UploadedStatement {
+  statementId: string;
+  bankName: string;
+  accountIdentifier: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  // YYYY-MM the statement covers (derived from the statement period).
+  periodMonth: string | null;
+  transactionCount: number;
+  filename: string | null;
+  uploadedAt: string | null;
+}
+
 export interface Transaction {
   id: string;
   amount: number;
@@ -323,6 +336,16 @@ export const transactionAPI = {
   getTransaction: async (transactionId: string): Promise<Transaction> => {
     const response = await api.get(`/transactions/${transactionId}`);
     return response.data.transaction;
+  },
+
+  // List the user's uploaded bank statements (bank + statement month/year +
+  // upload date + transaction count), most recent first.
+  getUploadedStatements: async (): Promise<{
+    statements: UploadedStatement[];
+    count: number;
+  }> => {
+    const response = await api.get("/transactions/statements");
+    return response.data;
   },
 
   // Helper method to convert expense data to transaction format

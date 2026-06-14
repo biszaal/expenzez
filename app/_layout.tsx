@@ -33,6 +33,7 @@ import * as SecureStore from "expo-secure-store";
 import * as Linking from "expo-linking";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
+import { CurrencyProvider } from "../contexts/CurrencyContext";
 import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
 import { NotificationProvider } from "../contexts/NotificationContext";
 import { NetworkProvider } from "../contexts/NetworkContext";
@@ -45,6 +46,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MigrationService } from "../services/migrationService";
 import { useScreenTracking } from "../hooks/useAnalytics";
 import { analyticsService } from "../services/analytics";
+import { crashReporting } from "../utils/crashReporting";
 
 // Global error handlers to catch crashes
 if (typeof global !== "undefined" && (global as any).ErrorUtils) {
@@ -195,7 +197,10 @@ function RootLayoutNav() {
   // analytics consent. With no decision yet, analytics stays disabled.
   useEffect(() => {
     (async () => {
-      await analyticsService.loadConsent();
+      const consent = await analyticsService.loadConsent();
+      // Sentry sends diagnostic data to a third-party processor, so it only
+      // starts once the user has accepted the analytics/diagnostics opt-in.
+      crashReporting.initialize(consent === "granted");
       analyticsService.logAppOpen();
     })();
   }, []);
@@ -204,6 +209,7 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isLoggedIn && auth?.user?.userId) {
       analyticsService.setUserId(auth.user.userId);
+      crashReporting.setUserContext(auth.user.userId);
     } else if (!isLoggedIn) {
       analyticsService.setUserId(null);
     }
@@ -733,6 +739,7 @@ function RootLayoutNav() {
         <Stack.Screen name="transactions/index" />
         <Stack.Screen name="add-transaction" />
         <Stack.Screen name="import-csv" />
+        <Stack.Screen name="statements/index" />
         <Stack.Screen name="settings/index" />
         <Stack.Screen name="subscription/plans" />
       </Stack>
@@ -865,12 +872,14 @@ export default function RootLayout() {
               <RevenueCatProvider>
                 <SubscriptionProvider>
                   <AuthProvider>
-                    <SecurityProvider>
-                      <NotificationProvider>
-                        <ShareIntentRouter />
-                        <RootLayoutNav />
-                      </NotificationProvider>
-                    </SecurityProvider>
+                    <CurrencyProvider>
+                      <SecurityProvider>
+                        <NotificationProvider>
+                          <ShareIntentRouter />
+                          <RootLayoutNav />
+                        </NotificationProvider>
+                      </SecurityProvider>
+                    </CurrencyProvider>
                   </AuthProvider>
                 </SubscriptionProvider>
               </RevenueCatProvider>

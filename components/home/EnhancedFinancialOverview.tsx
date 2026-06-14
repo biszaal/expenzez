@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 
 interface EnhancedFinancialOverviewProps {
   thisMonthSpent: number;
@@ -13,6 +14,7 @@ export const EnhancedFinancialOverview: React.FC<
   EnhancedFinancialOverviewProps
 > = ({ thisMonthSpent, userBudget }) => {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const router = useRouter();
 
   // Early return if colors is not available
@@ -75,7 +77,7 @@ export const EnhancedFinancialOverview: React.FC<
               </View>
             </View>
             <Text style={[styles.statValue, { color: colors.text.primary }]}>
-              £{thisMonthSpent.toFixed(2)}
+              {formatAmount(thisMonthSpent)}
             </Text>
             <View
               style={[
@@ -118,7 +120,7 @@ export const EnhancedFinancialOverview: React.FC<
               </View>
             </View>
             <Text style={[styles.statValue, { color: colors.text.primary }]}>
-              £{(userBudget || 0).toFixed(2)}
+              {formatAmount(userBudget || 0)}
             </Text>
             <View
               style={[
@@ -143,7 +145,7 @@ export const EnhancedFinancialOverview: React.FC<
               style={[styles.progressLabel, { color: colors.text.tertiary }]}
             >
               {budgetRemaining > 0
-                ? `£${budgetRemaining.toFixed(2)} remaining`
+                ? `${formatAmount(budgetRemaining)} remaining`
                 : "Budget exceeded"}
             </Text>
           </View>
@@ -171,8 +173,8 @@ export const EnhancedFinancialOverview: React.FC<
               ]}
             >
               {isOverBudget
-                ? `You're £${Math.abs(budgetRemaining).toFixed(2)} over budget`
-                : `You're on track with £${budgetRemaining.toFixed(2)} remaining`}
+                ? `You're ${formatAmount(Math.abs(budgetRemaining))} over budget`
+                : `You're on track with ${formatAmount(budgetRemaining)} remaining`}
             </Text>
           </View>
         </View>

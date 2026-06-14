@@ -20,6 +20,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { useSubscription } from "../../contexts/SubscriptionContext";
 import { SpendingSkeleton } from "../../components/ui/SkeletonLoader";
 import { spacing } from "../../constants/theme";
@@ -31,7 +32,6 @@ import dayjs from "dayjs";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { ChartData, ChartDataPoint } from "../../components/charts";
 import { processTransactionExpense } from "../../utils/expenseDetection";
-import { isExcludedFromSpend } from "../../utils/nonSpendDetection";
 import { clearAllCache } from "../../services/config/apiCache";
 import { PerformanceMonitor } from "../../utils/performanceOptimizations";
 import {
@@ -408,128 +408,26 @@ export default function SpendingPage() {
       return txDate.format("YYYY-MM") === prevMonth;
     });
 
-    // Process current month spending by day
+    // Process current month spending by day. Use the SAME canonical expense
+    // gate as the category/merchant totals (processTransactionExpense, which
+    // also excludes transfers/non-spend) so the chart, the headline total and
+    // the breakdown below all agree. A previous inline filter here was looser
+    // and over-counted spend versus the category breakdown.
     currentTransactions.forEach((tx) => {
       if (!tx.date) return;
-
-      const category = tx.category || "Other";
-
-      // Use same enhanced expense detection logic as categories
-      const isIncomeCategory =
-        category.toLowerCase().includes("income") ||
-        category.toLowerCase().includes("salary") ||
-        category.toLowerCase().includes("refund");
-
-      const categoryLower = category.toLowerCase();
-      const isExpenseCategory =
-        !isIncomeCategory &&
-        // Exact matches
-        (category === "Food & Dining" ||
-          category === "Shopping" ||
-          category === "Transport" ||
-          category === "Entertainment" ||
-          category === "Bills & Utilities" ||
-          category === "Health & Fitness" ||
-          category === "Other" ||
-          // Flexible matches for common variations
-          categoryLower.includes("food") ||
-          categoryLower.includes("dining") ||
-          categoryLower.includes("restaurant") ||
-          categoryLower.includes("shop") ||
-          categoryLower.includes("retail") ||
-          categoryLower.includes("transport") ||
-          categoryLower.includes("travel") ||
-          categoryLower.includes("taxi") ||
-          categoryLower.includes("uber") ||
-          categoryLower.includes("entertainment") ||
-          categoryLower.includes("movie") ||
-          categoryLower.includes("game") ||
-          categoryLower.includes("bill") ||
-          categoryLower.includes("utilities") ||
-          categoryLower.includes("utility") ||
-          categoryLower.includes("electric") ||
-          categoryLower.includes("gas") ||
-          categoryLower.includes("health") ||
-          categoryLower.includes("fitness") ||
-          categoryLower.includes("gym") ||
-          categoryLower.includes("medical") ||
-          categoryLower.includes("expense") ||
-          categoryLower.includes("purchase") ||
-          // Catch remaining non-income categories
-          (categoryLower !== "income" &&
-            categoryLower !== "salary" &&
-            categoryLower !== "refund"));
-
-      const isExpense =
-        tx.type === "debit" ||
-        tx.amount < 0 ||
-        (tx.amount > 0 && isExpenseCategory);
-
-      if (isExpense && !isExcludedFromSpend(tx as any)) {
+      const { isExpense } = processTransactionExpense(tx, 0, false);
+      if (isExpense) {
         const day = dayjs(tx.date).format("DD");
         currentMonthSpending[day] =
           (currentMonthSpending[day] || 0) + Math.abs(tx.amount);
       }
     });
 
-    // Process previous month spending by day
+    // Process previous month spending by day (same canonical gate).
     previousTransactions.forEach((tx) => {
       if (!tx.date) return;
-
-      const category = tx.category || "Other";
-
-      // Use same enhanced expense detection logic as categories
-      const isIncomeCategory =
-        category.toLowerCase().includes("income") ||
-        category.toLowerCase().includes("salary") ||
-        category.toLowerCase().includes("refund");
-
-      const categoryLower = category.toLowerCase();
-      const isExpenseCategory =
-        !isIncomeCategory &&
-        // Exact matches
-        (category === "Food & Dining" ||
-          category === "Shopping" ||
-          category === "Transport" ||
-          category === "Entertainment" ||
-          category === "Bills & Utilities" ||
-          category === "Health & Fitness" ||
-          category === "Other" ||
-          // Flexible matches for common variations
-          categoryLower.includes("food") ||
-          categoryLower.includes("dining") ||
-          categoryLower.includes("restaurant") ||
-          categoryLower.includes("shop") ||
-          categoryLower.includes("retail") ||
-          categoryLower.includes("transport") ||
-          categoryLower.includes("travel") ||
-          categoryLower.includes("taxi") ||
-          categoryLower.includes("uber") ||
-          categoryLower.includes("entertainment") ||
-          categoryLower.includes("movie") ||
-          categoryLower.includes("game") ||
-          categoryLower.includes("bill") ||
-          categoryLower.includes("utilities") ||
-          categoryLower.includes("utility") ||
-          categoryLower.includes("electric") ||
-          categoryLower.includes("gas") ||
-          categoryLower.includes("health") ||
-          categoryLower.includes("fitness") ||
-          categoryLower.includes("gym") ||
-          categoryLower.includes("medical") ||
-          categoryLower.includes("expense") ||
-          categoryLower.includes("purchase") ||
-          // Catch remaining non-income categories
-          (categoryLower !== "income" &&
-            categoryLower !== "salary" &&
-            categoryLower !== "refund"));
-
-      const isExpense =
-        tx.type === "debit" ||
-        tx.amount < 0 ||
-        (tx.amount > 0 && isExpenseCategory);
-
-      if (isExpense && !isExcludedFromSpend(tx as any)) {
+      const { isExpense } = processTransactionExpense(tx, 0, false);
+      if (isExpense) {
         const day = dayjs(tx.date).format("DD");
         previousMonthSpending[day] =
           (previousMonthSpending[day] || 0) + Math.abs(tx.amount);
@@ -636,15 +534,12 @@ export default function SpendingPage() {
   }, [dailySpendingData, selectedMonth]);
 
   // Format amount helper
-  const formatAmount = (amount: number, currency = "GBP") => {
-    const formatter = new Intl.NumberFormat("en-GB", {
-      style: "currency",
-      currency: currency,
+  const { formatAmount: formatCurrencyAmount } = useCurrency();
+  const formatAmount = (amount: number, _currency?: string) =>
+    formatCurrencyAmount(amount, {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     });
-    return formatter.format(amount);
-  };
 
   // Generate categories from transactions with month-specific budgets
   const generateCategoriesFromTransactions = useCallback(
@@ -989,7 +884,7 @@ export default function SpendingPage() {
 
         Alert.alert(
           "Budget updated",
-          `Moved £${s.amount} from ${s.fromName} to ${s.toName}.`
+          `Moved ${formatCurrencyAmount(s.amount)} from ${s.fromName} to ${s.toName}.`
         );
       } catch (err) {
         console.error("[Spending] Failed to apply budget suggestion", err);
@@ -1085,16 +980,22 @@ export default function SpendingPage() {
         }
       });
 
-      // Find peak day
+      // dailySpendingData.data is CUMULATIVE, so per-day spend is the gap
+      // between consecutive points and the month total is the final point.
       const dailyData = dailySpendingData?.data || [];
-      const peakAmount = Math.max(...dailyData);
-      const peakDayIndex = dailyData.indexOf(peakAmount);
+      const dailyIncrements = dailyData.map((v, i) =>
+        i === 0 ? v : v - dailyData[i - 1]
+      );
+      const totalSpent = dailyData.length ? dailyData[dailyData.length - 1] : 0;
+
+      // Find peak day (largest single-day spend, not the cumulative max)
+      const peakAmount = dailyIncrements.length ? Math.max(...dailyIncrements) : 0;
+      const peakDayIndex = dailyIncrements.indexOf(peakAmount);
       const peakDay = peakDayIndex >= 0 ? dayjs(selectedMonth).add(peakDayIndex, 'day').format('MMM D') : undefined;
 
-      // Calculate daily average
-      const dailyAverage = dailyData.length > 0
-        ? dailyData.reduce((a, b) => a + b, 0) / dailyData.filter(v => v > 0).length
-        : 0;
+      // Calculate daily average over days that actually had spending
+      const daysWithSpend = dailyIncrements.filter(v => v > 0).length;
+      const dailyAverage = daysWithSpend > 0 ? totalSpent / daysWithSpend : 0;
 
       // Determine trend
       let trend: "up" | "down" | "stable" = "stable";

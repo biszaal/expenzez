@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { expenseAPI } from '../services/api';
 import { spacing, borderRadius, typography } from '../constants/theme';
 
@@ -116,9 +117,9 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
     });
   };
 
-  const formatAmount = (amount: number) => {
-    return `£${Math.abs(amount).toFixed(2)}`;
-  };
+  const { formatAmount: formatCurrencyAmount } = useCurrency();
+  const formatAmount = (amount: number) =>
+    formatCurrencyAmount(Math.abs(amount));
 
   const getCategoryIcon = (category: string) => {
     const iconMap: { [key: string]: string } = {

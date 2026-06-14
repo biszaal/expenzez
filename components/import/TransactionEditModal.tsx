@@ -12,6 +12,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import {
   CategorizeTransaction,
   TRANSACTION_CATEGORIES,
@@ -41,6 +42,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
   onSave,
 }) => {
   const { colors } = useTheme();
+  const { symbol } = useCurrency();
   const insets = useSafeAreaInsets();
   const [editedTransaction, setEditedTransaction] = useState<EditableTransaction | null>(
     transaction
@@ -227,11 +229,11 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
           {/* Amount Field */}
           <View style={styles.fieldGroup}>
             <Text style={[styles.label, { color: colors.text.primary }]}>
-              Amount (£)
+              Amount ({symbol})
             </Text>
             <View style={styles.amountInputContainer}>
               <Text style={[styles.currencySymbol, { color: colors.text.primary }]}>
-                £
+                {symbol}
               </Text>
               <TextInput
                 style={[

@@ -4,11 +4,13 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { spacing, borderRadius, shadows } from "../../constants/theme";
 
 export default function TargetPage() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { symbol } = useCurrency();
 
   return (
     <SafeAreaView
@@ -59,7 +61,7 @@ export default function TargetPage() {
           </View>
           <View style={styles.goalProgress}>
             <Text style={[styles.goalAmount, { color: colors.text.primary }]}>
-              £2,400 / £5,000
+              {symbol}2,400 / {symbol}5,000
             </Text>
             <View
               style={[
@@ -80,7 +82,7 @@ export default function TargetPage() {
             <Text
               style={[styles.goalDescription, { color: colors.text.secondary }]}
             >
-              48% complete • £2,600 remaining
+              48% complete • {symbol}2,600 remaining
             </Text>
           </View>
         </View>

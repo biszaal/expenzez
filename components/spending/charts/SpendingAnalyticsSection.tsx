@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import dayjs from "dayjs";
 import { LineChart, ChartData } from "../../charts";
 import { useTheme } from "../../../contexts/ThemeContext";
+import { useCurrency } from "../../../contexts/CurrencyContext";
 import { spendingAnalyticsSectionStyles } from "./SpendingAnalyticsSection.styles";
 import { AIInsightCard } from "../../ai/AIInsightCard";
 import { ChartInsightResponse } from "../../../services/api/chartInsightsAPI";
@@ -62,6 +63,7 @@ export const SpendingAnalyticsSection: React.FC<
   aiInsightLoading,
 }) => {
   const { colors, isDark } = useTheme();
+  const { symbol } = useCurrency();
   const styles = spendingAnalyticsSectionStyles;
   const { width } = Dimensions.get("window");
   const [showAIInsight, setShowAIInsight] = useState(false);
@@ -75,19 +77,37 @@ export const SpendingAnalyticsSection: React.FC<
   const prevMonthLabel = dayjs(selectedMonth)
     .subtract(1, "month")
     .format("MMM");
+  const prevMonthLong = dayjs(selectedMonth)
+    .subtract(1, "month")
+    .format("MMMM");
   const monthShort = dayjs(selectedMonth).format("MMM");
+  const monthLong = dayjs(selectedMonth).format("MMMM");
 
   // Derived figures shown in the header + 3 stat tiles.
   const stats = useMemo(() => {
+    // `data` / `prevMonthData` are CUMULATIVE running totals (built in
+    // spending.tsx via `data.push(currentCumulative)`), so the month total is
+    // the FINAL point on the curve — not the sum of the series. A previous
+    // version summed the cumulative array, which inflated the total to roughly
+    // dailyAvg × days (e.g. £28k instead of ~£1.8k). Per-day spend is the
+    // difference between consecutive cumulative points.
     const data = dailySpendingData?.data || [];
     const prev = dailySpendingData?.prevMonthData || [];
 
-    const total = data.reduce((s, v) => s + v, 0);
-    const prevTotal = prev.reduce((s, v) => s + v, 0);
+    const lastValue = (series: number[]) =>
+      series.length > 0 ? series[series.length - 1] : 0;
+    const toDailyIncrements = (series: number[]) =>
+      series.map((v, i) => (i === 0 ? v : v - series[i - 1]));
 
-    const daysWithData = data.filter((v) => v > 0).length;
+    const total = lastValue(data);
+    const prevTotal = lastValue(prev);
+
+    const dailyIncrements = toDailyIncrements(data);
+    const prevIncrements = toDailyIncrements(prev);
+
+    const daysWithData = dailyIncrements.filter((v) => v > 0).length;
     const dailyAvg = daysWithData > 0 ? total / daysWithData : 0;
-    const prevDaysWithData = prev.filter((v) => v > 0).length;
+    const prevDaysWithData = prevIncrements.filter((v) => v > 0).length;
     const prevDailyAvg =
       prevDaysWithData > 0 ? prevTotal / prevDaysWithData : 0;
     const dailyDelta = dailyAvg - prevDailyAvg;
@@ -146,9 +166,17 @@ export const SpendingAnalyticsSection: React.FC<
     (v) => v > 0
   );
 
-  // Format the big total — use the chart sum so it tracks the visible curve.
+  // Format the big total — the final cumulative point, so it matches the end
+  // of the visible curve.
   const totalFormatted = formatGBP(stats.total, true);
   const [totalWhole, totalDec] = totalFormatted.split(".");
+
+  // Comparison readout. Lead with the absolute £ change (always meaningful) and
+  // only append the % when it's sane — when last month was near-zero the % blows
+  // up into nonsense like +11502%, so we drop it and let the £ figure stand.
+  const absDelta = Math.abs(stats.total - stats.prevTotal);
+  const showDeltaPct = stats.prevTotal > 0 && Math.abs(stats.deltaPct) < 1000;
+  const deltaColor = stats.deltaIsUp ? colors.rose[500] : colors.lime[500];
 
   return (
     <>
@@ -174,7 +202,7 @@ export const SpendingAnalyticsSection: React.FC<
                   },
                 ]}
               >
-                TOTAL SPENT
+                TOTAL SPENT · {monthLong.toUpperCase()}
               </Text>
               <View style={styles.headerAmountRow}>
                 <Text
@@ -186,7 +214,7 @@ export const SpendingAnalyticsSection: React.FC<
                     },
                   ]}
                 >
-                  £{totalWhole}
+                  {symbol}{totalWhole}
                 </Text>
                 <Text
                   style={[
@@ -202,38 +230,19 @@ export const SpendingAnalyticsSection: React.FC<
               </View>
               {hasPrevData && stats.prevTotal > 0 && (
                 <View style={styles.headerDeltaRow}>
-                  <View
+                  <Ionicons
+                    name={stats.deltaIsUp ? "arrow-up" : "arrow-down"}
+                    size={13}
+                    color={deltaColor}
+                  />
+                  <Text
                     style={[
-                      styles.headerDeltaChip,
-                      {
-                        backgroundColor: stats.deltaIsUp
-                          ? colors.negBg
-                          : colors.posBg,
-                      },
+                      styles.headerDeltaAmount,
+                      { color: deltaColor, fontFamily: fontFamily.semibold },
                     ]}
                   >
-                    <Ionicons
-                      name={stats.deltaIsUp ? "arrow-up" : "arrow-down"}
-                      size={10}
-                      color={
-                        stats.deltaIsUp ? colors.rose[500] : colors.lime[500]
-                      }
-                    />
-                    <Text
-                      style={[
-                        styles.headerDeltaChipText,
-                        {
-                          color: stats.deltaIsUp
-                            ? colors.rose[500]
-                            : colors.lime[500],
-                          fontFamily: fontFamily.semibold,
-                        },
-                      ]}
-                    >
-                      {stats.deltaIsUp ? "+" : "−"}
-                      {Math.abs(stats.deltaPct).toFixed(1)}%
-                    </Text>
-                  </View>
+                    {symbol}{formatGBP(absDelta)}
+                  </Text>
                   <Text
                     style={[
                       styles.headerDeltaSub,
@@ -243,7 +252,12 @@ export const SpendingAnalyticsSection: React.FC<
                       },
                     ]}
                   >
-                    vs {prevMonthLabel}
+                    {stats.deltaIsUp ? "more than" : "less than"} {prevMonthLong}
+                    {showDeltaPct
+                      ? `  ·  ${stats.deltaIsUp ? "+" : "−"}${Math.abs(
+                          stats.deltaPct
+                        ).toFixed(0)}%`
+                      : ""}
                   </Text>
                 </View>
               )}
@@ -275,10 +289,8 @@ export const SpendingAnalyticsSection: React.FC<
                   <View
                     style={[
                       styles.legendDot,
-                      {
-                        backgroundColor: colors.text.tertiary,
-                        opacity: 0.5,
-                      },
+                      styles.legendDotHollow,
+                      { borderColor: colors.text.tertiary },
                     ]}
                   />
                   <Text
@@ -317,59 +329,16 @@ export const SpendingAnalyticsSection: React.FC<
                   pointColor={chartLineColor}
                   backgroundColor="transparent"
                   onPointSelect={onPointSelect}
-                  showGrid={false}
+                  showGrid={true}
                   showPoints={true}
-                  curveType="bezier"
+                  curveType="monotone"
                   gridColor={colors.text.tertiary}
                   labelColor={colors.text.secondary}
+                  endDotRingColor={colors.card.background}
                 />
               </GestureHandlerRootView>
-              <View style={styles.xAxisRow}>
-                <Text
-                  style={[
-                    styles.xAxisLabel,
-                    {
-                      color: colors.text.tertiary,
-                      fontFamily: fontFamily.medium,
-                    },
-                  ]}
-                >
-                  1 {monthShort}
-                </Text>
-                <Text
-                  style={[
-                    styles.xAxisLabel,
-                    {
-                      color: colors.text.tertiary,
-                      fontFamily: fontFamily.medium,
-                    },
-                  ]}
-                >
-                  10 {monthShort}
-                </Text>
-                <Text
-                  style={[
-                    styles.xAxisLabel,
-                    {
-                      color: colors.text.tertiary,
-                      fontFamily: fontFamily.medium,
-                    },
-                  ]}
-                >
-                  20 {monthShort}
-                </Text>
-                <Text
-                  style={[
-                    styles.xAxisLabel,
-                    {
-                      color: colors.text.tertiary,
-                      fontFamily: fontFamily.medium,
-                    },
-                  ]}
-                >
-                  {dayjs(selectedMonth).daysInMonth()} {monthShort}
-                </Text>
-              </View>
+              {/* The LineChart draws its own date axis (1 / mid / last), so no
+                  second label row here — one clean axis only. */}
             </View>
           ) : (
             <View
@@ -426,153 +395,153 @@ export const SpendingAnalyticsSection: React.FC<
         </View>
       </View>
 
-      {/* 3 stat tiles below the chart card */}
+      {/* Stat row — one card, three columns split by hairline dividers. */}
       {hasTransactions && (
         <View style={styles.statsRow}>
           <View
             style={[
-              styles.statCard,
+              styles.statsCard,
               {
                 backgroundColor: colors.card.background,
                 borderColor: colors.border.medium,
               },
             ]}
           >
-            <Text
-              style={[
-                styles.statLabel,
-                {
-                  color: colors.text.tertiary,
-                  fontFamily: fontFamily.semibold,
-                },
-              ]}
-            >
-              Daily avg
-            </Text>
-            <Text
-              style={[
-                styles.statValue,
-                {
-                  color: colors.text.primary,
-                  fontFamily: fontFamily.monoSemibold,
-                },
-              ]}
-            >
-              £{formatGBP(stats.dailyAvg, true)}
-            </Text>
-            {Math.abs(stats.dailyDelta) >= 0.01 && (
+            <View style={styles.statCol}>
               <Text
                 style={[
-                  styles.statSub,
+                  styles.statLabel,
                   {
-                    color:
-                      stats.dailyDelta > 0
-                        ? colors.rose[500]
-                        : colors.lime[500],
-                    fontFamily: fontFamily.medium,
+                    color: colors.text.tertiary,
+                    fontFamily: fontFamily.semibold,
                   },
                 ]}
               >
-                {stats.dailyDelta > 0 ? "+" : "−"}£
-                {formatGBP(stats.dailyDelta, true)}
+                Daily avg
               </Text>
-            )}
-          </View>
+              <Text
+                style={[
+                  styles.statValue,
+                  {
+                    color: colors.text.primary,
+                    fontFamily: fontFamily.monoSemibold,
+                  },
+                ]}
+              >
+                {symbol}{formatGBP(stats.dailyAvg, true)}
+              </Text>
+              {Math.abs(stats.dailyDelta) >= 0.01 && (
+                <Text
+                  style={[
+                    styles.statSub,
+                    {
+                      color:
+                        stats.dailyDelta > 0
+                          ? colors.rose[500]
+                          : colors.lime[500],
+                      fontFamily: fontFamily.medium,
+                    },
+                  ]}
+                >
+                  {stats.dailyDelta > 0 ? "+" : "−"}{symbol}
+                  {formatGBP(Math.abs(stats.dailyDelta), true)}
+                </Text>
+              )}
+            </View>
 
-          <View
-            style={[
-              styles.statCard,
-              {
-                backgroundColor: colors.card.background,
-                borderColor: colors.border.medium,
-              },
-            ]}
-          >
-            <Text
+            <View
               style={[
-                styles.statLabel,
-                {
-                  color: colors.text.tertiary,
-                  fontFamily: fontFamily.semibold,
-                },
+                styles.statDivider,
+                { backgroundColor: colors.border.medium },
               ]}
-            >
-              Largest
-            </Text>
-            <Text
+            />
+
+            <View style={styles.statCol}>
+              <Text
+                style={[
+                  styles.statLabel,
+                  {
+                    color: colors.text.tertiary,
+                    fontFamily: fontFamily.semibold,
+                  },
+                ]}
+              >
+                Largest
+              </Text>
+              <Text
+                style={[
+                  styles.statValue,
+                  {
+                    color: colors.text.primary,
+                    fontFamily: fontFamily.monoSemibold,
+                  },
+                ]}
+              >
+                {symbol}{formatGBP(stats.largestAmount)}
+              </Text>
+              {stats.largestMerchant && (
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    styles.statSub,
+                    {
+                      color: colors.text.tertiary,
+                      fontFamily: fontFamily.medium,
+                    },
+                  ]}
+                >
+                  {stats.largestMerchant}
+                </Text>
+              )}
+            </View>
+
+            <View
               style={[
-                styles.statValue,
-                {
-                  color: colors.text.primary,
-                  fontFamily: fontFamily.monoSemibold,
-                },
+                styles.statDivider,
+                { backgroundColor: colors.border.medium },
               ]}
-            >
-              £{formatGBP(stats.largestAmount)}
-            </Text>
-            {stats.largestMerchant && (
+            />
+
+            <View style={styles.statCol}>
+              <Text
+                style={[
+                  styles.statLabel,
+                  {
+                    color: colors.text.tertiary,
+                    fontFamily: fontFamily.semibold,
+                  },
+                ]}
+              >
+                Most-used
+              </Text>
               <Text
                 numberOfLines={1}
                 style={[
-                  styles.statSub,
+                  styles.statValue,
                   {
-                    color: colors.text.tertiary,
-                    fontFamily: fontFamily.medium,
+                    color: colors.text.primary,
+                    fontFamily: fontFamily.semibold,
+                    fontSize: 14,
+                    letterSpacing: -0.2,
                   },
                 ]}
               >
-                {stats.largestMerchant}
+                {stats.mostUsed || "—"}
               </Text>
-            )}
-          </View>
-
-          <View
-            style={[
-              styles.statCard,
-              {
-                backgroundColor: colors.card.background,
-                borderColor: colors.border.medium,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.statLabel,
-                {
-                  color: colors.text.tertiary,
-                  fontFamily: fontFamily.semibold,
-                },
-              ]}
-            >
-              Most-used
-            </Text>
-            <Text
-              numberOfLines={1}
-              style={[
-                styles.statValue,
-                {
-                  color: colors.text.primary,
-                  fontFamily: fontFamily.semibold,
-                  fontSize: 14,
-                  letterSpacing: -0.2,
-                },
-              ]}
-            >
-              {stats.mostUsed || "—"}
-            </Text>
-            {stats.mostUsedCount > 0 && (
-              <Text
-                style={[
-                  styles.statSub,
-                  {
-                    color: colors.text.tertiary,
-                    fontFamily: fontFamily.medium,
-                  },
-                ]}
-              >
-                {stats.mostUsedCount}×
-              </Text>
-            )}
+              {stats.mostUsedCount > 0 && (
+                <Text
+                  style={[
+                    styles.statSub,
+                    {
+                      color: colors.text.tertiary,
+                      fontFamily: fontFamily.medium,
+                    },
+                  ]}
+                >
+                  {stats.mostUsedCount}×
+                </Text>
+              )}
+            </View>
           </View>
         </View>
       )}

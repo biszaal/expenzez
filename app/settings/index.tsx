@@ -12,19 +12,26 @@ import {
   Linking,
   ActivityIndicator,
   Clipboard,
+  Modal,
+  FlatList,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme, ColorScheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
+import { CURRENCIES, CurrencyOption } from "../../constants/currencies";
 import { useAuth } from "../auth/AuthContext";
 import { spacing, borderRadius, shadows, fontFamily } from "../../constants/theme";
 import { APP_VERSION } from "../../constants/version";
 import { useSubscription } from "../../hooks/useSubscription";
 import { useRevenueCat } from "../../contexts/RevenueCatContext";
 import { analyticsService } from "../../services/analytics";
+import { crashReporting } from "../../utils/crashReporting";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { colors, colorScheme, setColorScheme, isDark } = useTheme();
+  const { currencyCode, setCurrency } = useCurrency();
   const { logout } = useAuth();
   const {
     isPremium,
@@ -40,6 +47,24 @@ export default function SettingsPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [analyticsConsent, setAnalyticsConsent] = useState(false);
+  const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
+  const [currencySearch, setCurrencySearch] = useState("");
+
+  const activeCurrency =
+    CURRENCIES.find((c) => c.code === currencyCode) || CURRENCIES[0];
+  const filteredCurrencies = CURRENCIES.filter((c) => {
+    const q = currencySearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)
+    );
+  });
+
+  const handleSelectCurrency = (code: string) => {
+    setCurrency(code);
+    setCurrencyModalVisible(false);
+    setCurrencySearch("");
+  };
 
   // Load userId from AsyncStorage on mount
   useEffect(() => {
@@ -105,6 +130,11 @@ export default function SettingsPage() {
   const handleAnalyticsToggle = async (value: boolean) => {
     setAnalyticsConsent(value);
     await analyticsService.setConsent(value ? "granted" : "denied");
+    // Start crash reporting immediately on opt-in (no relaunch needed). Opting
+    // out takes effect on next launch, when initialize() is skipped.
+    if (value) {
+      crashReporting.initialize(true);
+    }
   };
 
   const themeOptions = [
@@ -489,6 +519,66 @@ export default function SettingsPage() {
                 </TouchableOpacity>
               ))}
             </View>
+          </View>
+
+          {/* Currency Section */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              Currency
+            </Text>
+            <Text
+              style={[
+                styles.sectionDescription,
+                { color: colors.text.secondary },
+              ]}
+            >
+              Changes how amounts are displayed. Does not convert existing
+              values.
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+              onPress={() => setCurrencyModalVisible(true)}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  styles.themeIconContainer,
+                  { backgroundColor: colors.primary.main },
+                ]}
+              >
+                <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
+                  {activeCurrency.symbol}
+                </Text>
+              </View>
+              <View style={styles.settingItemContent}>
+                <Text
+                  style={[styles.settingText, { color: colors.text.primary }]}
+                >
+                  Display currency
+                </Text>
+                <Text
+                  style={[
+                    styles.settingSubtext,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  {activeCurrency.name} ({activeCurrency.code})
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.text.secondary}
+              />
+            </TouchableOpacity>
           </View>
 
           {/* App Settings */}
@@ -1213,6 +1303,121 @@ export default function SettingsPage() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Currency Picker Modal */}
+      <Modal
+        visible={currencyModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setCurrencyModalVisible(false)}
+      >
+        <View style={styles.currencyModalOverlay}>
+          <View
+            style={[
+              styles.currencyModalSheet,
+              { backgroundColor: colors.background.secondary },
+            ]}
+          >
+            <View style={styles.currencyModalHeader}>
+              <Text
+                style={[
+                  styles.currencyModalTitle,
+                  { color: colors.text.primary },
+                ]}
+              >
+                Choose currency
+              </Text>
+              <TouchableOpacity
+                onPress={() => setCurrencyModalVisible(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close" size={24} color={colors.text.secondary} />
+              </TouchableOpacity>
+            </View>
+
+            <View
+              style={[
+                styles.currencySearchBox,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+              ]}
+            >
+              <Ionicons name="search" size={18} color={colors.text.secondary} />
+              <TextInput
+                style={[styles.currencySearchInput, { color: colors.text.primary }]}
+                placeholder="Search currency"
+                placeholderTextColor={colors.text.secondary}
+                value={currencySearch}
+                onChangeText={setCurrencySearch}
+                autoCorrect={false}
+                autoCapitalize="characters"
+              />
+            </View>
+
+            <FlatList
+              data={filteredCurrencies}
+              keyExtractor={(item) => item.code}
+              keyboardShouldPersistTaps="handled"
+              style={styles.currencyList}
+              renderItem={({ item }: { item: CurrencyOption }) => {
+                const selected = item.code === currencyCode;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.currencyRow,
+                      { borderBottomColor: colors.border.light },
+                      selected && {
+                        backgroundColor: isDark
+                          ? "rgba(78,124,255,0.10)"
+                          : "rgba(37,71,240,0.06)",
+                      },
+                    ]}
+                    onPress={() => handleSelectCurrency(item.code)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.currencyRowSymbol,
+                        { color: colors.text.primary },
+                      ]}
+                    >
+                      {item.symbol}
+                    </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={[
+                          styles.currencyRowName,
+                          { color: colors.text.primary },
+                          selected && { fontWeight: "700" },
+                        ]}
+                      >
+                        {item.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.currencyRowCode,
+                          { color: colors.text.secondary },
+                        ]}
+                      >
+                        {item.code}
+                      </Text>
+                    </View>
+                    {selected && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={22}
+                        color={colors.primary.main}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1338,6 +1543,71 @@ const styles = StyleSheet.create({
   settingSubtext: {
     fontSize: 12,
     marginTop: 3,
+    fontFamily: fontFamily.medium,
+  },
+  currencyModalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  currencyModalSheet: {
+    maxHeight: "80%",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
+  currencyModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  currencyModalTitle: {
+    fontSize: 18,
+    fontFamily: fontFamily.semibold,
+  },
+  currencySearchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
+    gap: 8,
+  },
+  currencySearchInput: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: fontFamily.medium,
+    paddingVertical: 0,
+  },
+  currencyList: {
+    flexGrow: 0,
+  },
+  currencyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 14,
+  },
+  currencyRowSymbol: {
+    fontSize: 18,
+    fontWeight: "700",
+    width: 34,
+    textAlign: "center",
+  },
+  currencyRowName: {
+    fontSize: 15,
+    fontFamily: fontFamily.medium,
+  },
+  currencyRowCode: {
+    fontSize: 12,
+    marginTop: 2,
     fontFamily: fontFamily.medium,
   },
   settingValue: {

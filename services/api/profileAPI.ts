@@ -95,6 +95,17 @@ export const profileAPI = {
     }
   },
 
+  // Update only the user's preferred display currency (best-effort sync).
+  updatePreferredCurrency: async (currency: string) => {
+    const response = await api.put("/profile", { preferredCurrency: currency });
+
+    // Invalidate the cached profile so the next read reflects the change.
+    const userId = await getCacheUserId();
+    await clearCachedData(`user_profile_${userId}`);
+
+    return response.data;
+  },
+
   // Get credit score with caching
   getCreditScore: async () => {
     // 🚨 CRITICAL: User-specific cache key

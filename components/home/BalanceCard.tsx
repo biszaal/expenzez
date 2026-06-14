@@ -7,6 +7,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../../app/auth/AuthContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { styles } from "./BalanceCard.styles";
 import { SHADOWS } from "../../constants/Colors";
 
@@ -30,6 +31,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   isRefreshing = false,
 }) => {
   const { user } = useAuth();
+  const { symbol, formatAmount } = useCurrency();
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
 
   // Load balance visibility preference
@@ -60,8 +62,8 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
 
   // Format balance display
   const displayBalance = isBalanceHidden
-    ? "£••••••.••"
-    : `£${totalBalance.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    ? `${symbol}••••••.••`
+    : formatAmount(totalBalance);
 
   // Check if name looks like an Apple ID (starts with "apple" followed by alphanumeric string)
   const isAppleId = user?.name?.match(/^apple[a-f0-9]{20,}$/i);

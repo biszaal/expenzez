@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../contexts/ThemeContext";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { useAuth } from "./auth/AuthContext";
 import { TabLoadingScreen } from "../components/ui";
 import {
@@ -36,6 +37,7 @@ import { fontFamily } from "../constants/theme";
 
 export default function GoalsScreen() {
   const { colors } = useTheme();
+  const { symbol } = useCurrency();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -573,7 +575,7 @@ export default function GoalsScreen() {
             )}
 
             <View style={styles.amountInputRow}>
-              <Text style={styles.currencyPrefix}>£</Text>
+              <Text style={styles.currencyPrefix}>{symbol}</Text>
               <TextInput
                 style={styles.amountInput}
                 value={contributeAmount}

@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import { useTheme } from "../../../contexts/ThemeContext";
+import { useCurrency } from "../../../contexts/CurrencyContext";
 import { fontFamily } from "../../../constants/theme";
 
 // v1.5 redesign — Recent transactions list at the bottom of the Spending
@@ -104,6 +105,7 @@ export const SpendingRecentTransactions: React.FC<Props> = ({
   limit = 6,
 }) => {
   const { colors } = useTheme();
+  const { symbol } = useCurrency();
 
   const recent = React.useMemo(() => {
     return [...transactions]
@@ -200,7 +202,7 @@ export const SpendingRecentTransactions: React.FC<Props> = ({
                   },
                 ]}
               >
-                {isCredit ? "+" : "−"}£{formatted.whole}
+                {isCredit ? "+" : "−"}{symbol}{formatted.whole}
                 <Text style={{ color: colors.text.tertiary }}>
                   {formatted.decimals}
                 </Text>

@@ -12,8 +12,8 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
     paddingTop: 14,
   },
   premiumSpendingCard: {
-    borderRadius: 22,
-    padding: 18,
+    borderRadius: 24,
+    padding: 20,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
@@ -35,7 +35,7 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
   headerAmountRow: {
     flexDirection: "row",
     alignItems: "baseline",
-    marginTop: 4,
+    marginTop: 6,
   },
   headerAmountWhole: {
     fontSize: 36,
@@ -49,23 +49,16 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
   headerDeltaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginTop: 8,
+    gap: 4,
+    marginTop: 10,
+    flexWrap: "wrap",
   },
-  headerDeltaChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 7,
-  },
-  headerDeltaChipText: {
-    fontSize: 11,
-    letterSpacing: 0.2,
+  headerDeltaAmount: {
+    fontSize: 13,
+    letterSpacing: -0.2,
   },
   headerDeltaSub: {
-    fontSize: 11,
+    fontSize: 12,
   },
 
   // Right-side legend stack.
@@ -85,44 +78,45 @@ export const spendingAnalyticsSectionStyles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
   },
+  // Hollow ring marker for the previous-month comparison, mirroring the
+  // dashed reference line on the chart.
+  legendDotHollow: {
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+  },
   legendText: {
     fontSize: 11,
   },
 
   // Chart section.
   chartSection: {
-    marginTop: 6,
+    marginTop: 12,
   },
   chartArea: {
     width: "100%",
     alignItems: "center",
   },
 
-  // X-axis labels under the chart.
-  xAxisRow: {
+  // Stat row — one card split into three columns by hairline dividers.
+  statsRow: {
+    paddingHorizontal: 22,
+    paddingTop: 12,
+  },
+  statsCard: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingTop: 4,
+    alignItems: "stretch",
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 14,
     paddingHorizontal: 4,
   },
-  xAxisLabel: {
-    fontSize: 10.5,
-    letterSpacing: 0.4,
-  },
-
-  // 3-up stat row below the chart card.
-  statsRow: {
-    flexDirection: "row",
-    paddingHorizontal: 22,
-    paddingTop: 10,
-    gap: 8,
-  },
-  statCard: {
+  statCol: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+  },
+  statDivider: {
+    width: StyleSheet.hairlineWidth,
+    marginVertical: 2,
   },
   statLabel: {
     fontSize: 10.5,

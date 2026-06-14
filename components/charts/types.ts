@@ -31,7 +31,10 @@ export interface ChartData {
 export interface ChartDimensions {
   width: number;
   height: number;
-  paddingHorizontal: number;
+  // Asymmetric horizontal padding: left gutter holds the Y-axis labels, the
+  // right inset gives the animated end-dot room so it never clips the edge.
+  paddingLeft: number;
+  paddingRight: number;
   paddingVertical: number;
   chartWidth: number;
   chartHeight: number;
@@ -50,10 +53,13 @@ export interface LineChartProps {
   onPointSelect?: (point: ChartDataPoint) => void;
   showGrid?: boolean;
   showPoints?: boolean;
-  curveType?: 'linear' | 'bezier';
+  curveType?: 'linear' | 'bezier' | 'monotone';
   // Theme-aware colors
   gridColor?: string;
   labelColor?: string;
+  // Colour the ring punched around the animated end-dot (usually the card
+  // background) so the dot reads as a clean target against the line + fill.
+  endDotRingColor?: string;
 }
 
 export interface AnimationConfig {

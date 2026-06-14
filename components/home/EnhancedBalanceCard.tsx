@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../../app/auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 
 interface EnhancedBalanceCardProps {
   totalBalance: number;
@@ -21,6 +22,7 @@ export const EnhancedBalanceCard: React.FC<EnhancedBalanceCardProps> = ({
 }) => {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { symbol, formatAmount } = useCurrency();
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
   const [pulseAnim] = useState(new Animated.Value(1));
 
@@ -52,8 +54,8 @@ export const EnhancedBalanceCard: React.FC<EnhancedBalanceCardProps> = ({
 
   // Format balance display
   const displayBalance = isBalanceHidden
-    ? "£••••••.••"
-    : `£${totalBalance.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    ? `${symbol}••••••.••`
+    : formatAmount(totalBalance);
 
   // Pulse animation for refresh button
   useEffect(() => {

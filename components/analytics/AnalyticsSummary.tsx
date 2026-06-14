@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import { analyticsAPI, AnalyticsMetrics } from '../../services/api/analyticsAPI';
 
 interface AnalyticsSummaryProps {
@@ -15,6 +16,7 @@ interface AnalyticsSummaryProps {
 
 export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }) => {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const [analytics, setAnalytics] = useState<AnalyticsMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -123,12 +125,12 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
                 </View>
               </View>
               <Text style={[styles.forecastAmount, { color: colors.primary.main }]}>
-                £{forecast.predicted.toFixed(2)}
+                {formatAmount(forecast.predicted)}
               </Text>
               <View style={styles.rangeContainer}>
                 <Ionicons name="swap-vertical-outline" size={12} color={colors.text.tertiary} />
                 <Text style={[styles.forecastRange, { color: colors.text.secondary }]}>
-                  Range: £{forecast.lower_bound.toFixed(0)} - £{forecast.upper_bound.toFixed(0)}
+                  Range: {formatAmount(forecast.lower_bound, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} - {formatAmount(forecast.upper_bound, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </Text>
               </View>
             </View>
@@ -160,7 +162,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
                     {trend.category}
                   </Text>
                   <Text style={[styles.trendAmount, { color: colors.text.secondary }]}>
-                    £{trend.currentMonth.toFixed(2)} this month
+                    {formatAmount(trend.currentMonth)} this month
                   </Text>
                 </View>
                 <View style={styles.trendBadgeContainer}>
@@ -223,7 +225,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
                     { color: analyticsAPI.getAnomalySeverityColor(anomaly.severity) },
                   ]}
                 >
-                  £{anomaly.amount.toFixed(2)}
+                  {formatAmount(anomaly.amount)}
                 </Text>
               </View>
               <View style={styles.anomalySeverityBadge}>
@@ -253,7 +255,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
               Savings Opportunity
             </Text>
             <Text style={[styles.metricValue, { color: colors.primary.main }]}>
-              £{analytics.savingsOpportunity.toFixed(2)}
+              {formatAmount(analytics.savingsOpportunity)}
             </Text>
           </View>
 
@@ -267,7 +269,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
                 { color: analytics.spendingVelocity > 0 ? '#EF4444' : '#10B981' },
               ]}
             >
-              {analytics.spendingVelocity > 0 ? '+' : ''}£{analytics.spendingVelocity.toFixed(2)}
+              {analytics.spendingVelocity > 0 ? '+' : ''}{formatAmount(analytics.spendingVelocity)}
             </Text>
           </View>
 

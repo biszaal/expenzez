@@ -14,11 +14,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import { spacing, borderRadius } from '../../constants/theme';
 import { creditAPI, CreditCard } from '../../services/api/creditAPI';
 
 export default function CreditCardsScreen() {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const router = useRouter();
 
   const [cards, setCards] = useState<CreditCard[]>([]);
@@ -224,7 +226,7 @@ export default function CreditCardsScreen() {
               </Text>
               <View style={styles.utilizationDetails}>
                 <Text style={[styles.utilizationAmount, { color: colors.text.secondary }]}>
-                  £{totalBalance.toFixed(2)} / £{totalLimit.toFixed(2)}
+                  {formatAmount(totalBalance)} / {formatAmount(totalLimit)}
                 </Text>
                 <Text style={[styles.utilizationCards, { color: colors.text.tertiary }]}>
                   {cards.length} {cards.length === 1 ? 'card' : 'cards'}
@@ -346,7 +348,7 @@ export default function CreditCardsScreen() {
                         Balance
                       </Text>
                       <Text style={[styles.cardMetricValue, { color: colors.text.primary }]}>
-                        £{card.currentBalance.toFixed(2)}
+                        {formatAmount(card.currentBalance)}
                       </Text>
                     </View>
 
@@ -355,7 +357,7 @@ export default function CreditCardsScreen() {
                         Limit
                       </Text>
                       <Text style={[styles.cardMetricValue, { color: colors.text.primary }]}>
-                        £{card.creditLimit.toFixed(2)}
+                        {formatAmount(card.creditLimit)}
                       </Text>
                     </View>
 
@@ -406,7 +408,7 @@ export default function CreditCardsScreen() {
                         <View style={styles.cardDetail}>
                           <Ionicons name="cash-outline" size={14} color={colors.text.tertiary} />
                           <Text style={[styles.cardDetailText, { color: colors.text.secondary }]}>
-                            Min: £{card.minimumPayment.toFixed(2)}
+                            Min: {formatAmount(card.minimumPayment)}
                           </Text>
                         </View>
                       )}

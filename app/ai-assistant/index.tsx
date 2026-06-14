@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { notificationAPI, aiService } from "../../services/api";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../app/auth/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { spacing, borderRadius, typography, fontFamily } from "../../constants/theme";
@@ -56,6 +57,7 @@ interface MonthlyReport {
 
 export default function AIAssistantScreen() {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const { user } = useAuth();
   const router = useRouter();
   const { isPremium, hasFeatureAccess } = useSubscription();
@@ -732,7 +734,7 @@ export default function AIAssistantScreen() {
                             color: colors.success[600],
                           }}
                         >
-                          £{monthlyReport.reportData.totalIncome.toFixed(0)}
+                          {formatAmount(monthlyReport.reportData.totalIncome, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </Text>
                         <Text
                           style={{ fontSize: 12, color: colors.text.secondary }}
@@ -748,7 +750,7 @@ export default function AIAssistantScreen() {
                             color: colors.error[600],
                           }}
                         >
-                          £{monthlyReport.reportData.totalExpenses.toFixed(0)}
+                          {formatAmount(monthlyReport.reportData.totalExpenses, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </Text>
                         <Text
                           style={{ fontSize: 12, color: colors.text.secondary }}
@@ -767,7 +769,7 @@ export default function AIAssistantScreen() {
                                 : colors.error[600],
                           }}
                         >
-                          £{monthlyReport.reportData.netFlow.toFixed(0)}
+                          {formatAmount(monthlyReport.reportData.netFlow, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </Text>
                         <Text
                           style={{ fontSize: 12, color: colors.text.secondary }}
@@ -836,7 +838,7 @@ export default function AIAssistantScreen() {
                                   color: colors.text.primary,
                                 }}
                               >
-                                £{category.amount.toFixed(0)}
+                                {formatAmount(category.amount, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                               </Text>
                             </View>
                           ))}

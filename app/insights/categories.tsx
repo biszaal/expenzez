@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import { useAuth } from '../auth/AuthContext';
 import { insightsEngine, CategoryInsights } from '../../services/insightsEngine';
 import { EXPENSE_CATEGORIES } from '../../services/expenseStorage';
@@ -24,6 +25,7 @@ import { aiInsightPersistence } from '../../services/aiInsightPersistence';
 
 export default function CategoriesAnalysisScreen() {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const { user } = useAuth();
   const { isPremium } = useSubscription();
   const [categoryInsights, setCategoryInsights] = useState<CategoryInsights[]>([]);
@@ -290,7 +292,7 @@ export default function CategoriesAnalysisScreen() {
                         Total Spent
                       </Text>
                       <Text style={[styles.statValue, { color: colors.text.primary }]}>
-                        £{insight.totalSpent.toFixed(2)}
+                        {formatAmount(insight.totalSpent)}
                       </Text>
                     </View>
 
@@ -299,7 +301,7 @@ export default function CategoriesAnalysisScreen() {
                         Average
                       </Text>
                       <Text style={[styles.statValue, { color: colors.text.primary }]}>
-                        £{insight.averageTransaction.toFixed(2)}
+                        {formatAmount(insight.averageTransaction)}
                       </Text>
                     </View>
                   </View>
@@ -307,7 +309,7 @@ export default function CategoriesAnalysisScreen() {
                   {insight.topMerchants.length > 0 && (
                     <View style={styles.topMerchants}>
                       <Text style={[styles.merchantsLabel, { color: colors.text.secondary }]}>
-                        Top spending: {insight.topMerchants[0].name} (£{insight.topMerchants[0].amount.toFixed(2)})
+                        Top spending: {insight.topMerchants[0].name} ({formatAmount(insight.topMerchants[0].amount)})
                       </Text>
                     </View>
                   )}
@@ -349,7 +351,7 @@ export default function CategoriesAnalysisScreen() {
                   Total Spending
                 </Text>
                 <Text style={[styles.summaryValue, { color: colors.text.primary }]}>
-                  £{categoryInsights.reduce((sum, c) => sum + c.totalSpent, 0).toFixed(2)}
+                  {formatAmount(categoryInsights.reduce((sum, c) => sum + c.totalSpent, 0))}
                 </Text>
               </View>
 

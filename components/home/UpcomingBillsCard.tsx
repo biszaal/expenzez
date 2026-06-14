@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import dayjs from 'dayjs';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import { autoBillDetection } from '../../services/automaticBillDetection';
 import { SPACING } from '../../constants/Colors';
 
@@ -104,9 +105,12 @@ export const UpcomingBillsCard: React.FC = () => {
     return colors.text.secondary; // Normal
   };
 
-  const formatAmount = (amount: number) => {
-    return `£${amount.toFixed(0)}`;
-  };
+  const { formatAmount: formatCurrencyAmount } = useCurrency();
+  const formatAmount = (amount: number) =>
+    formatCurrencyAmount(amount, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
 
   if (loading) {
     return (

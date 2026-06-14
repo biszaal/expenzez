@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import {
   costOfLivingService,
   CostOfLivingAnalysis,
@@ -72,9 +73,12 @@ export const CostOfLivingWidget: React.FC<CostOfLivingWidgetProps> = ({
     }, [loadAnalysis])
   );
 
-  const formatCurrency = (amount: number) => {
-    return `£${amount.toLocaleString("en-GB", { maximumFractionDigits: 0 })}`;
-  };
+  const { formatAmount: formatCurrencyAmount } = useCurrency();
+  const formatCurrency = (amount: number) =>
+    formatCurrencyAmount(amount, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
 
   const handlePress = () => {
     if (onViewDetails) {

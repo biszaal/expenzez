@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useCurrency } from "../../contexts/CurrencyContext";
 import { MerchantLogo } from "../ui/MerchantLogo";
 
 interface Transaction {
@@ -25,6 +26,7 @@ export const EnhancedTransactionsList: React.FC<
   EnhancedTransactionsListProps
 > = ({ transactions, onViewAll }) => {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const router = useRouter();
 
   // Early return if colors is not available
@@ -125,7 +127,7 @@ export const EnhancedTransactionsList: React.FC<
                     },
                   ]}
                 >
-                  {tx.amount >= 0 ? "+" : ""}£{Math.abs(tx.amount).toFixed(2)}
+                  {tx.amount >= 0 ? "+" : ""}{formatAmount(Math.abs(tx.amount))}
                 </Text>
               </View>
             </View>

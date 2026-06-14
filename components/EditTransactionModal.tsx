@@ -14,6 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../contexts/ThemeContext";
+import { useCurrency } from "../contexts/CurrencyContext";
 import { spacing, borderRadius } from "../constants/theme";
 import dayjs from "dayjs";
 import { detectNonSpend } from "../utils/nonSpendDetection";
@@ -62,6 +63,7 @@ export default function EditTransactionModal({
   onDelete,
 }: EditTransactionModalProps) {
   const { colors } = useTheme();
+  const { symbol } = useCurrency();
 
   const [description, setDescription] = useState("");
   const [merchant, setMerchant] = useState("");
@@ -216,7 +218,7 @@ export default function EditTransactionModal({
               ]}
             >
               <Text style={[styles.currencySymbol, { color: colors.text.primary }]}>
-                £
+                {symbol}
               </Text>
               <TextInput
                 style={[styles.input, { color: colors.text.primary }]}

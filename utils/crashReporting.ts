@@ -23,6 +23,8 @@ class CrashReporting {
         enableAutoSessionTracking: true,
         sessionTrackingIntervalMillis: 30000,
         maxBreadcrumbs: 50,
+        // Forward structured logs (Sentry.logger.*) to Sentry.
+        enableLogs: true,
         beforeSend: (event) => {
           // Filter out sensitive data
           if (event.exception) {

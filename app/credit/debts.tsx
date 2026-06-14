@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import { spacing, borderRadius } from '../../constants/theme';
 import { creditAPI, Debt } from '../../services/api/creditAPI';
 
@@ -21,6 +22,7 @@ const DEBT_TYPES = ['Personal Loan', 'Student Loan', 'Mortgage', 'Car Loan', 'Ot
 
 export default function DebtsScreen() {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const router = useRouter();
 
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -242,7 +244,7 @@ export default function DebtsScreen() {
                   Total Debt
                 </Text>
                 <Text style={[styles.metricValue, { color: colors.error.main }]}>
-                  £{totalDebt.toFixed(2)}
+                  {formatAmount(totalDebt)}
                 </Text>
               </View>
 
@@ -251,7 +253,7 @@ export default function DebtsScreen() {
                   Monthly Payments
                 </Text>
                 <Text style={[styles.metricValue, { color: colors.text.primary }]}>
-                  £{totalMonthlyPayments.toFixed(2)}
+                  {formatAmount(totalMonthlyPayments)}
                 </Text>
               </View>
 
@@ -356,7 +358,7 @@ export default function DebtsScreen() {
                         Remaining
                       </Text>
                       <Text style={[styles.debtMetricValue, { color: colors.error.main }]}>
-                        £{debt.remainingAmount.toFixed(2)}
+                        {formatAmount(debt.remainingAmount)}
                       </Text>
                     </View>
 
@@ -365,7 +367,7 @@ export default function DebtsScreen() {
                         Monthly
                       </Text>
                       <Text style={[styles.debtMetricValue, { color: colors.text.primary }]}>
-                        £{debt.monthlyPayment.toFixed(2)}
+                        {formatAmount(debt.monthlyPayment)}
                       </Text>
                     </View>
 
