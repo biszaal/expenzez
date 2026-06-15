@@ -566,10 +566,14 @@ class ShareViewController: UIViewController {
       }
       try FileManager.default.copyItem(at: srcURL, to: dstURL)
     } catch (let error) {
-      NSLog("[ShareExt] Cannot copy item at \(srcURL) to \(dstURL) (scoped=\(scoped)): \(error)")
+      // Do not log the source URL/filename — a statement filename can be
+      // sensitive. The error domain + code is enough to diagnose (e.g.
+      // NSCocoaErrorDomain 257 = no read permission / scoped-access failure).
+      let nsError = error as NSError
+      NSLog("[ShareExt] copyFile failed (scoped=\(scoped)) error=\(nsError.domain) code=\(nsError.code)")
       return false
     }
-    NSLog("[ShareExt] Copied shared file -> \(dstURL.lastPathComponent) (scoped=\(scoped))")
+    NSLog("[ShareExt] copyFile ok (scoped=\(scoped))")
     return true
   }
 
