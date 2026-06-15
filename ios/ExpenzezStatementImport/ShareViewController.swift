@@ -41,6 +41,7 @@ class ShareViewController: UIViewController {
         return
       }
       for (index, attachment) in (attachments).enumerated() {
+        NSLog("[ShareExt] attachment[\(index)] registeredTypeIdentifiers=\(attachment.registeredTypeIdentifiers)")
         if attachment.hasItemConformingToTypeIdentifier(imageContentType) {
           await handleImages(content: content, attachment: attachment, index: index)
         } else if attachment.hasItemConformingToTypeIdentifier(videoContentType) {
@@ -552,15 +553,23 @@ class ShareViewController: UIViewController {
   }
 
   func copyFile(at srcURL: URL, to dstURL: URL) -> Bool {
+    // Files shared from other apps (e.g. banking apps like Lloyds) often arrive
+    // as security-scoped URLs. Without explicitly starting scoped access the
+    // copy fails silently, the PDF never reaches the app-group container, and
+    // the host app receives an empty share (stuck/empty import). Request access
+    // for the duration of the copy. For non-scoped URLs this is a harmless no-op.
+    let scoped = srcURL.startAccessingSecurityScopedResource()
+    defer { if scoped { srcURL.stopAccessingSecurityScopedResource() } }
     do {
       if FileManager.default.fileExists(atPath: dstURL.path) {
         try FileManager.default.removeItem(at: dstURL)
       }
       try FileManager.default.copyItem(at: srcURL, to: dstURL)
     } catch (let error) {
-      NSLog("Cannot copy item at \(srcURL) to \(dstURL): \(error)")
+      NSLog("[ShareExt] Cannot copy item at \(srcURL) to \(dstURL) (scoped=\(scoped)): \(error)")
       return false
     }
+    NSLog("[ShareExt] Copied shared file -> \(dstURL.lastPathComponent) (scoped=\(scoped))")
     return true
   }
 
