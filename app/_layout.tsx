@@ -753,9 +753,11 @@ function ShareIntentRouter() {
   const { hasShareIntent, shareIntent, resetShareIntent } =
     useShareIntentContext();
   const { isLocked, isInitialized } = useSecurity();
+  const { isLoggedIn, loading: authLoading } = useAuth();
   const [pendingImport, setPendingImport] = useState<{
     uri: string;
     name: string;
+    debug: string;
   } | null>(null);
   const processedRef = useRef(false);
 
@@ -770,45 +772,60 @@ function ShareIntentRouter() {
   // push now would race an unmounted navigator and the parse would run against
   // an expired file ("pdf failed to parse"). Navigation is deferred to step 2.
   useEffect(() => {
-    if (!hasShareIntent || !shareIntent?.files?.length) return;
+    if (!hasShareIntent) return;
     if (processedRef.current) return;
-
-    const pdf = shareIntent.files.find((f) => f.mimeType === "application/pdf");
-    if (!pdf?.path) {
-      resetShareIntent();
-      return;
-    }
     processedRef.current = true;
 
-    (async () => {
-      const name = pdf.fileName ?? "statement.pdf";
-      let sharedUri = pdf.path;
-      try {
-        const cacheDir = (FileSystem as any).cacheDirectory as
-          | string
-          | undefined;
-        if (cacheDir) {
-          const safeName = name.replace(/[^\w.\-]/g, "_");
-          const dest = `${cacheDir}shared-${Date.now()}-${safeName}`;
-          await FileSystem.copyAsync({ from: pdf.path, to: dest });
-          const info = await FileSystem.getInfoAsync(dest);
-          if (info.exists && (info as any).size > 0) {
-            sharedUri = dest;
-          } else {
-            console.warn(
-              "[ShareIntent] cached copy missing/empty, passing original path"
-            );
-          }
-        }
-      } catch (copyErr: any) {
-        // Fall back to the original path; import screen will retry a copy.
-        console.warn(
-          "[ShareIntent] cache copy failed, passing original path",
-          copyErr?.message
-        );
-      }
+    // Snapshot exactly what arrived so we can diagnose empty/odd shares on the
+    // import screen — different source apps deliver a PDF as a file or as a
+    // file:// URL, and some deliver nothing usable at all.
+    const files: any[] = ((shareIntent as any)?.files as any[]) ?? [];
+    const debug = JSON.stringify({
+      fileCount: files.length,
+      files: files.map((f) => ({
+        mimeType: f?.mimeType ?? null,
+        fileName: f?.fileName ?? null,
+        hasPath: !!f?.path,
+      })),
+      webUrl: (shareIntent as any)?.webUrl ?? null,
+      hasText: !!(shareIntent as any)?.text,
+    });
 
-      setPendingImport({ uri: sharedUri, name });
+    // Accept a PDF from files (exact mime, .pdf name, or any file with a path)
+    // or a file:// web URL — not just an exact "application/pdf" mimeType.
+    const fileEntry =
+      files.find((f) => f?.path && f?.mimeType === "application/pdf") ||
+      files.find(
+        (f) => f?.path && /\.pdf$/i.test(f?.fileName ?? f?.path ?? "")
+      ) ||
+      files.find((f) => f?.path);
+    const rawWebUrl = (shareIntent as any)?.webUrl;
+    const webFileUrl =
+      typeof rawWebUrl === "string" && rawWebUrl.startsWith("file://")
+        ? rawWebUrl
+        : null;
+    const sourcePath: string | null = fileEntry?.path ?? webFileUrl;
+    const name = fileEntry?.fileName ?? "statement.pdf";
+
+    (async () => {
+      let sharedUri = sourcePath ?? "";
+      if (sourcePath) {
+        try {
+          const cacheDir = (FileSystem as any).cacheDirectory as
+            | string
+            | undefined;
+          if (cacheDir) {
+            const safeName = name.replace(/[^\w.\-]/g, "_");
+            const dest = `${cacheDir}shared-${Date.now()}-${safeName}`;
+            await FileSystem.copyAsync({ from: sourcePath, to: dest });
+            const info = await FileSystem.getInfoAsync(dest);
+            if (info.exists && (info as any).size > 0) sharedUri = dest;
+          }
+        } catch (copyErr: any) {
+          console.warn("[ShareIntent] cache copy failed", copyErr?.message);
+        }
+      }
+      setPendingImport({ uri: sharedUri, name, debug });
       resetShareIntent();
     })();
   }, [hasShareIntent, shareIntent, resetShareIntent]);
@@ -817,16 +834,21 @@ function ShareIntentRouter() {
   // session restored), route into the import flow with the durable cached file.
   useEffect(() => {
     if (!pendingImport) return;
-    if (!isInitialized || isLocked) return;
+    if (!isInitialized || isLocked || authLoading) return;
 
-    const { uri, name } = pendingImport;
+    const { uri, name, debug } = pendingImport;
     setPendingImport(null);
     processedRef.current = false;
+
+    // Don't drop a logged-out user onto the import screen — they can't import
+    // anyway, and it's confusing. Clear it; they can re-share after signing in.
+    if (!isLoggedIn) return;
+
     router.push({
       pathname: "/import-statement",
-      params: { sharedUri: uri, sharedName: name },
+      params: { sharedUri: uri, sharedName: name, shareDebug: debug },
     });
-  }, [pendingImport, isInitialized, isLocked]);
+  }, [pendingImport, isInitialized, isLocked, authLoading, isLoggedIn]);
 
   return null;
 }

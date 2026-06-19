@@ -36,9 +36,10 @@ export default function ImportStatementScreen() {
   // the session/token is restored gets them rejected at the API gateway (they
   // never reach the Lambda), which surfaced as "Parse failed" + a stuck quota.
   const { isLoggedIn, loading: authLoading } = useAuth();
-  const { sharedUri, sharedName } = useLocalSearchParams<{
+  const { sharedUri, sharedName, shareDebug } = useLocalSearchParams<{
     sharedUri?: string;
     sharedName?: string;
+    shareDebug?: string;
   }>();
 
   const [stage, setStage] = useState<Stage>("idle");
@@ -333,6 +334,35 @@ export default function ImportStatementScreen() {
           />
         </TouchableOpacity>
       </View>
+
+      {shareDebug ? (
+        <View
+          style={{
+            margin: 12,
+            padding: 12,
+            borderRadius: 10,
+            backgroundColor: "rgba(255,180,0,0.12)",
+            borderWidth: 1,
+            borderColor: "rgba(255,180,0,0.45)",
+          }}
+        >
+          <Text
+            style={{
+              fontWeight: "700",
+              marginBottom: 6,
+              color: colors.text.primary,
+            }}
+          >
+            Share debug — screenshot & send to support
+          </Text>
+          <Text
+            selectable
+            style={{ fontSize: 12, color: colors.text.secondary }}
+          >
+            {shareDebug}
+          </Text>
+        </View>
+      ) : null}
 
       {(stage === "idle" || stage === "parsing") && (
         <IdleView
