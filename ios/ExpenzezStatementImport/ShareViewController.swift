@@ -40,6 +40,42 @@ class ShareViewController: UIViewController {
         dismissWithError(message: "No content found")
         return
       }
+
+      // expenzez: this extension is a PDF-only importer (see the activation
+      // rule). Some source apps — notably Lloyds — bundle a trailing text/URL
+      // item alongside the shared PDF. The stock loop below writes every
+      // attachment into ONE shared slot and only redirects on the LAST
+      // attachment, so that trailing text overwrites the PDF and the host app
+      // receives text with no file (fileCount:0, hasText:true). Grab the PDF
+      // (or generic file) attachment explicitly and ignore the rest. We pass
+      // the last index so handleFileURL's existing "redirect on last" gate fires.
+      let lastIndex = attachments.count - 1
+      if let pdf = attachments.first(where: {
+        $0.hasItemConformingToTypeIdentifier(self.pdfContentType)
+      }) {
+        // PDF delivered as a file URL (Files, Mail, most banking apps).
+        if let url = try? await pdf.loadItem(forTypeIdentifier: self.pdfContentType) as? URL {
+          await self.handleFileURL(content: content, url: url, index: lastIndex)
+          return
+        }
+        // PDF delivered inline as Data (some apps) — write to a temp file first
+        // so the rest of the pipeline can copy it via a URL.
+        if let data = try? await pdf.loadItem(forTypeIdentifier: self.pdfContentType) as? Data {
+          let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + ".pdf")
+          if (try? data.write(to: tmp)) != nil {
+            await self.handleFileURL(content: content, url: tmp, index: lastIndex)
+            return
+          }
+        }
+      }
+      if let fileAtt = attachments.first(where: {
+        $0.hasItemConformingToTypeIdentifier(self.fileURLType)
+      }), let url = try? await fileAtt.loadItem(forTypeIdentifier: self.fileURLType) as? URL {
+        await self.handleFileURL(content: content, url: url, index: lastIndex)
+        return
+      }
+
       for (index, attachment) in (attachments).enumerated() {
         NSLog("[ShareExt] attachment[\(index)] registeredTypeIdentifiers=\(attachment.registeredTypeIdentifiers)")
         if attachment.hasItemConformingToTypeIdentifier(imageContentType) {

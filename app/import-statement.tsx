@@ -27,6 +27,11 @@ import type {
 
 const MAX_PDF_BYTES = 8 * 1024 * 1024;
 
+// Shown when a PDF uploads fine but we can't extract transactions from it —
+// almost always an unsupported bank / statement layout.
+const NOT_SUPPORTED_MSG =
+  "We couldn't read transactions from this statement. This bank or format isn't supported yet — we're working on adding more. Try a different statement, or contact support.";
+
 type Stage = "idle" | "parsing" | "preview" | "importing" | "done";
 
 export default function ImportStatementScreen() {
@@ -36,10 +41,9 @@ export default function ImportStatementScreen() {
   // the session/token is restored gets them rejected at the API gateway (they
   // never reach the Lambda), which surfaced as "Parse failed" + a stuck quota.
   const { isLoggedIn, loading: authLoading } = useAuth();
-  const { sharedUri, sharedName, shareDebug } = useLocalSearchParams<{
+  const { sharedUri, sharedName } = useLocalSearchParams<{
     sharedUri?: string;
     sharedName?: string;
-    shareDebug?: string;
   }>();
 
   const [stage, setStage] = useState<Stage>("idle");
@@ -79,7 +83,7 @@ export default function ImportStatementScreen() {
       // Track the most recent step so we can surface a useful error message
       // when something fails — "An unexpected error occurred" was hiding the
       // real cause (typically iOS share-intent URI permissions).
-      let step: "info" | "copy" | "upload" = "info";
+      let step: "info" | "copy" | "upload" | "parse" = "info";
 
       try {
         setStage("parsing");
@@ -156,13 +160,13 @@ export default function ImportStatementScreen() {
           throw new Error(`Upload failed (status ${uploadRes.status})`);
         }
 
+        // Upload is done; extraction is the step that fails for unsupported
+        // bank layouts — track it separately so we can show the right message.
+        step = "parse";
         const response = await transactionAPI.parseStatement(key, filename);
 
         if (!response.transactions || response.transactions.length === 0) {
-          Alert.alert(
-            "No transactions found",
-            "We couldn't find any transactions in this PDF. Try a different statement."
-          );
+          Alert.alert("Bank not supported yet", NOT_SUPPORTED_MSG);
           setStage("idle");
           return;
         }
@@ -184,13 +188,13 @@ export default function ImportStatementScreen() {
           info: "Couldn't access the shared file. Try opening the PDF directly in Expenzez instead of sharing.",
           copy: "Couldn't copy the shared file into the app. Try opening the PDF directly in Expenzez instead.",
           upload: "Couldn't upload the statement for parsing. Please check your connection and try again.",
+          parse: NOT_SUPPORTED_MSG,
         };
         const backendMessage =
           err?.response?.data?.message || err?.response?.data?.error;
         const code = err?.response?.data?.code;
-        // Refresh quota card on any backend error from the upload step —
-        // IMPORT_LIMIT_REACHED in particular changes the visible state.
-        if (step === "upload") refreshUsage();
+        // Quota can change on the upload/parse steps — keep the card accurate.
+        if (step === "upload" || step === "parse") refreshUsage();
         // Quota-exhausted gets a distinct title + matches the card CTA.
         if (code === "IMPORT_LIMIT_REACHED") {
           Alert.alert(
@@ -201,13 +205,21 @@ export default function ImportStatementScreen() {
           setStage("idle");
           return;
         }
+        // Upload succeeded but extraction failed → almost always an unsupported
+        // bank/layout. Show a friendly message instead of raw backend text
+        // ("pdf failed to parse"), which users read as a crash.
+        if (step === "parse") {
+          Alert.alert("Bank not supported yet", NOT_SUPPORTED_MSG);
+          setStage("idle");
+          return;
+        }
         const message =
           backendMessage ||
           friendlyByStep[step] ||
           err?.message ||
-          "Failed to parse statement. Please try again.";
+          "Failed to read the statement. Please try again.";
 
-        Alert.alert("Parse failed", message);
+        Alert.alert("Couldn't import", message);
         setStage("idle");
       }
     },
@@ -334,35 +346,6 @@ export default function ImportStatementScreen() {
           />
         </TouchableOpacity>
       </View>
-
-      {shareDebug ? (
-        <View
-          style={{
-            margin: 12,
-            padding: 12,
-            borderRadius: 10,
-            backgroundColor: "rgba(255,180,0,0.12)",
-            borderWidth: 1,
-            borderColor: "rgba(255,180,0,0.45)",
-          }}
-        >
-          <Text
-            style={{
-              fontWeight: "700",
-              marginBottom: 6,
-              color: colors.text.primary,
-            }}
-          >
-            Share debug — screenshot & send to support
-          </Text>
-          <Text
-            selectable
-            style={{ fontSize: 12, color: colors.text.secondary }}
-          >
-            {shareDebug}
-          </Text>
-        </View>
-      ) : null}
 
       {(stage === "idle" || stage === "parsing") && (
         <IdleView

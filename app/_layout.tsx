@@ -757,7 +757,6 @@ function ShareIntentRouter() {
   const [pendingImport, setPendingImport] = useState<{
     uri: string;
     name: string;
-    debug: string;
   } | null>(null);
   const processedRef = useRef(false);
 
@@ -825,7 +824,8 @@ function ShareIntentRouter() {
           console.warn("[ShareIntent] cache copy failed", copyErr?.message);
         }
       }
-      setPendingImport({ uri: sharedUri, name, debug });
+      console.warn("[ShareIntent] payload", debug);
+      setPendingImport({ uri: sharedUri, name });
       resetShareIntent();
     })();
   }, [hasShareIntent, shareIntent, resetShareIntent]);
@@ -836,7 +836,7 @@ function ShareIntentRouter() {
     if (!pendingImport) return;
     if (!isInitialized || isLocked || authLoading) return;
 
-    const { uri, name, debug } = pendingImport;
+    const { uri, name } = pendingImport;
     setPendingImport(null);
     processedRef.current = false;
 
@@ -846,7 +846,7 @@ function ShareIntentRouter() {
 
     router.push({
       pathname: "/import-statement",
-      params: { sharedUri: uri, sharedName: name, shareDebug: debug },
+      params: { sharedUri: uri, sharedName: name },
     });
   }, [pendingImport, isInitialized, isLocked, authLoading, isLoggedIn]);
 
