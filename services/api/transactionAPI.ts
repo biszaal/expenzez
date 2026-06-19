@@ -1,4 +1,5 @@
 import { api } from "../config/apiClient";
+import { cachedApiCall, getCacheUserId, CACHE_TTL } from "../config/apiCache";
 import { balanceAPI } from "./balanceAPI";
 
 export interface UploadedStatement {
@@ -262,9 +263,22 @@ export const transactionAPI = {
 
   // Returns the caller's CSV+PDF import quota for the current calendar month.
   // Used by the import screens to show "3/4 remaining" and gate uploads.
-  getImportUsage: async (): Promise<ImportUsageResponse> => {
-    const response = await api.get("/transactions/import-usage");
-    return response.data;
+  //
+  // Cached per-user (5 min) so the quota card renders instantly on every import
+  // screen open instead of refetching (and flashing a spinner) each time. The
+  // count only changes when the user imports, so callers pass force=true right
+  // after an import to refresh it immediately.
+  getImportUsage: async (force = false): Promise<ImportUsageResponse> => {
+    const userId = await getCacheUserId();
+    return cachedApiCall(
+      `import_usage_${userId}`,
+      async () => {
+        const response = await api.get("/transactions/import-usage");
+        return response.data;
+      },
+      CACHE_TTL.MEDIUM,
+      force
+    );
   },
 
   // Get a short-lived presigned S3 URL to upload a statement PDF directly to

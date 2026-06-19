@@ -127,9 +127,9 @@ export default function CSVImportScreen() {
   const [showExportGuide, setShowExportGuide] = useState(false);
   const [showBankSelector, setShowBankSelector] = useState(true);
 
-  const refreshUsage = useCallback(async () => {
+  const refreshUsage = useCallback(async (force = false) => {
     try {
-      const u = await transactionAPI.getImportUsage();
+      const u = await transactionAPI.getImportUsage(force);
       setUsage(u);
     } catch (err) {
       console.warn("[ImportCSV] usage fetch failed", err);
@@ -1004,7 +1004,7 @@ export default function CSVImportScreen() {
       );
       // Quota counter updated server-side after a successful import;
       // refresh the card so "X / 15 remaining" reflects the save.
-      refreshUsage();
+      refreshUsage(true);
     } catch (error: any) {
       console.error("Error importing CSV:", error);
       const backendMessage = error?.response?.data?.message;
@@ -1015,7 +1015,7 @@ export default function CSVImportScreen() {
           backendMessage ||
             "You've used all your imports this month. Upgrade for more."
         );
-        refreshUsage();
+        refreshUsage(true);
       } else {
         Alert.alert(
           "Error",

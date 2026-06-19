@@ -57,9 +57,9 @@ export default function ImportStatementScreen() {
   const [usageLoading, setUsageLoading] = useState(true);
   const autoUploadedRef = useRef<string | null>(null);
 
-  const refreshUsage = useCallback(async () => {
+  const refreshUsage = useCallback(async (force = false) => {
     try {
-      const u = await transactionAPI.getImportUsage();
+      const u = await transactionAPI.getImportUsage(force);
       setUsage(u);
     } catch (err) {
       console.warn("[ImportStatement] usage fetch failed", err);
@@ -194,7 +194,7 @@ export default function ImportStatementScreen() {
           err?.response?.data?.message || err?.response?.data?.error;
         const code = err?.response?.data?.code;
         // Quota can change on the upload/parse steps — keep the card accurate.
-        if (step === "upload" || step === "parse") refreshUsage();
+        if (step === "upload" || step === "parse") refreshUsage(true);
         // Quota-exhausted gets a distinct title + matches the card CTA.
         if (code === "IMPORT_LIMIT_REACHED") {
           Alert.alert(
@@ -293,7 +293,7 @@ export default function ImportStatementScreen() {
       setResult(response);
       setStage("done");
       // Pull the new used/remaining numbers so the quota card reflects the save.
-      refreshUsage();
+      refreshUsage(true);
     } catch (err: any) {
       const message =
         err?.response?.data?.message ||
@@ -303,7 +303,7 @@ export default function ImportStatementScreen() {
       setStage("preview");
       // Quota may have changed (e.g. 403 IMPORT_LIMIT_REACHED) — refresh
       // so the card is accurate even on failure paths.
-      refreshUsage();
+      refreshUsage(true);
     }
   };
 
