@@ -9,16 +9,31 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Image, StyleSheet, ViewStyle } from "react-native";
-import {
-  NativeAd,
-  NativeAdView,
-  NativeAsset,
-  NativeAssetType,
-} from "react-native-google-mobile-ads";
 import { useTheme } from "../../contexts/ThemeContext";
 import { borderRadius, spacing, fontFamily, typography } from "../../constants/theme";
 import { useAds } from "../../hooks/useAds";
 import { NATIVE_AD_UNIT_ID } from "../../constants/ads";
+
+// Guarded require so a missing/stale native module degrades to "no ad" instead
+// of throwing at import. react-native-google-mobile-ads eagerly calls
+// TurboModuleRegistry.getEnforcing, which crashes when the dev client predates
+// the native module — that would de-register any screen that imports this.
+let GMA: any = null;
+try {
+  GMA = require("react-native-google-mobile-ads");
+} catch {
+  GMA = null;
+}
+const NativeAd = GMA?.NativeAd;
+const NativeAdView = GMA?.NativeAdView;
+const NativeAsset = GMA?.NativeAsset;
+const ASSET = {
+  HEADLINE: "headline",
+  BODY: "body",
+  CALL_TO_ACTION: "callToAction",
+  ICON: "icon",
+  ADVERTISER: "advertiser",
+};
 
 interface NativeAdCardProps {
   style?: ViewStyle;
@@ -27,11 +42,11 @@ interface NativeAdCardProps {
 export default function NativeAdCard({ style }: NativeAdCardProps) {
   const { shouldShowAds, getRequestOptions } = useAds();
   const { colors } = useTheme();
-  const [nativeAd, setNativeAd] = useState<NativeAd | null>(null);
-  const adRef = useRef<NativeAd | null>(null);
+  const [nativeAd, setNativeAd] = useState<any | null>(null);
+  const adRef = useRef<any | null>(null);
 
   useEffect(() => {
-    if (!shouldShowAds) return undefined;
+    if (!shouldShowAds || !NativeAd) return undefined;
     let cancelled = false;
 
     NativeAd.createForAdRequest(NATIVE_AD_UNIT_ID, getRequestOptions())
@@ -55,7 +70,7 @@ export default function NativeAdCard({ style }: NativeAdCardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldShowAds]);
 
-  if (!shouldShowAds || !nativeAd) return null;
+  if (!shouldShowAds || !nativeAd || !NativeAdView) return null;
 
   return (
     <NativeAdView
@@ -78,7 +93,7 @@ export default function NativeAdCard({ style }: NativeAdCardProps) {
           </Text>
         </View>
         {nativeAd.advertiser ? (
-          <NativeAsset assetType={NativeAssetType.ADVERTISER}>
+          <NativeAsset assetType={ASSET.ADVERTISER}>
             <Text
               style={[styles.advertiser, { color: colors.text.tertiary }]}
               numberOfLines={1}
@@ -91,7 +106,7 @@ export default function NativeAdCard({ style }: NativeAdCardProps) {
 
       <View style={styles.bodyRow}>
         {nativeAd.icon?.url ? (
-          <NativeAsset assetType={NativeAssetType.ICON}>
+          <NativeAsset assetType={ASSET.ICON}>
             <Image
               source={{ uri: nativeAd.icon.url }}
               style={[styles.icon, { backgroundColor: colors.background.tertiary }]}
@@ -100,7 +115,7 @@ export default function NativeAdCard({ style }: NativeAdCardProps) {
         ) : null}
 
         <View style={styles.textCol}>
-          <NativeAsset assetType={NativeAssetType.HEADLINE}>
+          <NativeAsset assetType={ASSET.HEADLINE}>
             <Text
               style={[styles.headline, { color: colors.text.primary }]}
               numberOfLines={1}
@@ -109,7 +124,7 @@ export default function NativeAdCard({ style }: NativeAdCardProps) {
             </Text>
           </NativeAsset>
           {nativeAd.body ? (
-            <NativeAsset assetType={NativeAssetType.BODY}>
+            <NativeAsset assetType={ASSET.BODY}>
               <Text
                 style={[styles.body, { color: colors.text.secondary }]}
                 numberOfLines={2}
@@ -121,7 +136,7 @@ export default function NativeAdCard({ style }: NativeAdCardProps) {
         </View>
 
         {nativeAd.callToAction ? (
-          <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
+          <NativeAsset assetType={ASSET.CALL_TO_ACTION}>
             <View style={[styles.cta, { backgroundColor: colors.primary.main }]}>
               <Text style={styles.ctaText} numberOfLines={1}>
                 {nativeAd.callToAction}

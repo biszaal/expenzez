@@ -8,10 +8,22 @@
 
 import React, { useState } from "react";
 import { View, StyleSheet, ViewStyle } from "react-native";
-import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
 import { useAds } from "../../hooks/useAds";
 import { BANNER_AD_UNIT_ID } from "../../constants/ads";
 import { spacing } from "../../constants/theme";
+
+// Guarded require so a missing/stale native module degrades to "no ad" instead
+// of throwing at import (the package eagerly calls getEnforcing on the native
+// turbo module, which crashes a dev client built before the module existed).
+let GMA: any = null;
+try {
+  GMA = require("react-native-google-mobile-ads");
+} catch {
+  GMA = null;
+}
+const BannerAd = GMA?.BannerAd;
+const ANCHORED_ADAPTIVE =
+  GMA?.BannerAdSize?.ANCHORED_ADAPTIVE_BANNER ?? "ANCHORED_ADAPTIVE_BANNER";
 
 interface AdBannerProps {
   style?: ViewStyle;
@@ -21,13 +33,13 @@ export default function AdBanner({ style }: AdBannerProps) {
   const { shouldShowAds, getRequestOptions } = useAds();
   const [failed, setFailed] = useState(false);
 
-  if (!shouldShowAds || failed) return null;
+  if (!shouldShowAds || failed || !BannerAd) return null;
 
   return (
     <View style={[styles.container, style]}>
       <BannerAd
         unitId={BANNER_AD_UNIT_ID}
-        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+        size={ANCHORED_ADAPTIVE}
         requestOptions={getRequestOptions()}
         onAdFailedToLoad={(error) => {
           console.log("[Ads] banner load error:", error?.message);

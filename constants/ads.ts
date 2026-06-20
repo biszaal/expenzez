@@ -1,17 +1,20 @@
 /**
  * AdMob configuration — ad unit IDs and the global ads kill switch.
  *
- * In development (__DEV__) we ALWAYS use Google's built-in TestIds. Using real
- * ad unit IDs in development and tapping your own ads is "invalid activity" and
- * will get the AdMob account permanently banned. Real unit IDs are only ever
- * read from EAS env vars in a production build.
+ * In development (__DEV__) we ALWAYS use Google's built-in test ad unit IDs.
+ * Using real ad unit IDs in development and tapping your own ads is "invalid
+ * activity" and will get the AdMob account permanently banned. Real unit IDs
+ * are only ever read from EAS env vars in a production build.
  *
- * Real unit IDs are injected via EAS env (see eas.json). Until the AdMob units
- * exist they fall back to TestIds, so a build is never wired to a missing unit.
+ * The test IDs are hardcoded (Google's public values) rather than imported from
+ * react-native-google-mobile-ads on purpose: importing that package eagerly
+ * calls TurboModuleRegistry.getEnforcing, which throws when the native module
+ * isn't in the build (e.g. a dev client built before the module was added).
+ * Keeping this file free of the native import means it can never crash the
+ * screens that import it.
  */
 
 import { Platform } from "react-native";
-import { TestIds } from "react-native-google-mobile-ads";
 
 /**
  * Global kill switch. Ads are on unless EXPO_PUBLIC_ADS_ENABLED is exactly
@@ -20,6 +23,16 @@ import { TestIds } from "react-native-google-mobile-ads";
  */
 export const ADS_ENABLED = process.env.EXPO_PUBLIC_ADS_ENABLED !== "false";
 
+// Google's public test ad unit IDs — safe to render anywhere.
+const TEST_NATIVE =
+  (Platform.OS === "ios"
+    ? "ca-app-pub-3940256099942544/3986624511"
+    : "ca-app-pub-3940256099942544/2247696110");
+const TEST_BANNER =
+  (Platform.OS === "ios"
+    ? "ca-app-pub-3940256099942544/2435281174"
+    : "ca-app-pub-3940256099942544/9214589741");
+
 const pick = (ios?: string, android?: string) =>
   (Platform.OS === "ios" ? ios : android) || undefined;
 
@@ -27,21 +40,21 @@ const pick = (ios?: string, android?: string) =>
  * Native (in-feed) ad unit. Test ID in dev; real unit from env in production.
  */
 export const NATIVE_AD_UNIT_ID = __DEV__
-  ? TestIds.NATIVE
+  ? TEST_NATIVE
   : pick(
       process.env.EXPO_PUBLIC_ADMOB_NATIVE_IOS,
       process.env.EXPO_PUBLIC_ADMOB_NATIVE_ANDROID
-    ) ?? TestIds.NATIVE;
+    ) ?? TEST_NATIVE;
 
 /**
  * Anchored adaptive banner ad unit. Test ID in dev; real unit from env in prod.
  */
 export const BANNER_AD_UNIT_ID = __DEV__
-  ? TestIds.ADAPTIVE_BANNER
+  ? TEST_BANNER
   : pick(
       process.env.EXPO_PUBLIC_ADMOB_BANNER_IOS,
       process.env.EXPO_PUBLIC_ADMOB_BANNER_ANDROID
-    ) ?? TestIds.ADAPTIVE_BANNER;
+    ) ?? TEST_BANNER;
 
 /**
  * Insert one native ad after every Nth transaction row in the feed. Kept
