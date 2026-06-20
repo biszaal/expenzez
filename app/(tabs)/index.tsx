@@ -28,6 +28,7 @@ import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
 import { FREE_TIER_LIMITS } from "../../services/subscriptionService";
 import { useDashboardData } from "../../hooks/useDashboardData";
 import { BillsAPI, type SavedBill } from "../../services/api/billsAPI";
+import { type Transaction } from "../../services/api/transactionAPI";
 
 // v1.5 home — electric purple + lime, mono numerals, full-bleed dark.
 // All data wiring (useDashboardData, RevenueCat, notifications, auth) is
@@ -107,6 +108,78 @@ function formatGBP(amount: number): { whole: string; decimals: string } {
   return { whole: grouped, decimals: `.${dec}` };
 }
 
+type MonthAggregate = {
+  income: number;
+  spent: number;
+  net: number;
+  txnCount: number;
+  depositCount: number;
+  topCategories: CategoryAggregate[];
+  hasData: boolean;
+};
+
+// Aggregate a single calendar month's transactions (income/spent/net + the top
+// spending categories). `monthStart` may be any day within the target month.
+function aggregateMonth(
+  transactions: Transaction[],
+  monthStart: dayjs.Dayjs
+): MonthAggregate {
+  const start = monthStart.startOf("month");
+  const end = monthStart.endOf("month");
+  const monthTxns = transactions.filter((t) => {
+    if (!t.date) return false;
+    const d = dayjs(t.date);
+    return d.isAfter(start.subtract(1, "second")) && d.isBefore(end.add(1, "second"));
+  });
+
+  let income = 0;
+  let spent = 0;
+  let txnCount = 0;
+  let depositCount = 0;
+  const categoryTotals: Record<string, number> = {};
+
+  for (const t of monthTxns) {
+    const amt = Number(t.amount) || 0;
+    const isCredit = t.type === "credit" || amt > 0;
+    if (isCredit) {
+      income += Math.abs(amt);
+      depositCount += 1;
+    } else {
+      spent += Math.abs(amt);
+      txnCount += 1;
+      const cat = normalizeCategory(t.category);
+      categoryTotals[cat] = (categoryTotals[cat] || 0) + Math.abs(amt);
+    }
+  }
+
+  const topCategories: CategoryAggregate[] = Object.entries(categoryTotals)
+    .map(([key, amount]) => ({ key: key as CategoryKey, amount }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 3);
+
+  return {
+    income,
+    spent,
+    net: income - spent,
+    txnCount,
+    depositCount,
+    topCategories,
+    hasData: monthTxns.length > 0,
+  };
+}
+
+// The month of the most recent transaction (used to fall back when the current
+// month has no activity yet). Returns null when there are no dated transactions.
+function mostRecentTxnMonth(transactions: Transaction[]): dayjs.Dayjs | null {
+  let maxMs = 0;
+  for (const t of transactions) {
+    if (!t.date) continue;
+    const ms = dayjs(t.date).valueOf();
+    if (!Number.isNaN(ms) && ms > maxMs) maxMs = ms;
+  }
+  return maxMs > 0 ? dayjs(maxMs) : null;
+}
+
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
   const { symbol } = useCurrency();
@@ -128,41 +201,27 @@ export default function HomeScreen() {
   const [userBudget, setUserBudget] = useState<number>(2000);
   const [bills, setBills] = useState<SavedBill[]>([]);
 
-  // Aggregate the current calendar month's transactions for the hero + cards.
-  const monthAggregates = useMemo(() => {
+  // Current calendar month — drives the budget ring (so it correctly shows
+  // £0 used / full budget when this month has no activity yet).
+  const monthAggregates = useMemo(
+    () => aggregateMonth(transactions, dayjs()),
+    [transactions]
+  );
+
+  // Month shown in the hero + Income/Spent cards. When the current month has no
+  // activity yet, fall back to the most recent month that does, so the start of
+  // a new month doesn't render an empty dashboard. The month label updates too
+  // (see monthLabel below) so the user always sees which month they're viewing.
+  const displayMonthStart = useMemo(() => {
     const now = dayjs();
-    const start = now.startOf("month");
-    const monthTxns = transactions.filter((t) =>
-      t.date ? dayjs(t.date).isAfter(start.subtract(1, "second")) : false
-    );
-    let income = 0;
-    let spent = 0;
-    let txnCount = 0;
-    let depositCount = 0;
-    const categoryTotals: Record<string, number> = {};
+    if (monthAggregates.hasData) return now;
+    return mostRecentTxnMonth(transactions) ?? now;
+  }, [transactions, monthAggregates.hasData]);
 
-    for (const t of monthTxns) {
-      const amt = Number(t.amount) || 0;
-      const isCredit = t.type === "credit" || amt > 0;
-      if (isCredit) {
-        income += Math.abs(amt);
-        depositCount += 1;
-      } else {
-        spent += Math.abs(amt);
-        txnCount += 1;
-        const cat = normalizeCategory(t.category);
-        categoryTotals[cat] = (categoryTotals[cat] || 0) + Math.abs(amt);
-      }
-    }
-
-    const topCategories: CategoryAggregate[] = Object.entries(categoryTotals)
-      .map(([key, amount]) => ({ key: key as CategoryKey, amount }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 3);
-
-    const net = income - spent;
-    return { income, spent, net, txnCount, depositCount, topCategories };
-  }, [transactions]);
+  const displayAggregates = useMemo(
+    () => aggregateMonth(transactions, displayMonthStart),
+    [transactions, displayMonthStart]
+  );
 
   // Budget % used for the ring; clamp to [0, 1] so ring never overflows.
   const budgetUsed = userBudget > 0 ? Math.min(monthAggregates.spent / userBudget, 1) : 0;
@@ -275,8 +334,8 @@ export default function HomeScreen() {
     );
   }
 
-  const net = formatGBP(monthAggregates.net);
-  const monthLabel = dayjs().format("MMMM");
+  const net = formatGBP(displayAggregates.net);
+  const monthLabel = displayMonthStart.format("MMMM");
 
   return (
     <SafeAreaView
@@ -365,32 +424,32 @@ export default function HomeScreen() {
               {net.decimals}
             </Text>
           </View>
-          {monthAggregates.income > 0 && (
+          {displayAggregates.income > 0 && (
             <View style={styles.heroSubRow}>
               <View
                 style={[
                   styles.heroChip,
                   {
                     backgroundColor:
-                      monthAggregates.net >= 0 ? colors.posBg : colors.negBg,
+                      displayAggregates.net >= 0 ? colors.posBg : colors.negBg,
                   },
                 ]}
               >
                 <Ionicons
-                  name={monthAggregates.net >= 0 ? "trending-up" : "trending-down"}
+                  name={displayAggregates.net >= 0 ? "trending-up" : "trending-down"}
                   size={11}
-                  color={monthAggregates.net >= 0 ? colors.posFg : colors.negFg}
+                  color={displayAggregates.net >= 0 ? colors.posFg : colors.negFg}
                 />
                 <Text
                   style={[
                     styles.heroChipText,
                     {
                       color:
-                        monthAggregates.net >= 0 ? colors.posFg : colors.negFg,
+                        displayAggregates.net >= 0 ? colors.posFg : colors.negFg,
                     },
                   ]}
                 >
-                  {monthAggregates.net >= 0 ? "Positive" : "Negative"}
+                  {displayAggregates.net >= 0 ? "Positive" : "Negative"}
                 </Text>
               </View>
               <Text style={[styles.heroSubText, { color: colors.text.secondary }]}>
@@ -407,8 +466,8 @@ export default function HomeScreen() {
             label="INCOME"
             tone={colors.lime[500]}
             tintBg={colors.posBg}
-            value={`${symbol}${formatGBP(monthAggregates.income).whole}`}
-            sub={`${monthAggregates.depositCount} deposit${monthAggregates.depositCount === 1 ? "" : "s"}`}
+            value={`${symbol}${formatGBP(displayAggregates.income).whole}`}
+            sub={`${displayAggregates.depositCount} deposit${displayAggregates.depositCount === 1 ? "" : "s"}`}
             colors={colors}
           />
           <DualCard
@@ -416,8 +475,8 @@ export default function HomeScreen() {
             label="SPENT"
             tone={colors.rose[500]}
             tintBg={colors.negBg}
-            value={`${symbol}${formatGBP(monthAggregates.spent).whole}`}
-            sub={`${monthAggregates.txnCount} transaction${monthAggregates.txnCount === 1 ? "" : "s"}`}
+            value={`${symbol}${formatGBP(displayAggregates.spent).whole}`}
+            sub={`${displayAggregates.txnCount} transaction${displayAggregates.txnCount === 1 ? "" : "s"}`}
             colors={colors}
           />
         </View>
@@ -603,6 +662,17 @@ export default function HomeScreen() {
           />
         </Pressable>
 
+        {/* Upgrade banner — directly below the AI card for non-premium users */}
+        {!revenueCatLoading && !isPro && (
+          <View style={{ marginHorizontal: 22, marginTop: 14 }}>
+            <UpgradeBanner
+              variant="subtle"
+              message="Upgrade to Premium for unlimited budgets & advanced features"
+              actionLabel="Upgrade"
+            />
+          </View>
+        )}
+
         {/* Import transactions — CSV / PDF statement */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -688,7 +758,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Top categories */}
-        {monthAggregates.topCategories.length > 0 && (
+        {displayAggregates.topCategories.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text
@@ -705,9 +775,9 @@ export default function HomeScreen() {
               </Pressable>
             </View>
             <View style={{ gap: 8 }}>
-              {monthAggregates.topCategories.map((cat) => {
+              {displayAggregates.topCategories.map((cat) => {
                 const pal = colors.category[cat.key];
-                const max = monthAggregates.topCategories[0]?.amount || 1;
+                const max = displayAggregates.topCategories[0]?.amount || 1;
                 const pct = Math.min(cat.amount / max, 1);
                 return (
                   <View
@@ -1026,17 +1096,6 @@ export default function HomeScreen() {
                 );
               })}
             </View>
-          </View>
-        )}
-
-        {/* Upgrade Banner — keep existing flow for non-premium */}
-        {!revenueCatLoading && !isPro && (
-          <View style={{ marginHorizontal: 22, marginTop: 14 }}>
-            <UpgradeBanner
-              variant="subtle"
-              message="Upgrade to Premium for unlimited budgets & advanced features"
-              actionLabel="Upgrade"
-            />
           </View>
         )}
 

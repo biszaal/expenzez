@@ -1,5 +1,11 @@
 import { api } from "../config/apiClient";
-import { cachedApiCall, getCacheUserId, CACHE_TTL } from "../config/apiCache";
+import {
+  cachedApiCall,
+  cachedApiCallSWR,
+  clearCachedDataByPrefix,
+  getCacheUserId,
+  CACHE_TTL,
+} from "../config/apiCache";
 import { balanceAPI } from "./balanceAPI";
 
 export interface UploadedStatement {
@@ -171,13 +177,21 @@ export interface ImportUsageResponse {
 }
 
 export const transactionAPI = {
+  // Drop every cached transaction list for the current user. Called after any
+  // write so edited data shows immediately instead of after the 5-min TTL.
+  invalidateTransactionsCache: async (): Promise<void> => {
+    const userId = await getCacheUserId();
+    await clearCachedDataByPrefix(`transactions_${userId}`);
+  },
+
   createTransaction: async (
     data: TransactionCreateData
   ): Promise<TransactionCreateResponse> => {
     const response = await api.post("/transactions", data);
-    // A new transaction changes the balance/summary — drop the cached value so
-    // the dashboard reflects it immediately instead of after the TTL.
+    // A new transaction changes the balance/summary and the cached lists — drop
+    // both so the dashboard reflects it immediately instead of after the TTL.
     await balanceAPI.invalidateCache();
+    await transactionAPI.invalidateTransactionsCache();
     return response.data;
   },
 
@@ -200,9 +214,25 @@ export const transactionAPI = {
       ? `/transactions?${queryParams.toString()}`
       : "/transactions";
 
-    // Always fetch fresh data from server - no caching
-    const response = await api.get(url);
-    return response.data;
+    const fetchFromServer = async (): Promise<TransactionsResponse> => {
+      const response = await api.get(url);
+      return response.data;
+    };
+
+    // Paginated follow-up pages bypass the cache (each startKey is one-off).
+    if (params.startKey) {
+      return fetchFromServer();
+    }
+
+    // Cache per-user, per-params so the dashboard (limit 1800) and spending tab
+    // (limit 1000 + date range) get distinct entries. SWR gives instant repeat
+    // loads and falls back to last-known data when offline. `useCache: false`
+    // forces a fresh fetch.
+    const userId = await getCacheUserId();
+    const cacheKey = `transactions_${userId}_${limit}_${params.startDate || ""}_${params.endDate || ""}_${params.category || ""}_${params.type || ""}`;
+    return cachedApiCallSWR(cacheKey, fetchFromServer, CACHE_TTL.MEDIUM, {
+      forceRefresh: params.useCache === false,
+    });
   },
 
   // CSV Import with auto-categorization. `bank` (selected or auto-detected)
@@ -216,6 +246,8 @@ export const transactionAPI = {
       transactions,
       ...(bank ? { bank } : {}),
     });
+    await balanceAPI.invalidateCache();
+    await transactionAPI.invalidateTransactionsCache();
     return response.data;
   },
 
@@ -243,6 +275,7 @@ export const transactionAPI = {
       transactionIds,
       category,
     });
+    await transactionAPI.invalidateTransactionsCache();
     return response.data;
   },
 
@@ -258,6 +291,7 @@ export const transactionAPI = {
       excludeFromSpend,
       merchant,
     });
+    await transactionAPI.invalidateTransactionsCache();
     return response.data;
   },
 
@@ -322,6 +356,8 @@ export const transactionAPI = {
       { transactions, statement },
       { timeout: 30000 }
     );
+    await balanceAPI.invalidateCache();
+    await transactionAPI.invalidateTransactionsCache();
     return response.data;
   },
 
@@ -333,6 +369,7 @@ export const transactionAPI = {
     const response = await api.put(`/transactions/${transactionId}`, data);
     // Editing an amount/type can change the balance — invalidate the cache.
     await balanceAPI.invalidateCache();
+    await transactionAPI.invalidateTransactionsCache();
     return response.data;
   },
 
@@ -343,6 +380,7 @@ export const transactionAPI = {
     const response = await api.delete(`/transactions/${transactionId}`);
     // Removing a transaction changes the balance — invalidate the cache.
     await balanceAPI.invalidateCache();
+    await transactionAPI.invalidateTransactionsCache();
     return response.data;
   },
 

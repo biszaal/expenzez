@@ -71,27 +71,9 @@ export default function AccountScreen() {
         const userId = user?.sub || user?.id || user?.email || user?.username;
         console.log("📥 [Account] Fetching profile data for user:", userId);
 
-        // Clear AsyncStorage cache before fetching
-        try {
-          const AsyncStorage = (
-            await import("@react-native-async-storage/async-storage")
-          ).default;
-          const keys = await AsyncStorage.getAllKeys();
-          const cacheKeys = keys.filter(
-            (key) =>
-              key.includes("profile") ||
-              key.includes("@expenzez_cache_/api/profile") ||
-              key.includes("user_data")
-          );
-          if (cacheKeys.length > 0) {
-            await AsyncStorage.multiRemove(cacheKeys);
-            console.log("🧹 [Account] Cleared cache keys:", cacheKeys.length);
-          }
-        } catch (cacheError) {
-          console.warn("⚠️ [Account] Cache clear warning:", cacheError);
-        }
-
-        // Fetch profile data
+        // Fetch profile data (cached via dataSource.getProfile — no manual cache
+        // wipe here: it forced a network fetch on every visit, which made this
+        // page slow. Profile edits invalidate the cache; logout clears it.)
         const profileData = await getProfile().catch((err) => {
           console.error("❌ Error fetching profile:", err);
           return null;
@@ -122,7 +104,8 @@ export default function AccountScreen() {
       fetchUserData();
       fetchSavingsGoals();
     }
-  }, [isLoggedIn, user?.id, user?.email, user?.username, showError]);
+    // showError intentionally excluded: it must not retrigger a profile refetch.
+  }, [isLoggedIn, user?.id, user?.email, user?.username]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);

@@ -77,6 +77,34 @@ export const setCachedData = async (key: string, data: any, ttlMs: number = CACH
   });
 };
 
+// Stale-aware read: returns the cached entry even if it has expired, so callers
+// can fall back to last-known data when offline. Unlike getCachedData() it never
+// deletes an expired entry. `isStale` is true when the entry is past its TTL.
+export const getStaleCachedData = async (
+  key: string
+): Promise<{ data: any; isStale: boolean } | null> => {
+  const now = Date.now();
+
+  const memoryCached = memoryCache.get(key);
+  if (memoryCached) {
+    return { data: memoryCached.data, isStale: now - memoryCached.timestamp > memoryCached.ttl };
+  }
+
+  try {
+    const storedData = await AsyncStorage.getItem(CACHE_PREFIX + key);
+    if (storedData) {
+      const parsed = JSON.parse(storedData);
+      // Restore to memory cache for faster subsequent access
+      memoryCache.set(key, parsed);
+      return { data: parsed.data, isStale: now - parsed.timestamp > parsed.ttl };
+    }
+  } catch (error) {
+    console.warn('[Cache] Error reading stale data from AsyncStorage:', error);
+  }
+
+  return null;
+};
+
 // Clear specific cache key
 export const clearCachedData = async (key: string): Promise<void> => {
   memoryCache.delete(key);
@@ -84,6 +112,26 @@ export const clearCachedData = async (key: string): Promise<void> => {
     await AsyncStorage.removeItem(CACHE_PREFIX + key);
   } catch (error) {
     console.warn('[Cache] Error removing from AsyncStorage:', error);
+  }
+};
+
+// Clear every cache key starting with `prefix`, from both memory and AsyncStorage.
+// Used for parameterized keys (e.g. transactions_<userId>_<params>) where a single
+// mutation must drop several related entries at once.
+export const clearCachedDataByPrefix = async (prefix: string): Promise<void> => {
+  for (const key of Array.from(memoryCache.keys())) {
+    if (key.startsWith(prefix)) {
+      memoryCache.delete(key);
+    }
+  }
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const matching = keys.filter(key => key.startsWith(CACHE_PREFIX + prefix));
+    if (matching.length > 0) {
+      await AsyncStorage.multiRemove(matching);
+    }
+  } catch (error) {
+    console.warn('[Cache] Error clearing prefixed keys from AsyncStorage:', error);
   }
 };
 
@@ -144,4 +192,41 @@ export const cachedApiCall = async <T>(
   await setCachedData(cacheKey, data, ttl);
 
   return data;
+};
+
+// Cached API call with stale-while-revalidate + offline fallback.
+//
+// Unlike cachedApiCall, on a network/request failure this returns the last-known
+// cached value (even if expired) instead of throwing — so screens keep showing
+// data when the device is offline. A fresh cache hit short-circuits the request;
+// otherwise it fetches (deduplicated), caches, and returns fresh data.
+export const cachedApiCallSWR = async <T>(
+  cacheKey: string,
+  requestFn: () => Promise<T>,
+  ttl: number = CACHE_TTL.MEDIUM,
+  options: { forceRefresh?: boolean } = {}
+): Promise<T> => {
+  if (!options.forceRefresh) {
+    const fresh = await getCachedData(cacheKey);
+    if (fresh !== null) {
+      console.log('[Cache] Hit:', cacheKey);
+      return fresh;
+    }
+  }
+
+  console.log('[Cache] Miss:', cacheKey);
+
+  try {
+    const data = await deduplicateRequest(cacheKey, requestFn);
+    await setCachedData(cacheKey, data, ttl);
+    return data;
+  } catch (error) {
+    // Network/request failed — fall back to stale cache if we have one.
+    const stale = await getStaleCachedData(cacheKey);
+    if (stale !== null) {
+      console.log('[Cache] Serving stale (offline fallback):', cacheKey);
+      return stale.data as T;
+    }
+    throw error;
+  }
 };

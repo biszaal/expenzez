@@ -104,10 +104,12 @@ export const useDashboardData = () => {
       // Fetch transactions (always needed for display and fallback calculation)
       // Use same fetch params as All Transactions page to ensure consistency
       // Backend sorts by transactionId (UUID), not date, so we need high limit
-      console.log("🔄 [Home] Fetching fresh transactions from server...");
+      console.log("🔄 [Home] Fetching transactions...");
       const transactionResponse = await transactionAPI
         .getTransactions({
           limit: 1800, // Same as All Transactions page (6 months × 300)
+          // Cached for instant paint on navigation; pull-to-refresh bypasses it.
+          useCache: !isRefresh,
         })
         .catch((error) => {
           console.error("❌ Error loading transactions:", error);

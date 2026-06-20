@@ -110,6 +110,8 @@ export const useSpendingData = (isPro: boolean) => {
         limit: 1000,
         startDate: dayjs().subtract(12, "months").startOf("month").format("YYYY-MM-DD"),
         endDate: dayjs().endOf("month").format("YYYY-MM-DD"),
+        // Cached for instant paint on navigation; refresh bypasses it.
+        useCache: !forceRefresh,
       });
 
       if (response.transactions) {

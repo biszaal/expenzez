@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { transactionAPI, Transaction } from './api/transactionAPI';
 import { budgetAPI } from './api';
+import { cachedApiCallSWR, getCacheUserId, CACHE_TTL } from './config/apiCache';
 
 interface Achievement {
   userId: string;
@@ -64,10 +65,24 @@ export class AchievementCalculator {
     { id: 'month-6', title: 'Half Year Hero', description: 'Active for 6 months', type: 'goal_completion', category: 'consistency', difficulty: 'gold', points: 250, trigger: (stats: UserStats) => stats.monthsActive >= 6 },
   ] as const;
 
-  static async calculateUserAchievements(userId: string) {
+  // The Goals tab recomputes this on every mount (a transactions fetch + stats),
+  // which made it slow to load. Cache the computed result per-user so revisits
+  // paint instantly, with a stale-fallback when offline. Pull-to-refresh passes
+  // forceRefresh to bypass the cache (and refetch transactions).
+  static async calculateUserAchievements(userId: string, forceRefresh = false) {
+    const cacheKey = `goals_achievements_${await getCacheUserId()}`;
+    return cachedApiCallSWR(
+      cacheKey,
+      () => this._computeUserAchievements(userId, forceRefresh),
+      CACHE_TTL.MEDIUM,
+      { forceRefresh }
+    );
+  }
+
+  private static async _computeUserAchievements(userId: string, forceRefresh = false) {
     try {
-      // Get user transactions
-      const transactionResponse = await transactionAPI.getTransactions({ limit: 1000 });
+      // Get user transactions (cached; bypassed on force refresh)
+      const transactionResponse = await transactionAPI.getTransactions({ limit: 1000, useCache: !forceRefresh });
       const transactions = transactionResponse.transactions || [];
 
       // Calculate user stats

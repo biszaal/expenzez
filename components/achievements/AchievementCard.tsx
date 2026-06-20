@@ -23,150 +23,98 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
   const difficultyColor = achievementAPI.getDifficultyColor(achievement.difficulty);
   const typeIcon = achievementAPI.getTypeIcon(achievement.type);
 
-  const cardSize = {
-    small: { width: 120, height: 140, iconSize: 24, fontSize: 12 },
-    medium: { width: 160, height: 180, iconSize: 32, fontSize: 14 },
-    large: { width: 200, height: 220, iconSize: 40, fontSize: 16 }
-  }[size];
-
-  const styles = createStyles(colors, difficultyColor, cardSize);
+  const styles = createStyles(colors, difficultyColor);
 
   return (
     <TouchableOpacity
       style={styles.container}
       onPress={() => onPress?.(achievement)}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
-      {/* Difficulty Badge */}
-      <View style={styles.difficultyBadge}>
+      {/* Icon chip + difficulty accent */}
+      <View style={styles.topRow}>
+        <View style={styles.iconChip}>
+          <Ionicons name={typeIcon as any} size={15} color={difficultyColor} />
+        </View>
         <Text style={styles.difficultyText}>
           {achievement.difficulty.toUpperCase()}
         </Text>
       </View>
 
-      {/* Achievement Icon */}
-      <View style={styles.iconContainer}>
-        <Ionicons
-          name={typeIcon as any}
-          size={cardSize.iconSize}
-          color={difficultyColor}
-        />
-      </View>
+      <Text style={styles.title} numberOfLines={2}>
+        {achievement.title}
+      </Text>
 
-      {/* Achievement Info */}
-      <View style={styles.contentContainer}>
-        <Text style={styles.title} numberOfLines={2}>
-          {achievement.title}
-        </Text>
-
-        {showDescription && (
-          <Text style={styles.description} numberOfLines={3}>
-            {achievement.description}
-          </Text>
-        )}
-
-        {/* Points and Date */}
-        <View style={styles.footerContainer}>
-          <View style={styles.pointsContainer}>
-            <Ionicons name="star" size={14} color={colors.accent.main} />
-            <Text style={styles.pointsText}>
-              {achievement.pointsReward}
-            </Text>
-          </View>
-
-          <Text style={styles.dateText}>
-            {achievementAPI.formatAchievementDate(achievement.earnedAt)}
-          </Text>
+      <View style={styles.footer}>
+        <View style={styles.points}>
+          <Ionicons name="star" size={11} color={difficultyColor} />
+          <Text style={styles.pointsText}>{achievement.pointsReward}</Text>
         </View>
+        <Text style={styles.dateText} numberOfLines={1}>
+          {achievementAPI.formatAchievementDate(achievement.earnedAt)}
+        </Text>
       </View>
-
-      {/* Shine Effect */}
-      <View style={styles.shineEffect} />
     </TouchableOpacity>
   );
 };
 
-const createStyles = (colors: any, difficultyColor: string, cardSize: any) => StyleSheet.create({
+const createStyles = (colors: any, difficultyColor: string) => StyleSheet.create({
   container: {
-    width: cardSize.width,
-    height: cardSize.height,
-    backgroundColor: colors.background.primary,
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 2,
-    borderColor: difficultyColor,
-    overflow: 'hidden',
-    position: 'relative',
-    ...SHADOWS.md
+    width: '100%',
+    backgroundColor: colors.card.background,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.card.border,
+    padding: 12,
+    justifyContent: 'space-between',
+    minHeight: 104,
   },
-  difficultyBadge: {
-    position: 'absolute',
-    top: SPACING.xs,
-    right: SPACING.xs,
-    backgroundColor: difficultyColor,
-    paddingHorizontal: SPACING.xs,
-    paddingVertical: 2,
-    borderRadius: BORDER_RADIUS.sm,
-    zIndex: 2
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
-  difficultyText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5
-  },
-  iconContainer: {
+  iconChip: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    backgroundColor: `${difficultyColor}1F`,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.sm
   },
-  contentContainer: {
-    flex: 1,
-    paddingHorizontal: SPACING.sm,
-    paddingBottom: SPACING.sm
+  difficultyText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    color: difficultyColor,
   },
   title: {
-    fontSize: cardSize.fontSize,
+    fontSize: 13,
     fontWeight: '700',
     color: colors.text.primary,
-    textAlign: 'center',
-    marginBottom: SPACING.xs
+    letterSpacing: -0.1,
+    flex: 1,
   },
-  description: {
-    fontSize: cardSize.fontSize - 2,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    lineHeight: cardSize.fontSize + 2,
-    flex: 1
-  },
-  footerContainer: {
+  footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: SPACING.xs
+    marginTop: 8,
   },
-  pointsContainer: {
+  points: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    gap: 3,
   },
   pointsText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: colors.accent.main,
-    marginLeft: 2
+    fontWeight: '700',
+    color: colors.text.secondary,
   },
   dateText: {
     fontSize: 10,
     color: colors.text.tertiary,
-    fontWeight: '500'
+    fontWeight: '500',
   },
-  shineEffect: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '30%',
-    backgroundColor: `${difficultyColor}20`,
-    opacity: 0.3
-  }
 });

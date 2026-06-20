@@ -1,4 +1,5 @@
 import { api } from '../config/apiClient';
+import { cachedApiCall, CACHE_TTL } from '../config/apiCache';
 import { GamificationEngine } from '../gamificationEngine';
 import { goalsAPI } from './goalsAPI';
 
@@ -62,7 +63,17 @@ export interface AchievementResponse {
 }
 
 export const achievementAPI = {
+  // Cached per-user (30 min) — read-only/static within a session, so caching
+  // avoids refetching (and the gamification-engine fallback work) on every read.
   async getUserAchievements(userId: string): Promise<AchievementResponse> {
+    return cachedApiCall(
+      `achievements_${userId}`,
+      () => this._fetchUserAchievements(userId),
+      CACHE_TTL.LONG
+    );
+  },
+
+  async _fetchUserAchievements(userId: string): Promise<AchievementResponse> {
     try {
       console.log(`🏆 [AchievementAPI] Fetching achievements for user: ${userId}`);
 

@@ -86,8 +86,9 @@ export default function ProgressScreen() {
       console.log('🏆 [Progress] Calculating dynamic achievements for user:', userId);
 
       try {
-        // Calculate achievements based on real user data
-        const achievementData = await AchievementCalculator.calculateUserAchievements(userId);
+        // Calculate achievements based on real user data (cached for instant
+        // revisits; pull-to-refresh bypasses the cache).
+        const achievementData = await AchievementCalculator.calculateUserAchievements(userId, isRefresh);
         setAchievementData(achievementData);
 
         // Load XP data and sync with achievements
@@ -240,6 +241,7 @@ export default function ProgressScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]} edges={["top"]}>
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -383,6 +385,32 @@ export default function ProgressScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
+        </View>
+
+        {/* Earned achievements — filtered by the category chips above */}
+        <View style={{ paddingHorizontal: 16, marginBottom: 8 }}>
+          {filteredAchievements && filteredAchievements.length > 0 ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+              {filteredAchievements.map((achievement) => (
+                <View key={achievement.achievementId} style={{ width: '48%', marginBottom: 12 }}>
+                  <AchievementCard achievement={achievement} />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text
+              style={{
+                color: colors.text.tertiary,
+                fontSize: 13,
+                textAlign: 'center',
+                paddingVertical: 16,
+              }}
+            >
+              {selectedCategory === 'all'
+                ? 'No achievements yet — keep going to earn your first badge.'
+                : 'No achievements in this category yet.'}
+            </Text>
+          )}
         </View>
 
         {/* XP Leveling Guide */}

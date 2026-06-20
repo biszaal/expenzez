@@ -1,4 +1,5 @@
 import { api } from '../config/apiClient';
+import { cachedApiCall, clearCachedData, getCacheUserId, CACHE_TTL } from '../config/apiCache';
 
 export interface BudgetPreferences {
   monthlyBudget: number;
@@ -16,13 +17,25 @@ export interface BudgetPreferencesResponse {
 }
 
 export const budgetAPI = {
+  // Cached per-user (5 min) — refetched on every spending-tab load today, but it
+  // only changes when the user edits their budget (which invalidates below).
   getBudgetPreferences: async (): Promise<BudgetPreferences> => {
-    const response = await api.get('/profile/budget-preferences');
-    return response.data.budgetPreferences;
+    const userId = await getCacheUserId();
+    return cachedApiCall(
+      `budget_prefs_${userId}`,
+      async () => {
+        const response = await api.get('/profile/budget-preferences');
+        return response.data.budgetPreferences;
+      },
+      CACHE_TTL.MEDIUM
+    );
   },
 
   updateBudgetPreferences: async (preferences: Partial<BudgetPreferences>): Promise<BudgetPreferences> => {
     const response = await api.put('/profile/budget-preferences', preferences);
+    // Drop the cached prefs so the new budget shows immediately.
+    const userId = await getCacheUserId();
+    await clearCachedData(`budget_prefs_${userId}`);
     return response.data.budgetPreferences;
   },
 
