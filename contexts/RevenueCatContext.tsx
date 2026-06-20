@@ -565,6 +565,17 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("[RevenueCat] 💳 Purchase completed, processing customer info...");
       await processCustomerInfo(info);
 
+      // Persist the new entitlement (including free trials) to our backend
+      // immediately. Server-side gates — import quota, AI limits — read the
+      // backend cache, not the device SDK. Without this they wouldn't recognise
+      // the purchase until the RevenueCat webhook lands (or the next live
+      // re-check), which is exactly what caused a Pro/trial user to still see
+      // "Quota reached" on the import screen.
+      const appUserId = info?.originalAppUserId;
+      if (appUserId) {
+        await syncFromRevenueCat(appUserId);
+      }
+
       console.log("[RevenueCat] ✅ Purchase successful, isPro should now be:", info.entitlements.active["Premium"] !== undefined || info.entitlements.active["premium"] !== undefined);
       setIsLoading(false);
 
