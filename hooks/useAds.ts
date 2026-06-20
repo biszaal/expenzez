@@ -9,7 +9,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { adsService } from "../services/ads";
-import { ADS_ENABLED } from "../constants/ads";
+import { ADS_ENABLED, DEV_IGNORE_PRO } from "../constants/ads";
 import { useRevenueCat } from "../contexts/RevenueCatContext";
 import { useAuth } from "../app/auth/AuthContext";
 
@@ -52,7 +52,7 @@ export function useAds(): UseAdsReturn {
     isLoggedIn &&
     onboardingComplete &&
     !subLoading && // wait until RevenueCat resolves, don't flash ads at Pro users
-    !isPro;
+    (DEV_IGNORE_PRO || !isPro);
 
   return {
     shouldShowAds,

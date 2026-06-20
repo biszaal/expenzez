@@ -45,6 +45,7 @@ import PinInput from "../components/PinInput";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MigrationService } from "../services/migrationService";
 import { adsService } from "../services/ads";
+import { DEV_IGNORE_PRO } from "../constants/ads";
 import { useScreenTracking } from "../hooks/useAnalytics";
 import { analyticsService } from "../services/analytics";
 import { crashReporting } from "../utils/crashReporting";
@@ -222,7 +223,12 @@ function RootLayoutNav() {
   // ad-tracking prompt for ads they will never see, and skipped until auth +
   // onboarding + RevenueCat have settled. adsService.setup() is idempotent.
   useEffect(() => {
-    if (isLoggedIn && hasCompletedOnboarding && !subLoading && !isPro) {
+    if (
+      isLoggedIn &&
+      hasCompletedOnboarding &&
+      !subLoading &&
+      (DEV_IGNORE_PRO || !isPro)
+    ) {
       adsService.setup();
     }
   }, [isLoggedIn, hasCompletedOnboarding, subLoading, isPro]);

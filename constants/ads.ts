@@ -23,6 +23,16 @@ import { Platform } from "react-native";
  */
 export const ADS_ENABLED = process.env.EXPO_PUBLIC_ADS_ENABLED !== "false";
 
+/**
+ * Dev-only override: show ads even when signed in as a Pro account, so ad
+ * placements can be previewed without a separate free account. Hard-gated on
+ * __DEV__ so it can NEVER fire in a production build — Pro users in release
+ * builds always see zero ads. Enable by starting Metro with
+ * EXPO_PUBLIC_ADS_IGNORE_PRO=true.
+ */
+export const DEV_IGNORE_PRO =
+  __DEV__ && process.env.EXPO_PUBLIC_ADS_IGNORE_PRO === "true";
+
 // Google's public test ad unit IDs — safe to render anywhere.
 const TEST_NATIVE =
   (Platform.OS === "ios"
