@@ -25,6 +25,7 @@ import { fontFamily } from "../../constants/theme";
 import { DashboardSkeleton } from "../../components/ui/SkeletonLoader";
 import { MerchantLogo } from "../../components/ui/MerchantLogo";
 import { UpgradeBanner } from "../../components/premium/UpgradeBanner";
+import NativeAdCard from "../../components/ads/NativeAdCard";
 import { FREE_TIER_LIMITS } from "../../services/subscriptionService";
 import { useDashboardData } from "../../hooks/useDashboardData";
 import { BillsAPI, type SavedBill } from "../../services/api/billsAPI";
@@ -917,6 +918,11 @@ export default function HomeScreen() {
             </View>
           </View>
         )}
+
+        {/* In-feed native ad — free users only; renders null otherwise */}
+        <View style={{ paddingHorizontal: 22 }}>
+          <NativeAdCard />
+        </View>
 
         {/* Upcoming bills */}
         {upcomingBills.length > 0 && (

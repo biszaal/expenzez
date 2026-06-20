@@ -37,13 +37,14 @@ import { CurrencyProvider } from "../contexts/CurrencyContext";
 import { SecurityProvider, useSecurity } from "../contexts/SecurityContext";
 import { NotificationProvider } from "../contexts/NotificationContext";
 import { NetworkProvider } from "../contexts/NetworkContext";
-import { RevenueCatProvider } from "../contexts/RevenueCatContext";
+import { RevenueCatProvider, useRevenueCat } from "../contexts/RevenueCatContext";
 import { SubscriptionProvider } from "../contexts/SubscriptionContext";
 import BiometricSecurityLock from "../components/BiometricSecurityLock";
 import SplashScreen from "./SplashScreen";
 import PinInput from "../components/PinInput";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MigrationService } from "../services/migrationService";
+import { adsService } from "../services/ads";
 import { useScreenTracking } from "../hooks/useAnalytics";
 import { analyticsService } from "../services/analytics";
 import { crashReporting } from "../utils/crashReporting";
@@ -145,6 +146,7 @@ function RootLayoutNav() {
     isInitialized: securityInitialized,
   } = useSecurity();
   const { isDark } = useTheme();
+  const { isPro, isLoading: subLoading } = useRevenueCat();
   const [isLoading, setIsLoading] = useState(true);
   const [hasValidSession, setHasValidSession] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
@@ -214,6 +216,16 @@ function RootLayoutNav() {
       analyticsService.setUserId(null);
     }
   }, [isLoggedIn, auth?.user?.userId]);
+
+  // Initialise ads (UMP consent → iOS ATT → SDK init) for established, free
+  // users only. Skipped for Pro users so paying customers never get an
+  // ad-tracking prompt for ads they will never see, and skipped until auth +
+  // onboarding + RevenueCat have settled. adsService.setup() is idempotent.
+  useEffect(() => {
+    if (isLoggedIn && hasCompletedOnboarding && !subLoading && !isPro) {
+      adsService.setup();
+    }
+  }, [isLoggedIn, hasCompletedOnboarding, subLoading, isPro]);
 
   // Run data migrations on app startup
   useEffect(() => {

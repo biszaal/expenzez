@@ -26,6 +26,7 @@ import { APP_VERSION } from "../../constants/version";
 import { useSubscription } from "../../hooks/useSubscription";
 import { useRevenueCat } from "../../contexts/RevenueCatContext";
 import { analyticsService } from "../../services/analytics";
+import { adsService } from "../../services/ads";
 import { crashReporting } from "../../utils/crashReporting";
 
 export default function SettingsPage() {
@@ -1030,6 +1031,50 @@ export default function SettingsPage() {
                 trackColor={{ false: colors.border.light, true: colors.primary.main }}
               />
             </View>
+
+            {/* Ad consent — only relevant to free users who see ads */}
+            {!isPremium && (
+              <TouchableOpacity
+                style={[
+                  styles.settingItem,
+                  {
+                    backgroundColor: colors.background.primary,
+                    borderColor: colors.border.light,
+                    marginTop: 12,
+                  },
+                  shadows.sm,
+                ]}
+                onPress={() => adsService.showPrivacyOptionsForm()}
+              >
+                <Ionicons
+                  name="megaphone-outline"
+                  size={22}
+                  color={colors.primary.main}
+                  style={{ marginRight: 14 }}
+                />
+                <View style={{ flex: 1, marginRight: 12 }}>
+                  <Text
+                    style={[styles.settingText, { color: colors.text.primary }]}
+                  >
+                    Manage ad consent
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.text.tertiary,
+                      fontSize: 12,
+                      marginTop: 2,
+                    }}
+                  >
+                    Review or change your choices for personalised ads. Upgrade to Pro to remove ads entirely.
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.text.tertiary}
+                />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Legal */}

@@ -29,6 +29,9 @@ import { MerchantLogo } from "../../components/ui/MerchantLogo";
 import EditTransactionModal from "../../components/EditTransactionModal";
 import SimilarTransactionsModal from "../../components/transactions/SimilarTransactionsModal";
 import type { SimilarTransaction } from "../../services/api/transactionAPI";
+import NativeAdCard from "../../components/ads/NativeAdCard";
+import AdBanner from "../../components/ads/AdBanner";
+import { NATIVE_AD_FEED_INTERVAL } from "../../constants/ads";
 import dayjs from "dayjs";
 
 const INITIAL_MONTHS = 6;
@@ -745,8 +748,15 @@ export default function TransactionsScreen() {
               </View>
             )}
 
-            {/* Grouped by Month -> Date */}
-            {monthSections.map((section) => (
+            {/* Grouped by Month -> Date (native ads spliced into the feed) */}
+            {(() => {
+              // Running counter across the whole feed so ads land at even
+              // intervals regardless of how transactions split across days/
+              // months. Capped so a long feed makes only a few ad requests.
+              let txnCount = 0;
+              let adsShown = 0;
+              const MAX_FEED_ADS = 3;
+              return monthSections.map((section) => (
               <View key={section.monthKey} style={styles.monthSection}>
                 <View
                   style={[
@@ -790,9 +800,15 @@ export default function TransactionsScreen() {
                       </Text>
                     </View>
 
-                    {group.transactions.map((transaction) => (
+                    {group.transactions.map((transaction) => {
+                      txnCount += 1;
+                      const showAd =
+                        txnCount % NATIVE_AD_FEED_INTERVAL === 0 &&
+                        adsShown < MAX_FEED_ADS;
+                      if (showAd) adsShown += 1;
+                      return (
+                      <React.Fragment key={transaction.id}>
                       <TouchableOpacity
-                        key={transaction.id}
                         style={[
                           styles.transactionCard,
                           { backgroundColor: colors.background.secondary },
@@ -852,11 +868,15 @@ export default function TransactionsScreen() {
                           />
                         </View>
                       </TouchableOpacity>
-                    ))}
+                      {showAd && <NativeAdCard />}
+                      </React.Fragment>
+                      );
+                    })}
                   </View>
                 ))}
               </View>
-            ))}
+              ));
+            })()}
 
             {/* Load-more footer */}
             {loadingMore && (
@@ -896,6 +916,9 @@ export default function TransactionsScreen() {
                   }
                 />
               )}
+
+            {/* Anchored banner at the bottom of the feed */}
+            <AdBanner />
           </View>
         )}
       </ScrollView>

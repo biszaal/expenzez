@@ -36,7 +36,12 @@
         "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyBlKr2w0WKmM1A5z4qEz7ULeeq7KopXCRs",
         "EXPO_PUBLIC_SENTRY_DSN": "https://90d3d97e1f3eac9cfefba049f2232c9f@o4509875840745472.ingest.de.sentry.io/4509875920240720",
         "EXPO_PUBLIC_ENABLE_CRASH_REPORTING": "false",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "EXPO_PUBLIC_ADS_ENABLED": "true",
+        "EXPO_PUBLIC_ADMOB_NATIVE_IOS": "",
+        "EXPO_PUBLIC_ADMOB_NATIVE_ANDROID": "",
+        "EXPO_PUBLIC_ADMOB_BANNER_IOS": "",
+        "EXPO_PUBLIC_ADMOB_BANNER_ANDROID": ""
       },
       "ios": {
         "enterpriseProvisioning": "universal",
