@@ -47,9 +47,28 @@ const pick = (ios?: string, android?: string) =>
   (Platform.OS === "ios" ? ios : android) || undefined;
 
 /**
+ * Diagnostic override: force Google's TEST ad units even in a release/TestFlight
+ * build by setting EXPO_PUBLIC_ADMOB_FORCE_TEST=true. Test ads ALWAYS fill, so
+ * this isolates the whole pipeline (native module → consent/init → gating →
+ * render) from AdMob "no fill" on brand-new real units — if test ads show but
+ * real ones don't, the code is fine and it's just a serving/approval delay.
+ * NEVER ship a store release with this on: real users would only see test ads.
+ */
+const FORCE_TEST_ADS = process.env.EXPO_PUBLIC_ADMOB_FORCE_TEST === "true";
+const USE_TEST_ADS = __DEV__ || FORCE_TEST_ADS;
+
+/**
+ * Show the on-screen ads diagnostics card (Account screen). On in dev, or in a
+ * release/TestFlight build when EXPO_PUBLIC_ADMOB_FORCE_TEST=true — so the one
+ * flag that forces test ads also surfaces the gate breakdown. Off for real store
+ * releases, so users never see it.
+ */
+export const ADS_DEBUG = __DEV__ || FORCE_TEST_ADS;
+
+/**
  * Native (in-feed) ad unit. Test ID in dev; real unit from env in production.
  */
-export const NATIVE_AD_UNIT_ID = __DEV__
+export const NATIVE_AD_UNIT_ID = USE_TEST_ADS
   ? TEST_NATIVE
   : pick(
       process.env.EXPO_PUBLIC_ADMOB_NATIVE_IOS,
@@ -59,7 +78,7 @@ export const NATIVE_AD_UNIT_ID = __DEV__
 /**
  * Anchored adaptive banner ad unit. Test ID in dev; real unit from env in prod.
  */
-export const BANNER_AD_UNIT_ID = __DEV__
+export const BANNER_AD_UNIT_ID = USE_TEST_ADS
   ? TEST_BANNER
   : pick(
       process.env.EXPO_PUBLIC_ADMOB_BANNER_IOS,

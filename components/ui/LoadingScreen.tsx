@@ -1,11 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import {
-  View,
-  StyleSheet,
-  Animated,
-  StatusBar,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { View, StyleSheet, Animated, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Typography from "./Typography";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -13,391 +7,152 @@ import { spacing } from "../../constants/theme";
 
 interface LoadingScreenProps {
   message?: string;
-  variant?: 'default' | 'login';
+  variant?: "default" | "login";
 }
 
-export default function LoadingScreen({ message = "Loading...", variant = 'default' }: LoadingScreenProps) {
-  const { colors } = useTheme();
+/**
+ * LoadingScreen — the brief full-screen loader shown while the app resolves auth
+ * before the tabs mount. Restyled to match the rest of the app: the light (or
+ * dark) theme surface, the brand-blue app tile and Geist type — instead of the
+ * old full-bleed blue gradient, which felt like a different product.
+ */
+export default function LoadingScreen({
+  message = "Loading...",
+  variant = "default",
+}: LoadingScreenProps) {
+  const { colors, isDark } = useTheme();
+  const accent = colors.primary.main;
 
-  // Animation values
+  // Gentle logo breathe + a staggered three-dot pulse. Native-driven so it stays
+  // smooth even while the JS thread is busy doing the auth/data work behind it.
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-  const dotsAnim1 = useRef(new Animated.Value(0)).current;
-  const dotsAnim2 = useRef(new Animated.Value(0)).current;
-  const dotsAnim3 = useRef(new Animated.Value(0)).current;
+  const dot1 = useRef(new Animated.Value(0.3)).current;
+  const dot2 = useRef(new Animated.Value(0.3)).current;
+  const dot3 = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
-    // Pulse animation for logo
-    const pulseAnimation = Animated.loop(
+    const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 1.2,
-          duration: 1000,
+          toValue: 1.06,
+          duration: 900,
           useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: 1000,
+          duration: 900,
           useNativeDriver: true,
         }),
       ])
     );
 
-    // Rotation animation
-    const rotateAnimation = Animated.loop(
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 2000,
-        useNativeDriver: true,
-      })
+    const mkDot = (v: Animated.Value) =>
+      Animated.sequence([
+        Animated.timing(v, { toValue: 1, duration: 380, useNativeDriver: true }),
+        Animated.timing(v, { toValue: 0.3, duration: 380, useNativeDriver: true }),
+      ]);
+
+    const dots = Animated.loop(
+      Animated.stagger(160, [mkDot(dot1), mkDot(dot2), mkDot(dot3)])
     );
 
-    // Dots animation
-    const dotsAnimation = Animated.loop(
-      Animated.stagger(200, [
-        Animated.sequence([
-          Animated.timing(dotsAnim1, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.timing(dotsAnim1, {
-            toValue: 0,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.sequence([
-          Animated.timing(dotsAnim2, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.timing(dotsAnim2, {
-            toValue: 0,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.sequence([
-          Animated.timing(dotsAnim3, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.timing(dotsAnim3, {
-            toValue: 0,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-        ]),
-      ])
-    );
-
-    pulseAnimation.start();
-    rotateAnimation.start();
-    dotsAnimation.start();
-
+    pulse.start();
+    dots.start();
     return () => {
-      pulseAnimation.stop();
-      rotateAnimation.stop();
-      dotsAnimation.stop();
+      pulse.stop();
+      dots.stop();
     };
   }, []);
 
-  const rotateInterpolate = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
   return (
-    <>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      <LinearGradient
-        colors={variant === 'login'
-          ? ['#7DA0FF', '#4E7CFF', '#1A33B8']
-          : [colors.primary[400], colors.primary[600], colors.primary[800]]}
-        style={styles.container}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+    <View
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent
+      />
+
+      <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+        <View
+          style={[styles.logoTile, { backgroundColor: accent, shadowColor: accent }]}
+        >
+          <Ionicons
+            name={variant === "login" ? "shield-checkmark" : "wallet"}
+            size={42}
+            color="#FFFFFF"
+          />
+        </View>
+      </Animated.View>
+
+      <Typography
+        variant="h2"
+        weight="bold"
+        align="center"
+        style={StyleSheet.flatten([styles.title, { color: colors.text.primary }])}
       >
-        {/* Background decoration */}
-        <View style={styles.decoration}>
+        {variant === "login" ? "Welcome to Expenzez" : "Expenzez"}
+      </Typography>
+
+      <Typography
+        variant="body"
+        align="center"
+        style={StyleSheet.flatten([styles.message, { color: colors.text.secondary }])}
+      >
+        {message}
+      </Typography>
+
+      <View style={styles.dotsContainer}>
+        {[dot1, dot2, dot3].map((a, i) => (
           <Animated.View
+            key={i}
             style={[
-              styles.decorCircle,
-              styles.decorCircle1,
-              {
-                transform: [{ rotate: rotateInterpolate }, { scale: 0.5 }],
-                opacity: 0.1,
-              },
+              styles.dot,
+              { backgroundColor: accent, opacity: a, transform: [{ scale: a }] },
             ]}
           />
-          <Animated.View
-            style={[
-              styles.decorCircle,
-              styles.decorCircle2,
-              {
-                transform: [
-                  { rotate: rotateInterpolate },
-                  { scale: 0.7 },
-                  { translateX: 50 },
-                ],
-                opacity: 0.05,
-              },
-            ]}
-          />
-        </View>
-
-        <View style={styles.content}>
-          {/* Logo with animations */}
-          <View style={styles.logoSection}>
-            <Animated.View
-              style={[
-                styles.logoContainer,
-                {
-                  transform: [{ scale: pulseAnim }],
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.7)']}
-                style={styles.logoBackground}
-              >
-                <Ionicons 
-                  name={variant === 'login' ? "shield-checkmark" : "wallet"} 
-                  size={48} 
-                  color={colors.primary.main} 
-                />
-              </LinearGradient>
-
-              {/* Loading ring */}
-              <Animated.View
-                style={[
-                  styles.loadingRing,
-                  {
-                    transform: [{ rotate: rotateInterpolate }],
-                  },
-                ]}
-              >
-                <View style={styles.ringSegment} />
-                <View style={[styles.ringSegment, styles.ringSegment2]} />
-                <View style={[styles.ringSegment, styles.ringSegment3]} />
-                <View style={[styles.ringSegment, styles.ringSegment4]} />
-              </Animated.View>
-            </Animated.View>
-
-            <View style={styles.textContainer}>
-              <Typography
-                variant="h2"
-                weight="bold"
-                style={styles.title}
-                align="center"
-              >
-                {variant === 'login' ? 'Welcome to Expenzez' : 'Expenzez'}
-              </Typography>
-
-              <View style={styles.messageContainer}>
-                <Typography
-                  variant="body"
-                  style={styles.message}
-                  align="center"
-                >
-                  {message}
-                </Typography>
-                
-                {variant === 'login' && (
-                  <Typography
-                    variant="body"
-                    style={StyleSheet.flatten([styles.message, { fontSize: 14, marginTop: spacing.xs, opacity: 0.8 }])}
-                    align="center"
-                  >
-                    Securing your connection...
-                  </Typography>
-                )}
-
-                {/* Animated dots */}
-                <View style={styles.dotsContainer}>
-                  <Animated.View
-                    style={[
-                      styles.dot,
-                      {
-                        opacity: dotsAnim1,
-                        transform: [{ scale: dotsAnim1 }],
-                      },
-                    ]}
-                  />
-                  <Animated.View
-                    style={[
-                      styles.dot,
-                      {
-                        opacity: dotsAnim2,
-                        transform: [{ scale: dotsAnim2 }],
-                      },
-                    ]}
-                  />
-                  <Animated.View
-                    style={[
-                      styles.dot,
-                      {
-                        opacity: dotsAnim3,
-                        transform: [{ scale: dotsAnim3 }],
-                      },
-                    ]}
-                  />
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* Progress indicator */}
-          <View style={styles.progressSection}>
-            <View style={styles.progressBar}>
-              <Animated.View
-                style={[
-                  styles.progressFill,
-                  {
-                    transform: [{ scaleX: pulseAnim }],
-                  },
-                ]}
-              />
-            </View>
-          </View>
-        </View>
-      </LinearGradient>
-    </>
+        ))}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  decoration: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  decorCircle: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  decorCircle1: {
-    top: '10%',
-    right: '10%',
-  },
-  decorCircle2: {
-    bottom: '20%',
-    left: '5%',
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-  },
-  content: {
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: spacing.xl,
   },
-  logoSection: {
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  logoContainer: {
-    position: 'relative',
-    marginBottom: spacing.lg,
-  },
-  logoBackground: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+  logoTile: {
+    width: 88,
+    height: 88,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.28,
+    shadowRadius: 20,
     elevation: 8,
   },
-  loadingRing: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    top: -10,
-    left: -10,
-  },
-  ringSegment: {
-    position: 'absolute',
-    width: 4,
-    height: 20,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    borderRadius: 2,
-    top: 0,
-    left: '50%',
-    marginLeft: -2,
-    transformOrigin: '50% 60px',
-  },
-  ringSegment2: {
-    transform: [{ rotate: '90deg' }],
-    backgroundColor: 'rgba(255,255,255,0.6)',
-  },
-  ringSegment3: {
-    transform: [{ rotate: '180deg' }],
-    backgroundColor: 'rgba(255,255,255,0.4)',
-  },
-  ringSegment4: {
-    transform: [{ rotate: '270deg' }],
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  textContainer: {
-    alignItems: 'center',
-  },
   title: {
-    fontSize: 32,
-    color: 'white',
-    marginBottom: spacing.md,
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  messageContainer: {
-    alignItems: 'center',
+    fontSize: 26,
+    marginTop: spacing.xl,
   },
   message: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.9)',
-    marginBottom: spacing.sm,
+    fontSize: 15,
+    marginTop: spacing.xs,
   },
   dotsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: spacing.lg,
   },
   dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-  },
-  progressSection: {
-    width: '80%',
-    alignItems: 'center',
-  },
-  progressBar: {
-    width: '100%',
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    borderRadius: 2,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
   },
 });

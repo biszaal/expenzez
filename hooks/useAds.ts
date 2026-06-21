@@ -13,10 +13,25 @@ import { ADS_ENABLED, DEV_IGNORE_PRO } from "../constants/ads";
 import { useRevenueCat } from "../contexts/RevenueCatContext";
 import { useAuth } from "../app/auth/AuthContext";
 
+/** Per-condition breakdown of the ad gate — surfaced for the diagnostics card. */
+export interface AdsGates {
+  adsEnabled: boolean;
+  available: boolean;
+  initialized: boolean;
+  consentResolved: boolean;
+  isLoggedIn: boolean;
+  onboardingComplete: boolean;
+  subLoading: boolean;
+  isPro: boolean;
+  devIgnorePro: boolean;
+}
+
 export interface UseAdsReturn {
   shouldShowAds: boolean;
   canRequestPersonalized: boolean;
   getRequestOptions: () => { requestNonPersonalizedAdsOnly: boolean };
+  /** Why ads are / aren't showing. Read by the AdsDebugCard. */
+  gates: AdsGates;
 }
 
 export function useAds(): UseAdsReturn {
@@ -58,5 +73,16 @@ export function useAds(): UseAdsReturn {
     shouldShowAds,
     canRequestPersonalized: adsState.canRequestPersonalized,
     getRequestOptions: adsService.getRequestOptions,
+    gates: {
+      adsEnabled: ADS_ENABLED,
+      available: adsState.available,
+      initialized: adsState.initialized,
+      consentResolved: adsState.consentResolved,
+      isLoggedIn,
+      onboardingComplete,
+      subLoading,
+      isPro,
+      devIgnorePro: DEV_IGNORE_PRO,
+    },
   };
 }

@@ -669,16 +669,31 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const markAllAsRead = async () => {
+    // Capture ids before mutating state.
+    const allIds = notifications.map((n) => n.id);
+
     setNotifications((prev) =>
       prev.map((notification) => ({ ...notification, read: true }))
     );
 
-    // Persist all read states to AsyncStorage
+    // Persist locally first (survives a restart even if the network call fails).
     try {
-      const allIds = notifications.map((n) => n.id);
       await Promise.all(allIds.map((id) => persistReadState(id, true)));
     } catch (error) {
       console.error("[NotificationContext] Failed to persist all read states:", error);
+    }
+
+    // Then sync each to the backend. The feed is re-fetched from the server on
+    // every open, so without this the backend keeps returning read:false and the
+    // whole list reappears as unread (the bug where notifications never clear).
+    try {
+      const { notificationAPI } = await import("../services/api");
+      await Promise.allSettled(allIds.map((id) => notificationAPI.markAsRead(id)));
+    } catch (backendError) {
+      console.error(
+        "[NotificationContext] Failed to sync all read states to backend:",
+        backendError
+      );
     }
   };
 

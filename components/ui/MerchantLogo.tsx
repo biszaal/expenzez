@@ -3,8 +3,6 @@ import { View, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { getMerchantInfo, MerchantInfo } from '../../services/merchantService';
-import { BRANDFETCH_CLIENT_ID } from '../../config/logos';
-import { resolveMerchantDomain } from '../../services/merchantLogoResolver';
 
 interface MerchantLogoProps {
   merchant?: string;
@@ -103,10 +101,10 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 /**
- * MerchantLogo — shows the real brand logo (Clearbit, high-res) for merchants
- * with a known curated domain. Anything without a known domain, or whose logo
- * Clearbit doesn't have, falls back to a clean category icon — we never show a
- * guessed/wrong or low-resolution logo. (Domains live in
+ * MerchantLogo — shows the real brand icon (DuckDuckGo / Google favicon) for
+ * merchants with a known curated domain. Anything without a known domain falls
+ * back to a clean category icon — we never guess a domain from the raw bank
+ * description, so we never show a wrong/random logo. (Domains live in
  * services/merchantService.ts MERCHANT_LOGOS.)
  */
 export const MerchantLogo: React.FC<MerchantLogoProps> = ({
@@ -120,40 +118,24 @@ export const MerchantLogo: React.FC<MerchantLogoProps> = ({
   const merchantInfo: MerchantInfo = getMerchantInfo(merchant || description || '');
   const effectiveCategory = (merchantInfo.category || category || 'other').toLowerCase();
   const brandColor = merchantInfo.color || CATEGORY_COLORS[effectiveCategory] || CATEGORY_COLORS.other;
-  // Domain comes from the curated map (instant), or for everything else is
-  // resolved by name via Brandfetch Search and cached (merchantLogoResolver) —
-  // so messy bank names like "ADIDASUKLIM7300.4386.603" still get a logo.
-  const curatedDomain = merchantInfo.domain || null;
-  const [resolvedDomain, setResolvedDomain] = useState<string | null>(null);
-  useEffect(() => {
-    if (curatedDomain) {
-      setResolvedDomain(null);
-      return undefined;
-    }
-    let active = true;
-    resolveMerchantDomain(merchant || description).then((d) => {
-      if (active) setResolvedDomain(d);
-    });
-    return () => {
-      active = false;
-    };
-  }, [curatedDomain, merchant, description]);
-  const domain = curatedDomain || resolvedDomain;
+  // Only merchants that map to a KNOWN domain in our curated list
+  // (services/merchantService.ts MERCHANT_LOGOS) get a real logo. We deliberately
+  // do NOT guess a domain from the raw bank description: name-based brand search
+  // matched junk strings like "Money out" or "DDH3GDEVICEPAYMENT" to unrelated
+  // brands and rendered random, unprofessional logos (a stock photo of a person,
+  // a dollar bill, …). No known domain → clean category icon.
+  const domain = merchantInfo.domain || null;
 
-  // High-res brand logo. Prefer Brandfetch (best quality) when a client ID is
-  // configured, falling back to Clearbit. If neither has it, the source list
-  // is exhausted and we show a clean category icon — never a wrong/blurry logo.
+  // Brand icon via favicon services: DuckDuckGo first (high-res, reliable), then
+  // Google as a fallback. Both return a known generic icon — never a random brand
+  // — when a domain has no favicon, and we still drop to the category icon if both
+  // error.
   const sources = useMemo(() => {
     if (!domain) return [];
-    const list: string[] = [];
-    if (BRANDFETCH_CLIENT_ID) {
-      // Brandfetch Logo Link — sized + explicit `icon` type (verified format).
-      list.push(
-        `https://cdn.brandfetch.io/${domain}/w/256/h/256/icon?c=${BRANDFETCH_CLIENT_ID}`
-      );
-    }
-    list.push(`https://logo.clearbit.com/${domain}?size=256`);
-    return list;
+    return [
+      `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+    ];
   }, [domain]);
 
   // Which source we're currently attempting. Advances on load error; reset when

@@ -444,10 +444,12 @@ export default function SubscriptionPlansScreen() {
               let price = "";
               if (productId.includes("monthly")) {
                 tier = "Monthly Plan";
-                price = "£4.99/month";
+                // Use the store's localized price (correct currency) when we have
+                // the package; fall back to GBP copy only if offerings haven't loaded.
+                price = monthlyPackage ? formatPrice(monthlyPackage) : "£4.99/month";
               } else if (productId.includes("annual") || productId.includes("yearly")) {
                 tier = "Annual Plan";
-                price = "£49.99/year";
+                price = annualPackage ? formatPrice(annualPackage) : "£49.99/year";
               }
 
               return (
@@ -635,9 +637,17 @@ export default function SubscriptionPlansScreen() {
     (monthlyPackage as any)?.product?.priceString || "£4.99";
   const annualDisplay =
     (annualPackage as any)?.product?.priceString || "£49.99";
-  const annualPerMonthDisplay = `£${(annualPriceNum / 12).toFixed(2)}`;
+  // Derive the currency symbol from the store's own localized price string so the
+  // computed per-month / strikethrough figures match the real price's currency
+  // (e.g. a US/sandbox App Store account renders "$4.99", not "£4.99"). Hardcoding
+  // "£" here showed "£4.17" sitting next to a "$4.99" price — inconsistent.
+  const currencySymbol =
+    annualDisplay.match(/^[^\d\s]+/)?.[0] ||
+    monthlyDisplay.match(/^[^\d\s]+/)?.[0] ||
+    "£";
+  const annualPerMonthDisplay = `${currencySymbol}${(annualPriceNum / 12).toFixed(2)}`;
   // Strikethrough anchor: what 12 months of monthly billing would cost.
-  const annualOriginalDisplay = `£${(monthlyPriceNum * 12).toFixed(2)}`;
+  const annualOriginalDisplay = `${currencySymbol}${(monthlyPriceNum * 12).toFixed(2)}`;
   const isAnnualSelected = selectedPackage?.identifier === "annual";
 
   return (
@@ -705,7 +715,7 @@ export default function SubscriptionPlansScreen() {
                 fontFamily: fontFamily.bold,
               }}
             >
-              £87/month
+              {currencySymbol}87/month
             </Text>
             {" "}with Pro.
           </Text>
@@ -1008,7 +1018,7 @@ export default function SubscriptionPlansScreen() {
           ]}
         >
           {isAnnualSelected
-            ? `Then ${annualPerMonthDisplay}/month, billed yearly. Cancel anytime.`
+            ? `Then ${annualDisplay}/year, billed yearly. Cancel anytime.`
             : `Then ${monthlyDisplay}/month. Cancel anytime.`}
         </Text>
 

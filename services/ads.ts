@@ -38,6 +38,29 @@ export type AdsState = {
   canRequestPersonalized: boolean;
 };
 
+/**
+ * Race a promise against a timer so a stalled native call (a consent fetch that
+ * never resolves, an SDK init that hangs) can't block the whole setup flow
+ * forever — which would leave `initialized`/`consentResolved` false and show
+ * zero ads. On timeout it resolves `undefined` and the flow continues.
+ */
+function withTimeout<T>(
+  p: Promise<T>,
+  ms: number,
+  label: string
+): Promise<T | undefined> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<undefined>((resolve) => {
+    timer = setTimeout(() => {
+      console.log(`[Ads] ${label} timed out after ${ms}ms — continuing`);
+      resolve(undefined);
+    }, ms);
+  });
+  return Promise.race([p, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
 class AdsService {
   private state: AdsState = {
     available: adsModuleAvailable,
@@ -76,62 +99,77 @@ class AdsService {
     if (!adsModuleAvailable || this.setupStarted) return;
     this.setupStarted = true;
 
+    // Configure + initialise the SDK FIRST, each timeout-guarded. Init doesn't
+    // depend on consent, and a slow/stalled consent fetch must never be able to
+    // block it — otherwise `initialized` stays false forever and not a single ad
+    // renders. Ad *requests* stay withheld until `consentResolved` (see useAds),
+    // so initialising early requests nothing and stays policy-safe.
     try {
-      // 1) UMP / GDPR consent (UK & EEA). gatherConsent() requests an info
-      //    update, then shows the consent form when one is required.
-      try {
-        await AdsConsent.gatherConsent();
-      } catch (e) {
-        console.log("[Ads] UMP gatherConsent error:", e);
-      }
-
-      // 2) iOS App Tracking Transparency — after UMP so the prompt order is
-      //    correct. Android has no ATT, so it counts as granted there.
-      let attGranted = Platform.OS !== "ios";
-      if (Platform.OS === "ios") {
-        try {
-          const { requestTrackingPermissionsAsync } = await import(
-            "expo-tracking-transparency"
-          );
-          const { status } = await requestTrackingPermissionsAsync();
-          attGranted = status === "granted";
-        } catch (e) {
-          console.log("[Ads] ATT request error:", e);
-        }
-      }
-
-      // 3) Personalised ads need UMP canRequestAds AND (on iOS) ATT. Otherwise
-      //    we still serve ads, just non-personalised.
-      let canRequestAds = true;
-      try {
-        const info = await AdsConsent.getConsentInfo();
-        canRequestAds = info?.canRequestAds !== false;
-      } catch {
-        // ignore — default to allowed; non-personalised handled by ATT flag
-      }
-      this.state.canRequestPersonalized = canRequestAds && attGranted;
-      this.state.consentResolved = true;
-      this.emit();
-
-      // 4) Request configuration — finance app: keep content family-safe and
-      //    never child-directed. Must be set before initialize().
-      try {
-        await mobileAds().setRequestConfiguration({
+      await withTimeout(
+        mobileAds().setRequestConfiguration({
           maxAdContentRating: MaxAdContentRating?.PG,
           tagForChildDirectedTreatment: false,
           tagForUnderAgeOfConsent: false,
-        });
-      } catch (e) {
-        console.log("[Ads] setRequestConfiguration error:", e);
-      }
+        }),
+        5000,
+        "setRequestConfiguration"
+      );
+    } catch (e) {
+      console.log("[Ads] setRequestConfiguration error:", e);
+    }
 
-      // 5) Initialise the SDK.
-      await mobileAds().initialize();
+    try {
+      await withTimeout(mobileAds().initialize(), 10000, "SDK initialize");
       this.state.initialized = true;
       this.emit();
     } catch (e) {
-      console.log("[Ads] setup failed:", e);
+      console.log("[Ads] initialize error:", e);
     }
+
+    // Consent flow: UMP (UK & EEA) → iOS ATT, in that order. Each is
+    // timeout-guarded so a hung native promise can't strand the gate. Whatever
+    // the outcome (granted / denied / error / timeout) we mark consent resolved;
+    // personalisation is decided separately just below.
+    try {
+      await withTimeout(AdsConsent.gatherConsent(), 15000, "UMP gatherConsent");
+    } catch (e) {
+      console.log("[Ads] UMP gatherConsent error:", e);
+    }
+
+    let attGranted = Platform.OS !== "ios";
+    if (Platform.OS === "ios") {
+      try {
+        const { requestTrackingPermissionsAsync } = await import(
+          "expo-tracking-transparency"
+        );
+        const res = await withTimeout(
+          requestTrackingPermissionsAsync(),
+          15000,
+          "ATT request"
+        );
+        attGranted = res?.status === "granted";
+      } catch (e) {
+        console.log("[Ads] ATT request error:", e);
+      }
+    }
+
+    // Personalised ads need UMP canRequestAds AND (on iOS) ATT. Otherwise we
+    // still serve ads, just non-personalised.
+    let canRequestAds = true;
+    try {
+      const info = await withTimeout<any>(
+        AdsConsent.getConsentInfo(),
+        5000,
+        "getConsentInfo"
+      );
+      canRequestAds = info?.canRequestAds !== false;
+    } catch {
+      // ignore — default to allowed; non-personalised handled by ATT flag
+    }
+
+    this.state.canRequestPersonalized = canRequestAds && attGranted;
+    this.state.consentResolved = true;
+    this.emit();
   }
 
   /**
