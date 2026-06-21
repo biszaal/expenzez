@@ -77,7 +77,7 @@
         "android.permission.POST_NOTIFICATIONS"
       ],
       "package": "com.biszaaltech.expenzez",
-      "versionCode": 32
+      "versionCode": 33
     },
     "web": {
       "bundler": "metro",
