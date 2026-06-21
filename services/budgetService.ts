@@ -117,7 +117,8 @@ export class BudgetService {
         Object.entries(budgetPreferences.categoryBudgets).forEach(
           ([category, amount]) => {
             if (amount > 0) {
-              const categorySpent = spendingByCategory[category] || 0;
+              const categorySpent =
+                spendingByCategory[this.canonicalCategoryKey(category)] || 0;
 
               budgets.push({
                 id: `category-${category.toLowerCase().replace(/\s+/g, "-")}`,
@@ -454,6 +455,29 @@ export class BudgetService {
     }
   }
 
+  // Reduce any category label to a stable canonical key so spending matches its
+  // budget regardless of how the category was stored. Imported/bank/CSV/statement
+  // transactions carry lowercase backend codes ("transport", "food", "bills"),
+  // while manually-added expenses and budget category names use Title Case display
+  // names ("Transport", "Food & Dining", "Bills & Utilities"). Without this, every
+  // category budget showed £0 for accounts whose spending came from imports.
+  static canonicalCategoryKey(raw?: string): string {
+    const s = (raw || "other").toLowerCase().replace(/[^a-z]/g, "");
+    const aliases: { [key: string]: string } = {
+      fooddining: "food", food: "food", dining: "food", restaurant: "food",
+      transport: "transport", transportation: "transport",
+      shopping: "shopping", retail: "shopping",
+      entertainment: "entertainment", recreation: "entertainment",
+      billsutilities: "bills", bills: "bills", utilities: "bills",
+      healthfitness: "health", healthcare: "health", health: "health", fitness: "health",
+      groceries: "groceries", grocery: "groceries",
+      fuel: "fuel", subscriptions: "subscriptions", subscription: "subscriptions",
+      travel: "travel", education: "education", income: "income",
+      bankingfinance: "banking", other: "other",
+    };
+    return aliases[s] || s;
+  }
+
   static calculateSpendingByCategory(transactions: any[]): {
     [category: string]: number;
   } {
@@ -462,7 +486,7 @@ export class BudgetService {
     transactions.forEach((transaction) => {
       // Only count debit transactions (expenses)
       if (transaction.type === "debit" || transaction.amount < 0) {
-        const category = transaction.category || "Uncategorized";
+        const category = this.canonicalCategoryKey(transaction.category);
         const amount = Math.abs(transaction.amount);
 
         if (!spendingByCategory[category]) {
