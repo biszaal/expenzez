@@ -38,8 +38,6 @@
         "EXPO_PUBLIC_ENABLE_CRASH_REPORTING": "false",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
         "EXPO_PUBLIC_ADS_ENABLED": "true",
-        "_comment_ADMOB_FORCE_TEST": "DIAGNOSTIC ONLY — forces Google test ads + shows the Ads diagnostics card on TestFlight. REMOVE this and the line below before a public App Store release, or real users will only ever see test ads.",
-        "EXPO_PUBLIC_ADMOB_FORCE_TEST": "true",
         "EXPO_PUBLIC_ADMOB_NATIVE_IOS": "ca-app-pub-5406377320439537/6936652433",
         "EXPO_PUBLIC_ADMOB_NATIVE_ANDROID": "ca-app-pub-5406377320439537/8472105701",
         "EXPO_PUBLIC_ADMOB_BANNER_IOS": "ca-app-pub-5406377320439537/4446220466",

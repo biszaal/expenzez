@@ -34,7 +34,6 @@ import {
 } from "../../services/dataSource";
 import SupportSystem from "../../components/SupportSystem";
 import ExportSystem from "../../components/ExportSystem";
-import AdsDebugCard from "../../components/ads/AdsDebugCard";
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -296,10 +295,6 @@ export default function AccountScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Ads diagnostics — only renders when ADS_DEBUG is on (dev or a
-            force-test build); invisible in real store releases. */}
-        <AdsDebugCard />
-
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>

@@ -13,6 +13,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { borderRadius, spacing, fontFamily, typography } from "../../constants/theme";
 import { useAds } from "../../hooks/useAds";
 import { NATIVE_AD_UNIT_ID } from "../../constants/ads";
+import AdErrorBoundary from "./AdErrorBoundary";
 
 // Guarded require so a missing/stale native module degrades to "no ad" instead
 // of throwing at import. react-native-google-mobile-ads eagerly calls
@@ -73,6 +74,7 @@ export default function NativeAdCard({ style }: NativeAdCardProps) {
   if (!shouldShowAds || !nativeAd || !NativeAdView) return null;
 
   return (
+    <AdErrorBoundary>
     <NativeAdView
       nativeAd={nativeAd}
       style={[
@@ -146,6 +148,7 @@ export default function NativeAdCard({ style }: NativeAdCardProps) {
         ) : null}
       </View>
     </NativeAdView>
+    </AdErrorBoundary>
   );
 }
 

@@ -11,6 +11,7 @@ import { View, StyleSheet, ViewStyle } from "react-native";
 import { useAds } from "../../hooks/useAds";
 import { BANNER_AD_UNIT_ID } from "../../constants/ads";
 import { spacing } from "../../constants/theme";
+import AdErrorBoundary from "./AdErrorBoundary";
 
 // Guarded require so a missing/stale native module degrades to "no ad" instead
 // of throwing at import (the package eagerly calls getEnforcing on the native
@@ -36,6 +37,7 @@ export default function AdBanner({ style }: AdBannerProps) {
   if (!shouldShowAds || failed || !BannerAd) return null;
 
   return (
+    <AdErrorBoundary>
     <View style={[styles.container, style]}>
       <BannerAd
         unitId={BANNER_AD_UNIT_ID}
@@ -47,6 +49,7 @@ export default function AdBanner({ style }: AdBannerProps) {
         }}
       />
     </View>
+    </AdErrorBoundary>
   );
 }
 
