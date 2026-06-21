@@ -1,6 +1,7 @@
 // Constants for the application
 import { Platform } from "react-native";
 import { CURRENT_API_CONFIG } from "../config/api";
+import { APP_VERSION } from "./version";
 
 // Platform-specific values
 export const IS_IOS = Platform.OS === "ios";
@@ -9,7 +10,7 @@ export const IS_ANDROID = Platform.OS === "android";
 // App configuration
 export const APP_CONFIG = {
   name: "Expenzez",
-  version: "1.0.0",
+  version: APP_VERSION, // single source: app.json expo.version
   buildNumber: "1",
   bundleId: "com.expenzez.app",
 } as const;

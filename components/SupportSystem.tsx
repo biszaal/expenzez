@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { spacing, borderRadius } from "../constants/theme";
+import { APP_VERSION } from "../constants/version";
 
 interface FAQ {
   id: string;
@@ -113,7 +114,7 @@ I need help with:
 [Please describe your issue here]
 
 Device Information:
-- App Version: 1.0.0
+- App Version: ${APP_VERSION}
 - Platform: Mobile
 
 Thank you!`;
