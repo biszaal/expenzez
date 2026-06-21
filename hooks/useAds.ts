@@ -32,6 +32,8 @@ export interface UseAdsReturn {
   getRequestOptions: () => { requestNonPersonalizedAdsOnly: boolean };
   /** Why ads are / aren't showing. Read by the AdsDebugCard. */
   gates: AdsGates;
+  /** Current adsService.setup() phase — diagnostics only. */
+  phase: string;
 }
 
 export function useAds(): UseAdsReturn {
@@ -59,6 +61,23 @@ export function useAds(): UseAdsReturn {
     };
   }, [isLoggedIn]);
 
+  // Kick off ad-SDK setup as soon as THIS hook's own conditions are met. setup()
+  // is idempotent (guarded by setupStarted), so it's safe that _layout also calls
+  // it — but triggering it here means ad init no longer depends on _layout's
+  // separate copy of the gating, which can lag or differ (the observed bug:
+  // setup() never ran, so the SDK stayed uninitialised).
+  useEffect(() => {
+    if (
+      adsState.available &&
+      isLoggedIn &&
+      onboardingComplete &&
+      !subLoading &&
+      (DEV_IGNORE_PRO || !isPro)
+    ) {
+      adsService.setup();
+    }
+  }, [adsState.available, isLoggedIn, onboardingComplete, subLoading, isPro]);
+
   const shouldShowAds =
     ADS_ENABLED &&
     adsState.available &&
@@ -84,5 +103,6 @@ export function useAds(): UseAdsReturn {
       isPro,
       devIgnorePro: DEV_IGNORE_PRO,
     },
+    phase: adsState.phase,
   };
 }

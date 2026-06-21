@@ -36,6 +36,8 @@ export type AdsState = {
   consentResolved: boolean;
   /** Whether personalised ads may be requested (UMP consent + iOS ATT). */
   canRequestPersonalized: boolean;
+  /** How far adsService.setup() has progressed — surfaced for the debug card. */
+  phase: string;
 };
 
 /**
@@ -67,6 +69,7 @@ class AdsService {
     initialized: false,
     consentResolved: false,
     canRequestPersonalized: false,
+    phase: "idle",
   };
   private listeners = new Set<() => void>();
   private setupStarted = false;
@@ -91,6 +94,12 @@ class AdsService {
     this.listeners.forEach((l) => l());
   }
 
+  /** Record how far setup() has gotten, and notify subscribers (debug card). */
+  private setPhase(phase: string) {
+    this.state.phase = phase;
+    this.emit();
+  }
+
   /**
    * Consent → ATT → initialise. Idempotent: safe to call from an effect that
    * may fire more than once; only the first call does work.
@@ -105,6 +114,7 @@ class AdsService {
     // renders. Ad *requests* stay withheld until `consentResolved` (see useAds),
     // so initialising early requests nothing and stays policy-safe.
     try {
+      this.setPhase("set-config");
       await withTimeout(
         mobileAds().setRequestConfiguration({
           maxAdContentRating: MaxAdContentRating?.PG,
@@ -119,18 +129,21 @@ class AdsService {
     }
 
     try {
+      this.setPhase("initializing");
       await withTimeout(mobileAds().initialize(), 10000, "SDK initialize");
       this.state.initialized = true;
-      this.emit();
+      this.setPhase("initialized");
     } catch (e) {
       console.log("[Ads] initialize error:", e);
+      this.setPhase("init-error");
     }
 
     // Consent flow: UMP (UK & EEA) → iOS ATT, in that order. Each is
-    // timeout-guarded so a hung native promise can't strand the gate. Whatever
-    // the outcome (granted / denied / error / timeout) we mark consent resolved;
-    // personalisation is decided separately just below.
+    // timeout-guarded — including the dynamic import — so a hung native promise
+    // or stalled module resolution can't strand the gate. Whatever the outcome
+    // (granted / denied / error / timeout) we mark consent resolved below.
     try {
+      this.setPhase("consent");
       await withTimeout(AdsConsent.gatherConsent(), 15000, "UMP gatherConsent");
     } catch (e) {
       console.log("[Ads] UMP gatherConsent error:", e);
@@ -139,15 +152,23 @@ class AdsService {
     let attGranted = Platform.OS !== "ios";
     if (Platform.OS === "ios") {
       try {
-        const { requestTrackingPermissionsAsync } = await import(
-          "expo-tracking-transparency"
+        this.setPhase("att");
+        // Guard the dynamic import too — this was the one remaining await with no
+        // timeout, so a stalled module resolution here could hang setup() and
+        // leave `consentResolved` false forever.
+        const mod: any = await withTimeout(
+          import("expo-tracking-transparency"),
+          5000,
+          "import ATT module"
         );
-        const res = await withTimeout(
-          requestTrackingPermissionsAsync(),
-          15000,
-          "ATT request"
-        );
-        attGranted = res?.status === "granted";
+        if (mod?.requestTrackingPermissionsAsync) {
+          const res = await withTimeout<any>(
+            mod.requestTrackingPermissionsAsync(),
+            15000,
+            "ATT request"
+          );
+          attGranted = res?.status === "granted";
+        }
       } catch (e) {
         console.log("[Ads] ATT request error:", e);
       }
@@ -157,6 +178,7 @@ class AdsService {
     // still serve ads, just non-personalised.
     let canRequestAds = true;
     try {
+      this.setPhase("consent-info");
       const info = await withTimeout<any>(
         AdsConsent.getConsentInfo(),
         5000,
@@ -169,7 +191,7 @@ class AdsService {
 
     this.state.canRequestPersonalized = canRequestAds && attGranted;
     this.state.consentResolved = true;
-    this.emit();
+    this.setPhase("done");
   }
 
   /**

@@ -25,7 +25,7 @@ const TEST_PREFIX = "ca-app-pub-3940256099942544";
 
 export default function AdsDebugCard() {
   const { colors } = useTheme();
-  const { shouldShowAds, gates, canRequestPersonalized } = useAds();
+  const { shouldShowAds, gates, canRequestPersonalized, phase } = useAds();
 
   if (!ADS_DEBUG) return null;
 
@@ -111,6 +111,9 @@ export default function AdsDebugCard() {
 
       <View style={[styles.divider, { backgroundColor: colors.border.light }]} />
 
+      <Text style={[styles.meta, { color: colors.text.secondary }]}>
+        setup phase: {phase}
+      </Text>
       <Text style={[styles.meta, { color: colors.text.tertiary }]}>
         native unit: {usingTestNative ? "TEST" : "REAL"} · banner:{" "}
         {usingTestBanner ? "TEST" : "REAL"} · personalized:{" "}
