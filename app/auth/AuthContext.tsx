@@ -1170,6 +1170,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         );
       }
 
+      // 🚨 CRITICAL: Wipe the native Keychain PIN (secure_pin_hash /
+      // secure_pin_salt) + session. The SecureStore deletes above only target
+      // "pin_hash" under the "expenzez-tokens" keychain — a DIFFERENT key from
+      // the one nativeCryptoStorage actually uses — so the real PIN survived
+      // logout and leaked into the next account's login, which then prompted for
+      // (and crashed on) a PIN belonging to the previous account. Clearing it
+      // here makes every account start with a clean lock state.
+      try {
+        const { nativeCryptoStorage } = await import(
+          "../../services/nativeCryptoStorage"
+        );
+        await nativeCryptoStorage.clearAllSecurityData();
+        console.log(
+          "🔐 [AuthContext] ✅ Cleared native security data (PIN + session)"
+        );
+      } catch (nativeSecError) {
+        console.warn(
+          "🔐 [AuthContext] Could not clear native security data:",
+          nativeSecError
+        );
+      }
+
       // 🚨 STRICT SECURITY: Clear ALL keys except absolute essentials
       try {
         const allKeys = await AsyncStorage.getAllKeys();
