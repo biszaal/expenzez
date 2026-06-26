@@ -17,7 +17,9 @@ import {
   Animated,
   Easing,
   Alert,
+  RefreshControl,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useCurrency } from "../../contexts/CurrencyContext";
@@ -59,6 +61,7 @@ export default function SpendingPage() {
 
   // State Management
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<string>("summary");
   const [spendingTab, setSpendingTab] = useState<string>("categories");
@@ -85,6 +88,11 @@ export default function SpendingPage() {
 
   // Ref to prevent multiple simultaneous fetchData calls
   const fetchingRef = useRef(false);
+
+  // Skip the very first focus (the initial mount already fetches) so we only
+  // auto-refresh when the user *returns* to the tab — e.g. after excluding or
+  // editing a transaction elsewhere — without double-fetching on first load.
+  const hasFocusedRef = useRef(false);
 
   // Ref to prevent multiple simultaneous category updates
   const updatingCategoriesRef = useRef(false);
@@ -666,8 +674,10 @@ export default function SpendingPage() {
     [awardXPSilently]
   );
 
-  // Data fetching
-  const fetchData = useCallback(async () => {
+  // Data fetching. `forceRefresh` bypasses the SWR cache so an explicit
+  // pull-to-refresh (or returning to the tab after editing/excluding a
+  // transaction) always pulls fresh data from the server.
+  const fetchData = useCallback(async (forceRefresh = false) => {
     // Prevent multiple simultaneous calls
     if (fetchingRef.current) {
       console.log("🔄 [Spending] Fetch already in progress, skipping...");
@@ -684,7 +694,7 @@ export default function SpendingPage() {
       let useTransactionsForMonths = false;
 
       try {
-        balanceSummary = await balanceAPI.getSummary({ useCache: true });
+        balanceSummary = await balanceAPI.getSummary({ useCache: !forceRefresh });
         setAvailableMonths(balanceSummary.monthsWithData);
         console.log(
           "✅ [Spending] Available months from API:",
@@ -714,7 +724,7 @@ export default function SpendingPage() {
           startDate,
           endDate,
           limit: 2400, // ~200 per month for 12 months
-          useCache: true,
+          useCache: !forceRefresh,
         });
 
         if (transactionsResponse && transactionsResponse.transactions) {
@@ -1267,6 +1277,32 @@ export default function SpendingPage() {
     }
   }, [isLoggedIn]);
 
+  // Pull-to-refresh: force a fresh fetch (bypassing the cache) so manual edits,
+  // exclusions and new transactions show immediately.
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchData(true);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchData]);
+
+  // Re-fetch when the tab regains focus (e.g. coming back from the
+  // transactions list after excluding/editing a transaction). The write paths
+  // invalidate the transactions cache, so this picks up the change. We skip the
+  // first focus to avoid double-fetching on initial mount.
+  useFocusEffect(
+    useCallback(() => {
+      if (!isLoggedIn) return;
+      if (!hasFocusedRef.current) {
+        hasFocusedRef.current = true;
+        return;
+      }
+      fetchData();
+    }, [isLoggedIn, fetchData])
+  );
+
   // Show the full-page skeleton only on the first load (when we have no
   // transactions yet). Once data has arrived, subsequent fetches/refreshes
   // update in place so the user can swipe between months without flicker.
@@ -1311,7 +1347,7 @@ export default function SpendingPage() {
               styles.retryButton,
               { backgroundColor: colors.primary.main },
             ]}
-            onPress={fetchData}
+            onPress={() => fetchData(true)}
           >
             <Ionicons
               name="refresh"
@@ -1343,6 +1379,14 @@ export default function SpendingPage() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary.main}
+            colors={[colors.primary.main]}
+          />
+        }
       >
         {/* v1.5 redesign — date range + Spending title + filter button */}
         <View style={styles.premiumHeader}>
@@ -1485,7 +1529,7 @@ export default function SpendingPage() {
                   styles.emptyStateButton,
                   { backgroundColor: colors.primary.main },
                 ]}
-                onPress={fetchData}
+                onPress={() => fetchData(true)}
                 activeOpacity={0.8}
               >
                 <Ionicons

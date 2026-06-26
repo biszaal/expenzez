@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { isExcludedFromSpend } from "../../utils/nonSpendDetection";
+import { processTransactionExpense } from "../../utils/expenseDetection";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useCurrency } from "../../contexts/CurrencyContext";
@@ -92,29 +93,39 @@ export default function TransactionsScreen() {
   const [similarCategory, setSimilarCategory] = useState("");
   const [applyingSimilar, setApplyingSimilar] = useState(false);
 
-  // Calculate spending summary
+  // Calculate spending summary. Uses the same canonical spend gate as the
+  // Spending page (processTransactionExpense) so excluded / non-spend
+  // transactions (transfers, savings moves, card payments) and income never
+  // count as spend. Income likewise drops non-spend transfers so net flow is
+  // consistent.
   const getSpendingSummary = () => {
-    const totalSpending = transactions
-      .filter((t) => t.type === "debit")
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const isSpend = (t: Transaction) =>
+      processTransactionExpense(t, 0, false).isExpense;
+    const isCountableIncome = (t: Transaction) =>
+      t.type === "credit" && !isExcludedFromSpend(t as any);
+
+    const spendTransactions = transactions.filter(isSpend);
+
+    const totalSpending = spendTransactions.reduce(
+      (sum, t) => sum + Math.abs(t.amount),
+      0
+    );
 
     const totalIncome = transactions
-      .filter((t) => t.type === "credit")
-      .reduce((sum, t) => sum + t.amount, 0);
+      .filter(isCountableIncome)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
     const netFlow = totalIncome - totalSpending;
 
-    // Group by category
-    const categorySpending = transactions
-      .filter((t) => t.type === "debit")
-      .reduce(
-        (acc, t) => {
-          const category = t.category || "Uncategorized";
-          acc[category] = (acc[category] || 0) + Math.abs(t.amount);
-          return acc;
-        },
-        {} as Record<string, number>
-      );
+    // Group spend by category
+    const categorySpending = spendTransactions.reduce(
+      (acc, t) => {
+        const category = t.category || "Uncategorized";
+        acc[category] = (acc[category] || 0) + Math.abs(t.amount);
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     const topCategories = Object.entries(categorySpending)
       .sort(([, a], [, b]) => b - a)
@@ -127,9 +138,8 @@ export default function TransactionsScreen() {
       transactionCount: transactions.length,
       topCategories,
       avgTransaction:
-        transactions.length > 0
-          ? totalSpending /
-            transactions.filter((t) => t.type === "debit").length
+        spendTransactions.length > 0
+          ? totalSpending / spendTransactions.length
           : 0,
     };
   };
@@ -481,7 +491,9 @@ export default function TransactionsScreen() {
         bucket.dateMap.set(dateKey, []);
       }
       bucket.dateMap.get(dateKey)!.push(tx);
-      if (tx.type === "debit") {
+      // Month header total is "spent" — use the canonical spend gate so income
+      // and excluded / non-spend transactions don't inflate it.
+      if (processTransactionExpense(tx, 0, false).isExpense) {
         bucket.total += Math.abs(tx.originalAmount);
       }
     });
