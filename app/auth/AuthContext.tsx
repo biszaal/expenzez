@@ -10,6 +10,7 @@ import { securityAPI } from "../../services/api/securityAPI";
 import { sessionManager } from "../../services/sessionManager";
 import { deviceAPI } from "../../services/api/deviceAPI";
 import { useRevenueCat } from "../../contexts/RevenueCatContext";
+import { updateWidgets } from "../../services/widget";
 
 interface User {
   id: string;
@@ -497,6 +498,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setIsLoggedIn(false);
           setUser(null);
           setUserBudget(null);
+          // Session expired outside the explicit logout() flow (e.g. refresh
+          // token rejected) — reset the widget snapshot so it doesn't keep
+          // showing the last known balance on the home screen.
+          updateWidgets({ loggedIn: false }, { force: true });
         }
         // If storage says logged in but context says logged out, update context
         else if (
@@ -1278,6 +1283,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null);
       setUserBudget(null);
       setNeedsPinSetup(false);
+
+      // Reset home-screen widgets to the logged-out "Sign in" state. This also
+      // overwrites the iOS App Group store, which the AsyncStorage wipe above
+      // does not reach. Runs last so it isn't cleared by the cleanup.
+      await updateWidgets({ loggedIn: false }, { force: true });
 
       console.log("✅ STRICT LOGOUT COMPLETED - ALL user data cleared");
     } catch (error) {

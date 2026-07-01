@@ -1,0 +1,9 @@
+<resources>
+  <string name="app_name">Expenzez</string>
+  <string name="expo_system_ui_user_interface_style" translatable="false">automatic</string>
+  <string name="widget_balance_description" translatable="false">Your total balance at a glance</string>
+  <string name="widget_budget_description" translatable="false">This month\'s spend vs your budget</string>
+  <string name="widget_streak_description" translatable="false">Your daily tracking streak</string>
+  <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
+  <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
+</resources>

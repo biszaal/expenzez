@@ -29,6 +29,7 @@ import { spacing } from "../../constants/theme";
 import { balanceAPI } from "../../services/api/balanceAPI";
 import { useXP } from "../../hooks/useXP";
 import { transactionAPI } from "../../services/api/transactionAPI";
+import { updateWidgets } from "../../services/widget";
 import { getMerchantInfo } from "../../services/merchantService";
 import dayjs from "dayjs";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
@@ -889,6 +890,8 @@ export default function SpendingPage() {
           "categoryBudgets",
           JSON.stringify(categoryBudgets)
         );
+
+        updateWidgets({}, { force: true });
 
         await fetchData();
 

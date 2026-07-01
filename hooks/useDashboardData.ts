@@ -7,6 +7,7 @@ import { transactionAPI, Transaction } from "../services/api/transactionAPI";
 import { TransactionService } from "../services/transactionService";
 import { useAuth } from "../app/auth/AuthContext";
 import { APP_STRINGS } from "../constants/strings";
+import { updateWidgets } from "../services/widget";
 
 interface Account {
   id: string;
@@ -67,6 +68,7 @@ export const useDashboardData = () => {
         setWarning(APP_STRINGS.HOME.LOGIN_WARNING);
         setLoading(false);
         setFetchingData(false);
+        updateWidgets({ loggedIn: false }, { force: true });
         return;
       }
 
@@ -227,6 +229,13 @@ export const useDashboardData = () => {
           "No transactions found. Add expenses manually or import CSV data to get started."
         );
       }
+
+      // Refresh home-screen widgets with the freshly loaded balance/spend.
+      updateWidgets({
+        loggedIn: true,
+        balance: finalBalance,
+        transactions: allTransactions,
+      });
     } catch (error) {
       console.error("❌ Error loading data:", error);
       setError("Failed to load transaction data. Please try again.");

@@ -16,6 +16,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { budgetAPI } from "../../services/api";
 import { transactionAPI } from "../../services/api/transactionAPI";
+import { updateWidgets } from "../../services/widget";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { spacing, borderRadius } from "../../constants/theme";
@@ -177,6 +178,9 @@ export default function EditBudgetPage() {
           categoryBudgets: categoryBudgetsByName,
         }
       );
+
+      // New budget limit changes the budget widget — refresh immediately.
+      updateWidgets({}, { force: true });
     } catch (error) {
       console.error("Error saving budget to DynamoDB:", error);
       throw error;

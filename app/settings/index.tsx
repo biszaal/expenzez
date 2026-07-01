@@ -28,6 +28,7 @@ import { useRevenueCat } from "../../contexts/RevenueCatContext";
 import { analyticsService } from "../../services/analytics";
 import { adsService } from "../../services/ads";
 import { crashReporting } from "../../utils/crashReporting";
+import { getHideAmounts, setHideAmounts } from "../../services/widget";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -48,6 +49,8 @@ export default function SettingsPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [analyticsConsent, setAnalyticsConsent] = useState(false);
+  // Widgets hide amounts by default; this toggle reflects "show amounts".
+  const [widgetShowAmounts, setWidgetShowAmounts] = useState(false);
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
   const [currencySearch, setCurrencySearch] = useState("");
 
@@ -136,6 +139,20 @@ export default function SettingsPage() {
     if (value) {
       crashReporting.initialize(true);
     }
+  };
+
+  // Load the widget amount-visibility preference (hidden by default).
+  useEffect(() => {
+    (async () => {
+      const hidden = await getHideAmounts();
+      setWidgetShowAmounts(!hidden);
+    })();
+  }, []);
+
+  const handleWidgetAmountsToggle = async (value: boolean) => {
+    setWidgetShowAmounts(value);
+    // Stored as "hide", so showing amounts means hide = false.
+    await setHideAmounts(!value);
   };
 
   const themeOptions = [
@@ -1028,6 +1045,47 @@ export default function SettingsPage() {
               <Switch
                 value={analyticsConsent}
                 onValueChange={handleAnalyticsToggle}
+                trackColor={{ false: colors.border.light, true: colors.primary.main }}
+              />
+            </View>
+
+            {/* Widget privacy — amounts hidden by default on home/lock screens */}
+            <View
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                  marginTop: 12,
+                },
+                shadows.sm,
+              ]}
+            >
+              <Ionicons
+                name="eye-outline"
+                size={22}
+                color={colors.primary.main}
+                style={{ marginRight: 14 }}
+              />
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text
+                  style={[styles.settingText, { color: colors.text.primary }]}
+                >
+                  Show amounts in widgets
+                </Text>
+                <Text
+                  style={{
+                    color: colors.text.tertiary,
+                    fontSize: 12,
+                    marginTop: 2,
+                  }}
+                >
+                  Off by default — home-screen widgets hide balances as ••••. Turn on to display real amounts.
+                </Text>
+              </View>
+              <Switch
+                value={widgetShowAmounts}
+                onValueChange={handleWidgetAmountsToggle}
                 trackColor={{ false: colors.border.light, true: colors.primary.main }}
               />
             </View>

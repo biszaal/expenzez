@@ -16,6 +16,7 @@ import {
   symbolForCurrency,
 } from "../constants/currencies";
 import { profileAPI } from "../services/api/profileAPI";
+import { updateWidgets } from "../services/widget";
 
 const CURRENCY_STORAGE_KEY = "@expenzez_currency";
 
@@ -117,6 +118,8 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({
       } catch (error) {
         console.error("Error saving currency preference:", error);
       }
+      // Reformat widgets with the new display currency symbol.
+      updateWidgets({}, { force: true });
       // Best-effort sync to the backend profile (offline-first).
       try {
         await profileAPI.updatePreferredCurrency(finalCode);
