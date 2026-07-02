@@ -5,5 +5,6 @@ export {
   updateWidgets,
   getHideAmounts,
   setHideAmounts,
+  getWidgetLastUpdated,
 } from "./widgetSnapshot";
 export { setAndroidReloader } from "./widgetBridge";

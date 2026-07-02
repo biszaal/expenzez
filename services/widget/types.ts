@@ -12,7 +12,7 @@
  */
 
 /** Bump when the snapshot shape changes so native readers can guard on it. */
-export const WIDGET_SNAPSHOT_VERSION = 1 as const;
+export const WIDGET_SNAPSHOT_VERSION = 2 as const;
 
 /** AsyncStorage key holding the latest snapshot JSON (Android reads this). */
 export const WIDGET_SNAPSHOT_KEY = "@expenzez_widget_snapshot";
@@ -33,6 +33,15 @@ export interface WidgetBalance {
   /** Signed percentage change vs `prevAmount`. */
   trendPct: number;
   trendDir: TrendDirection;
+  /** Spend so far this calendar month (same figure the Budget widget uses). */
+  monthSpend?: number;
+}
+
+/** The category with the highest spend this month (null when no spend yet). */
+export interface WidgetTopCategory {
+  /** Display-ready name, e.g. "Groceries". */
+  name: string;
+  spent: number;
 }
 
 export interface WidgetBudget {
@@ -45,6 +54,7 @@ export interface WidgetBudget {
   /** `spent / limit` as a percentage (0 when no limit). */
   progressPct: number;
   overBudget: boolean;
+  topCategory?: WidgetTopCategory | null;
 }
 
 export interface WidgetStreak {
@@ -52,6 +62,12 @@ export interface WidgetStreak {
   current: number;
   /** Gamification level (from XPService). */
   level: number;
+  /** Longest streak ever achieved. */
+  best?: number;
+  /** XP earned within the current level (0..xpPerLevel). */
+  xpIntoLevel?: number;
+  /** XP needed to complete a level (flat leveling). */
+  xpPerLevel?: number;
 }
 
 export interface WidgetSnapshot {
@@ -61,8 +77,10 @@ export interface WidgetSnapshot {
   /** False after logout — widgets show a neutral "Sign in" prompt. */
   loggedIn: boolean;
   currency: { code: string; symbol: string };
-  /** When true, widgets mask amounts as "••••" (privacy default). */
+  /** When true, widgets mask amounts as "••••" (opt-in via Settings → Widgets). */
   hideAmounts: boolean;
+  /** Current month's display name, e.g. "July". */
+  monthLabel?: string;
   balance: WidgetBalance;
   budget: WidgetBudget;
   streak: WidgetStreak;

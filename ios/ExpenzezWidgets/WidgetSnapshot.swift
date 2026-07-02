@@ -17,6 +17,13 @@ struct WidgetBalanceData: Codable {
   let prevAmount: Double
   let trendPct: Double
   let trendDir: String // "up" | "down" | "flat"
+  // v2 — optional so a v1 snapshot still decodes after an app update.
+  let monthSpend: Double?
+}
+
+struct WidgetTopCategory: Codable {
+  let name: String
+  let spent: Double
 }
 
 struct WidgetBudgetData: Codable {
@@ -25,11 +32,17 @@ struct WidgetBudgetData: Codable {
   let remaining: Double
   let progressPct: Double
   let overBudget: Bool
+  // v2
+  let topCategory: WidgetTopCategory?
 }
 
 struct WidgetStreakData: Codable {
   let current: Int
   let level: Int
+  // v2
+  let best: Int?
+  let xpIntoLevel: Double?
+  let xpPerLevel: Double?
 }
 
 struct WidgetSnapshot: Codable {
@@ -38,6 +51,8 @@ struct WidgetSnapshot: Codable {
   let loggedIn: Bool
   let currency: WidgetCurrency
   let hideAmounts: Bool
+  // v2
+  let monthLabel: String?
   let balance: WidgetBalanceData
   let budget: WidgetBudgetData
   let streak: WidgetStreakData
@@ -59,14 +74,18 @@ struct WidgetSnapshot: Codable {
   /// Sample data for the widget gallery / placeholder state.
   static var placeholder: WidgetSnapshot {
     WidgetSnapshot(
-      v: 1,
+      v: 2,
       updatedAt: "",
       loggedIn: true,
       currency: WidgetCurrency(code: "GBP", symbol: "£"),
-      hideAmounts: true,
-      balance: WidgetBalanceData(amount: 1234.56, prevAmount: 1180, trendPct: 4.6, trendDir: "up"),
-      budget: WidgetBudgetData(spent: 820, limit: 2000, remaining: 1180, progressPct: 41, overBudget: false),
-      streak: WidgetStreakData(current: 5, level: 3)
+      hideAmounts: false,
+      monthLabel: nil,
+      balance: WidgetBalanceData(
+        amount: 1234.56, prevAmount: 1180, trendPct: 4.6, trendDir: "up", monthSpend: 412),
+      budget: WidgetBudgetData(
+        spent: 820, limit: 2000, remaining: 1180, progressPct: 41, overBudget: false,
+        topCategory: WidgetTopCategory(name: "Groceries", spent: 160)),
+      streak: WidgetStreakData(current: 5, level: 3, best: 12, xpIntoLevel: 40, xpPerLevel: 100)
     )
   }
 }

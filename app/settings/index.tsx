@@ -28,7 +28,13 @@ import { useRevenueCat } from "../../contexts/RevenueCatContext";
 import { analyticsService } from "../../services/analytics";
 import { adsService } from "../../services/ads";
 import { crashReporting } from "../../utils/crashReporting";
-import { getHideAmounts, setHideAmounts } from "../../services/widget";
+import {
+  getHideAmounts,
+  setHideAmounts,
+  updateWidgets,
+  getWidgetLastUpdated,
+} from "../../services/widget";
+import { timeAgo } from "../../widgets/theme";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -49,8 +55,10 @@ export default function SettingsPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [analyticsConsent, setAnalyticsConsent] = useState(false);
-  // Widgets hide amounts by default; this toggle reflects "show amounts".
-  const [widgetShowAmounts, setWidgetShowAmounts] = useState(false);
+  // Widgets show amounts by default; hiding is the opt-in.
+  const [widgetShowAmounts, setWidgetShowAmounts] = useState(true);
+  const [widgetLastUpdated, setWidgetLastUpdated] = useState<string | null>(null);
+  const [refreshingWidgets, setRefreshingWidgets] = useState(false);
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
   const [currencySearch, setCurrencySearch] = useState("");
 
@@ -141,11 +149,12 @@ export default function SettingsPage() {
     }
   };
 
-  // Load the widget amount-visibility preference (hidden by default).
+  // Load the widget amount-visibility preference and last snapshot time.
   useEffect(() => {
     (async () => {
       const hidden = await getHideAmounts();
       setWidgetShowAmounts(!hidden);
+      setWidgetLastUpdated(await getWidgetLastUpdated());
     })();
   }, []);
 
@@ -153,6 +162,18 @@ export default function SettingsPage() {
     setWidgetShowAmounts(value);
     // Stored as "hide", so showing amounts means hide = false.
     await setHideAmounts(!value);
+    setWidgetLastUpdated(await getWidgetLastUpdated());
+  };
+
+  const handleRefreshWidgets = async () => {
+    if (refreshingWidgets) return;
+    setRefreshingWidgets(true);
+    try {
+      await updateWidgets({}, { force: true });
+      setWidgetLastUpdated(await getWidgetLastUpdated());
+    } finally {
+      setRefreshingWidgets(false);
+    }
   };
 
   const themeOptions = [
@@ -1004,6 +1025,100 @@ export default function SettingsPage() {
             </TouchableOpacity>
           </View>
 
+          {/* Widgets */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              Widgets
+            </Text>
+
+            <View
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+            >
+              <Ionicons
+                name="eye-outline"
+                size={22}
+                color={colors.primary.main}
+                style={{ marginRight: 14 }}
+              />
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text
+                  style={[styles.settingText, { color: colors.text.primary }]}
+                >
+                  Show amounts in widgets
+                </Text>
+                <Text
+                  style={{
+                    color: colors.text.tertiary,
+                    fontSize: 12,
+                    marginTop: 2,
+                  }}
+                >
+                  Turn off to mask balances as •••• on your home screen.
+                </Text>
+              </View>
+              <Switch
+                value={widgetShowAmounts}
+                onValueChange={handleWidgetAmountsToggle}
+                trackColor={{ false: colors.border.light, true: colors.primary.main }}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                  marginTop: 12,
+                },
+                shadows.sm,
+              ]}
+              onPress={handleRefreshWidgets}
+              disabled={refreshingWidgets}
+            >
+              <Ionicons
+                name="refresh-outline"
+                size={22}
+                color={colors.primary.main}
+                style={{ marginRight: 14 }}
+              />
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text
+                  style={[styles.settingText, { color: colors.text.primary }]}
+                >
+                  Refresh widgets now
+                </Text>
+                <Text
+                  style={{
+                    color: colors.text.tertiary,
+                    fontSize: 12,
+                    marginTop: 2,
+                  }}
+                >
+                  {widgetLastUpdated && timeAgo(widgetLastUpdated)
+                    ? `Last updated ${timeAgo(widgetLastUpdated)}`
+                    : "Widgets update automatically as you use the app."}
+                </Text>
+              </View>
+              {refreshingWidgets ? (
+                <ActivityIndicator size="small" color={colors.primary.main} />
+              ) : (
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.text.tertiary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+
           {/* Data & Privacy */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
@@ -1045,47 +1160,6 @@ export default function SettingsPage() {
               <Switch
                 value={analyticsConsent}
                 onValueChange={handleAnalyticsToggle}
-                trackColor={{ false: colors.border.light, true: colors.primary.main }}
-              />
-            </View>
-
-            {/* Widget privacy — amounts hidden by default on home/lock screens */}
-            <View
-              style={[
-                styles.settingItem,
-                {
-                  backgroundColor: colors.background.primary,
-                  borderColor: colors.border.light,
-                  marginTop: 12,
-                },
-                shadows.sm,
-              ]}
-            >
-              <Ionicons
-                name="eye-outline"
-                size={22}
-                color={colors.primary.main}
-                style={{ marginRight: 14 }}
-              />
-              <View style={{ flex: 1, marginRight: 12 }}>
-                <Text
-                  style={[styles.settingText, { color: colors.text.primary }]}
-                >
-                  Show amounts in widgets
-                </Text>
-                <Text
-                  style={{
-                    color: colors.text.tertiary,
-                    fontSize: 12,
-                    marginTop: 2,
-                  }}
-                >
-                  Off by default — home-screen widgets hide balances as ••••. Turn on to display real amounts.
-                </Text>
-              </View>
-              <Switch
-                value={widgetShowAmounts}
-                onValueChange={handleWidgetAmountsToggle}
                 trackColor={{ false: colors.border.light, true: colors.primary.main }}
               />
             </View>

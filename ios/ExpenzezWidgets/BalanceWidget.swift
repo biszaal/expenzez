@@ -2,7 +2,8 @@
 //  BalanceWidget.swift
 //  ExpenzezWidgets
 //
-//  Total balance with a trend indicator. Tapping opens the app home.
+//  Total balance with a trend chip, this month's spend and top category.
+//  Tapping opens the app home.
 //
 import WidgetKit
 import SwiftUI
@@ -41,8 +42,18 @@ struct BalanceWidgetView: View {
     }
   }
 
+  private var spendLine: String {
+    let spent = WidgetFormat.amount(
+      s.balance.monthSpend ?? 0, symbol: s.currency.symbol, hidden: s.hideAmounts)
+    var line = "Spent \(spent) this month"
+    if family != .systemSmall, let top = s.budget.topCategory {
+      line += " · Most: \(top.name)"
+    }
+    return line
+  }
+
   private var content: some View {
-    VStack(alignment: .leading, spacing: family == .systemSmall ? 6 : 10) {
+    VStack(alignment: .leading, spacing: family == .systemSmall ? 5 : 8) {
       HStack(spacing: 6) {
         Image(systemName: "wallet.pass.fill")
           .font(.system(size: 12, weight: .semibold))
@@ -51,6 +62,16 @@ struct BalanceWidgetView: View {
           .font(.system(size: 12, weight: .semibold))
           .foregroundColor(.white.opacity(0.7))
         Spacer()
+        HStack(spacing: 3) {
+          Image(systemName: trendIcon)
+            .font(.system(size: 9, weight: .bold))
+          Text(WidgetFormat.trend(s.balance.trendPct, hidden: false))
+            .font(.system(size: 11, weight: .bold))
+        }
+        .foregroundColor(trendColor)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(Capsule().fill(trendColor.opacity(0.15)))
       }
 
       Text(WidgetFormat.amount(s.balance.amount, symbol: s.currency.symbol, hidden: s.hideAmounts))
@@ -59,14 +80,16 @@ struct BalanceWidgetView: View {
         .minimumScaleFactor(0.6)
         .lineLimit(1)
 
-      if !s.hideAmounts {
-        HStack(spacing: 4) {
-          Image(systemName: trendIcon)
-            .font(.system(size: 11, weight: .bold))
-          Text(WidgetFormat.trend(s.balance.trendPct, hidden: s.hideAmounts))
-            .font(.system(size: 12, weight: .semibold))
-        }
-        .foregroundColor(trendColor)
+      Text(spendLine)
+        .font(.system(size: 11, weight: .medium))
+        .foregroundColor(.white.opacity(0.65))
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+
+      if let updated = WidgetFormat.timeAgo(s.updatedAt) {
+        Text("Updated \(updated)")
+          .font(.system(size: 9, weight: .regular))
+          .foregroundColor(.white.opacity(0.4))
       }
 
       Spacer(minLength: 0)
@@ -84,7 +107,7 @@ struct BalanceWidget: Widget {
       BalanceWidgetView(entry: entry)
     }
     .configurationDisplayName("Balance")
-    .description("Your total balance at a glance.")
+    .description("Your balance, trend and this month's spend at a glance.")
     .supportedFamilies([.systemSmall, .systemMedium])
   }
 }

@@ -24,6 +24,7 @@ import { processTransactionExpense } from "../../utils/expenseDetection";
 
 import {
   WidgetSnapshot,
+  WidgetTopCategory,
   WIDGET_SNAPSHOT_VERSION,
   WIDGET_SNAPSHOT_KEY,
   WIDGET_HIDE_AMOUNTS_KEY,
@@ -39,14 +40,16 @@ export interface BuildSnapshotInput {
   transactions?: Transaction[];
 }
 
-/** Whether widget amounts should be masked. Defaults to hidden (privacy). */
+/**
+ * Whether widget amounts should be masked. Amounts are VISIBLE by default;
+ * hiding is opt-in via Settings → Widgets. Only an explicit "true" hides, so
+ * corrupt/legacy values can't accidentally flip a user who never opted in —
+ * but an unreadable store still masks, since we can't rule out an opt-in.
+ */
 export async function getHideAmounts(): Promise<boolean> {
   try {
     const v = await AsyncStorage.getItem(WIDGET_HIDE_AMOUNTS_KEY);
-    if (v === null) return true; // hidden by default
-    // Fail safe: only an explicit "false" un-hides; any other stored value
-    // (corruption, future format change) keeps amounts masked.
-    return v !== "false";
+    return v === "true";
   } catch {
     return true;
   }
@@ -69,17 +72,44 @@ async function isLoggedIn(): Promise<boolean> {
   }
 }
 
-/** Sum of this calendar month's spend, mirroring the spending screen's logic. */
-function sumCurrentMonthSpend(txns: Transaction[]): number {
+/** "eating_out" / "eating-out" / "eating out" -> "Eating Out". */
+function prettyCategory(raw: string): string {
+  return raw
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+/**
+ * This calendar month's spend total and top category, mirroring the spending
+ * screen's expense-detection logic.
+ */
+function summarizeCurrentMonth(txns: Transaction[]): {
+  spent: number;
+  topCategory: WidgetTopCategory | null;
+} {
   const currentMonth = dayjs().format("YYYY-MM");
+  const byCategory: Record<string, number> = {};
   let total = 0;
   txns.forEach((txn, index) => {
     if (!txn?.date) return;
     if (dayjs(txn.date).format("YYYY-MM") !== currentMonth) return;
     const { isExpense } = processTransactionExpense(txn, index, false);
-    if (isExpense) total += Math.abs(Number(txn.amount) || 0);
+    if (!isExpense) return;
+    const amount = Math.abs(Number(txn.amount) || 0);
+    total += amount;
+    const cat = (txn.category || "other").trim().toLowerCase();
+    byCategory[cat] = (byCategory[cat] || 0) + amount;
   });
-  return total;
+  let top: { name: string; spent: number } | null = null;
+  for (const [name, spent] of Object.entries(byCategory)) {
+    if (!top || spent > top.spent) top = { name, spent };
+  }
+  return {
+    spent: total,
+    topCategory: top ? { name: prettyCategory(top.name), spent: top.spent } : null,
+  };
 }
 
 async function readPreviousSnapshot(): Promise<WidgetSnapshot | null> {
@@ -93,11 +123,21 @@ async function readPreviousSnapshot(): Promise<WidgetSnapshot | null> {
 
 function emptyMoneySections(): Pick<WidgetSnapshot, "balance" | "budget" | "streak"> {
   return {
-    balance: { amount: 0, prevAmount: 0, trendPct: 0, trendDir: "flat" },
-    budget: { spent: 0, limit: 0, remaining: 0, progressPct: 0, overBudget: false },
-    streak: { current: 0, level: 1 },
+    balance: { amount: 0, prevAmount: 0, trendPct: 0, trendDir: "flat", monthSpend: 0 },
+    budget: {
+      spent: 0,
+      limit: 0,
+      remaining: 0,
+      progressPct: 0,
+      overBudget: false,
+      topCategory: null,
+    },
+    streak: { current: 0, level: 1, best: 0, xpIntoLevel: 0, xpPerLevel: XP_PER_LEVEL },
   };
 }
+
+// Mirrors XPService's flat leveling (XP_PER_LEVEL is private to that class).
+const XP_PER_LEVEL = 100;
 
 /** Assemble the snapshot. Resilient: any failing source degrades to zeros. */
 export async function buildSnapshot(
@@ -107,6 +147,7 @@ export async function buildSnapshot(
   const currency = { code, symbol: symbolForCurrency(code) };
   const hideAmounts = await getHideAmounts();
   const updatedAt = new Date().toISOString();
+  const monthLabel = dayjs().format("MMMM");
 
   const loggedIn =
     input.loggedIn !== undefined ? input.loggedIn : await isLoggedIn();
@@ -118,6 +159,7 @@ export async function buildSnapshot(
       loggedIn: false,
       currency,
       hideAmounts,
+      monthLabel,
       ...emptyMoneySections(),
     };
   }
@@ -145,7 +187,7 @@ export async function buildSnapshot(
       txns = [];
     }
   }
-  const spent = sumCurrentMonthSpend(txns);
+  const { spent, topCategory } = summarizeCurrentMonth(txns);
 
   // Budget limit
   let limit = 0;
@@ -161,16 +203,24 @@ export async function buildSnapshot(
 
   // Streak + level
   let streakCurrent = 0;
+  let streakBest = 0;
   let level = 1;
+  let xpIntoLevel = 0;
   try {
-    streakCurrent = (await StreakService.getStreak()).currentStreak;
+    const streak = await StreakService.getStreak();
+    streakCurrent = streak.currentStreak;
+    streakBest = streak.longestStreak;
   } catch {
     streakCurrent = 0;
+    streakBest = 0;
   }
   try {
-    level = (await XPService.getUserXP()).level;
+    const xp = await XPService.getUserXP();
+    level = xp.level;
+    xpIntoLevel = Math.max(0, xp.totalXP % XP_PER_LEVEL);
   } catch {
     level = 1;
+    xpIntoLevel = 0;
   }
 
   // Balance trend vs the previously written snapshot
@@ -192,10 +242,23 @@ export async function buildSnapshot(
     loggedIn: true,
     currency,
     hideAmounts,
-    balance: { amount: balanceAmount, prevAmount, trendPct, trendDir },
-    budget: { spent, limit, remaining, progressPct, overBudget },
-    streak: { current: streakCurrent, level },
+    monthLabel,
+    balance: { amount: balanceAmount, prevAmount, trendPct, trendDir, monthSpend: spent },
+    budget: { spent, limit, remaining, progressPct, overBudget, topCategory },
+    streak: {
+      current: streakCurrent,
+      level,
+      best: Math.max(streakBest, streakCurrent),
+      xpIntoLevel,
+      xpPerLevel: XP_PER_LEVEL,
+    },
   };
+}
+
+/** ISO timestamp of the last written snapshot (for Settings → Widgets). */
+export async function getWidgetLastUpdated(): Promise<string | null> {
+  const prev = await readPreviousSnapshot();
+  return prev?.updatedAt || null;
 }
 
 // Content signature (excludes the volatile `updatedAt`) used to skip
