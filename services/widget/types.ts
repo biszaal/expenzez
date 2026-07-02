@@ -81,6 +81,12 @@ export interface WidgetSnapshot {
   hideAmounts: boolean;
   /** Current month's display name, e.g. "July". */
   monthLabel?: string;
+  /**
+   * App theme setting (ThemeContext's @expenzez_theme). Widgets render a
+   * light or dark palette from this; "system" resolves against the device
+   * appearance at render time.
+   */
+  theme?: "light" | "dark" | "system";
   balance: WidgetBalance;
   budget: WidgetBudget;
   streak: WidgetStreak;

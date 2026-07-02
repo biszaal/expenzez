@@ -15,6 +15,40 @@ extension Color {
   static let exCardDark = Color(red: 0x12 / 255, green: 0x1C / 255, blue: 0x38 / 255)
 }
 
+/// Light/dark palette resolved from the snapshot's app-theme setting;
+/// "system" (or missing) follows the widget's environment color scheme.
+struct WidgetPalette {
+  let bg: Color
+  let text: Color
+  let textMuted: Color
+  let textFaint: Color
+  let track: Color
+
+  static let dark = WidgetPalette(
+    bg: .exNavy,
+    text: .white,
+    textMuted: Color(red: 0x9A / 255, green: 0xA3 / 255, blue: 0xB8 / 255),
+    textFaint: Color(red: 0x5E / 255, green: 0x6A / 255, blue: 0x85 / 255),
+    track: Color.white.opacity(0.14)
+  )
+
+  static let light = WidgetPalette(
+    bg: .white,
+    text: .exNavy,
+    textMuted: Color(red: 0x5A / 255, green: 0x64 / 255, blue: 0x78 / 255),
+    textFaint: Color(red: 0x8B / 255, green: 0x94 / 255, blue: 0xA8 / 255),
+    track: Color(red: 0xE4 / 255, green: 0xE9 / 255, blue: 0xF2 / 255)
+  )
+
+  static func resolve(_ theme: String?, system: ColorScheme) -> WidgetPalette {
+    switch theme {
+    case "light": return .light
+    case "dark": return .dark
+    default: return system == .light ? .light : .dark
+    }
+  }
+}
+
 enum WidgetFormat {
   /// Mask token shown when amounts are hidden (privacy default).
   static let masked = "••••"

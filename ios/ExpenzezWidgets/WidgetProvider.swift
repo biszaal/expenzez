@@ -33,6 +33,8 @@ struct Provider: TimelineProvider {
 
 /// Shown on every widget when the user is signed out.
 struct SignedOutView: View {
+  let palette: WidgetPalette
+
   var body: some View {
     VStack(spacing: 6) {
       Image(systemName: "lock.fill")
@@ -40,7 +42,7 @@ struct SignedOutView: View {
         .foregroundColor(.exCobalt)
       Text("Sign in to Expenzez")
         .font(.system(size: 12, weight: .medium))
-        .foregroundColor(.white.opacity(0.85))
+        .foregroundColor(palette.text.opacity(0.85))
         .multilineTextAlignment(.center)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)

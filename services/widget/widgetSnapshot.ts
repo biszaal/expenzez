@@ -61,6 +61,16 @@ export async function setHideAmounts(hide: boolean): Promise<void> {
   await updateWidgets({}, { force: true });
 }
 
+/** The app's theme setting — same key ThemeContext persists to. */
+async function getThemeSetting(): Promise<"light" | "dark" | "system"> {
+  try {
+    const v = await AsyncStorage.getItem("@expenzez_theme");
+    return v === "light" || v === "dark" ? v : "system";
+  } catch {
+    return "system";
+  }
+}
+
 async function isLoggedIn(): Promise<boolean> {
   try {
     const token = await SecureStore.getItemAsync("accessToken", {
@@ -146,6 +156,7 @@ export async function buildSnapshot(
   const code = getActiveCurrency();
   const currency = { code, symbol: symbolForCurrency(code) };
   const hideAmounts = await getHideAmounts();
+  const theme = await getThemeSetting();
   const updatedAt = new Date().toISOString();
   const monthLabel = dayjs().format("MMMM");
 
@@ -159,6 +170,7 @@ export async function buildSnapshot(
       loggedIn: false,
       currency,
       hideAmounts,
+      theme,
       monthLabel,
       ...emptyMoneySections(),
     };
@@ -242,6 +254,7 @@ export async function buildSnapshot(
     loggedIn: true,
     currency,
     hideAmounts,
+    theme,
     monthLabel,
     balance: { amount: balanceAmount, prevAmount, trendPct, trendDir, monthSpend: spent },
     budget: { spent, limit, remaining, progressPct, overBudget, topCategory },

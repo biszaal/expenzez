@@ -5,9 +5,14 @@
  * Amount formatting is done manually (no Intl) so it works inside the headless
  * widget render task regardless of the Hermes Intl build.
  */
+import { Appearance } from "react-native";
 import type { FlexWidgetStyle } from "react-native-android-widget";
-import type { WidgetBudget } from "../services/widget";
+import type { WidgetBudget, WidgetSnapshot } from "../services/widget";
 
+/** Hex colour literal accepted by react-native-android-widget's ColorProp. */
+export type WidgetColor = `#${string}`;
+
+/** Accent colours shared by both palettes. */
 export const COLORS = {
   navy: "#0A1226",
   cobalt: "#2547F0",
@@ -18,6 +23,40 @@ export const COLORS = {
   muted: "#9AA3B8",
   track: "#1E2A47",
 } as const;
+
+export interface WidgetPalette {
+  bg: WidgetColor;
+  text: WidgetColor;
+  textMuted: WidgetColor;
+  textFaint: WidgetColor;
+  track: WidgetColor;
+}
+
+const DARK_PALETTE: WidgetPalette = {
+  bg: COLORS.navy,
+  text: COLORS.white,
+  textMuted: COLORS.muted,
+  textFaint: "#5E6A85",
+  track: COLORS.track,
+};
+
+const LIGHT_PALETTE: WidgetPalette = {
+  bg: "#FFFFFF",
+  text: COLORS.navy,
+  textMuted: "#5A6478",
+  textFaint: "#8B94A8",
+  track: "#E4E9F2",
+};
+
+/**
+ * Palette from the snapshot's theme setting; "system" (or a missing value)
+ * follows the device appearance at render time.
+ */
+export function paletteFor(theme: WidgetSnapshot["theme"]): WidgetPalette {
+  if (theme === "light") return LIGHT_PALETTE;
+  if (theme === "dark") return DARK_PALETTE;
+  return Appearance.getColorScheme() === "light" ? LIGHT_PALETTE : DARK_PALETTE;
+}
 
 /** Mask shown when amounts are hidden (privacy default). */
 export const MASKED = "••••";
@@ -55,9 +94,6 @@ export function timeAgo(iso: string | undefined): string | null {
   if (hrs < 24) return `${hrs}h ago`;
   return `${Math.round(hrs / 24)}d ago`;
 }
-
-/** Hex colour literal accepted by react-native-android-widget's ColorProp. */
-export type WidgetColor = `#${string}`;
 
 export interface BudgetPace {
   /** Days remaining in this calendar month, including today. */
@@ -97,14 +133,16 @@ export function flameTier(streak: number): { size: number; color: WidgetColor } 
   return { size: 18, color: COLORS.muted };
 }
 
-/** Root card style shared by every widget. */
-export const cardRoot: FlexWidgetStyle = {
-  height: "match_parent",
-  width: "match_parent",
-  flexDirection: "column",
-  justifyContent: "center",
-  alignItems: "flex-start",
-  backgroundColor: COLORS.navy,
-  padding: 16,
-  borderRadius: 24,
-};
+/** Root card style shared by every widget, themed by the active palette. */
+export function cardRoot(p: WidgetPalette): FlexWidgetStyle {
+  return {
+    height: "match_parent",
+    width: "match_parent",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "flex-start",
+    backgroundColor: p.bg,
+    padding: 16,
+    borderRadius: 24,
+  };
+}

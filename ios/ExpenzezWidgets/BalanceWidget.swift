@@ -3,26 +3,29 @@
 //  ExpenzezWidgets
 //
 //  Total balance with a trend chip, this month's spend and top category.
-//  Tapping opens the app home.
+//  The chip lives in the header on medium; on small it gets its own row so
+//  the header never truncates. Tapping opens the app home.
 //
 import WidgetKit
 import SwiftUI
 
 struct BalanceWidgetView: View {
   @Environment(\.widgetFamily) var family
+  @Environment(\.colorScheme) var systemScheme
   let entry: SnapshotEntry
 
   private var s: WidgetSnapshot { entry.snapshot }
+  private var p: WidgetPalette { .resolve(s.theme, system: systemScheme) }
 
   var body: some View {
     Group {
       if !s.loggedIn {
-        SignedOutView()
+        SignedOutView(palette: p)
       } else {
         content
       }
     }
-    .exWidgetBackground(.exNavy)
+    .exWidgetBackground(p.bg)
     .widgetURL(URL(string: "expenzez://"))
   }
 
@@ -30,7 +33,7 @@ struct BalanceWidgetView: View {
     switch s.balance.trendDir {
     case "up": return .exMint
     case "down": return .exCoral
-    default: return .white.opacity(0.6)
+    default: return p.textMuted
     }
   }
 
@@ -40,6 +43,20 @@ struct BalanceWidgetView: View {
     case "down": return "arrow.down.right"
     default: return "minus"
     }
+  }
+
+  private var trendChip: some View {
+    HStack(spacing: 3) {
+      Image(systemName: trendIcon)
+        .font(.system(size: 9, weight: .bold))
+      Text(WidgetFormat.trend(s.balance.trendPct, hidden: false))
+        .font(.system(size: 11, weight: .bold))
+        .lineLimit(1)
+    }
+    .foregroundColor(trendColor)
+    .padding(.horizontal, 7)
+    .padding(.vertical, 3)
+    .background(Capsule().fill(trendColor.opacity(0.15)))
   }
 
   private var spendLine: String {
@@ -60,36 +77,35 @@ struct BalanceWidgetView: View {
           .foregroundColor(.exCobalt)
         Text("Balance")
           .font(.system(size: 12, weight: .semibold))
-          .foregroundColor(.white.opacity(0.7))
+          .foregroundColor(p.textMuted)
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
         Spacer()
-        HStack(spacing: 3) {
-          Image(systemName: trendIcon)
-            .font(.system(size: 9, weight: .bold))
-          Text(WidgetFormat.trend(s.balance.trendPct, hidden: false))
-            .font(.system(size: 11, weight: .bold))
+        if family != .systemSmall {
+          trendChip
         }
-        .foregroundColor(trendColor)
-        .padding(.horizontal, 7)
-        .padding(.vertical, 3)
-        .background(Capsule().fill(trendColor.opacity(0.15)))
       }
 
       Text(WidgetFormat.amount(s.balance.amount, symbol: s.currency.symbol, hidden: s.hideAmounts))
         .font(.system(size: family == .systemSmall ? 26 : 34, weight: .bold, design: .rounded))
-        .foregroundColor(.white)
+        .foregroundColor(p.text)
         .minimumScaleFactor(0.6)
         .lineLimit(1)
 
+      if family == .systemSmall {
+        trendChip
+      }
+
       Text(spendLine)
         .font(.system(size: 11, weight: .medium))
-        .foregroundColor(.white.opacity(0.65))
+        .foregroundColor(p.textMuted)
         .lineLimit(1)
         .minimumScaleFactor(0.8)
 
       if let updated = WidgetFormat.timeAgo(s.updatedAt) {
         Text("Updated \(updated)")
           .font(.system(size: 9, weight: .regular))
-          .foregroundColor(.white.opacity(0.4))
+          .foregroundColor(p.textFaint)
       }
 
       Spacer(minLength: 0)

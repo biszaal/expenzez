@@ -53,6 +53,7 @@ struct WidgetSnapshot: Codable {
   let hideAmounts: Bool
   // v2
   let monthLabel: String?
+  let theme: String? // "light" | "dark" | "system"
   let balance: WidgetBalanceData
   let budget: WidgetBudgetData
   let streak: WidgetStreakData
@@ -80,6 +81,7 @@ struct WidgetSnapshot: Codable {
       currency: WidgetCurrency(code: "GBP", symbol: "£"),
       hideAmounts: false,
       monthLabel: nil,
+      theme: nil,
       balance: WidgetBalanceData(
         amount: 1234.56, prevAmount: 1180, trendPct: 4.6, trendDir: "up", monthSpend: 412),
       budget: WidgetBudgetData(

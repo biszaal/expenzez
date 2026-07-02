@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "../hooks/useColorScheme";
 import { lightColors, darkColors, createShadows } from "../constants/theme";
+import { updateWidgets } from "../services/widget";
 
 export type ColorScheme = "light" | "dark" | "system";
 
@@ -58,6 +59,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await AsyncStorage.setItem(THEME_STORAGE_KEY, scheme);
       setColorSchemeState(scheme);
+      // Home-screen widgets carry the theme in their snapshot — rebuild so
+      // they flip palette right away rather than on the next data refresh.
+      updateWidgets({}, { force: true });
     } catch (error) {
       console.error("Error saving theme preference:", error);
     }

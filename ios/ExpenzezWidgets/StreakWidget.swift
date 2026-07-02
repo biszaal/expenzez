@@ -11,9 +11,11 @@ import SwiftUI
 
 struct StreakWidgetView: View {
   @Environment(\.widgetFamily) var family
+  @Environment(\.colorScheme) var systemScheme
   let entry: SnapshotEntry
 
   private var s: WidgetSnapshot { entry.snapshot }
+  private var p: WidgetPalette { .resolve(s.theme, system: systemScheme) }
 
   private var xpInto: Double { s.streak.xpIntoLevel ?? 0 }
   private var xpPer: Double { s.streak.xpPerLevel ?? 100 }
@@ -24,12 +26,12 @@ struct StreakWidgetView: View {
   var body: some View {
     Group {
       if !s.loggedIn {
-        SignedOutView()
+        SignedOutView(palette: p)
       } else {
         content
       }
     }
-    .exWidgetBackground(.exNavy)
+    .exWidgetBackground(p.bg)
     .widgetURL(URL(string: "expenzez://progress"))
   }
 
@@ -41,16 +43,17 @@ struct StreakWidgetView: View {
           .foregroundColor(FlameTier.color(s.streak.current))
         Text("Streak")
           .font(.system(size: 12, weight: .semibold))
-          .foregroundColor(.white.opacity(0.7))
+          .foregroundColor(p.textMuted)
         Spacer()
         if let best = s.streak.best, best > 0 {
           HStack(spacing: 3) {
             Image(systemName: "trophy.fill")
               .font(.system(size: 9, weight: .semibold))
-            Text("Best \(best)")
+            Text(family == .systemSmall ? "\(best)" : "Best \(best)")
               .font(.system(size: 11, weight: .semibold))
+              .lineLimit(1)
           }
-          .foregroundColor(.white.opacity(0.5))
+          .foregroundColor(p.textMuted)
         }
       }
 
@@ -60,10 +63,10 @@ struct StreakWidgetView: View {
           .foregroundColor(FlameTier.color(s.streak.current))
         Text("\(s.streak.current)")
           .font(.system(size: family == .systemSmall ? 32 : 42, weight: .bold, design: .rounded))
-          .foregroundColor(.white)
+          .foregroundColor(p.text)
         Text(s.streak.current == 1 ? "day" : "days")
           .font(.system(size: 13, weight: .medium))
-          .foregroundColor(.white.opacity(0.7))
+          .foregroundColor(p.textMuted)
       }
 
       if s.streak.current == 0 {
@@ -86,12 +89,12 @@ struct StreakWidgetView: View {
         Spacer()
         Text("\(Int(xpInto.rounded()))/\(Int(xpPer.rounded())) XP")
           .font(.system(size: 10, weight: .medium))
-          .foregroundColor(.white.opacity(0.5))
+          .foregroundColor(p.textMuted)
       }
 
       GeometryReader { geo in
         ZStack(alignment: .leading) {
-          Capsule().fill(Color.white.opacity(0.12))
+          Capsule().fill(p.track)
           Capsule().fill(Color.exMint)
             .frame(width: max(3, geo.size.width * xpProgress))
         }
