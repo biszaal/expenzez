@@ -105,18 +105,37 @@ export const useSpendingData = (isPro: boolean) => {
         console.warn("Failed to load balance summary:", err);
       }
 
-      // Fetch transactions
+      // Fetch transactions. The backend ignores startDate/endDate (the table
+      // sort key is transactionId) and pages at `limit` rows, so a user with
+      // >1000 transactions in the window would silently lose older months.
+      // Follow nextKey until the data reaches 12 months back (bounded pages).
+      const windowStart = dayjs().subtract(12, "months").startOf("month");
       const response = await transactionAPI.getTransactions({
         limit: 1000,
-        startDate: dayjs().subtract(12, "months").startOf("month").format("YYYY-MM-DD"),
+        startDate: windowStart.format("YYYY-MM-DD"),
         endDate: dayjs().endOf("month").format("YYYY-MM-DD"),
         // Cached for instant paint on navigation; refresh bypasses it.
         useCache: !forceRefresh,
       });
 
-      if (response.transactions) {
-        setTransactions(response.transactions);
+      const allTransactions = [...(response.transactions || [])];
+      let nextKey = (response as any).nextKey;
+      let extraPages = 0;
+      const MAX_EXTRA_PAGES = 4; // safety bound: up to 5000 transactions
+      while (nextKey && extraPages < MAX_EXTRA_PAGES) {
+        const oldest = allTransactions[allTransactions.length - 1];
+        // Results are newest-first; once past the 12-month window, stop.
+        if (oldest?.date && dayjs(oldest.date).isBefore(windowStart)) break;
+        const page = await transactionAPI.getTransactions({
+          limit: 1000,
+          startKey: nextKey,
+        });
+        allTransactions.push(...(page.transactions || []));
+        nextKey = (page as any).nextKey;
+        extraPages++;
       }
+
+      setTransactions(allTransactions);
 
       // Award XP if not already awarded
       if (!xpAwardedRef.current) {
