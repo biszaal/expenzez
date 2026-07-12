@@ -2,7 +2,7 @@
   "expo": {
     "name": "Expenzez",
     "slug": "expenzez",
-    "version": "1.8.0",
+    "version": "1.8.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "expenzez",
@@ -20,7 +20,7 @@
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/images/icon-ios.png",
-      "buildNumber": "68",
+      "buildNumber": "69",
       "config": {
         "usesNonExemptEncryption": false
       },

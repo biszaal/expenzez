@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   KeyboardAvoidingView,
-  Platform,
   View,
   ScrollView,
   TouchableOpacity,
@@ -428,13 +427,23 @@ export default function Register() {
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        // iOS keyboard avoidance is handled by the ScrollView's
+        // `automaticallyAdjustKeyboardInsets` below (it insets AND auto-scrolls
+        // the focused field into view). Adding "padding" here too would
+        // double-count the keyboard height, so this wrapper stays a passthrough.
+        // Android resizes the window via `adjustResize` in AndroidManifest.xml.
+        behavior={undefined}
       >
         <ScrollView
           ref={scrollViewRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          // Insets the scroll area by the keyboard height and scrolls the
+          // focused input into view (fixes lower fields being hidden behind
+          // the keyboard on Steps 3 & 4). No-op on Android.
+          automaticallyAdjustKeyboardInsets={true}
+          keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.formContent}>

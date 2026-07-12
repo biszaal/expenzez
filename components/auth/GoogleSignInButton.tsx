@@ -89,16 +89,32 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       // Check if device supports Google Play Services
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
-      // Sign in with Google
-      const userInfo = await GoogleSignin.signIn();
-      console.log('🔍 [GoogleButton] Sign-in successful:', userInfo.user.email);
+      // Sign in with Google.
+      // v13 returns { type: 'success' | 'cancelled', data }, where the user
+      // details and idToken live under `data` — NOT directly on the response.
+      // (Accessing `userInfo.user` here threw a TypeError after a successful
+      // native sign-in, which is why Android Google Sign-In always failed.)
+      const response = await GoogleSignin.signIn();
 
-      // Get ID token for backend verification
-      const tokens = await GoogleSignin.getTokens();
+      if (response.type === 'cancelled' || !response.data) {
+        console.log('🔍 [GoogleButton] User cancelled sign-in');
+        return;
+      }
+
+      const { user, idToken } = response.data;
+      console.log('🔍 [GoogleButton] Sign-in successful:', user.email);
+
+      // The idToken is returned directly by signIn() in v13; fall back to
+      // getTokens() only if it is somehow missing.
+      let token = idToken;
+      if (!token) {
+        const tokens = await GoogleSignin.getTokens();
+        token = tokens.idToken;
+      }
       console.log('🔍 [GoogleButton] Got ID token');
 
       // Call parent onPress handler with token and user info
-      await onPress(tokens.idToken, userInfo.user);
+      await onPress(token, user);
 
     } catch (error: any) {
       console.error('🔍 [GoogleButton] Sign-in error:', error);
