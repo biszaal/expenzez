@@ -5,6 +5,20 @@ import { Typography } from '../ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../app/auth/AuthContext';
 import { spacing, borderRadius } from '../../constants/theme';
+import { GOOGLE_WEB_CLIENT_ID } from '../../config/googleAuth';
+
+// Android surfaces Google Play Services failures as the stringified GMS status
+// int (see ErrorDto.kt in @react-native-google-signin). `statusCodes` only
+// exports four of them, so the ones we care about are pinned here — otherwise
+// every other failure collapses into an untraceable "please try again".
+const GMS_STATUS = {
+  NETWORK_ERROR: '7',
+  INTERNAL_ERROR: '8',
+  DEVELOPER_ERROR: '10', // package name / SHA-1 not registered for this OAuth client
+  SIGN_IN_FAILED: '12500',
+  SIGN_IN_CANCELLED: '12501',
+  SIGN_IN_CURRENTLY_IN_PROGRESS: '12502',
+} as const;
 
 // Conditional import - only load on Android in production builds
 let GoogleSignin: any;
@@ -50,9 +64,11 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
 
     const configureGoogleSignIn = async () => {
       try {
-        // Web client ID from Google Cloud Console (for backend token verification)
+        // Web client ID from Google Cloud Console (for backend token verification).
+        // Sourced from config/googleAuth.ts so it cannot drift from app.json and
+        // the backend's expected token audience.
         GoogleSignin.configure({
-          webClientId: '904573665938-8nll766e8aghsactrfrd5ucu6n4f1haa.apps.googleusercontent.com',
+          webClientId: GOOGLE_WEB_CLIENT_ID,
           offlineAccess: true,
         });
 
@@ -117,22 +133,63 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       await onPress(token, user);
 
     } catch (error: any) {
-      console.error('🔍 [GoogleButton] Sign-in error:', error);
+      // `code` is a string on Android; normalise so comparisons are reliable.
+      const code = error?.code != null ? String(error.code) : undefined;
 
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+      console.error('🔍 [GoogleButton] Sign-in error:', {
+        code,
+        message: error?.message,
+        webClientId: GOOGLE_WEB_CLIENT_ID,
+      });
+
+      // statusCodes is read defensively: if the native module ever fails to
+      // provide constants, a TypeError in here would swallow the real error.
+      if (
+        code === String(statusCodes?.SIGN_IN_CANCELLED) ||
+        code === GMS_STATUS.SIGN_IN_CANCELLED
+      ) {
         console.log('🔍 [GoogleButton] User cancelled sign-in');
-      } else if (error.code === statusCodes.IN_PROGRESS) {
+      } else if (
+        code === String(statusCodes?.IN_PROGRESS) ||
+        code === GMS_STATUS.SIGN_IN_CURRENTLY_IN_PROGRESS
+      ) {
         console.log('🔍 [GoogleButton] Sign-in already in progress');
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+      } else if (code === String(statusCodes?.PLAY_SERVICES_NOT_AVAILABLE)) {
         Alert.alert(
           'Google Play Services Required',
           'Google Play Services is not available or outdated. Please update it from the Play Store.',
           [{ text: 'OK' }]
         );
+      } else if (code === GMS_STATUS.DEVELOPER_ERROR) {
+        // Google returns this when Play Services cannot match this build's
+        // package name + signing certificate SHA-1 to an Android OAuth client
+        // in the same project as webClientId. It is always a console
+        // misconfiguration, never something the user can retry their way out of.
+        console.error(
+          '🚨 [GoogleButton] DEVELOPER_ERROR — the SHA-1 of this build is not registered ' +
+            'against an Android OAuth client in Google Cloud project ' +
+            `${GOOGLE_WEB_CLIENT_ID.split('-')[0]}, for package com.biszaaltech.expenzez. ` +
+            'Play App Signing re-signs uploads, so the Play build needs the App Signing ' +
+            'SHA-1 registered as well as the EAS upload-key SHA-1.'
+        );
+        Alert.alert(
+          'Google Sign-In Unavailable',
+          "Google Sign-In isn't set up correctly for this build. Please sign in with your " +
+            'email and password — we\'re fixing this.',
+          [{ text: 'OK' }]
+        );
+      } else if (code === GMS_STATUS.NETWORK_ERROR) {
+        Alert.alert(
+          'No Connection',
+          'Could not reach Google. Check your internet connection and try again.',
+          [{ text: 'OK' }]
+        );
       } else {
+        // Surface the code — without it a failure screenshot is undiagnosable.
         Alert.alert(
           'Sign In Failed',
-          'Unable to sign in with Google. Please try again or use email/password.',
+          'Unable to sign in with Google. Please try again or use email/password.' +
+            (code ? `\n\n(Error ${code})` : ''),
           [{ text: 'OK' }]
         );
       }
