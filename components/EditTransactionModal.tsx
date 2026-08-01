@@ -17,7 +17,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { spacing, borderRadius } from "../constants/theme";
 import dayjs from "dayjs";
-import { detectNonSpend } from "../utils/nonSpendDetection";
+import { isSpend, exclusionReason } from "../utils/spend";
 
 interface Transaction {
   id: string;
@@ -29,6 +29,10 @@ interface Transaction {
   type: "debit" | "credit";
   originalAmount: number;
   excludeFromSpend?: boolean;
+  // Server spend classification — read via utils/spend.ts.
+  spendType?: string;
+  spendTypeSource?: string;
+  spendTypeConfidence?: number;
 }
 
 interface EditTransactionModalProps {
@@ -91,14 +95,14 @@ export default function EditTransactionModal({
       setDate(dayjs(transaction.date).format("YYYY-MM-DD"));
       setType(transaction.type || "debit");
 
-      // Show the effective state: explicit override if set, else auto-detection.
-      const auto = detectNonSpend({
-        description: transaction.description,
-        merchant: transaction.merchant,
-        category: transaction.category,
-      });
-      setExcludeFromSpend(transaction.excludeFromSpend ?? auto.excluded);
-      setAutoExcludeReason(auto.excluded ? auto.reason : null);
+      // Show the effective state and, when it was decided automatically, the
+      // reason — so the toggle explains itself rather than just being on.
+      setExcludeFromSpend(!isSpend(transaction as any));
+      setAutoExcludeReason(
+        transaction.spendTypeSource === "user"
+          ? null
+          : exclusionReason(transaction as any)
+      );
     }
   }, [transaction]);
 
@@ -379,9 +383,7 @@ export default function EditTransactionModal({
                   Exclude from spending
                 </Text>
                 <Text style={{ fontSize: 12, color: colors.text.tertiary, lineHeight: 17 }}>
-                  {autoExcludeReason
-                    ? "Auto-detected as an internal transfer. "
-                    : ""}
+                  {autoExcludeReason ? `${autoExcludeReason} ` : ""}
                   Excluded transactions don't count in your spending charts or totals.
                 </Text>
               </View>

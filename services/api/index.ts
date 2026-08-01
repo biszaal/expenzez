@@ -11,6 +11,7 @@ export { notificationAPI } from './notificationAPI';
 export { securityAPI } from './securityAPI';
 export { transactionAPI } from './transactionAPI';
 export { balanceAPI } from './balanceAPI';
+export { accountsAPI } from './accountsAPI';
 export { achievementAPI } from './achievementAPI';
 export { savingsInsightsAPI } from './savingsInsightsAPI';
 export { goalsAPI } from './goalsAPI';

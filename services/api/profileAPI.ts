@@ -234,10 +234,18 @@ export const profileAPI = {
   createGoal: async (goalData: {
     title: string;
     description?: string;
+    type?: string;
     targetAmount: number;
     currentAmount: number;
     targetDate: string;
+    priority?: string;
     category: string;
+    autoSaveSettings?: {
+      enabled: boolean;
+      amount: number;
+      frequency: string;
+      roundUpEnabled: boolean;
+    };
   }) => {
     const response = await api.post("/goals", goalData);
 

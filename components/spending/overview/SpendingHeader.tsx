@@ -16,6 +16,12 @@ interface SpendingHeaderProps {
   onPreviousMonth: () => void;
   onNextMonth: () => void;
   onInfoPress: () => void;
+  // Money that left the account this month but isn't spending — transfers
+  // between the user's own accounts and credit-card bill payments. Shown so
+  // the total explains itself instead of just being mysteriously lower.
+  excludedTotal?: number;
+  excludedCount?: number;
+  onExcludedPress?: () => void;
 }
 
 // v1.5 redesign — clean two-row header.
@@ -35,6 +41,9 @@ export const SpendingHeader: React.FC<SpendingHeaderProps> = ({
   onPreviousMonth,
   onNextMonth,
   onInfoPress,
+  excludedTotal = 0,
+  excludedCount = 0,
+  onExcludedPress,
 }) => {
   const { colors } = useTheme();
 
@@ -173,6 +182,30 @@ export const SpendingHeader: React.FC<SpendingHeaderProps> = ({
           {diffPositive ? "+" : "−"}
           {diffMagnitude} vs last month
         </Text>
+        {excludedCount > 0 && (
+          <Pressable
+            onPress={onExcludedPress}
+            disabled={!onExcludedPress}
+            accessibilityRole={onExcludedPress ? "button" : undefined}
+            accessibilityLabel={`${formatAmount(excludedTotal, currency)} excluded from spending across ${excludedCount} transactions`}
+            style={styles.excludedRow}
+          >
+            <Ionicons
+              name="swap-horizontal-outline"
+              size={13}
+              color={colors.text.tertiary}
+            />
+            <Text
+              style={[
+                styles.excludedText,
+                { color: colors.text.tertiary, fontFamily: fontFamily.medium },
+              ]}
+            >
+              {formatAmount(excludedTotal, currency)} moved, not spent
+              {onExcludedPress ? " ›" : ""}
+            </Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );

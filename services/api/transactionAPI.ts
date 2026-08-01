@@ -7,6 +7,7 @@ import {
   CACHE_TTL,
 } from "../config/apiCache";
 import { balanceAPI } from "./balanceAPI";
+import type { SpendType } from "../../utils/spend";
 
 export interface UploadedStatement {
   statementId: string;
@@ -31,8 +32,16 @@ export interface Transaction {
   type: "debit" | "credit";
   currency?: string;
   merchant?: string;
-  // When true/false the user has explicitly chosen whether this counts in spend
-  // analysis; when undefined it's decided by auto-detection (nonSpendDetection).
+  accountId?: string;
+  bankName?: string;
+  // Server-assigned spend classification — the single source of truth for
+  // "does this count as spending?". Read it via utils/spend.ts; never re-derive
+  // spend from the amount sign or the category.
+  spendType?: SpendType;
+  spendTypeSource?: string;
+  spendTypeConfidence?: number;
+  transferGroupId?: string | null;
+  // When true/false the user has explicitly overridden the classification.
   excludeFromSpend?: boolean;
 }
 
@@ -59,6 +68,12 @@ export interface TransactionsResponse {
     totalAmount: number;
     creditTotal: number;
     debitTotal: number;
+    // Authoritative spend figure plus the money that was only moved, so the
+    // app can explain why the total is lower than the raw debits.
+    spendTotal?: number;
+    transferTotal?: number;
+    cardPaymentTotal?: number;
+    refundTotal?: number;
     count: number;
   };
 }
@@ -291,6 +306,26 @@ export const transactionAPI = {
       excludeFromSpend,
       merchant,
     });
+    await transactionAPI.invalidateTransactionsCache();
+    return response.data;
+  },
+
+  // Recompute spend classification across the whole ledger, including matching
+  // the two legs of internal transfers to each other. Runs automatically after
+  // imports; expose it manually so a user can force a recalculation.
+  reclassify: async (): Promise<{
+    scanned: number;
+    updated: number;
+    unchanged: number;
+    totals: {
+      spend: number;
+      income: number;
+      transfer: number;
+      cardPayment: number;
+      refund: number;
+    };
+  }> => {
+    const response = await api.post("/transactions/reclassify", {}, { timeout: 60000 });
     await transactionAPI.invalidateTransactionsCache();
     return response.data;
   },

@@ -61,5 +61,56 @@ target 'Expenzez' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
+
+    # Xcode 27 refuses to build anything targeting iOS < 15.0. Several pods (and
+    # the resource bundle targets CocoaPods generates for them) still declare
+    # 9.0-13.4 in their podspecs, so raise every target to the app's minimum.
+    min_deployment_target = podfile_properties['ios.deploymentTarget'] || '15.1'
+    raise_deployment_target = lambda do |target|
+      target.build_configurations.each do |build_configuration|
+        current = build_configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+        if current.nil? || current.to_f < min_deployment_target.to_f
+          build_configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = min_deployment_target
+        end
+      end
+    end
+
+    installer.pods_project.targets.each(&raise_deployment_target)
+    if installer.respond_to?(:generated_projects)
+      installer.generated_projects.each { |project| project.targets.each(&raise_deployment_target) }
+    end
+
+    # RevenueCat 5.45.0 declares PaywallColor's designated initializer in an
+    # extension, so Swift still synthesizes a memberwise init for the struct.
+    # Swift 6.2 (Xcode 27) gives optional properties a default value in that
+    # memberwise init, which makes it collide with the explicit
+    # `init(stringRepresentation:)`. Upstream fixed this in RevenueCat 5.78.0 by
+    # moving the designated initializer into the struct body, but only
+    # react-native-purchases 10.x pulls a RevenueCat that new. Apply the same
+    # move here until that upgrade happens.
+    paywall_color_path = File.join(__dir__, 'Pods', 'RevenueCat', 'Sources', 'Paywalls', 'PaywallColor.swift')
+    if File.exist?(paywall_color_path)
+      source = File.read(paywall_color_path)
+      anchor = "    fileprivate var _underlyingColor: (any Sendable)?\n"
+      designated_init = <<~SWIFT.gsub(/^/, '    ').gsub(/^ {4}$/, '')
+        /// "Designated" initializer
+        private init(stringRepresentation: String, underlyingColor: (any Sendable)?) {
+            self.stringRepresentation = stringRepresentation
+            self._underlyingColor = underlyingColor
+        }
+      SWIFT
+
+      already_patched = source.include?(anchor + "\n" + designated_init)
+      if !already_patched && source.include?(anchor) && source.include?(designated_init)
+        source = source.sub(designated_init, '')
+        source = source.sub(anchor, anchor + "\n" + designated_init)
+        # CocoaPods installs pod sources read-only, so restore the mode afterwards.
+        original_mode = File.stat(paywall_color_path).mode & 0o7777
+        File.chmod(0o644, paywall_color_path)
+        File.write(paywall_color_path, source)
+        File.chmod(original_mode, paywall_color_path)
+        Pod::UI.puts '[Expenzez] Patched RevenueCat PaywallColor.swift for Swift 6.2 / Xcode 27'
+      end
+    end
   end
 end

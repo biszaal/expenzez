@@ -124,6 +124,18 @@ export const notificationAPI = {
     }
   },
 
+  // Mark every notification as read in one call. Doing this per-notification
+  // meant a partial failure left the list half-read and it came back unread.
+  markAllAsRead: async (): Promise<{ success: boolean; updated: number }> => {
+    try {
+      const response = await api.put('/notifications/read-all');
+      return response.data;
+    } catch (error: any) {
+      console.error('Error marking all notifications as read:', error);
+      throw error;
+    }
+  },
+
   // Clear all notifications
   clearAll: async () => {
     try {

@@ -15,6 +15,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { useTheme } from "../contexts/ThemeContext";
 import { useCurrency } from "../contexts/CurrencyContext";
+import { BankPickerModal } from "../components/import/BankPickerModal";
 import { useAuth } from "./auth/AuthContext";
 import { transactionAPI } from "../services/api";
 import { ImportQuotaCard } from "../components/imports/ImportQuotaCard";
@@ -48,6 +49,10 @@ export default function ImportStatementScreen() {
 
   const [stage, setStage] = useState<Stage>("idle");
   const [statement, setStatement] = useState<StatementMetadata | null>(null);
+  // Which bank this statement is from. Pre-filled when the parser recognised
+  // the issuer; otherwise the user must pick one before importing, so the
+  // transactions land in a real account rather than an anonymous bucket.
+  const [bankPickerOpen, setBankPickerOpen] = useState(false);
   const [transactions, setTransactions] = useState<ParsedStatementTransaction[]>(
     []
   );
@@ -290,6 +295,7 @@ export default function ImportStatementScreen() {
         toImport,
         statement ?? undefined
       );
+
       setResult(response);
       setStage("done");
       // Pull the new used/remaining numbers so the quota card reflects the save.
@@ -370,6 +376,7 @@ export default function ImportStatementScreen() {
           onSelectNone={selectNone}
           onConfirm={handleConfirmImport}
           onCancel={handleStartOver}
+          onChangeBank={() => setBankPickerOpen(true)}
         />
       )}
 
@@ -390,6 +397,23 @@ export default function ImportStatementScreen() {
           onStartOver={handleStartOver}
         />
       )}
+
+      <BankPickerModal
+        visible={bankPickerOpen}
+        value={statement?.issuer ?? null}
+        onSelect={(bankName) => {
+          setStatement((prev) => ({
+            accountIdentifier: prev?.accountIdentifier ?? null,
+            periodStart: prev?.periodStart ?? null,
+            periodEnd: prev?.periodEnd ?? null,
+            filename: prev?.filename ?? null,
+            ...(prev ?? {}),
+            issuer: bankName,
+          }));
+          setBankPickerOpen(false);
+        }}
+        onClose={() => setBankPickerOpen(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -460,6 +484,7 @@ const PreviewView: React.FC<{
   onSelectNone: () => void;
   onConfirm: () => void;
   onCancel: () => void;
+  onChangeBank: () => void;
 }> = ({
   colors,
   statement,
@@ -470,6 +495,7 @@ const PreviewView: React.FC<{
   onSelectNone,
   onConfirm,
   onCancel,
+  onChangeBank,
 }) => {
   const { formatAmount: formatCurrencyAmount } = useCurrency();
   const formatAmount = (t: ParsedStatementTransaction) => {
@@ -481,30 +507,66 @@ const PreviewView: React.FC<{
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.previewContent}>
-        {statement && (statement.issuer || statement.periodStart) && (
-          <View
-            style={[
-              styles.metaCard,
-              { backgroundColor: colors.background.secondary },
-            ]}
-          >
-            {statement.issuer && (
+        {/* Which bank this statement belongs to. Naming it is what keeps the
+            transactions together as an account, so when the parser couldn't
+            work it out we ask rather than silently filing it as "unknown". */}
+        <View
+          style={[
+            styles.metaCard,
+            {
+              backgroundColor: colors.background.secondary,
+              borderWidth: statement?.issuer ? 0 : 1,
+              borderColor: colors.amber[500],
+            },
+          ]}
+        >
+          <View style={styles.bankRow}>
+            <View style={{ flex: 1 }}>
               <Text style={[styles.metaTitle, { color: colors.text.primary }]}>
-                {statement.issuer}
-                {statement.accountIdentifier
+                {statement?.issuer || "Which bank is this from?"}
+                {statement?.issuer && statement?.accountIdentifier
                   ? ` · ${statement.accountIdentifier}`
                   : ""}
               </Text>
-            )}
-            {statement.periodStart && statement.periodEnd && (
               <Text
                 style={[styles.metaSubtitle, { color: colors.text.tertiary }]}
               >
-                {statement.periodStart} → {statement.periodEnd}
+                {statement?.issuer
+                  ? statement.periodStart && statement.periodEnd
+                    ? `${statement.periodStart} → ${statement.periodEnd}`
+                    : "Detected from your statement"
+                  : "We couldn't tell — pick it so these transactions stay together."}
               </Text>
-            )}
+            </View>
+            <TouchableOpacity
+              onPress={onChangeBank}
+              style={[
+                styles.bankButton,
+                {
+                  backgroundColor: statement?.issuer
+                    ? "transparent"
+                    : colors.primary[500],
+                  borderColor: colors.primary[500],
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={
+                statement?.issuer ? "Change bank" : "Choose bank"
+              }
+            >
+              <Text
+                style={[
+                  styles.bankButtonLabel,
+                  {
+                    color: statement?.issuer ? colors.primary[500] : "#FFFFFF",
+                  },
+                ]}
+              >
+                {statement?.issuer ? "Change" : "Choose"}
+              </Text>
+            </TouchableOpacity>
           </View>
-        )}
+        </View>
 
         <View style={styles.selectionRow}>
           <Text style={[styles.selectionText, { color: colors.text.secondary }]}>
@@ -604,19 +666,22 @@ const PreviewView: React.FC<{
             Cancel
           </Text>
         </TouchableOpacity>
+        {/* Blocked until the bank is known: importing without it would put
+            these transactions in a bucket the user can't identify later. */}
         <TouchableOpacity
           onPress={onConfirm}
           style={[
             styles.primaryButton,
             styles.footerPrimary,
             { backgroundColor: colors.primary[500] },
-            selected.size === 0 && styles.buttonDisabled,
+            (selected.size === 0 || !statement?.issuer) && styles.buttonDisabled,
           ]}
-          disabled={selected.size === 0}
+          disabled={selected.size === 0 || !statement?.issuer}
         >
           <Text style={styles.primaryButtonText}>
-            Import {selected.size} transaction
-            {selected.size === 1 ? "" : "s"}
+            {!statement?.issuer
+              ? "Choose a bank first"
+              : `Import ${selected.size} transaction${selected.size === 1 ? "" : "s"}`}
           </Text>
         </TouchableOpacity>
       </View>
@@ -794,6 +859,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   metaTitle: { fontSize: 16, fontWeight: "600", marginBottom: 4 },
+  bankRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  bankButton: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  bankButtonLabel: { fontSize: 13, fontWeight: "600" },
   metaSubtitle: { fontSize: 13 },
   selectionRow: {
     flexDirection: "row",

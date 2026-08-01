@@ -33,8 +33,8 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="index" options={{ title: "Home" }} />
       <Tabs.Screen name="spending" options={{ title: "Spending" }} />
+      <Tabs.Screen name="accounts" options={{ title: "Accounts" }} />
       <Tabs.Screen name="progress" options={{ title: "Goals" }} />
-      <Tabs.Screen name="account" options={{ title: "Account" }} />
       {/* Health screen kept routable but hidden from the floating bar.
           The bar only renders the four tabs above; deep-link or button
           navigation can still reach /health. */}

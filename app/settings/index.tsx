@@ -35,6 +35,8 @@ import {
   getWidgetLastUpdated,
 } from "../../services/widget";
 import { timeAgo } from "../../widgets/theme";
+import { transactionAPI } from "../../services/api/transactionAPI";
+import { formatCurrency } from "../../utils/formatters";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -52,6 +54,7 @@ export default function SettingsPage() {
 
   // Local state for settings
   const [restoringPurchases, setRestoringPurchases] = useState(false);
+  const [recalculating, setRecalculating] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [analyticsConsent, setAnalyticsConsent] = useState(false);
@@ -375,6 +378,31 @@ export default function SettingsPage() {
     ]);
   };
 
+  // Re-run spend classification over the whole ledger. Reports what changed so
+  // the user can see the effect rather than wondering whether it did anything.
+  const handleRecalculateSpending = async () => {
+    setRecalculating(true);
+    try {
+      const result = await transactionAPI.reclassify();
+      const { spend, transfer, cardPayment } = result.totals;
+      const moved = transfer + cardPayment;
+      Alert.alert(
+        "Spending recalculated",
+        `Checked ${result.scanned} transactions and updated ${result.updated}.\n\n` +
+          `Spending: ${formatCurrency(spend, currencyCode)}\n` +
+          `Moved between accounts (not spending): ${formatCurrency(moved, currencyCode)}`
+      );
+    } catch (error) {
+      console.error("[Settings] Recalculate spending failed:", error);
+      Alert.alert(
+        "Couldn't recalculate",
+        "Something went wrong. Please check your connection and try again."
+      );
+    } finally {
+      setRecalculating(false);
+    }
+  };
+
   const handleRestorePurchases = async () => {
     setRestoringPurchases(true);
     try {
@@ -464,10 +492,100 @@ export default function SettingsPage() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
+          {/* Your profile — folded in from the old Account tab, which was a
+              near-duplicate of this screen. Everything about "you" now lives
+              in one place instead of two competing menus. */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+              Your profile
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+              onPress={() => router.push("/profile/personal")}
+            >
+              <Ionicons
+                name="person-outline"
+                size={22}
+                color={colors.primary.main}
+                style={{ marginRight: 14 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text.primary }]}>
+                Personal information
+              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.text.tertiary}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+              onPress={() => router.push("/accounts" as any)}
+            >
+              <Ionicons
+                name="card-outline"
+                size={22}
+                color={colors.primary.main}
+                style={{ marginRight: 14 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text.primary }]}>
+                Banks & accounts
+              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.text.tertiary}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+              onPress={() => router.push("/statements" as any)}
+            >
+              <Ionicons
+                name="document-text-outline"
+                size={22}
+                color={colors.primary.main}
+                style={{ marginRight: 14 }}
+              />
+              <Text style={[styles.settingText, { color: colors.text.primary }]}>
+                Uploaded statements
+              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.text.tertiary}
+              />
+            </TouchableOpacity>
+          </View>
+
           {/* Theme Section */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Appearance
+              Preferences
             </Text>
             <Text
               style={[
@@ -562,9 +680,6 @@ export default function SettingsPage() {
 
           {/* Currency Section */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Currency
-            </Text>
             <Text
               style={[
                 styles.sectionDescription,
@@ -622,9 +737,6 @@ export default function SettingsPage() {
 
           {/* App Settings */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              App Settings
-            </Text>
 
             <TouchableOpacity
               style={[
@@ -658,9 +770,6 @@ export default function SettingsPage() {
 
           {/* Preferences Section */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Preferences
-            </Text>
 
             {/* Notifications */}
             <TouchableOpacity
@@ -719,6 +828,41 @@ export default function SettingsPage() {
                 size={20}
                 color={colors.text.tertiary}
               />
+            </TouchableOpacity>
+
+            {/* Re-runs spend classification over the whole ledger, including
+                re-matching internal transfers. Useful after importing several
+                statements, or if a total ever looks wrong. */}
+            <TouchableOpacity
+              style={[
+                styles.settingItem,
+                {
+                  backgroundColor: colors.background.primary,
+                  borderColor: colors.border.light,
+                },
+                shadows.sm,
+              ]}
+              disabled={recalculating}
+              onPress={handleRecalculateSpending}
+            >
+              <Ionicons
+                name="refresh-outline"
+                size={22}
+                color={colors.primary.main}
+                style={{ marginRight: 14 }}
+              />
+              <Text
+                style={[styles.settingText, { color: colors.text.primary }]}
+              >
+                {recalculating ? "Recalculating…" : "Recalculate spending"}
+              </Text>
+              {!recalculating && (
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.text.tertiary}
+                />
+              )}
             </TouchableOpacity>
           </View>
 
@@ -1154,7 +1298,7 @@ export default function SettingsPage() {
                     marginTop: 2,
                   }}
                 >
-                  Helps us improve Expenzez. Off by default — turn on only if you're happy to share usage data.
+                  Helps us improve Expenzez. Off by default — turn on only if you&apos;re happy to share usage data.
                 </Text>
               </View>
               <Switch
@@ -1211,9 +1355,6 @@ export default function SettingsPage() {
 
           {/* Legal */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
-              Legal
-            </Text>
 
             <TouchableOpacity
               style={[

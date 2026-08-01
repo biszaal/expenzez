@@ -43,7 +43,7 @@ export const NotificationCard: React.FC = () => {
         router.push("/(tabs)/spending");
         break;
       case "account":
-        router.push("/(tabs)/account");
+        router.push("/settings");
         break;
       case "insight":
         router.push("/ai-assistant");

@@ -6,7 +6,7 @@ import { transactionAPI } from "../services/api/transactionAPI";
 import { budgetAPI } from "../services/api";
 import { balanceAPI } from "../services/api/balanceAPI";
 import { getMerchantInfo } from "../services/merchantService";
-import { processTransactionExpense } from "../utils/expenseDetection";
+import { isSpend, spendBreakdown, reviewQueue } from "../utils/spend";
 import { PerformanceMonitor } from "../utils/performanceOptimizations";
 import { SPENDING_CATEGORIES } from "../constants/spendingCategories";
 import { useAuth } from "../app/auth/AuthContext";
@@ -176,32 +176,35 @@ export const useSpendingData = (isPro: boolean) => {
         averageTransaction: 0,
         monthlySpentByCategory: {},
         monthlySpentByMerchant: {},
-        monthlyTotalSpent: 0
+        monthlyTotalSpent: 0,
+        breakdown: spendBreakdown([]),
+        reviewItems: [],
       };
     }
 
-    // Process transactions
-    monthlyTransactions.forEach((txn, index) => {
+    // What counts as spend is decided once, in utils/spend.ts, from the
+    // server's classification. Nothing here re-derives it.
+    monthlyTransactions.forEach((txn) => {
+      if (!isSpend(txn)) return;
       const category = txn.category || "Other";
       const merchantInfo = getMerchantInfo(txn.description || txn.merchant || "Unknown");
-      
-      const { isExpense } = processTransactionExpense(txn, index, false);
-
-      if (isExpense) {
-        const amount = Math.abs(txn.amount);
-        monthlySpentByCategory[category] = (monthlySpentByCategory[category] || 0) + amount;
-        monthlySpentByMerchant[merchantInfo.name] = (monthlySpentByMerchant[merchantInfo.name] || 0) + amount;
-      }
+      const amount = Math.abs(Number(txn.amount) || 0);
+      monthlySpentByCategory[category] = (monthlySpentByCategory[category] || 0) + amount;
+      monthlySpentByMerchant[merchantInfo.name] = (monthlySpentByMerchant[merchantInfo.name] || 0) + amount;
     });
 
-    const monthlyTotalSpent = Object.values(monthlySpentByCategory).reduce((a, b) => a + b, 0);
+    const breakdown = spendBreakdown(monthlyTransactions);
 
     stopTiming();
     return {
       monthlyTransactions,
       monthlySpentByCategory,
       monthlySpentByMerchant,
-      monthlyTotalSpent,
+      monthlyTotalSpent: breakdown.spend,
+      // Powers the "why is this lower than my debits?" breakdown and the
+      // review card, so exclusions are visible rather than silent.
+      breakdown,
+      reviewItems: reviewQueue(monthlyTransactions),
     };
   }, [monthlyTransactions]);
 
@@ -218,12 +221,9 @@ export const useSpendingData = (isPro: boolean) => {
     // Helper to process spending
     const processSpending = (txs: any[], target: Record<string, number>) => {
       txs.forEach(tx => {
-        if (!tx.date) return;
-        const { isExpense } = processTransactionExpense(tx, 0, false);
-        if (isExpense) {
-          const day = dayjs(tx.date).format("DD");
-          target[day] = (target[day] || 0) + Math.abs(tx.amount);
-        }
+        if (!tx.date || !isSpend(tx)) return;
+        const day = dayjs(tx.date).format("DD");
+        target[day] = (target[day] || 0) + Math.abs(Number(tx.amount) || 0);
       });
     };
 

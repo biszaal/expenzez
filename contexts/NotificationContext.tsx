@@ -79,7 +79,10 @@ export interface NotificationHistoryItem {
   id: string;
   title: string;
   message: string;
+  /** Pre-formatted relative label, e.g. "2 hours ago". */
   time: string;
+  /** Epoch ms. Kept alongside `time` so the list can group and sort by day. */
+  timestamp?: number;
   type: "transaction" | "budget" | "account" | "security" | "insight";
   read: boolean;
   data?: Record<string, any>;
@@ -526,32 +529,42 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       const notificationData = await getRecentNotifications();
 
       if (notificationData && notificationData.length > 0) {
-        // Load persisted read states from AsyncStorage
-        const persistedReadStates = await AsyncStorage.getItem(
-          `notification_read_states_${user?.username || user?.id}`
-        );
-        const readStates = persistedReadStates
-          ? JSON.parse(persistedReadStates)
-          : {};
+        // The server is the source of truth for read state. AsyncStorage holds
+        // only ids we marked read but haven't successfully synced yet, so an
+        // offline tap still looks read — it is a pending-writes queue, not a
+        // second opinion. (Previously the two were OR-merged, so a local entry
+        // could never be cleared and the badge drifted from the server for good.)
+        const pendingReadIds = await getPendingReadIds();
+        const synced: string[] = [];
 
-        // Transform data to match NotificationHistoryItem interface and apply persisted read states
         const notifications: NotificationHistoryItem[] = notificationData.map(
-          (item: any) => ({
-            id: item.id,
-            title: item.title,
-            message: item.message,
-            time: formatTimestamp(item.timestamp),
-            type: item.type,
-            read: readStates[item.id] === true ? true : item.isRead || false,
-            data: {
-              amount: item.amount,
-              merchant: item.merchant,
-              category: item.category,
-              location: item.location,
-              savingsAmount: item.savingsAmount,
-            },
-          })
+          (item: any) => {
+            const serverRead = item.isRead === true;
+            // Once the server agrees, the pending entry has done its job.
+            if (serverRead && pendingReadIds.has(item.id)) synced.push(item.id);
+
+            return {
+              id: item.id,
+              title: item.title,
+              message: item.message,
+              time: formatTimestamp(item.timestamp),
+              timestamp: item.timestamp,
+              type: item.type,
+              read: serverRead || pendingReadIds.has(item.id),
+              data: {
+                amount: item.amount,
+                merchant: item.merchant,
+                category: item.category,
+                location: item.location,
+                savingsAmount: item.savingsAmount,
+              },
+            };
+          }
         );
+
+        if (synced.length > 0) {
+          await clearPendingReadIds(synced);
+        }
 
         setNotifications(notifications);
       } else {
@@ -609,6 +622,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       title: notification.request.content.title || "Notification",
       message: notification.request.content.body || "",
       time: "Just now",
+      timestamp: Date.now(),
       type: (notification.request.content.data?.type as any) || "account",
       read: false,
       data: notification.request.content.data,
@@ -639,82 +653,107 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     }
 
-    // Mark notification as read
-    const notificationId = response.notification.request.identifier;
-    markAsRead(notificationId);
+    // Mark as read using the BACKEND notification id carried in the push
+    // payload. `request.identifier` is the OS-assigned id for the delivered
+    // notification and matches nothing in our history table, so marking it
+    // did nothing — the row stayed unread and came back on the next open.
+    const backendId =
+      notificationData?.notificationId || notificationData?.id;
+    if (backendId) {
+      markAsRead(String(backendId));
+    } else {
+      // No id to act on; a refresh will reconcile from the server.
+      refreshNotifications().catch(() => {});
+    }
   };
 
   const markAsRead = async (id: string) => {
-    // Update UI immediately for better UX
+    // Optimistic: reflect the tap immediately.
     setNotifications((prev) =>
       prev.map((notification) =>
         notification.id === id ? { ...notification, read: true } : notification
       )
     );
 
-    // Persist locally first (ensures state survives app restart)
-    try {
-      await persistReadState(id, true);
-    } catch (localError) {
-      console.error("[NotificationContext] Failed to persist read state locally:", localError);
-    }
+    // Queue it, then try to sync. On success the queue entry is dropped
+    // straight away; on failure it stays so the row still reads as read until
+    // a later refresh confirms it with the server.
+    await addPendingReadId(id);
 
-    // Then persist to backend database
     try {
       const { notificationAPI } = await import("../services/api");
       await notificationAPI.markAsRead(id);
+      await clearPendingReadIds([id]);
     } catch (backendError) {
-      console.error("[NotificationContext] Failed to sync read state to backend:", backendError);
+      console.error(
+        "[NotificationContext] Failed to sync read state to backend:",
+        backendError
+      );
     }
   };
 
   const markAllAsRead = async () => {
-    // Capture ids before mutating state.
     const allIds = notifications.map((n) => n.id);
 
     setNotifications((prev) =>
       prev.map((notification) => ({ ...notification, read: true }))
     );
 
-    // Persist locally first (survives a restart even if the network call fails).
-    try {
-      await Promise.all(allIds.map((id) => persistReadState(id, true)));
-    } catch (error) {
-      console.error("[NotificationContext] Failed to persist all read states:", error);
-    }
-
-    // Then sync each to the backend. The feed is re-fetched from the server on
-    // every open, so without this the backend keeps returning read:false and the
-    // whole list reappears as unread (the bug where notifications never clear).
+    // One server call rather than one per notification: a partial failure
+    // used to leave the list half-read, so it reappeared on the next open.
     try {
       const { notificationAPI } = await import("../services/api");
-      await Promise.allSettled(allIds.map((id) => notificationAPI.markAsRead(id)));
+      await notificationAPI.markAllAsRead();
+      await clearPendingReadIds(allIds);
     } catch (backendError) {
       console.error(
-        "[NotificationContext] Failed to sync all read states to backend:",
+        "[NotificationContext] Failed to mark all as read:",
         backendError
       );
+      // Keep them queued so the UI stays consistent until a refresh reconciles.
+      for (const id of allIds) await addPendingReadId(id);
     }
   };
 
-  // Helper function to persist read state
-  const persistReadState = async (notificationId: string, isRead: boolean) => {
+  // --- Pending read-state queue -------------------------------------------
+  // Ids marked read locally whose sync to the server hasn't been confirmed.
+  // Not a mirror of read state: entries are removed as soon as the server
+  // reports the notification as read, so this can never outlive the truth.
+  //
+  // Keyed off username rather than user.id: on a clean login user.id is the
+  // Cognito sub, but the token-refresh restore path sets it to the username.
+  // Username is stable across both, so the queue survives a restart.
+  const pendingReadKey = () =>
+    `notification_pending_read_${user?.username || user?.id}`;
+
+  const getPendingReadIds = async (): Promise<Set<string>> => {
     try {
-      // Key off username, not user.id: on a clean login user.id is the Cognito
-      // sub, but the token-refresh fallback restore path sets it to the username.
-      // Username is stable across both, so cached read-states survive a restart.
-      const storageKey = `notification_read_states_${user?.username || user?.id}`;
-      const existingStates = await AsyncStorage.getItem(storageKey);
-      const readStates = existingStates ? JSON.parse(existingStates) : {};
-
-      readStates[notificationId] = isRead;
-
-      await AsyncStorage.setItem(storageKey, JSON.stringify(readStates));
+      const raw = await AsyncStorage.getItem(pendingReadKey());
+      const ids = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(ids) ? ids : []);
     } catch (error) {
-      console.error(
-        "[NotificationContext] Error persisting read state:",
-        error
-      );
+      console.error("[NotificationContext] Error reading pending queue:", error);
+      return new Set();
+    }
+  };
+
+  const addPendingReadId = async (notificationId: string) => {
+    try {
+      const ids = await getPendingReadIds();
+      ids.add(notificationId);
+      await AsyncStorage.setItem(pendingReadKey(), JSON.stringify([...ids]));
+    } catch (error) {
+      console.error("[NotificationContext] Error queuing read state:", error);
+    }
+  };
+
+  const clearPendingReadIds = async (notificationIds: string[]) => {
+    try {
+      const ids = await getPendingReadIds();
+      for (const id of notificationIds) ids.delete(id);
+      await AsyncStorage.setItem(pendingReadKey(), JSON.stringify([...ids]));
+    } catch (error) {
+      console.error("[NotificationContext] Error clearing pending queue:", error);
     }
   };
 
@@ -731,7 +770,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       );
 
       // Also clear local cache
-      const storageKey = `notification_read_states_${user?.username || user?.id}`;
+      const storageKey = pendingReadKey();
       await AsyncStorage.removeItem(storageKey);
     } catch (error: any) {
       console.error(
@@ -741,7 +780,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // If backend fails, still clear local cache
       try {
-        const storageKey = `notification_read_states_${user?.username || user?.id}`;
+        const storageKey = pendingReadKey();
         await AsyncStorage.removeItem(storageKey);
       } catch (localError) {
         console.error(

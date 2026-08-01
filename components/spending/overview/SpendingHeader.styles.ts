@@ -66,4 +66,13 @@ export const styles = StyleSheet.create({
   comparison: {
     fontSize: 12,
   },
+  excludedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 6,
+  },
+  excludedText: {
+    fontSize: 12,
+  },
 });

@@ -30,6 +30,9 @@ import { FREE_TIER_LIMITS } from "../../services/subscriptionService";
 import { useDashboardData } from "../../hooks/useDashboardData";
 import { BillsAPI, type SavedBill } from "../../services/api/billsAPI";
 import { type Transaction } from "../../services/api/transactionAPI";
+import { spendBreakdown, spendTypeOf, isSpend } from "../../utils/spend";
+import { accountsAPI, type Account } from "../../services/api/accountsAPI";
+import { BankAvatar } from "../../components/accounts/BankAvatar";
 
 // v1.5 home — electric purple + lime, mono numerals, full-bleed dark.
 // All data wiring (useDashboardData, RevenueCat, notifications, auth) is
@@ -133,24 +136,23 @@ function aggregateMonth(
     return d.isAfter(start.subtract(1, "second")) && d.isBefore(end.add(1, "second"));
   });
 
-  let income = 0;
-  let spent = 0;
-  let txnCount = 0;
-  let depositCount = 0;
-  const categoryTotals: Record<string, number> = {};
+  // Spend comes from the shared selector, which reads the server's spendType.
+  // This screen used to count every negative amount as spending — transfers
+  // between the user's own accounts and credit-card bill payments included —
+  // which is why Home reported several times the real figure.
+  const breakdown = spendBreakdown(monthTxns as any);
+  const income = breakdown.income;
+  const spent = breakdown.spend;
+  const txnCount = breakdown.spendCount;
+  const depositCount = monthTxns.filter(
+    (t) => spendTypeOf(t as any) === "income"
+  ).length;
 
+  const categoryTotals: Record<string, number> = {};
   for (const t of monthTxns) {
-    const amt = Number(t.amount) || 0;
-    const isCredit = t.type === "credit" || amt > 0;
-    if (isCredit) {
-      income += Math.abs(amt);
-      depositCount += 1;
-    } else {
-      spent += Math.abs(amt);
-      txnCount += 1;
-      const cat = normalizeCategory(t.category);
-      categoryTotals[cat] = (categoryTotals[cat] || 0) + Math.abs(amt);
-    }
+    if (!isSpend(t as any)) continue;
+    const cat = normalizeCategory(t.category);
+    categoryTotals[cat] = (categoryTotals[cat] || 0) + Math.abs(Number(t.amount) || 0);
   }
 
   const topCategories: CategoryAggregate[] = Object.entries(categoryTotals)
@@ -199,6 +201,7 @@ export default function HomeScreen() {
     forceRefresh,
   } = useDashboardData();
 
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [userBudget, setUserBudget] = useState<number>(2000);
   const [bills, setBills] = useState<SavedBill[]>([]);
 
@@ -280,9 +283,21 @@ export default function HomeScreen() {
     }
   }, [isLocked, isLoggedIn]);
 
+  const loadAccounts = async () => {
+    try {
+      const response = await accountsAPI.getAccounts();
+      setAccounts(response.accounts || []);
+    } catch (err) {
+      // Silent — the bank strip is supplementary; its absence shouldn't
+      // disrupt the rest of home.
+      setAccounts([]);
+    }
+  };
+
   useEffect(() => {
     if (!isLocked && isLoggedIn) {
       loadBills();
+      loadAccounts();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLocked, isLoggedIn, transactions.length]);
@@ -396,7 +411,7 @@ export default function HomeScreen() {
               )}
             </Pressable>
             <Pressable
-              onPress={() => router.push("/(tabs)/account" as any)}
+              onPress={() => router.push("/settings" as any)}
               style={styles.avatarPressable}
             >
               <LinearGradient
@@ -671,6 +686,81 @@ export default function HomeScreen() {
               message="Upgrade to Premium for unlimited budgets & advanced features"
               actionLabel="Upgrade"
             />
+          </View>
+        )}
+
+        {/* Your banks — a horizontal strip straight to each account's own
+            transactions. Home is where people land, so the fastest route to
+            "what did I spend on this card" belongs here, not two taps away. */}
+        {accounts.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
+                Your banks
+              </Text>
+              <Pressable onPress={() => router.push("/(tabs)/accounts" as any)}>
+                <Text style={[styles.sectionLink, { color: colors.primary[500] }]}>
+                  See all
+                </Text>
+              </Pressable>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 10, paddingRight: 8 }}
+            >
+              {accounts.map((account) => (
+                <Pressable
+                  key={account.accountId}
+                  onPress={() =>
+                    router.push(
+                      `/accounts/${encodeURIComponent(account.accountId)}` as any
+                    )
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel={`${account.displayName}, ${symbol}${formatGBP(account.monthSpend).whole} spent this month`}
+                  style={({ pressed }) => [
+                    styles.bankChip,
+                    {
+                      backgroundColor: colors.card.background,
+                      borderColor: colors.border.medium,
+                      opacity: pressed ? 0.85 : 1,
+                    },
+                  ]}
+                >
+                  <BankAvatar
+                    bankId={account.bankId}
+                    bankName={account.displayName}
+                    colorHex={account.colorHex}
+                    size={30}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.bankChipName,
+                      {
+                        color: colors.text.primary,
+                        fontFamily: fontFamily.medium,
+                      },
+                    ]}
+                  >
+                    {account.displayName}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.bankChipAmount,
+                      {
+                        color: colors.text.tertiary,
+                        fontFamily: fontFamily.monoMedium,
+                      },
+                    ]}
+                  >
+                    {symbol}
+                    {formatGBP(account.monthSpend).whole}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
           </View>
         )}
 
@@ -1023,7 +1113,7 @@ export default function HomeScreen() {
               <Text
                 style={[styles.sectionTitle, { color: colors.text.primary }]}
               >
-                What's new
+                What&apos;s new
               </Text>
               <Pressable
                 onPress={() => router.push("/notifications" as any)}
@@ -1477,6 +1567,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
+  bankChip: {
+    width: 132,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    gap: 8,
+  },
+  bankChipName: { fontSize: 13 },
+  bankChipAmount: { fontSize: 12 },
   sectionTitle: {
     fontSize: 14,
     fontFamily: fontFamily.semibold,

@@ -521,10 +521,18 @@ export const getSavingsGoals = async () => {
 export const createSavingsGoal = async (goalData: {
   title: string;
   description?: string;
+  type?: string;
   targetAmount: number;
   currentAmount: number;
   targetDate: string;
+  priority?: string;
   category: string;
+  autoSaveSettings?: {
+    enabled: boolean;
+    amount: number;
+    frequency: string;
+    roundUpEnabled: boolean;
+  };
 }) => {
   try {
     const response = await profileAPI.createGoal(goalData);

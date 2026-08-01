@@ -34,7 +34,12 @@ import { getMerchantInfo } from "../../services/merchantService";
 import dayjs from "dayjs";
 import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { ChartData, ChartDataPoint } from "../../components/charts";
-import { processTransactionExpense } from "../../utils/expenseDetection";
+import {
+  isSpend,
+  spendTotal,
+  spendBreakdown,
+  reviewQueue,
+} from "../../utils/spend";
 import { clearAllCache } from "../../services/config/apiCache";
 import { PerformanceMonitor } from "../../utils/performanceOptimizations";
 import {
@@ -47,6 +52,7 @@ import {
   SpendingMerchantList,
   SmartSuggestionCard,
 } from "../../components/spending";
+import { ReviewQueueCard } from "../../components/spending/shared/ReviewQueueCard";
 import { useRouter } from "expo-router";
 import { getSpendingInsight, getBudgetInsight, ChartInsightResponse } from "../../services/api/chartInsightsAPI";
 import { aiInsightPersistence } from "../../services/aiInsightPersistence";
@@ -82,6 +88,9 @@ export default function SpendingPage() {
   const [budgetAiInsight, setBudgetAiInsight] = useState<ChartInsightResponse | null>(null);
   const [budgetAiInsightLoading, setBudgetAiInsightLoading] = useState(false);
   const [canRequestBudgetInsight, setCanRequestBudgetInsight] = useState(true);
+
+  // Spend-review card: which row is mid-save.
+  const [reviewBusyId, setReviewBusyId] = useState<string | null>(null);
 
   // Animation values
   const animatedProgress = useMemo(() => new Animated.Value(0), []);
@@ -198,132 +207,31 @@ export default function SpendingPage() {
       };
     }
 
-    console.log(
-      `[Spending] Processing ${monthlyTransactions.length} monthly transactions`
-    );
-
-    // OPTIMIZATION: Process transactions in batches to prevent UI blocking
-    const BATCH_SIZE = 50;
-    const batches = [];
-    for (let i = 0; i < monthlyTransactions.length; i += BATCH_SIZE) {
-      batches.push(monthlyTransactions.slice(i, i + BATCH_SIZE));
-    }
-
-    // Process each batch
-    batches.forEach((batch, batchIndex) => {
-      batch.forEach((txn, index) => {
-        const category = txn.category || "Other";
-        const merchantInfo = getMerchantInfo(
-          txn.description || txn.merchant || "Unknown Merchant"
-        );
-        const merchantName = merchantInfo.name;
-
-        // Use centralized expense detection logic
-        const expenseDetection = processTransactionExpense(
-          txn,
-          index,
-          index < 3
-        ); // Only log first 3 transactions
-        const { isExpense } = expenseDetection;
-
-        if (isExpense) {
-          const expenseAmount = Math.abs(txn.amount);
-          monthlySpentByCategory[category] =
-            (monthlySpentByCategory[category] || 0) + expenseAmount;
-          monthlySpentByMerchant[merchantName] =
-            (monthlySpentByMerchant[merchantName] || 0) + expenseAmount;
-        }
-      });
+    // Spend is decided once, in utils/spend.ts, from the server's spendType.
+    monthlyTransactions.forEach((txn) => {
+      if (!isSpend(txn)) return;
+      const category = txn.category || "Other";
+      const merchantName = getMerchantInfo(
+        txn.description || txn.merchant || "Unknown Merchant"
+      ).name;
+      const expenseAmount = Math.abs(Number(txn.amount) || 0);
+      monthlySpentByCategory[category] =
+        (monthlySpentByCategory[category] || 0) + expenseAmount;
+      monthlySpentByMerchant[merchantName] =
+        (monthlySpentByMerchant[merchantName] || 0) + expenseAmount;
     });
 
-    console.log(
-      `[Spending] Monthly spending by category:`,
-      monthlySpentByCategory
-    );
-    console.log(
-      `[Spending] Monthly spending by merchant:`,
-      monthlySpentByMerchant
-    );
-
-    // Debug: Show all unique categories found in transactions
-    const allCategories = Array.from(
-      new Set(monthlyTransactions.map((tx) => tx.category || "Other"))
-    );
-    console.log(
-      "🐛 [Spending] All unique categories in transactions:",
-      allCategories
-    );
-
-    // Debug: Show expense vs income breakdown
-    const expenseTransactions = monthlyTransactions.filter((tx) => {
-      const category = tx.category || "Other";
-      const isIncomeCategory =
-        category.toLowerCase().includes("income") ||
-        category.toLowerCase().includes("salary") ||
-        category.toLowerCase().includes("refund");
-      const categoryLower = category.toLowerCase();
-      const isExpenseCategory =
-        !isIncomeCategory &&
-        // Exact matches
-        (category === "Food & Dining" ||
-          category === "Shopping" ||
-          category === "Transport" ||
-          category === "Entertainment" ||
-          category === "Bills & Utilities" ||
-          category === "Health & Fitness" ||
-          category === "Other" ||
-          // Flexible matches for common variations
-          categoryLower.includes("food") ||
-          categoryLower.includes("dining") ||
-          categoryLower.includes("restaurant") ||
-          categoryLower.includes("shop") ||
-          categoryLower.includes("retail") ||
-          categoryLower.includes("transport") ||
-          categoryLower.includes("travel") ||
-          categoryLower.includes("taxi") ||
-          categoryLower.includes("uber") ||
-          categoryLower.includes("entertainment") ||
-          categoryLower.includes("movie") ||
-          categoryLower.includes("game") ||
-          categoryLower.includes("bill") ||
-          categoryLower.includes("utilities") ||
-          categoryLower.includes("utility") ||
-          categoryLower.includes("electric") ||
-          categoryLower.includes("gas") ||
-          categoryLower.includes("health") ||
-          categoryLower.includes("fitness") ||
-          categoryLower.includes("gym") ||
-          categoryLower.includes("medical") ||
-          categoryLower.includes("expense") ||
-          categoryLower.includes("purchase") ||
-          // Catch remaining non-income categories
-          (categoryLower !== "income" &&
-            categoryLower !== "salary" &&
-            categoryLower !== "refund"));
-      return (
-        tx.type === "debit" ||
-        tx.amount < 0 ||
-        (tx.amount > 0 && isExpenseCategory)
-      );
-    });
-    console.log(
-      "🐛 [Spending] Total expenses detected:",
-      expenseTransactions.length,
-      "out of",
-      monthlyTransactions.length,
-      "transactions"
-    );
-
-    const monthlyTotalSpent = Object.values(monthlySpentByCategory).reduce(
-      (sum, amount) => sum + amount,
-      0
-    );
+    const breakdown = spendBreakdown(monthlyTransactions);
 
     return {
       monthlyTransactions,
       monthlySpentByCategory,
       monthlySpentByMerchant,
-      monthlyTotalSpent,
+      monthlyTotalSpent: breakdown.spend,
+      // Transfers and card payments that were kept out of the total, so the
+      // screen can show what was excluded instead of asking for trust.
+      breakdown,
+      reviewItems: reviewQueue(monthlyTransactions),
     };
   }, [monthlyTransactions]);
 
@@ -417,31 +325,18 @@ export default function SpendingPage() {
       return txDate.format("YYYY-MM") === prevMonth;
     });
 
-    // Process current month spending by day. Use the SAME canonical expense
-    // gate as the category/merchant totals (processTransactionExpense, which
-    // also excludes transfers/non-spend) so the chart, the headline total and
-    // the breakdown below all agree. A previous inline filter here was looser
-    // and over-counted spend versus the category breakdown.
-    currentTransactions.forEach((tx) => {
-      if (!tx.date) return;
-      const { isExpense } = processTransactionExpense(tx, 0, false);
-      if (isExpense) {
+    // The chart, the headline total and the category breakdown all read the
+    // same `isSpend` selector, so they cannot drift apart.
+    const byDay = (txs: any[], target: Record<string, number>) => {
+      txs.forEach((tx) => {
+        if (!tx.date || !isSpend(tx)) return;
         const day = dayjs(tx.date).format("DD");
-        currentMonthSpending[day] =
-          (currentMonthSpending[day] || 0) + Math.abs(tx.amount);
-      }
-    });
+        target[day] = (target[day] || 0) + Math.abs(Number(tx.amount) || 0);
+      });
+    };
 
-    // Process previous month spending by day (same canonical gate).
-    previousTransactions.forEach((tx) => {
-      if (!tx.date) return;
-      const { isExpense } = processTransactionExpense(tx, 0, false);
-      if (isExpense) {
-        const day = dayjs(tx.date).format("DD");
-        previousMonthSpending[day] =
-          (previousMonthSpending[day] || 0) + Math.abs(tx.amount);
-      }
-    });
+    byDay(currentTransactions, currentMonthSpending);
+    byDay(previousTransactions, previousMonthSpending);
 
     // Get days in selected month
     const selectedDate = dayjs(selectedMonth);
@@ -910,6 +805,47 @@ export default function SpendingPage() {
     [sortedCategoryData, fetchData]
   );
 
+  // Confirm or overturn a low-confidence exclusion. Passing the merchant lets
+  // the backend learn a rule, so the same merchant is handled automatically
+  // next time rather than asking again every month.
+  const handleReviewDecision = useCallback(
+    async (item: any, exclude: boolean) => {
+      setReviewBusyId(item.id);
+      // Optimistic: the row leaves the review list immediately.
+      setTransactions((prev) =>
+        prev.map((t) =>
+          t.id === item.id
+            ? {
+                ...t,
+                excludeFromSpend: exclude,
+                spendType: exclude ? "transfer" : "spend",
+                spendTypeSource: "user",
+                spendTypeConfidence: 1,
+              }
+            : t
+        )
+      );
+      try {
+        await transactionAPI.bulkExclude(
+          [item.id],
+          exclude,
+          item.merchant || undefined
+        );
+        updateWidgets({}, { force: true });
+      } catch (err) {
+        console.error("[Spending] Failed to save review decision", err);
+        Alert.alert(
+          "Couldn't save that",
+          "We'll ask again next time you open this screen."
+        );
+        await fetchData(true);
+      } finally {
+        setReviewBusyId(null);
+      }
+    },
+    [fetchData]
+  );
+
   // Award XP once when categories are first loaded (not on every regeneration)
   useEffect(() => {
     if (sortedCategoryData.length > 0 && !xpAwardedRef.current) {
@@ -985,13 +921,7 @@ export default function SpendingPage() {
       });
 
       // Calculate previous month spending
-      let previousSpending = 0;
-      prevMonthTransactions.forEach((tx) => {
-        const expenseDetection = processTransactionExpense(tx, 0, false);
-        if (expenseDetection.isExpense) {
-          previousSpending += Math.abs(tx.amount);
-        }
-      });
+      const previousSpending = spendTotal(prevMonthTransactions);
 
       // dailySpendingData.data is CUMULATIVE, so per-day spend is the gap
       // between consecutive points and the month total is the final point.
@@ -1447,6 +1377,21 @@ export default function SpendingPage() {
           months={months}
         />
 
+        {/* Transactions the classifier excluded but isn't confident about.
+            They're already out of the total; this asks the user to confirm. */}
+        {(monthlyData?.reviewItems?.length || 0) > 0 && (
+          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+            <ReviewQueueCard
+              items={(monthlyData?.reviewItems || []).slice(0, 5) as any}
+              formatAmount={formatAmount}
+              currency="GBP"
+              busyId={reviewBusyId}
+              onKeep={(item) => handleReviewDecision(item, false)}
+              onExclude={(item) => handleReviewDecision(item, true)}
+            />
+          </View>
+        )}
+
         {/* Empty State - No Transactions */}
         {transactions.length === 0 && (
           <View
@@ -1563,6 +1508,8 @@ export default function SpendingPage() {
                 currentMonth={currentMonth}
                 formatAmount={formatAmount}
                 currency="GBP"
+                excludedTotal={monthlyData?.breakdown?.excluded || 0}
+                excludedCount={monthlyData?.breakdown?.excludedCount || 0}
                 animatedScale={animatedScale}
                 animatedProgress={animatedProgress}
                 isPro={isPro}

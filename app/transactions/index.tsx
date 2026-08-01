@@ -15,8 +15,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { isExcludedFromSpend } from "../../utils/nonSpendDetection";
-import { processTransactionExpense } from "../../utils/expenseDetection";
+import { isSpend, spendTypeOf, excludedLabel } from "../../utils/spend";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useCurrency } from "../../contexts/CurrencyContext";
@@ -54,6 +53,10 @@ interface Transaction {
   accountType?: string;
   isPending?: boolean;
   excludeFromSpend?: boolean;
+  // Server spend classification — read via utils/spend.ts.
+  spendType?: string;
+  spendTypeSource?: string;
+  spendTypeConfidence?: number;
 }
 
 export default function TransactionsScreen() {
@@ -93,18 +96,13 @@ export default function TransactionsScreen() {
   const [similarCategory, setSimilarCategory] = useState("");
   const [applyingSimilar, setApplyingSimilar] = useState(false);
 
-  // Calculate spending summary. Uses the same canonical spend gate as the
-  // Spending page (processTransactionExpense) so excluded / non-spend
-  // transactions (transfers, savings moves, card payments) and income never
-  // count as spend. Income likewise drops non-spend transfers so net flow is
-  // consistent.
+  // Spending summary reads the shared selector, so this screen's totals match
+  // Home, the Spending tab and the widget exactly.
   const getSpendingSummary = () => {
-    const isSpend = (t: Transaction) =>
-      processTransactionExpense(t, 0, false).isExpense;
     const isCountableIncome = (t: Transaction) =>
-      t.type === "credit" && !isExcludedFromSpend(t as any);
+      spendTypeOf(t as any) === "income";
 
-    const spendTransactions = transactions.filter(isSpend);
+    const spendTransactions = transactions.filter((t) => isSpend(t as any));
 
     const totalSpending = spendTransactions.reduce(
       (sum, t) => sum + Math.abs(t.amount),
@@ -201,6 +199,12 @@ export default function TransactionsScreen() {
                 originalAmount,
                 accountType: tx.accountType || "Manual Account",
                 isPending: tx.isPending || false,
+                // Carry the server's classification through — dropping it here
+                // would silently downgrade every total to local guesswork.
+                spendType: tx.spendType,
+                spendTypeSource: tx.spendTypeSource,
+                spendTypeConfidence: tx.spendTypeConfidence,
+                excludeFromSpend: tx.excludeFromSpend,
               };
             });
 
@@ -314,7 +318,7 @@ export default function TransactionsScreen() {
       const newExclude = updates.excludeFromSpend;
       if (newExclude !== undefined && merchant) {
         const prevEffective = selectedTransaction
-          ? isExcludedFromSpend(selectedTransaction as any)
+          ? !isSpend(selectedTransaction as any)
           : false;
         if (newExclude !== prevEffective) {
           const norm = (s?: string) =>
@@ -324,7 +328,7 @@ export default function TransactionsScreen() {
             (t) =>
               t.id !== transactionId &&
               norm(t.merchant || t.description) === target &&
-              isExcludedFromSpend(t as any) !== newExclude
+              !isSpend(t as any) !== newExclude
           );
           const ids = similar.map((t) => t.id);
           const verb = newExclude ? "Exclude" : "Include";
@@ -491,9 +495,8 @@ export default function TransactionsScreen() {
         bucket.dateMap.set(dateKey, []);
       }
       bucket.dateMap.get(dateKey)!.push(tx);
-      // Month header total is "spent" — use the canonical spend gate so income
-      // and excluded / non-spend transactions don't inflate it.
-      if (processTransactionExpense(tx, 0, false).isExpense) {
+      // Month header total is "spent" — same selector as everywhere else.
+      if (isSpend(tx as any)) {
         bucket.total += Math.abs(tx.originalAmount);
       }
     });
@@ -727,8 +730,8 @@ export default function TransactionsScreen() {
                         ]}
                       >
                         {(transaction.category || 'General') +
-                          (isExcludedFromSpend(transaction as any)
-                            ? '  ·  Not counted'
+                          (excludedLabel(transaction as any)
+                            ? `  ·  ${excludedLabel(transaction as any)} · not counted`
                             : '')}
                       </Text>
                     </View>
@@ -851,8 +854,8 @@ export default function TransactionsScreen() {
                             ]}
                           >
                             {(transaction.category || "General") +
-                              (isExcludedFromSpend(transaction as any)
-                                ? "  ·  Not counted"
+                              (excludedLabel(transaction as any)
+                                ? `  ·  ${excludedLabel(transaction as any)} · not counted`
                                 : "")}
                           </Text>
                         </View>

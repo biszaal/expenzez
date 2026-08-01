@@ -20,7 +20,7 @@ import { StreakService } from "../streakService";
 import { XPService } from "../xpService";
 import { getActiveCurrency } from "../../utils/currencyStore";
 import { symbolForCurrency } from "../../constants/currencies";
-import { processTransactionExpense } from "../../utils/expenseDetection";
+import { isSpend } from "../../utils/spend";
 
 import {
   WidgetSnapshot,
@@ -92,8 +92,9 @@ function prettyCategory(raw: string): string {
 }
 
 /**
- * This calendar month's spend total and top category, mirroring the spending
- * screen's expense-detection logic.
+ * This calendar month's spend total and top category. Uses the same shared
+ * selector as every other surface, so the widget can never drift from what the
+ * Spending tab shows.
  */
 function summarizeCurrentMonth(txns: Transaction[]): {
   spent: number;
@@ -102,11 +103,10 @@ function summarizeCurrentMonth(txns: Transaction[]): {
   const currentMonth = dayjs().format("YYYY-MM");
   const byCategory: Record<string, number> = {};
   let total = 0;
-  txns.forEach((txn, index) => {
+  txns.forEach((txn) => {
     if (!txn?.date) return;
     if (dayjs(txn.date).format("YYYY-MM") !== currentMonth) return;
-    const { isExpense } = processTransactionExpense(txn, index, false);
-    if (!isExpense) return;
+    if (!isSpend(txn as any)) return;
     const amount = Math.abs(Number(txn.amount) || 0);
     total += amount;
     const cat = (txn.category || "other").trim().toLowerCase();

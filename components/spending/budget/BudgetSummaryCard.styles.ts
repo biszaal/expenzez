@@ -86,6 +86,11 @@ export const budgetSummaryCardStyles = StyleSheet.create({
     lineHeight: 34,
     marginTop: 2,
   },
+  statsExcluded: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 4,
+  },
   statsDivider: {
     height: StyleSheet.hairlineWidth,
     marginVertical: 14,

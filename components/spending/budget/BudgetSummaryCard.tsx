@@ -34,6 +34,11 @@ interface BudgetSummaryCardProps {
   currentMonth: boolean;
   formatAmount: (amount: number, currency?: string) => string;
   currency: string;
+  // Money that left the account this month but isn't spending (transfers
+  // between the user's own accounts, credit-card bill payments). Surfaced so
+  // the total explains itself rather than just being lower than the debits.
+  excludedTotal?: number;
+  excludedCount?: number;
   animatedScale: Animated.Value;
   animatedProgress: Animated.Value;
   isPro?: boolean;
@@ -61,6 +66,8 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
   currentMonth,
   formatAmount,
   currency,
+  excludedTotal = 0,
+  excludedCount = 0,
   animatedScale,
   animatedProgress,
   isPro,
@@ -334,23 +341,37 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                 },
               ]}
             >
-              REMAINING
+              TOTAL SPENT
             </Text>
             <Text
               numberOfLines={1}
               style={[
                 styles.statsRemaining,
                 {
-                  color:
-                    displayLeftToSpend < 0
-                      ? colors.rose[500]
-                      : colors.text.primary,
+                  color: monthlyOverBudget
+                    ? colors.rose[500]
+                    : colors.text.primary,
                   fontFamily: fontFamily.monoMedium,
                 },
               ]}
             >
-              {formatAmount(Math.max(displayLeftToSpend, 0), currency)}
+              {formatAmount(monthlyTotalSpent, currency)}
             </Text>
+            {excludedCount > 0 && (
+              <Text
+                numberOfLines={2}
+                style={[
+                  styles.statsExcluded,
+                  {
+                    color: colors.text.tertiary,
+                    fontFamily: fontFamily.medium,
+                  },
+                ]}
+              >
+                {formatAmount(excludedTotal, currency)} moved between accounts,
+                not counted
+              </Text>
+            )}
             <View
               style={[
                 styles.statsDivider,
@@ -371,18 +392,21 @@ export const BudgetSummaryCard: React.FC<BudgetSummaryCardProps> = ({
                   },
                 ]}
               >
-                Spent
+                Remaining
               </Text>
               <Text
                 style={[
                   styles.statsRowValue,
                   {
-                    color: colors.text.primary,
+                    color:
+                      displayLeftToSpend < 0
+                        ? colors.rose[500]
+                        : colors.text.primary,
                     fontFamily: fontFamily.monoMedium,
                   },
                 ]}
               >
-                {formatAmount(monthlyTotalSpent, currency)}
+                {formatAmount(Math.max(displayLeftToSpend, 0), currency)}
               </Text>
             </View>
             <View style={styles.statsRow}>

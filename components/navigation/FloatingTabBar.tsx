@@ -15,11 +15,15 @@ import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useTheme } from "../../contexts/ThemeContext";
 import { fontFamily } from "../../constants/theme";
 
-// New v1.5 floating tab bar with a center FAB for "Add transaction".
-// 4 visible tabs (Home / Spending / Progress / Account) + the FAB. Other
-// stack screens registered in the (tabs) layout are kept routable but
-// hidden from the bar (e.g. Health).
-const VISIBLE_TABS = ["index", "spending", "progress", "account"] as const;
+// Floating tab bar with a center FAB for "Add transaction".
+// 4 visible tabs (Home / Spending / Accounts / Goals) + the FAB. Other stack
+// screens registered in the (tabs) layout are kept routable but hidden from
+// the bar (e.g. Health).
+//
+// Profile and settings deliberately do NOT have a tab: they're reached from
+// the avatar in the Home header. A tab slot is prime real estate and belongs
+// to something you check often — your banks — not to a settings menu.
+const VISIBLE_TABS = ["index", "spending", "accounts", "progress"] as const;
 type VisibleTab = (typeof VISIBLE_TABS)[number];
 
 const TAB_META: Record<
@@ -28,8 +32,8 @@ const TAB_META: Record<
 > = {
   index: { label: "Home", icon: "home-outline", iconActive: "home" },
   spending: { label: "Spending", icon: "stats-chart-outline", iconActive: "stats-chart" },
+  accounts: { label: "Accounts", icon: "card-outline", iconActive: "card" },
   progress: { label: "Goals", icon: "trophy-outline", iconActive: "trophy" },
-  account: { label: "Account", icon: "person-outline", iconActive: "person" },
 };
 
 export const FloatingTabBar: React.FC<BottomTabBarProps> = ({
@@ -63,9 +67,9 @@ export const FloatingTabBar: React.FC<BottomTabBarProps> = ({
     router.push("/add-transaction");
   };
 
-  // Render order: Home, Spending, [FAB], Progress, Account
+  // Render order: Home, Spending, [FAB], Accounts, Goals
   const leftTabs: VisibleTab[] = ["index", "spending"];
-  const rightTabs: VisibleTab[] = ["progress", "account"];
+  const rightTabs: VisibleTab[] = ["accounts", "progress"];
 
   const blurTint = isDark ? "dark" : "light";
   const barBackground =

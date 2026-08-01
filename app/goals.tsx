@@ -133,18 +133,23 @@ export default function GoalsScreen() {
         await updateSavingsGoal(editingGoal.goalId, {
           title: goalData.title,
           description: goalData.description,
+          type: goalData.type,
           targetAmount: goalData.targetAmount,
           targetDate: goalData.targetDate,
+          priority: goalData.priority,
           category: goalData.category,
         });
       } else {
         await createSavingsGoal({
           title: goalData.title,
           description: goalData.description,
+          type: goalData.type,
           targetAmount: goalData.targetAmount,
           currentAmount: 0,
           targetDate: goalData.targetDate,
+          priority: goalData.priority,
           category: goalData.category,
+          autoSaveSettings: goalData.autoSaveSettings,
         });
       }
 
@@ -256,15 +261,17 @@ export default function GoalsScreen() {
   // Show create / edit form
   if (showCreateForm) {
     return (
-      <CreateGoalForm
-        onSubmit={handleSaveGoal}
-        onCancel={() => {
-          setShowCreateForm(false);
-          setEditingGoal(null);
-        }}
-        isLoading={isCreating}
-        initialGoal={editingGoal ?? undefined}
-      />
+      <SafeAreaView style={styles.container}>
+        <CreateGoalForm
+          onSubmit={handleSaveGoal}
+          onCancel={() => {
+            setShowCreateForm(false);
+            setEditingGoal(null);
+          }}
+          isLoading={isCreating}
+          initialGoal={editingGoal ?? undefined}
+        />
+      </SafeAreaView>
     );
   }
 

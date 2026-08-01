@@ -82,7 +82,7 @@ export default function NotificationsScreen() {
         safeNavigate("/(tabs)/spending", true);
         break;
       case "account":
-        safeNavigate("/(tabs)/account", true);
+        safeNavigate("/settings", true);
         break;
       case "insight":
         // Navigate to AI assistant
@@ -104,6 +104,61 @@ export default function NotificationsScreen() {
         break;
     }
   };
+
+  // Group by calendar day so a long feed reads as a timeline instead of an
+  // undifferentiated wall. Anything without a timestamp falls into "Earlier"
+  // rather than being dropped.
+  const groupedNotifications = React.useMemo(() => {
+    const dayMs = 24 * 60 * 60 * 1000;
+    const startOfToday = new Date().setHours(0, 0, 0, 0);
+
+    const labelFor = (timestamp?: number): { key: string; label: string } => {
+      if (!timestamp || Number.isNaN(timestamp)) {
+        return { key: "earlier", label: "EARLIER" };
+      }
+      const startOfDay = new Date(timestamp).setHours(0, 0, 0, 0);
+      if (startOfDay === startOfToday) return { key: "today", label: "TODAY" };
+      if (startOfDay === startOfToday - dayMs) {
+        return { key: "yesterday", label: "YESTERDAY" };
+      }
+      return {
+        key: String(startOfDay),
+        label: new Date(timestamp)
+          .toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year:
+              new Date(timestamp).getFullYear() === new Date().getFullYear()
+                ? undefined
+                : "numeric",
+          })
+          .toUpperCase(),
+      };
+    };
+
+    const groups = new Map<
+      string,
+      { key: string; label: string; sort: number; items: typeof notifications }
+    >();
+
+    for (const notification of notifications) {
+      const { key, label } = labelFor(notification.timestamp);
+      const existing = groups.get(key);
+      if (existing) {
+        existing.items.push(notification);
+      } else {
+        groups.set(key, {
+          key,
+          label,
+          // Undated items sink to the bottom.
+          sort: notification.timestamp ?? 0,
+          items: [notification],
+        });
+      }
+    }
+
+    return Array.from(groups.values()).sort((a, b) => b.sort - a.sort);
+  }, [notifications]);
 
   const styles = createStyles(colors);
 
@@ -191,113 +246,63 @@ export default function NotificationsScreen() {
           </View>
         )}
 
-        {/* Summary card */}
+        {/* Unread line + one-tap clear. The old summary card restated the
+            list count in a large box; the only thing worth acting on here is
+            "how many are unread", so that is all this shows. */}
         {notifications.length > 0 && (
-          <View style={styles.summaryWrap}>
-            <View
-              style={[
-                styles.summaryCard,
-                { borderColor: colors.border.dark },
-              ]}
+          <View style={styles.statusRow}>
+            <Text
+              style={{
+                fontSize: 13,
+                color:
+                  unreadCount > 0 ? colors.text.primary : colors.text.tertiary,
+                fontFamily: fontFamily.medium,
+              }}
             >
-              <View style={{ flex: 1 }}>
+              {unreadCount > 0
+                ? `${unreadCount} unread`
+                : "You're all caught up"}
+            </Text>
+            {unreadCount > 0 && (
+              <Pressable onPress={markAllAsRead} hitSlop={8}>
                 <Text
                   style={{
                     fontSize: 13,
-                    color: colors.text.secondary,
-                    fontFamily: fontFamily.medium,
-                  }}
-                >
-                  All activity
-                </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "baseline",
-                    gap: 8,
-                    marginTop: 2,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 22,
-                      color: colors.text.primary,
-                      fontFamily: fontFamily.monoMedium,
-                      letterSpacing: -0.6,
-                    }}
-                  >
-                    {notifications.length}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color: colors.text.secondary,
-                      fontFamily: fontFamily.medium,
-                    }}
-                  >
-                    {notifications.length === 1 ? "item" : "items"}
-                  </Text>
-                </View>
-                <Text
-                  style={{
-                    fontSize: 11.5,
-                    color: unreadCount > 0 ? colors.lime[500] : colors.text.tertiary,
+                    color: colors.primary[500],
                     fontFamily: fontFamily.semibold,
-                    marginTop: 6,
                   }}
                 >
-                  {unreadCount > 0
-                    ? `${unreadCount} unread`
-                    : "All caught up"}
+                  Mark all read
                 </Text>
-              </View>
-              {unreadCount > 0 && (
-                <Pressable
-                  onPress={markAllAsRead}
-                  style={[
-                    styles.markAllChip,
-                    {
-                      backgroundColor: colors.card.background,
-                      borderColor: colors.border.medium,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      color: colors.primary[500],
-                      fontFamily: fontFamily.semibold,
-                    }}
-                  >
-                    Mark all
-                  </Text>
-                </Pressable>
-              )}
-            </View>
+              </Pressable>
+            )}
           </View>
-        )}
-
-        {/* Section label */}
-        {notifications.length > 0 && (
-          <Text
-            style={[
-              styles.sectionLabel,
-              { color: colors.text.tertiary, fontFamily: fontFamily.semibold },
-            ]}
-          >
-            RECENT
-          </Text>
         )}
 
         {/* Notifications List */}
         {notifications.length > 0 ? (
-          notifications.map((notification, index) => (
-            <NotificationCard
-              key={`${notification.id}_${index}_${notification.time}`}
-              notification={notification}
-              onPress={() => handleNotificationPress(notification)}
-              isLast={index === notifications.length - 1}
-            />
+          groupedNotifications.map((group) => (
+            <View key={group.key}>
+              <Text
+                style={[
+                  styles.dayHeader,
+                  {
+                    color: colors.text.tertiary,
+                    fontFamily: fontFamily.semibold,
+                  },
+                ]}
+              >
+                {group.label}
+              </Text>
+              {group.items.map((notification, index) => (
+                <NotificationCard
+                  key={notification.id}
+                  notification={notification}
+                  onPress={() => handleNotificationPress(notification)}
+                  isLast={index === group.items.length - 1}
+                />
+              ))}
+            </View>
           ))
         ) : (
           <EmptyState
@@ -398,6 +403,20 @@ const createStyles = (colors: any) =>
       borderWidth: StyleSheet.hairlineWidth,
     },
     sectionLabel: {
+      paddingHorizontal: 28,
+      paddingTop: 22,
+      paddingBottom: 10,
+      fontSize: 11,
+      letterSpacing: 1.2,
+    },
+    statusRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 28,
+      paddingTop: 18,
+    },
+    dayHeader: {
       paddingHorizontal: 28,
       paddingTop: 22,
       paddingBottom: 10,
