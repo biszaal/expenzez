@@ -65,7 +65,8 @@
       },
       "android": {
         "serviceAccountKeyPath": "./android-service-account.json",
-        "track": "internal"
+        "track": "production",
+        "releaseStatus": "completed"
       }
     }
   }
