@@ -4,7 +4,11 @@
 // Kept in sync by bankId. The backend decides which bank a statement came from;
 // this file decides what that bank looks like.
 
-import { Ionicons } from "@expo/vector-icons";
+// Type-only: this module is pulled in by the API layer (accountsAPI ->
+// services/api barrel -> AuthContext), which loads at app startup. A value
+// import here would drag @expo/vector-icons and expo-font into that chain
+// before the native modules are necessarily ready.
+import type { Ionicons } from "@expo/vector-icons";
 
 export interface BankBrand {
   bankId: string;
