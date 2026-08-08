@@ -128,9 +128,11 @@ class ErrorBoundary extends React.Component<
           </Text>
           <Text style={{ textAlign: "center" }}>Please restart the app</Text>
 
-          {/* Release builds gave no clue what actually failed, which turned a
-              one-line bug into a multi-build hunt. Show the error itself so a
-              screenshot is enough to diagnose it. */}
+          {/* Detail only in development. Release builds previously gave no
+              clue what failed, which turned a one-line bug into a multi-build
+              hunt — but raw stack traces must never reach real users, so this
+              is gated rather than removed. */}
+          {__DEV__ && (
           <ScrollView
             style={{ maxHeight: 320, marginTop: 20, alignSelf: "stretch" }}
             contentContainerStyle={{ padding: 12 }}
@@ -148,6 +150,7 @@ class ErrorBoundary extends React.Component<
               {String(this.state.componentStack || "").split("\n").slice(0, 12).join("\n")}
             </Text>
           </ScrollView>
+          )}
         </View>
       );
     }

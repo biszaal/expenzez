@@ -40,7 +40,7 @@ interface NativeAdCardProps {
   style?: ViewStyle;
 }
 
-export default function NativeAdCard({ style }: NativeAdCardProps) {
+function NativeAdCardInner({ style }: NativeAdCardProps) {
   const { shouldShowAds, getRequestOptions } = useAds();
   const { colors } = useTheme();
   const [nativeAd, setNativeAd] = useState<any | null>(null);
@@ -217,3 +217,18 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semibold,
   },
 });
+
+/**
+ * The boundary must wrap the component, not live inside its return: an error
+ * thrown by NativeAdCardInner's own effects (loading the ad) escapes any
+ * boundary rendered *by* that component and takes down the whole app. That is
+ * exactly what happened — a bad ad request crashed the app on login instead of
+ * quietly hiding one card.
+ */
+export default function NativeAdCard(props: NativeAdCardProps) {
+  return (
+    <AdErrorBoundary>
+      <NativeAdCardInner {...props} />
+    </AdErrorBoundary>
+  );
+}

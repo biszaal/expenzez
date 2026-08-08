@@ -30,7 +30,7 @@ interface AdBannerProps {
   style?: ViewStyle;
 }
 
-export default function AdBanner({ style }: AdBannerProps) {
+function AdBannerInner({ style }: AdBannerProps) {
   const { shouldShowAds, getRequestOptions } = useAds();
   const [failed, setFailed] = useState(false);
 
@@ -62,3 +62,16 @@ const styles = StyleSheet.create({
     minHeight: 60,
   },
 });
+
+/**
+ * Wrapped rather than boundary-inside-return, for the same reason as
+ * NativeAdCard: getRequestOptions() is evaluated during this component's own
+ * render, and a boundary rendered by that component cannot catch it.
+ */
+export default function AdBanner(props: AdBannerProps) {
+  return (
+    <AdErrorBoundary>
+      <AdBannerInner {...props} />
+    </AdErrorBoundary>
+  );
+}

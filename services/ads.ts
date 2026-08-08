@@ -84,10 +84,19 @@ class AdsService {
     };
   };
 
-  /** Request options to pass on every ad load (personalised vs not). */
-  getRequestOptions() {
+  /**
+   * Request options to pass on every ad load (personalised vs not).
+   *
+   * An arrow property, not a method: useAds hands this reference straight to
+   * components, which call it bare. As a regular method `this` was undefined at
+   * the call site and reading `this.state` threw, crashing the app on login for
+   * anyone actually being served ads — i.e. real devices in production, never
+   * the simulator or a dev build (where __DEV__ makes every user Pro, so ads
+   * never render). `getState` and `subscribe` above are bound the same way.
+   */
+  getRequestOptions = () => {
     return { requestNonPersonalizedAdsOnly: !this.state.canRequestPersonalized };
-  }
+  };
 
   private emit() {
     this.state = { ...this.state }; // new identity so subscribers re-read
