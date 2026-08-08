@@ -27,6 +27,7 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
+  ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
@@ -81,6 +82,7 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  componentStack: string | null;
 }
 
 class ErrorBoundary extends React.Component<
@@ -89,14 +91,17 @@ class ErrorBoundary extends React.Component<
 > {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, componentStack: null };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(
+    error: Error
+  ): Pick<ErrorBoundaryState, "hasError" | "error"> {
     return { hasError: true, error };
   }
 
   override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    this.setState({ componentStack: errorInfo.componentStack ?? null });
     console.error("🚨 [ErrorBoundary] CRITICAL ERROR CAUGHT:", error);
     console.error("🚨 [ErrorBoundary] Error stack:", error.stack);
     console.error(
@@ -122,6 +127,27 @@ class ErrorBoundary extends React.Component<
             Something went wrong
           </Text>
           <Text style={{ textAlign: "center" }}>Please restart the app</Text>
+
+          {/* Release builds gave no clue what actually failed, which turned a
+              one-line bug into a multi-build hunt. Show the error itself so a
+              screenshot is enough to diagnose it. */}
+          <ScrollView
+            style={{ maxHeight: 320, marginTop: 20, alignSelf: "stretch" }}
+            contentContainerStyle={{ padding: 12 }}
+          >
+            <Text
+              selectable
+              style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}
+            >
+              {this.state.error?.name}: {this.state.error?.message}
+            </Text>
+            <Text selectable style={{ fontSize: 10, opacity: 0.75 }}>
+              {String(this.state.error?.stack || "").split("\n").slice(0, 14).join("\n")}
+            </Text>
+            <Text selectable style={{ fontSize: 10, opacity: 0.75, marginTop: 8 }}>
+              {String(this.state.componentStack || "").split("\n").slice(0, 12).join("\n")}
+            </Text>
+          </ScrollView>
         </View>
       );
     }
