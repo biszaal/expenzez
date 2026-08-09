@@ -210,9 +210,20 @@ export default function ImportStatementScreen() {
           setStage("idle");
           return;
         }
-        // Upload succeeded but extraction failed → almost always an unsupported
-        // bank/layout. Show a friendly message instead of raw backend text
-        // ("pdf failed to parse"), which users read as a crash.
+        // Our side is down (exhausted API credits, rate limit, upstream
+        // outage). Say so — reporting this as "bank not supported" sent a
+        // user chasing an Amex compatibility problem that did not exist.
+        if (code === "PARSER_UNAVAILABLE") {
+          Alert.alert(
+            "Couldn't process it right now",
+            backendMessage ||
+              "This is a problem on our side, not with your statement. Please try again shortly."
+          );
+          setStage("idle");
+          return;
+        }
+        // Upload succeeded but extraction genuinely found nothing → an
+        // unsupported bank/layout. Friendlier than raw backend text.
         if (step === "parse") {
           Alert.alert("Bank not supported yet", NOT_SUPPORTED_MSG);
           setStage("idle");

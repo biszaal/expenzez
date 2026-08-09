@@ -62,8 +62,19 @@ function classifyLocally(txn: SpendClassified): SpendType {
   return "spend";
 }
 
-/** The effective spend type for a transaction: server first, local fallback. */
+/**
+ * The effective spend type: explicit user choice, then server, then local.
+ *
+ * The override has to be checked BEFORE spendType, mirroring the backend's own
+ * precedence (classifyTransaction resolves excludeFromSpend first). Checking
+ * spendType first meant a freshly-toggled row — which carries the new
+ * excludeFromSpend but the previous spendType until the list refetches — was
+ * read with its stale classification, so the "exclude from spending" switch
+ * saved correctly and then appeared to turn itself back off.
+ */
 export function spendTypeOf(txn: SpendClassified): SpendType {
+  if (txn.excludeFromSpend === true) return "transfer";
+  if (txn.excludeFromSpend === false) return "spend";
   if (txn.spendType && txn.spendType !== "unclassified") {
     return txn.spendType as SpendType;
   }

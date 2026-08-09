@@ -33,8 +33,8 @@
     <key>AppGroupIdentifier</key>
     <string>group.com.biszaal.expenzez</string>
     <key>CFBundleVersion</key>
-    <string>73</string>
+    <string>74</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.8.2</string>
+    <string>1.8.3</string>
   </dict>
 </plist>

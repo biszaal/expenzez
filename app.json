@@ -20,7 +20,7 @@
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/images/icon-ios.png",
-      "buildNumber": "73",
+      "buildNumber": "74",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -77,7 +77,7 @@
         "android.permission.POST_NOTIFICATIONS"
       ],
       "package": "com.biszaaltech.expenzez",
-      "versionCode": 41
+      "versionCode": 42
     },
     "web": {
       "bundler": "metro",

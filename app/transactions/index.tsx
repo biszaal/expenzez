@@ -280,11 +280,20 @@ export default function TransactionsScreen() {
     try {
       await transactionAPI.updateTransaction(transactionId, updates);
 
-      // Update the local state
+      // Update the local state. Move spendType with an exclusion change:
+      // merging only excludeFromSpend leaves the row contradicting itself
+      // (new override, previous classification) until the list refetches.
       setTransactions((prevTransactions) =>
-        prevTransactions.map((tx) =>
-          tx.id === transactionId ? { ...tx, ...updates } : tx
-        )
+        prevTransactions.map((tx) => {
+          if (tx.id !== transactionId) return tx;
+          const merged: any = { ...tx, ...updates };
+          if (updates.excludeFromSpend !== undefined) {
+            merged.spendType = updates.excludeFromSpend ? "transfer" : "spend";
+            merged.spendTypeSource = "user";
+            merged.spendTypeConfidence = 1;
+          }
+          return merged;
+        })
       );
 
       showSuccess("Transaction updated successfully");
