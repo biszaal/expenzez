@@ -69,6 +69,7 @@ api.interceptors.request.use(
       "/auth/forgot-password",
       "/auth/confirm-forgot-password",
       "/auth/apple-login",
+      "/auth/google-login",
       "/auth/check-user-status",
     ];
 
@@ -95,6 +96,7 @@ api.interceptors.request.use(
       "/auth/forgot-password",
       "/auth/confirm-forgot-password",
       "/auth/apple-login",
+      "/auth/google-login",
     ];
 
     const isAuthEndpoint = authEndpoints.some((endpoint) =>
