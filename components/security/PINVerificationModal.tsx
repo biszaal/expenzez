@@ -57,6 +57,8 @@ export const PINVerificationModal: React.FC<PINVerificationModalProps> = ({
           {/* Header */}
           <View style={styles.verificationHeader}>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Close"
               onPress={onClose}
               style={[
                 styles.closeButton,

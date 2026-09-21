@@ -133,9 +133,9 @@ export default function AccountDetailScreen() {
     >
       <View style={styles.navRow}>
         <Pressable
-          onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel="Back"
+          onPress={() => router.back()}
           hitSlop={10}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary[500]} />

@@ -342,6 +342,8 @@ export default function AddTransaction() {
           {/* Top bar */}
           <View style={styles.topBar}>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Back"
               onPress={() => router.back()}
               style={[
                 styles.backChip,
@@ -382,6 +384,9 @@ export default function AddTransaction() {
               const active = transactionType === tp;
               return (
                 <Pressable
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: transactionType === tp }}
+                  accessibilityLabel={tp === "expense" ? "Expense" : "Income"}
                   key={tp}
                   onPress={() => {
                     setTransactionType(tp);
@@ -455,6 +460,9 @@ export default function AddTransaction() {
               const active = paymentMethod === pm;
               return (
                 <Pressable
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: paymentMethod === pm }}
+                  accessibilityLabel={pm === "cash" ? "Cash" : "Bank or manual"}
                   key={pm}
                   onPress={() => setPaymentMethod(pm)}
                   style={{ flex: 1, borderRadius: 12, overflow: "hidden" }}
@@ -613,6 +621,9 @@ export default function AddTransaction() {
                 const active = selectedCategory.id === category.id;
                 return (
                   <Pressable
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={category.name}
                     key={category.id}
                     onPress={() => setSelectedCategory(category)}
                     style={[
@@ -669,6 +680,7 @@ export default function AddTransaction() {
 
           {/* Save Button */}
           <Pressable
+            accessibilityRole="button"
             onPress={handleSaveTransaction}
             disabled={loading}
             style={({ pressed }) => [

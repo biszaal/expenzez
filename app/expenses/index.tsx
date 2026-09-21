@@ -115,6 +115,8 @@ export default function ExpenseManagementPage() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Back"
             onPress={() => router.back()}
             style={styles.backButton}
           >
@@ -127,12 +129,16 @@ export default function ExpenseManagementPage() {
         
         <View style={styles.headerRight}>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Filters"
             onPress={() => setFilterModalVisible(true)}
             style={[styles.filterButton, { backgroundColor: colors.background.primary }]}
           >
             <Ionicons name="funnel" size={20} color={colors.primary.main} />
           </TouchableOpacity>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Add an expense"
             onPress={() => router.push('/expenses/add')}
             style={[styles.addButton, { backgroundColor: colors.primary.main }]}
           >
@@ -150,7 +156,12 @@ export default function ExpenseManagementPage() {
                 <Text style={[styles.filterTagText, { color: colors.primary[700] }]}>
                   {selectedCategory}
                 </Text>
-                <TouchableOpacity onPress={() => setSelectedCategory('')}>
+                <TouchableOpacity
+                  onPress={() => setSelectedCategory('')}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: selectedCategory === '' }}
+                  accessibilityLabel="All categories"
+                >
                   <Ionicons name="close" size={16} color={colors.primary[700]} />
                 </TouchableOpacity>
               </View>
@@ -160,7 +171,11 @@ export default function ExpenseManagementPage() {
                 <Text style={[styles.filterTagText, { color: colors.primary[700] }]}>
                   From: {new Date(dateRange.startDate).toLocaleDateString()}
                 </Text>
-                <TouchableOpacity onPress={() => setDateRange(prev => ({ ...prev, startDate: undefined }))}>
+                <TouchableOpacity
+                  onPress={() => setDateRange(prev => ({ ...prev, startDate: undefined }))}
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose date"
+                >
                   <Ionicons name="close" size={16} color={colors.primary[700]} />
                 </TouchableOpacity>
               </View>
@@ -170,13 +185,21 @@ export default function ExpenseManagementPage() {
                 <Text style={[styles.filterTagText, { color: colors.primary[700] }]}>
                   To: {new Date(dateRange.endDate).toLocaleDateString()}
                 </Text>
-                <TouchableOpacity onPress={() => setDateRange(prev => ({ ...prev, endDate: undefined }))}>
+                <TouchableOpacity
+                  onPress={() => setDateRange(prev => ({ ...prev, endDate: undefined }))}
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose date"
+                >
                   <Ionicons name="close" size={16} color={colors.primary[700]} />
                 </TouchableOpacity>
               </View>
             )}
           </View>
-          <TouchableOpacity onPress={clearFilters} style={styles.clearFiltersButton}>
+          <TouchableOpacity
+            onPress={clearFilters} style={styles.clearFiltersButton}
+            accessibilityRole="button"
+            accessibilityLabel="Clear all filters"
+          >
             <Text style={[styles.clearFiltersText, { color: colors.primary[600] }]}>
               Clear All
             </Text>
@@ -199,11 +222,19 @@ export default function ExpenseManagementPage() {
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background.secondary }}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+            <TouchableOpacity
+              onPress={() => setFilterModalVisible(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
               <Text style={[styles.modalCancel, { color: colors.primary.main }]}>Cancel</Text>
             </TouchableOpacity>
             <Text style={[styles.modalTitle, { color: colors.text.primary }]}>Filters</Text>
-            <TouchableOpacity onPress={applyFilters}>
+            <TouchableOpacity
+              onPress={applyFilters}
+              accessibilityRole="button"
+              accessibilityLabel="Apply filters"
+            >
               <Text style={[styles.modalApply, { color: colors.primary.main }]}>Apply</Text>
             </TouchableOpacity>
           </View>
@@ -214,6 +245,9 @@ export default function ExpenseManagementPage() {
             </Text>
             <View style={styles.categoryGrid}>
               <TouchableOpacity
+                accessibilityRole="radio"
+                accessibilityState={{ selected: selectedCategory === '' }}
+                accessibilityLabel="All categories"
                 onPress={() => setSelectedCategory('')}
                 style={[
                   styles.categoryOption,
@@ -232,6 +266,9 @@ export default function ExpenseManagementPage() {
               </TouchableOpacity>
               {categories.map((category) => (
                 <TouchableOpacity
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: selectedCategory === category.toLowerCase() }}
+                  accessibilityLabel={category}
                   key={category}
                   onPress={() => setSelectedCategory(category.toLowerCase())}
                   style={[
@@ -279,6 +316,7 @@ export default function ExpenseManagementPage() {
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background.secondary }}>
           <View style={styles.modalHeader}>
             <TouchableOpacity 
+              accessibilityRole="button"
               onPress={() => {
                 setEditModalVisible(false);
                 setEditingExpense(null);
@@ -287,7 +325,12 @@ export default function ExpenseManagementPage() {
               <Text style={[styles.modalCancel, { color: colors.primary.main }]}>Cancel</Text>
             </TouchableOpacity>
             <Text style={[styles.modalTitle, { color: colors.text.primary }]}>Edit Expense</Text>
-            <TouchableOpacity onPress={handleSaveExpense} disabled={editLoading}>
+            <TouchableOpacity
+              onPress={handleSaveExpense} disabled={editLoading}
+              accessibilityRole="button"
+              accessibilityLabel={editLoading ? "Saving" : "Save"}
+              accessibilityState={{ busy: editLoading }}
+            >
               <Text style={[styles.modalApply, { 
                 color: editLoading ? colors.gray[400] : colors.primary.main 
               }]}>
@@ -315,6 +358,7 @@ export default function ExpenseManagementPage() {
             <View style={styles.categoryGrid}>
               {categories.map((cat) => (
                 <TouchableOpacity
+                  accessibilityRole="button"
                   key={cat}
                   style={[
                     styles.categoryOption,
@@ -341,6 +385,7 @@ export default function ExpenseManagementPage() {
 
             <Text style={[styles.label, { color: colors.text.primary }]}>Date</Text>
             <TouchableOpacity
+              accessibilityRole="button"
               onPress={() => setShowEditDatePicker(true)}
               style={[styles.input, {
                 backgroundColor: colors.background.primary,

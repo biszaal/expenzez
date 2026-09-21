@@ -56,6 +56,9 @@ export const CategoryMerchantSwitch: React.FC<CategoryMerchantSwitchProps> = ({
           );
           return (
             <Pressable
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={tab.label}
               key={tab.key}
               onPress={() => setSpendingTab(tab.key)}
               style={styles.pillPressable}

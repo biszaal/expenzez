@@ -77,6 +77,9 @@ export const AppleSignInButton: React.FC<AppleSignInButtonProps> = ({
           }
         ]}
         disabled={true}
+        accessibilityRole="button"
+        accessibilityLabel="Checking Apple Sign In"
+        accessibilityState={{ disabled: true, busy: true }}
       >
         <View style={styles.appleButtonContent}>
           <Ionicons 
@@ -111,6 +114,9 @@ export const AppleSignInButton: React.FC<AppleSignInButtonProps> = ({
       ]}
       onPress={isAvailable ? onPress : undefined}
       disabled={disabled || !isAvailable}
+      accessibilityRole="button"
+      accessibilityLabel={isAvailable ? buttonText : unavailableText}
+      accessibilityState={{ disabled: disabled || !isAvailable }}
     >
       <View style={styles.appleButtonContent}>
         <Ionicons 

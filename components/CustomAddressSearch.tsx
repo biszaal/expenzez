@@ -246,7 +246,11 @@ export default function CustomAddressSearch({
           />
         )}
         {query.length > 0 && !loading && (
-          <TouchableOpacity onPress={clearSearch} style={{ marginLeft: spacing.sm }}>
+          <TouchableOpacity
+            onPress={clearSearch} style={{ marginLeft: spacing.sm }}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+          >
             <Ionicons name="close-circle" size={20} color={colors.text.tertiary} />
           </TouchableOpacity>
         )}
@@ -280,6 +284,7 @@ export default function CustomAddressSearch({
           >
             {suggestions.map((suggestion, index) => (
               <TouchableOpacity
+                accessibilityRole="button"
                 key={suggestion.place_id}
                 onPress={() => handleSelectAddress(suggestion)}
                 style={{

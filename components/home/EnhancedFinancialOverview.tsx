@@ -33,6 +33,8 @@ export const EnhancedFinancialOverview: React.FC<
           This Month
         </Text>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="View spending"
           style={[
             styles.viewAllButton,
             { backgroundColor: colors.primary.main },

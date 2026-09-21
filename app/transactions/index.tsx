@@ -556,6 +556,8 @@ export default function TransactionsScreen() {
       >
         <View style={styles.header}>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Back"
             style={[
               styles.backButton,
               { backgroundColor: colors.background.secondary },
@@ -611,6 +613,8 @@ export default function TransactionsScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Back"
             style={[
               styles.backButton,
               { backgroundColor: colors.background.secondary },
@@ -638,6 +642,8 @@ export default function TransactionsScreen() {
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() => setSummaryModalVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Spending summary"
           >
             <Ionicons
               name="ellipsis-horizontal"
@@ -708,6 +714,7 @@ export default function TransactionsScreen() {
 
                 {pendingTransactions.map((transaction) => (
                   <TouchableOpacity
+                    accessibilityRole="button"
                     key={transaction.id}
                     style={[
                       styles.transactionCard,
@@ -833,6 +840,7 @@ export default function TransactionsScreen() {
                       return (
                       <React.Fragment key={transaction.id}>
                       <TouchableOpacity
+                        accessibilityRole="button"
                         style={[
                           styles.transactionCard,
                           { backgroundColor: colors.background.secondary },
@@ -984,6 +992,8 @@ export default function TransactionsScreen() {
               </Text>
               <TouchableOpacity
                 onPress={() => setSummaryModalVisible(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
                 style={styles.closeButton}
               >
                 <Ionicons

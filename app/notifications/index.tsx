@@ -182,6 +182,8 @@ export default function NotificationsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           onPress={() => router.back()}
           style={[
             styles.headerChip,
@@ -202,6 +204,8 @@ export default function NotificationsScreen() {
           Activity
         </Text>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Notification preferences"
           onPress={() => router.push("/notifications/preferences")}
           style={[
             styles.headerChip,
@@ -240,7 +244,11 @@ export default function NotificationsScreen() {
             />
             <Text style={styles.errorTitle}>Error Loading Notifications</Text>
             <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
+            <TouchableOpacity
+              style={styles.retryButton} onPress={onRefresh}
+              accessibilityRole="button"
+              accessibilityLabel="Try again"
+            >
               <Text style={styles.retryButtonText}>Try Again</Text>
             </TouchableOpacity>
           </View>
@@ -264,7 +272,11 @@ export default function NotificationsScreen() {
                 : "You're all caught up"}
             </Text>
             {unreadCount > 0 && (
-              <Pressable onPress={markAllAsRead} hitSlop={8}>
+              <Pressable
+                onPress={markAllAsRead} hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Mark all read"
+              >
                 <Text
                   style={{
                     fontSize: 13,
@@ -317,6 +329,7 @@ export default function NotificationsScreen() {
         {notifications.length > 0 && (
           <View style={styles.clearSection}>
             <Pressable
+              accessibilityRole="button"
               onPress={() => {
                 Alert.alert(
                   "Clear All Notifications",

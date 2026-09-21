@@ -186,13 +186,18 @@ export default function EditTransactionModal({
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} disabled={saving || deleting}>
+          <TouchableOpacity
+            onPress={onClose} disabled={saving || deleting}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
             <Ionicons name="close" size={28} color={colors.text.primary} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
             Edit Transaction
           </Text>
           <TouchableOpacity
+            accessibilityRole="button"
             onPress={handleSave}
             disabled={saving || deleting}
             style={styles.saveButton}
@@ -242,6 +247,7 @@ export default function EditTransactionModal({
             </Text>
             <View style={styles.typeContainer}>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[
                   styles.typeButton,
                   {
@@ -266,6 +272,7 @@ export default function EditTransactionModal({
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[
                   styles.typeButton,
                   {
@@ -347,6 +354,7 @@ export default function EditTransactionModal({
             >
               {CATEGORIES.map((cat) => (
                 <TouchableOpacity
+                  accessibilityRole="button"
                   key={cat}
                   style={[
                     styles.categoryChip,
@@ -418,6 +426,7 @@ export default function EditTransactionModal({
 
           {/* Delete Button */}
           <TouchableOpacity
+            accessibilityRole="button"
             style={[
               styles.deleteButton,
               { backgroundColor: colors.error.main + "20" },

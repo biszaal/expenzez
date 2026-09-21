@@ -103,6 +103,8 @@ export const EnhancedBalanceCard: React.FC<EnhancedBalanceCardProps> = ({
             {onRefresh && (
               <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                 <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Refresh balance"
                   onPress={onRefresh}
                   style={styles.balanceActionButton}
                   disabled={isRefreshing}
@@ -117,6 +119,8 @@ export const EnhancedBalanceCard: React.FC<EnhancedBalanceCardProps> = ({
               </Animated.View>
             )}
             <TouchableOpacity 
+              accessibilityRole="button"
+              accessibilityLabel={isBalanceHidden ? "Show balance" : "Hide balance"}
               style={styles.balanceActionButton}
               onPress={toggleBalanceVisibility}
             >

@@ -33,6 +33,9 @@ export const SavingsOpportunityCard: React.FC<SavingsOpportunityCardProps> = ({
     <View style={styles.container}>
       {/* Header */}
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        accessibilityLabel={opportunity.title}
         style={styles.header}
         onPress={onToggleExpanded}
         activeOpacity={0.8}
@@ -123,6 +126,8 @@ export const SavingsOpportunityCard: React.FC<SavingsOpportunityCardProps> = ({
 
           {/* Action Button */}
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Take action"
             style={[styles.actionButton, { backgroundColor: typeColor }]}
             onPress={() => onActionPress?.(opportunity)}
             activeOpacity={0.8}

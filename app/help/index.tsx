@@ -124,6 +124,8 @@ export default function HelpSupportScreen() {
         >
           <View style={styles.headerContent}>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Back"
               style={[
                 styles.backButton,
                 { backgroundColor: colors.background.secondary },
@@ -141,6 +143,8 @@ export default function HelpSupportScreen() {
               Help & Support
             </Text>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Contact support"
               style={[
                 styles.contactButton,
                 { backgroundColor: colors.primary[100] },
@@ -161,6 +165,7 @@ export default function HelpSupportScreen() {
           <View style={styles.helpGrid}>
             {helpOptions.map((option) => (
               <TouchableOpacity
+                accessibilityRole="button"
                 key={option.id}
                 style={[
                   styles.helpCard,
@@ -232,6 +237,9 @@ export default function HelpSupportScreen() {
                 ]}
               >
                 <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: expandedFAQ === faq.id }}
+                  accessibilityLabel={faq.question}
                   style={styles.faqHeader}
                   onPress={() => toggleFAQ(faq.id)}
                   activeOpacity={0.7}
@@ -325,6 +333,8 @@ export default function HelpSupportScreen() {
                 </Text>
               </View>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Contact support"
                 style={[
                   styles.contactButton,
                   { backgroundColor: colors.primary.main },
@@ -347,7 +357,12 @@ export default function HelpSupportScreen() {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <TouchableOpacity onPress={openWebsite}>
+          <TouchableOpacity
+            onPress={openWebsite}
+            accessibilityRole="link"
+            accessibilityLabel="Visit our website"
+            accessibilityHint="Opens in your browser"
+          >
             <Text style={[styles.footerText, { color: colors.text.secondary }]}>
               Visit our website
             </Text>

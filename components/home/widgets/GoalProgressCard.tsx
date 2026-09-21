@@ -122,6 +122,8 @@ export const GoalProgressCard: React.FC = () => {
     const styles = createStyles(colors);
     return (
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Goals"
         style={[styles.container, { backgroundColor: colors.background.primary }]}
         onPress={() => router.push('/goals')}
         activeOpacity={0.8}
@@ -158,6 +160,8 @@ export const GoalProgressCard: React.FC = () => {
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel="Goals"
       style={[styles.container, { backgroundColor: colors.background.primary }]}
       onPress={() => router.push('/goals')}
       activeOpacity={0.8}

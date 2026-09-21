@@ -339,6 +339,8 @@ export default function ImportStatementScreen() {
     >
       <View style={styles.header}>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           onPress={() =>
             // When opened via the share sheet there's no navigation history, so
             // router.back() lands on a non-existent screen — fall back home.
@@ -457,6 +459,7 @@ const IdleView: React.FC<{
     </View>
 
     <TouchableOpacity
+      accessibilityRole="button"
       style={[
         styles.primaryButton,
         { backgroundColor: colors.primary[500] },
@@ -583,7 +586,11 @@ const PreviewView: React.FC<{
           <Text style={[styles.selectionText, { color: colors.text.secondary }]}>
             {selected.size} of {transactions.length} selected
           </Text>
-          <TouchableOpacity onPress={allSelected ? onSelectNone : onSelectAll}>
+          <TouchableOpacity
+            onPress={allSelected ? onSelectNone : onSelectAll}
+            accessibilityRole="button"
+            accessibilityLabel={allSelected ? "Deselect all" : "Select all"}
+          >
             <Text style={[styles.selectionLink, { color: colors.primary[500] }]}>
               {allSelected ? "Deselect all" : "Select all"}
             </Text>
@@ -594,6 +601,8 @@ const PreviewView: React.FC<{
           const isSelected = selected.has(i);
           return (
             <TouchableOpacity
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: selected[i] }}
               key={i}
               onPress={() => onToggle(i)}
               activeOpacity={0.7}
@@ -665,6 +674,7 @@ const PreviewView: React.FC<{
         ]}
       >
         <TouchableOpacity
+          accessibilityRole="button"
           onPress={onCancel}
           style={[styles.secondaryButton, { borderColor: colors.border }]}
         >
@@ -680,6 +690,8 @@ const PreviewView: React.FC<{
         {/* Blocked until the bank is known: importing without it would put
             these transactions in a bucket the user can't identify later. */}
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Confirm import"
           onPress={onConfirm}
           style={[
             styles.primaryButton,
@@ -774,12 +786,14 @@ const ResultView: React.FC<{
         </View>
 
         <TouchableOpacity
+          accessibilityRole="button"
           style={[styles.primaryButton, { backgroundColor: colors.primary[500] }]}
           onPress={() => router.replace("/(tabs)/spending" as any)}
         >
           <Text style={styles.primaryButtonText}>View transactions</Text>
         </TouchableOpacity>
         <TouchableOpacity
+          accessibilityRole="button"
           style={[styles.secondaryButton, { borderColor: colors.border, marginTop: 8 }]}
           onPress={onStartOver}
         >

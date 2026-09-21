@@ -81,6 +81,8 @@ export const EnhancedQuickActions: React.FC = () => {
       <View style={styles.grid}>
         {quickActions.map((action) => (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={action.title}
             key={action.id}
             style={styles.actionCard}
             onPress={() => handlePress(action.route)}

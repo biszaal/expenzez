@@ -80,6 +80,8 @@ export default function PinInput({
       onPress={() => onPress(digit)}
       activeOpacity={0.7}
       disabled={isLoading}
+      accessibilityRole="button"
+      accessibilityLabel={digit}
     >
       <Text style={[styles.numberButtonText, { color: colors.text.primary }]}>
         {digit}
@@ -90,7 +92,11 @@ export default function PinInput({
   return (
     <View style={styles.container}>
       {/* PIN Dots */}
-      <View style={styles.pinDotsContainer}>
+      <View
+        style={styles.pinDotsContainer}
+        accessible
+        accessibilityLabel={`PIN, ${pin.length} of ${maxLength} digits entered`}
+      >
         {Array.from({ length: maxLength }, (_, index) => (
           <PinDot key={index} filled={index < pin.length} />
         ))}
@@ -138,6 +144,9 @@ export default function PinInput({
               ]}
               onPress={() => handlePinPress('biometric')}
               disabled={!isBiometricEnabled || isLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Unlock with biometrics"
+              accessibilityState={{ disabled: !isBiometricEnabled || isLoading }}
             >
               <Ionicons
                 name="finger-print"
@@ -156,6 +165,8 @@ export default function PinInput({
                   opacity: 0.3
                 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel="Face ID unavailable"
               onPress={() => {
                 Alert.alert(
                   "Face ID Unavailable",
@@ -186,6 +197,8 @@ export default function PinInput({
             ]}
             onPress={() => handlePinPress('backspace')}
             disabled={isLoading}
+            accessibilityRole="button"
+            accessibilityLabel="Delete"
           >
             <Ionicons
               name="backspace-outline"
@@ -206,6 +219,8 @@ export default function PinInput({
             }]}
             onPress={onPasswordPress}
             disabled={isLoading}
+            accessibilityRole="button"
+            accessibilityLabel="Use password instead"
           >
             <Ionicons name="key-outline" size={20} color={colors.primary.main} />
             <Text style={[styles.passwordButtonText, { color: colors.primary.main }]}>

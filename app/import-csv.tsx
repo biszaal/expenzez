@@ -1044,7 +1044,11 @@ export default function CSVImportScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={showBankSelector ? () => router.back() : handleBackToBankSelector}>
+          <TouchableOpacity
+            onPress={showBankSelector ? () => router.back() : handleBackToBankSelector}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
             <Ionicons
               name="chevron-back"
               size={24}
@@ -1089,7 +1093,11 @@ export default function CSVImportScreen() {
                     Format auto-detected
                   </Text>
                 </View>
-                <TouchableOpacity onPress={() => setShowExportGuide(true)}>
+                <TouchableOpacity
+                  onPress={() => setShowExportGuide(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="How to export a CSV"
+                >
                   <Ionicons name="help-circle-outline" size={24} color={colors.text.secondary} />
                 </TouchableOpacity>
               </View>
@@ -1103,6 +1111,7 @@ export default function CSVImportScreen() {
               ]}
             >
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[
                   styles.selectButton,
                   {
@@ -1284,6 +1293,7 @@ export default function CSVImportScreen() {
             </View>
 
             <TouchableOpacity
+              accessibilityRole="button"
               style={[
                 styles.importButton,
                 {

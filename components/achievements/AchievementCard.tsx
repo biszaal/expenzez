@@ -27,6 +27,8 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={achievement.title}
       style={styles.container}
       onPress={() => onPress?.(achievement)}
       activeOpacity={0.85}

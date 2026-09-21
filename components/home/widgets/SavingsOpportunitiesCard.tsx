@@ -167,6 +167,8 @@ export const SavingsOpportunitiesCard: React.FC = () => {
 
             return (
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={opportunity.title}
                 key={index}
                 style={[styles.opportunityCard, { borderLeftColor: typeColor }]}
                 activeOpacity={0.8}
@@ -222,7 +224,11 @@ export const SavingsOpportunitiesCard: React.FC = () => {
           })}
 
           {/* View All Card */}
-          <TouchableOpacity style={styles.viewAllCard} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.viewAllCard} activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="View all opportunities"
+          >
             <Ionicons name="arrow-forward" size={24} color={colors.primary.main} />
             <Text style={styles.viewAllText}>View All</Text>
             <Text style={styles.viewAllSubtext}>

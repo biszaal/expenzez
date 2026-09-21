@@ -74,6 +74,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ onDataLoad }
               : 'Try again in a moment'}
           </Text>
           <TouchableOpacity
+            accessibilityRole="button"
             style={[styles.emptyRetryButton, { borderColor: colors.primary.main }]}
             onPress={loadAnalytics}
           >

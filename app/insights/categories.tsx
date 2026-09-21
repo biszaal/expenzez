@@ -211,7 +211,11 @@ export default function CategoriesAnalysisScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            onPress={() => router.back()}
+          >
             <Ionicons name="chevron-back" size={24} color={colors.primary.main} />
           </TouchableOpacity>
           <Text style={[styles.title, { color: colors.text.primary }]}>
@@ -257,6 +261,8 @@ export default function CategoriesAnalysisScreen() {
                   key={insight.category}
                   style={[styles.categoryCard, { backgroundColor: colors.background.secondary }]}
                   onPress={() => router.push(`/insights/categories?category=${insight.category}`)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${insight.category}, view details`}
                   activeOpacity={0.7}
                 >
                   <View style={styles.categoryHeader}>

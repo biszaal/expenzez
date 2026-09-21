@@ -113,6 +113,7 @@ const AuthField: React.FC<AuthFieldProps> = ({
           secureTextEntry={secureTextEntry}
           autoCapitalize={autoCapitalize}
           editable={editable}
+          accessibilityLabel={label}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={{
@@ -434,6 +435,9 @@ export default function Login() {
           <View style={styles.optionsRow}>
             <Pressable
               onPress={() => setRememberMe(!rememberMe)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: rememberMe }}
+              accessibilityLabel="Remember me"
               style={styles.rememberRow}
             >
               <View
@@ -462,7 +466,12 @@ export default function Login() {
                 Remember me
               </Text>
             </Pressable>
-            <Pressable onPress={() => router.push("/auth/ForgotPassword")}>
+            <Pressable
+              onPress={() => router.push("/auth/ForgotPassword")}
+              accessibilityRole="button"
+              accessibilityLabel="Forgot password"
+              hitSlop={12}
+            >
               <Text
                 style={[
                   styles.forgotText,
@@ -478,6 +487,9 @@ export default function Login() {
           <Pressable
             onPress={handleLogin}
             disabled={isLoading}
+            accessibilityRole="button"
+            accessibilityLabel={isLoading ? "Signing in" : "Sign in"}
+            accessibilityState={{ disabled: isLoading, busy: isLoading }}
             style={({ pressed }) => [
               styles.primaryButton,
               { opacity: pressed || isLoading ? 0.85 : 1 },
@@ -543,7 +555,12 @@ export default function Login() {
             >
               New to Expenzez?{" "}
             </Text>
-            <Pressable onPress={() => router.push("/auth/Register")}>
+            <Pressable
+              onPress={() => router.push("/auth/Register")}
+              accessibilityRole="button"
+              accessibilityLabel="Create account"
+              hitSlop={12}
+            >
               <Text
                 style={[
                   styles.registerTextBold,

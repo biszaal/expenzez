@@ -201,7 +201,12 @@ export default function PinSetupScreen({ onComplete }: PinSetupScreenProps) {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
+        <TouchableOpacity
+          onPress={handleCancel}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel"
+          style={styles.headerButton}
+        >
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text.primary }]}>

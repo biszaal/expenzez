@@ -161,6 +161,8 @@ export default function ForgotPasswordScreen() {
           {/* Header */}
           <View style={styles.header}>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Back"
               onPress={() => router.back()}
               style={[
                 styles.backChip,
@@ -286,6 +288,15 @@ export default function ForgotPasswordScreen() {
 
               <Pressable
                 onPress={handleResend}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  resendCooldown > 0
+                    ? `Resend code, available in ${resendCooldown} seconds`
+                    : isLoading
+                      ? "Sending"
+                      : "Resend code"
+                }
+                accessibilityState={{ disabled: resendCooldown > 0 || isLoading, busy: isLoading }}
                 disabled={resendCooldown > 0 || isLoading}
                 style={({ pressed }) => [
                   styles.secondaryButton,
@@ -314,6 +325,8 @@ export default function ForgotPasswordScreen() {
               </Pressable>
 
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Continue"
                 onPress={() => {
                   router.push({
                     pathname: "/auth/ResetPassword",
@@ -379,6 +392,7 @@ export default function ForgotPasswordScreen() {
                   autoCapitalize="none"
                   autoCorrect={false}
                   editable={!isLoading}
+                  accessibilityLabel="Username"
                   onFocus={() => setFocused(true)}
                   onBlur={() => setFocused(false)}
                   style={{
@@ -394,6 +408,9 @@ export default function ForgotPasswordScreen() {
               <Pressable
                 onPress={handleSubmit}
                 disabled={isLoading}
+                accessibilityRole="button"
+                accessibilityLabel={isLoading ? "Sending" : "Send reset code"}
+                accessibilityState={{ disabled: isLoading, busy: isLoading }}
                 style={({ pressed }) => [
                   styles.primaryButton,
                   { opacity: pressed || isLoading ? 0.85 : 1, marginTop: 18 },
@@ -418,7 +435,12 @@ export default function ForgotPasswordScreen() {
               </Pressable>
 
               <View style={styles.linksRow}>
-                <Pressable onPress={() => router.push("/auth/ForgotUsername")}>
+                <Pressable
+                  onPress={() => router.push("/auth/ForgotUsername")}
+                  accessibilityRole="button"
+                  accessibilityLabel="Forgot username"
+                  hitSlop={12}
+                >
                   <Text
                     style={[
                       styles.linkText,
@@ -439,7 +461,12 @@ export default function ForgotPasswordScreen() {
                 >
                   ·
                 </Text>
-                <Pressable onPress={() => router.push("/auth/login")}>
+                <Pressable
+                  onPress={() => router.push("/auth/login")}
+                  accessibilityRole="button"
+                  accessibilityLabel="Sign in"
+                  hitSlop={12}
+                >
                   <Text
                     style={[
                       styles.linkText,

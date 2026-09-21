@@ -315,7 +315,11 @@ export default function TrendsAnalysisScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            onPress={() => router.back()}
+          >
             <Ionicons name="chevron-back" size={24} color={colors.primary.main} />
           </TouchableOpacity>
           <Text style={[styles.title, { color: colors.text.primary }]}>
@@ -333,6 +337,9 @@ export default function TrendsAnalysisScreen() {
             <TouchableOpacity
               key={period}
               onPress={() => setSelectedPeriod(period as 3 | 6 | 12)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedPeriod === period }}
+              accessibilityLabel={`Last ${period} months`}
               style={[
                 styles.periodButton,
                 {
@@ -360,6 +367,9 @@ export default function TrendsAnalysisScreen() {
         <View style={styles.tabSelector}>
           <TouchableOpacity
             onPress={() => setActiveTab('trends')}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === 'trends' }}
+            accessibilityLabel="Trends"
             style={[
               styles.tabButton,
               {
@@ -383,6 +393,9 @@ export default function TrendsAnalysisScreen() {
 
           <TouchableOpacity
             onPress={() => setActiveTab('analytics')}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === 'analytics' }}
+            accessibilityLabel="Analytics"
             style={[
               styles.tabButton,
               {

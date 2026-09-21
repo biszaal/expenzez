@@ -157,6 +157,8 @@ export default function FinancialHealthScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={styles.header}>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           onPress={() => router.back()}
           style={styles.backButton}
           hitSlop={8}
@@ -192,6 +194,13 @@ export default function FinancialHealthScreen() {
             },
           ]}
           onPress={() => router.push('/credit-score')}
+          accessibilityRole="button"
+          accessibilityLabel={
+            hasScores
+              ? `Credit score, ${bureauHistories.length} bureau${bureauHistories.length > 1 ? 's' : ''} tracked`
+              : "Credit score, none entered yet"
+          }
+          accessibilityHint="Opens your credit score details"
           activeOpacity={0.7}
         >
           <View style={styles.creditScoreHeader}>
@@ -255,6 +264,8 @@ export default function FinancialHealthScreen() {
               <TouchableOpacity
                 style={[styles.updateScoreButton, { backgroundColor: colors.background.primary, borderWidth: 1, borderColor: colors.border.light }]}
                 onPress={() => router.push('/credit-score')}
+                accessibilityRole="button"
+                accessibilityLabel="Update scores"
                 activeOpacity={0.8}
               >
                 <Ionicons name="pencil-outline" size={20} color={colors.primary.main} />
@@ -277,6 +288,8 @@ export default function FinancialHealthScreen() {
               <TouchableOpacity
                 style={[styles.updateScoreButton, { backgroundColor: colors.primary.main }]}
                 onPress={() => router.push('/credit-score')}
+                accessibilityRole="button"
+                accessibilityLabel="Add credit score"
                 activeOpacity={0.8}
               >
                 <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
@@ -302,6 +315,8 @@ export default function FinancialHealthScreen() {
           <TouchableOpacity
             style={[styles.sectionButton, { borderColor: colors.primary.main }]}
             onPress={() => router.push('/credit-score')}
+            accessibilityRole="button"
+            accessibilityLabel="Start learning about credit"
             activeOpacity={0.7}
           >
             <Text style={[styles.sectionButtonText, { color: colors.primary.main }]}>
@@ -315,6 +330,9 @@ export default function FinancialHealthScreen() {
         <TouchableOpacity
           style={[styles.section, { backgroundColor: colors.card.background, borderColor: colors.border.medium }]}
           onPress={() => router.push('/cost-of-living')}
+          accessibilityRole="button"
+          accessibilityLabel="Cost of living"
+          accessibilityHint="See how your area compares and what it means for your budget"
           activeOpacity={0.7}
         >
           <View style={styles.sectionHeader}>
@@ -385,6 +403,9 @@ export default function FinancialHealthScreen() {
           <TouchableOpacity
             style={styles.resourceLink}
             onPress={() => openExternalLink('https://www.moneyhelper.org.uk')}
+            accessibilityRole="link"
+            accessibilityLabel="Money Helper"
+            accessibilityHint="Opens in your browser"
             activeOpacity={0.7}
           >
             <View style={styles.resourceLeft}>
@@ -404,6 +425,9 @@ export default function FinancialHealthScreen() {
           <TouchableOpacity
             style={styles.resourceLink}
             onPress={() => openExternalLink('https://www.citizensadvice.org.uk')}
+            accessibilityRole="link"
+            accessibilityLabel="Citizens Advice"
+            accessibilityHint="Opens in your browser"
             activeOpacity={0.7}
           >
             <View style={styles.resourceLeft}>
@@ -423,6 +447,9 @@ export default function FinancialHealthScreen() {
           <TouchableOpacity
             style={styles.resourceLink}
             onPress={() => openExternalLink('https://www.stepchange.org')}
+            accessibilityRole="link"
+            accessibilityLabel="StepChange"
+            accessibilityHint="Opens in your browser"
             activeOpacity={0.7}
           >
             <View style={styles.resourceLeft}>

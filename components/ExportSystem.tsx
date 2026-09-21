@@ -556,7 +556,11 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
               Download your financial data
             </Text>
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <TouchableOpacity
+            onPress={onClose} style={styles.closeButton}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
             <Ionicons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
         </View>
@@ -569,6 +573,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
             </Text>
             <View style={styles.dateRangeContainer}>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[
                   styles.dateButton,
                   { backgroundColor: colors.background.primary },
@@ -643,6 +648,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
               </TouchableOpacity>
 
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[
                   styles.dateButton,
                   { backgroundColor: colors.background.primary },
@@ -715,6 +721,7 @@ export const ExportSystem: React.FC<ExportSystemProps> = ({
             <View style={styles.exportGrid}>
               {exportOptions.map((option) => (
                 <TouchableOpacity
+                  accessibilityRole="button"
                   key={option.id}
                   style={[
                     styles.exportCard,

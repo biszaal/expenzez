@@ -175,6 +175,8 @@ export default function InsightsScreen() {
 
           <TouchableOpacity
             onPress={() => handleDismissInsight(insight.id)}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss insight"
             style={styles.dismissButton}
           >
             <Ionicons name="close" size={16} color={colors.text.secondary} />
@@ -241,6 +243,7 @@ export default function InsightsScreen() {
 
           {insight.actionText && (
             <TouchableOpacity
+              accessibilityRole="button"
               onPress={() => handleInsightAction(insight)}
               style={[
                 styles.actionButton,
@@ -323,7 +326,11 @@ export default function InsightsScreen() {
     >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            onPress={() => router.back()}
+          >
             <Ionicons
               name="chevron-back"
               size={24}
@@ -340,6 +347,9 @@ export default function InsightsScreen() {
       <View style={styles.tabContainer}>
         <TouchableOpacity
           onPress={() => setActiveTab("insights")}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === "insights" }}
+          accessibilityLabel="Insights"
           style={[
             styles.tab,
             activeTab === "insights" && {
@@ -365,6 +375,9 @@ export default function InsightsScreen() {
 
         <TouchableOpacity
           onPress={() => setActiveTab("nudges")}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === "nudges" }}
+          accessibilityLabel="Nudges"
           style={[
             styles.tab,
             activeTab === "nudges" && { backgroundColor: colors.primary[100] },
@@ -462,6 +475,7 @@ export default function InsightsScreen() {
           </Text>
 
           <TouchableOpacity
+            accessibilityRole="button"
             onPress={() => router.push("/insights/trends")}
             style={[
               styles.quickLinkButton,
@@ -486,6 +500,7 @@ export default function InsightsScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
+            accessibilityRole="button"
             onPress={() => router.push("/insights/categories")}
             style={[
               styles.quickLinkButton,

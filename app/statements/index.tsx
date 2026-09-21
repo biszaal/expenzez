@@ -121,6 +121,8 @@ export default function StatementsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           onPress={() => router.back()}
           style={[
             styles.headerChip,
@@ -146,6 +148,8 @@ export default function StatementsScreen() {
         </Text>
         <Pressable
           onPress={() => router.push("/import-statement")}
+          accessibilityRole="button"
+          accessibilityLabel="Import a statement"
           style={[
             styles.headerChip,
             {

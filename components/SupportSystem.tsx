@@ -175,7 +175,11 @@ Thank you!`;
               How can we help you today?
             </Text>
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <TouchableOpacity
+            onPress={onClose} style={styles.closeButton}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
             <Ionicons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
         </View>
@@ -187,6 +191,7 @@ Thank you!`;
               Contact Us
             </Text>
             <TouchableOpacity
+              accessibilityRole="button"
               style={[
                 styles.emailSupportCard,
                 { backgroundColor: colors.background.primary },
@@ -253,6 +258,9 @@ Thank you!`;
             >
               {categories.map((category) => (
                 <TouchableOpacity
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: selectedCategory === category.id }}
+                  accessibilityLabel={category.name}
                   key={category.id}
                   onPress={() => setSelectedCategory(category.id)}
                   style={[
@@ -307,6 +315,7 @@ Thank you!`;
             </Text>
             <View style={styles.quickLinks}>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[
                   styles.quickLinkItem,
                   { backgroundColor: colors.background.primary },
@@ -331,6 +340,7 @@ Thank you!`;
               </TouchableOpacity>
 
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[
                   styles.quickLinkItem,
                   { backgroundColor: colors.background.primary },
@@ -355,6 +365,7 @@ Thank you!`;
               </TouchableOpacity>
 
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[
                   styles.quickLinkItem,
                   { backgroundColor: colors.background.primary },
@@ -389,6 +400,7 @@ const FAQItem: React.FC<{ faq: FAQ; colors: any }> = ({ faq, colors }) => {
       style={[styles.faqItem, { backgroundColor: colors.background.primary }]}
     >
       <TouchableOpacity
+        accessibilityRole="button"
         style={styles.faqHeader}
         onPress={() => setIsExpanded(!isExpanded)}
       >

@@ -116,6 +116,8 @@ export const DeviceListItem: React.FC<DeviceListItemProps> = ({
       <View style={styles.deviceActions}>
         {!device.isTrusted && onTrust && (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={`Trust ${device.deviceName}`}
             style={[
               styles.deviceActionButton,
               { backgroundColor: colors.success[100] },
@@ -131,6 +133,8 @@ export const DeviceListItem: React.FC<DeviceListItemProps> = ({
         )}
         {!isCurrentDevice && onRevoke && (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={`Revoke ${device.deviceName}`}
             style={[
               styles.deviceActionButton,
               { backgroundColor: colors.error[100] },

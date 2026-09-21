@@ -398,6 +398,9 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
         >
           {categories.map((category) => (
             <TouchableOpacity
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedCategory === category.name }}
+              accessibilityLabel={category.name}
               key={category.name}
               style={[
                 styles.categoryChip,
@@ -483,6 +486,8 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
 
             return (
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={bill.name}
                 key={bill.id}
                 style={[
                   styles.billCard,
@@ -554,6 +559,9 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
 
                         {/* Mark Paid Button */}
                         <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityState={{ checked: paidBills.has(bill.id) }}
+                          accessibilityLabel={paidBills.has(bill.id) ? `${bill.name}, marked paid` : `Mark ${bill.name} paid`}
                           style={[
                             styles.paidButton,
                             paidBills.has(bill.id)
@@ -597,6 +605,8 @@ export const EnhancedBillsList: React.FC<EnhancedBillsListProps> = ({
                         </TouchableOpacity>
 
                         <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityLabel={`More options for ${bill.name}`}
                           style={styles.billMenuButton}
                           onPress={(e) => {
                             e.stopPropagation();

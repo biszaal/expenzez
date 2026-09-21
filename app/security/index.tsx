@@ -192,6 +192,8 @@ export default function SecurityScreen() {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Back"
             style={[
               styles.backButton,
               {
@@ -286,6 +288,7 @@ export default function SecurityScreen() {
               ]}
             >
               <TouchableOpacity
+                accessibilityRole="button"
                 style={styles.settingItem}
                 onPress={() => router.push("/security/create-pin")}
               >
@@ -380,7 +383,11 @@ export default function SecurityScreen() {
                 shadows.sm,
               ]}
             >
-              <TouchableOpacity style={styles.settingItem} onPress={changePassword}>
+              <TouchableOpacity
+                style={styles.settingItem} onPress={changePassword}
+                accessibilityRole="button"
+                accessibilityLabel="Change password"
+              >
                 <View style={styles.settingLeft}>
                   <View
                     style={[
@@ -541,6 +548,8 @@ export default function SecurityScreen() {
                       <View style={styles.deviceActions}>
                         {!device.isTrusted && (
                           <TouchableOpacity
+                            accessibilityRole="button"
+                            accessibilityLabel={`Trust ${device.deviceName}`}
                             style={[
                               styles.deviceActionButton,
                               { backgroundColor: colors.success[50] },
@@ -558,6 +567,8 @@ export default function SecurityScreen() {
                         )}
                         {!isCurrentDevice && (
                           <TouchableOpacity
+                            accessibilityRole="button"
+                            accessibilityLabel={`Revoke ${device.deviceName}`}
                             style={[
                               styles.deviceActionButton,
                               { backgroundColor: colors.error[50] },
@@ -622,6 +633,7 @@ export default function SecurityScreen() {
         {/* Reset Security Section */}
         <View style={styles.section}>
           <TouchableOpacity
+            accessibilityRole="button"
             style={[
               styles.resetButton,
               { backgroundColor: colors.error[100] },
@@ -657,6 +669,8 @@ export default function SecurityScreen() {
             {/* Header */}
             <View style={styles.verificationHeader}>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Close"
                 onPress={() => {
                   setPinInput("");
                   setShowPinVerification(false);

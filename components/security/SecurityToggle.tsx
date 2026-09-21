@@ -101,7 +101,12 @@ export const SecurityToggle: React.FC<SecurityToggleProps> = ({
 
   if (onPress) {
     return (
-      <TouchableOpacity onPress={onPress} disabled={disabled}>
+      <TouchableOpacity
+        onPress={onPress} disabled={disabled}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: value, disabled }}
+        accessibilityLabel={title}
+      >
         {content}
       </TouchableOpacity>
     );

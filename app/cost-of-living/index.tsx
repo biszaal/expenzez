@@ -124,6 +124,9 @@ export default function CostOfLivingDashboard() {
             Your Cost of Living Score
           </Text>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showRegionPicker }}
+            accessibilityLabel={`Region, ${UK_REGION_LABELS[selectedRegion]}`}
             style={[styles.regionButton, { backgroundColor: colors.primary.main + "15" }]}
             onPress={() => setShowRegionPicker(!showRegionPicker)}
           >
@@ -437,6 +440,9 @@ export default function CostOfLivingDashboard() {
         <ScrollView style={styles.regionList} showsVerticalScrollIndicator={false}>
           {regions.map((region) => (
             <TouchableOpacity
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedRegion === region }}
+              accessibilityLabel={UK_REGION_LABELS[region]}
               key={region}
               style={[
                 styles.regionOption,
@@ -492,7 +498,11 @@ export default function CostOfLivingDashboard() {
     >
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.background.primary }]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton} onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text.primary }]}>

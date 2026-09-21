@@ -302,6 +302,7 @@ export default function GoalsScreen() {
             {error}
           </Text>
           <TouchableOpacity
+            accessibilityRole="button"
             style={[
               styles.retryButton,
               { backgroundColor: colors.primary.main },
@@ -328,6 +329,8 @@ export default function GoalsScreen() {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
@@ -335,6 +338,8 @@ export default function GoalsScreen() {
         <Text style={styles.headerTitle}>Financial Goals</Text>
         <TouchableOpacity
           style={styles.addButton}
+          accessibilityRole="button"
+          accessibilityLabel="Add a goal"
           onPress={() => {
             setEditingGoal(null);
             setShowCreateForm(true);
@@ -397,6 +402,7 @@ export default function GoalsScreen() {
                 Create your first goal to start building your financial future!
               </Text>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={styles.createFirstGoalButton}
                 onPress={() => {
             setEditingGoal(null);
@@ -535,6 +541,7 @@ export default function GoalsScreen() {
                     </Text>
 
                     <TouchableOpacity
+                      accessibilityRole="button"
                       style={[
                         styles.createFromRecommendationButton,
                         { backgroundColor: typeColor },
@@ -598,13 +605,18 @@ export default function GoalsScreen() {
 
             <View style={styles.modalActions}>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={styles.modalCancel}
                 onPress={() => setContributeGoal(null)}
+                accessibilityLabel="Cancel"
               >
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalConfirm}
+                accessibilityRole="button"
+                accessibilityLabel={contributing ? "Adding" : "Add"}
+                accessibilityState={{ busy: contributing }}
                 onPress={handleContribute}
                 disabled={contributing}
                 activeOpacity={0.85}
@@ -639,6 +651,8 @@ export default function GoalsScreen() {
                     </Text>
                     <TouchableOpacity
                       onPress={() => setDetailGoal(null)}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                       <Ionicons
@@ -698,6 +712,8 @@ export default function GoalsScreen() {
                   <TouchableOpacity
                     style={styles.detailPrimaryBtn}
                     activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Add money"
                     onPress={() => {
                       setDetailGoal(null);
                       setContributeAmount("");
@@ -710,7 +726,9 @@ export default function GoalsScreen() {
 
                   <View style={styles.detailActions}>
                     <TouchableOpacity
+                      accessibilityRole="button"
                       style={styles.detailActionBtn}
+                      accessibilityLabel="Edit goal"
                       onPress={() => {
                         setDetailGoal(null);
                         setEditingGoal(g);
@@ -726,6 +744,8 @@ export default function GoalsScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.detailActionBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel={g.isActive ? "Pause goal" : "Resume goal"}
                       onPress={async () => {
                         setDetailGoal(null);
                         await togglePause(g);
@@ -741,8 +761,10 @@ export default function GoalsScreen() {
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
+                      accessibilityRole="button"
                       style={styles.detailActionBtn}
                       onPress={() => handleDeleteGoal(g)}
+                      accessibilityLabel="Delete goal"
                     >
                       <Ionicons
                         name="trash-outline"

@@ -213,6 +213,9 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
           }
         ]}
         disabled={true}
+        accessibilityRole="button"
+        accessibilityLabel="Checking Google Sign In"
+        accessibilityState={{ disabled: true, busy: true }}
       >
         <View style={styles.googleButtonContent}>
           <Ionicons
@@ -248,6 +251,9 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       ]}
       onPress={handleGoogleSignIn}
       disabled={disabled || isSigningIn}
+      accessibilityRole="button"
+      accessibilityLabel={buttonText}
+      accessibilityState={{ disabled: disabled || isSigningIn, busy: isSigningIn }}
     >
       <View style={styles.googleButtonContent}>
         <Ionicons

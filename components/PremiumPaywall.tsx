@@ -45,6 +45,7 @@ export default function PremiumPaywall({
         </Text>
 
         <TouchableOpacity
+          accessibilityRole="button"
           style={[styles.button, { backgroundColor: colors.primary.main }]}
           onPress={handleUpgrade}
         >
@@ -54,7 +55,11 @@ export default function PremiumPaywall({
         </TouchableOpacity>
 
         {onClose && (
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <TouchableOpacity
+            style={styles.closeButton} onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
             <Text style={[styles.closeText, { color: colors.text.tertiary }]}>
               Maybe Later
             </Text>

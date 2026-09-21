@@ -179,7 +179,11 @@ export default function CSVImportPreviewScreen() {
           { backgroundColor: colors.background.secondary, borderBottomColor: colors.background.tertiary },
         ]}
       >
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
           <Ionicons
             name="chevron-back"
             size={24}
@@ -281,6 +285,8 @@ export default function CSVImportPreviewScreen() {
         ]}
       >
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           style={[
             styles.cancelButton,
             { borderColor: colors.primary[300] },
@@ -294,6 +300,7 @@ export default function CSVImportPreviewScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
+          accessibilityRole="button"
           style={[
             styles.importButton,
             {

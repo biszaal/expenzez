@@ -44,7 +44,11 @@ This tool is designed to help you understand your spending patterns and develop 
           <Text style={[styles.disclaimerTitle, { color: colors.warning[700] }]}>
             Not Certified Financial Advice
           </Text>
-          <TouchableOpacity onPress={() => setModalVisible(true)}>
+          <TouchableOpacity
+            onPress={() => setModalVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Read more"
+          >
             <Text style={[styles.readMoreText, { color: colors.primary[600] }]}>
               Read More
             </Text>
@@ -66,7 +70,11 @@ This tool is designed to help you understand your spending patterns and develop 
                 <Text style={[styles.modalTitle, { color: colors.text.primary }]}>
                   Financial Advisor Disclaimer
                 </Text>
-                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <TouchableOpacity
+                  onPress={() => setModalVisible(false)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close"
+                >
                   <Ionicons name="close" size={24} color={colors.text.secondary} />
                 </TouchableOpacity>
               </View>
@@ -76,6 +84,8 @@ This tool is designed to help you understand your spending patterns and develop 
               </Text>
 
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Close"
                 style={[styles.understoodButton, { backgroundColor: colors.primary.main }]}
                 onPress={() => setModalVisible(false)}
               >
@@ -90,6 +100,8 @@ This tool is designed to help you understand your spending patterns and develop 
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel="Read more"
       style={[styles.compactDisclaimer, { backgroundColor: colors.warning[100] }, style]}
       onPress={() => setModalVisible(true)}
     >
@@ -111,7 +123,11 @@ This tool is designed to help you understand your spending patterns and develop 
               <Text style={[styles.modalTitle, { color: colors.text.primary }]}>
                 Financial Advisor Disclaimer
               </Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+                onPress={() => setModalVisible(false)}
+              >
                 <Ionicons name="close" size={24} color={colors.text.secondary} />
               </TouchableOpacity>
             </View>
@@ -121,6 +137,8 @@ This tool is designed to help you understand your spending patterns and develop 
             </Text>
 
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Close"
               style={[styles.understoodButton, { backgroundColor: colors.primary.main }]}
               onPress={() => setModalVisible(false)}
             >

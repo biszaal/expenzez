@@ -148,6 +148,8 @@ export default function ResetPasswordScreen() {
               {/* Clean Header */}
               <View style={styles.header}>
                 <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Back"
                   onPress={() => router.back()}
                   style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.secondary }])}
                 >
@@ -223,6 +225,9 @@ export default function ResetPasswordScreen() {
                       style={styles.resendLink}
                       onPress={handleResendCode}
                       disabled={isResendingCode}
+                      accessibilityRole="button"
+                      accessibilityLabel={isResendingCode ? "Sending" : "Resend code"}
+                      accessibilityState={{ disabled: isResendingCode, busy: isResendingCode }}
                     >
                       <Typography variant="body" style={{ color: '#8B5CF6' }}>
                         {isResendingCode ? "Sending..." : "Didn't receive code? Resend"}
@@ -239,6 +244,9 @@ export default function ResetPasswordScreen() {
                       ])}
                       onPress={handleSubmit}
                       disabled={isLoading}
+                      accessibilityRole="button"
+                      accessibilityLabel={isLoading ? "Resetting password" : "Reset password"}
+                      accessibilityState={{ disabled: isLoading, busy: isLoading }}
                     >
                       <Typography variant="body" weight="semibold" style={{ color: 'white' }}>
                         {isLoading ? 'Resetting...' : 'Reset Password'}
@@ -248,6 +256,8 @@ export default function ResetPasswordScreen() {
                     <TouchableOpacity
                       style={styles.backToLoginLink}
                       onPress={() => router.push("/auth/login")}
+                      accessibilityRole="button"
+                      accessibilityLabel="Sign in"
                     >
                       <Typography variant="body" style={{ color: colors.text.secondary }} align="center">
                         Remember your password?{" "}

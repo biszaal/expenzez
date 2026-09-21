@@ -72,6 +72,8 @@ export default function TermsPrivacyScreen() {
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Back"
               style={styles.backButton}
               onPress={() => router.back()}
             >
@@ -82,7 +84,11 @@ export default function TermsPrivacyScreen() {
               />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Terms & Privacy</Text>
-            <TouchableOpacity style={styles.legalButton} onPress={contactLegal}>
+            <TouchableOpacity
+              style={styles.legalButton} onPress={contactLegal}
+              accessibilityRole="button"
+              accessibilityLabel="Contact us about our terms"
+            >
               <Ionicons name="mail" size={20} color={colors.primary.main} />
             </TouchableOpacity>
           </View>
@@ -98,6 +104,9 @@ export default function TermsPrivacyScreen() {
           >
             {legalSections.map((section) => (
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedSection === section.id }}
+                accessibilityLabel={section.title}
                 key={section.id}
                 style={[
                   styles.navButton,
@@ -131,7 +140,11 @@ export default function TermsPrivacyScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionsCard}>
-            <TouchableOpacity style={styles.actionItem}>
+            <TouchableOpacity
+              style={styles.actionItem}
+              accessibilityRole="button"
+              accessibilityLabel="Download PDF"
+            >
               <View style={styles.actionIcon}>
                 <Ionicons
                   name="download-outline"
@@ -152,7 +165,12 @@ export default function TermsPrivacyScreen() {
               />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionItem}>
+            <TouchableOpacity
+              style={styles.actionItem}
+              accessibilityRole="link"
+              accessibilityLabel="View online"
+              accessibilityHint="Opens in your browser"
+            >
               <View style={styles.actionIcon}>
                 <Ionicons
                   name="globe-outline"
@@ -171,7 +189,11 @@ export default function TermsPrivacyScreen() {
               />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionItem}>
+            <TouchableOpacity
+              style={styles.actionItem}
+              accessibilityRole="button"
+              accessibilityLabel="Contact legal"
+            >
               <View style={styles.actionIcon}>
                 <Ionicons
                   name="mail-outline"

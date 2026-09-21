@@ -306,6 +306,8 @@ export default function WelcomeOnboarding() {
 
           {/* Primary CTA — full width */}
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={isLast ? "Get started" : "Continue"}
             style={[styles.actionButton, { shadowColor: accent }]}
             onPress={handleNext}
             activeOpacity={0.85}

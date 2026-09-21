@@ -280,6 +280,8 @@ export default function BudgetsScreen() {
     const over = progress.remaining < 0;
     return (
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={`Edit ${progress.budget.category} budget`}
         activeOpacity={0.85}
         onPress={() => router.push(`/budgets/edit?id=${progress.budget.id}`)}
         style={[
@@ -345,6 +347,8 @@ export default function BudgetsScreen() {
     const over = progress.remaining < 0;
     return (
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={`Edit ${progress.budget.category} budget`}
         key={progress.budget.id}
         activeOpacity={0.7}
         onPress={() => router.push(`/budgets/edit?id=${progress.budget.id}`)}
@@ -433,7 +437,11 @@ export default function BudgetsScreen() {
     >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
             <Ionicons
               name="chevron-back"
               size={24}
@@ -454,6 +462,8 @@ export default function BudgetsScreen() {
 
         <TouchableOpacity
           onPress={handleAddBudget}
+          accessibilityRole="button"
+          accessibilityLabel="Add a budget"
           style={[styles.addButton, { backgroundColor: colors.primary.main }]}
         >
           <Ionicons name="add" size={20} color="#fff" />
@@ -525,6 +535,7 @@ export default function BudgetsScreen() {
               your financial goals.
             </Text>
             <TouchableOpacity
+              accessibilityRole="button"
               onPress={handleAddBudget}
               style={[
                 styles.emptyButton,
@@ -566,6 +577,7 @@ export default function BudgetsScreen() {
         {budgetProgress.length > 0 && (
           <View style={styles.suggestionsSection}>
             <TouchableOpacity
+              accessibilityRole="button"
               onPress={() => router.push("/insights")}
               style={[
                 styles.suggestionButton,

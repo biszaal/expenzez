@@ -68,6 +68,8 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
     }}>
       {/* Previous Month Button */}
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Previous month"
         onPress={() => navigateMonth('prev')}
         style={{
           padding: 8,
@@ -107,6 +109,8 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
 
       {/* Next Month Button */}
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Next month"
         onPress={() => navigateMonth('next')}
         style={{
           padding: 8,

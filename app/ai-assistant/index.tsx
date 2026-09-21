@@ -519,6 +519,8 @@ export default function AIAssistantScreen() {
           }}
         >
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Back"
             onPress={() => router.back()}
             style={{
               width: 40,
@@ -590,6 +592,8 @@ export default function AIAssistantScreen() {
           </View>
 
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Clear chat"
             onPress={handleClearChat}
             disabled={loading}
             style={{
@@ -655,6 +659,7 @@ export default function AIAssistantScreen() {
                 }}
               >
                 <TouchableOpacity
+                  accessibilityRole="button"
                   onPress={() => setShowReport(!showReport)}
                   style={{
                     flexDirection: "row",
@@ -882,6 +887,8 @@ export default function AIAssistantScreen() {
 
                       return (
                         <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityLabel={insight.title}
                           key={insight.id}
                           style={{
                             backgroundColor: colors.card.background,
@@ -1001,6 +1008,8 @@ export default function AIAssistantScreen() {
                         .slice(0, 6)
                         .map((starter, index) => (
                           <TouchableOpacity
+                            accessibilityRole="button"
+                            accessibilityLabel={starter}
                             key={index}
                             style={{
                               backgroundColor: colors.card.background,
@@ -1313,6 +1322,8 @@ export default function AIAssistantScreen() {
                 </View>
               ) : (
                 <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Send message"
                   onPress={() => sendMessage()}
                   activeOpacity={0.85}
                   style={{ marginLeft: 10 }}

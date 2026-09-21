@@ -72,6 +72,8 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
           </View>
         </View>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Refresh transactions"
           style={[
             styles.premiumTransactionsRefresh,
             { backgroundColor: colors.primary.main },
@@ -173,6 +175,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
       )}
 
       <TouchableOpacity
+        accessibilityRole="button"
         style={[
           styles.premiumViewAllTransactions,
           { backgroundColor: colors.primary.main },

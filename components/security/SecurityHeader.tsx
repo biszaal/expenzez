@@ -21,6 +21,8 @@ export const SecurityHeader: React.FC<SecurityHeaderProps> = ({
     >
       <View style={styles.headerContent}>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           style={[
             styles.backButton,
             { backgroundColor: colors.background.secondary },

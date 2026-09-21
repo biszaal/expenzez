@@ -73,6 +73,8 @@ export default function BudgetOverview() {
             Budgets
           </Text>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="View budgets"
             onPress={() => router.push("/budgets")}
             style={styles.headerButton}
           >
@@ -90,6 +92,7 @@ export default function BudgetOverview() {
             No budgets set up yet
           </Text>
           <TouchableOpacity
+            accessibilityRole="button"
             onPress={() => router.push("/budgets/edit")}
             style={[
               styles.createButton,
@@ -119,6 +122,8 @@ export default function BudgetOverview() {
           Budgets
         </Text>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="View budgets"
           onPress={() => router.push("/budgets")}
           style={styles.headerButton}
         >
@@ -142,6 +147,7 @@ export default function BudgetOverview() {
 
           return (
             <TouchableOpacity
+              accessibilityRole="button"
               key={progress.budget.id}
               style={[
                 styles.budgetItem,
@@ -240,6 +246,8 @@ export default function BudgetOverview() {
 
       {budgetProgress.length >= 3 && (
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="View budgets"
           onPress={() => router.push("/budgets")}
           style={[
             styles.viewAllButton,

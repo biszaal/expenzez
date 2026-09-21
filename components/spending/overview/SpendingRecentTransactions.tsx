@@ -125,7 +125,11 @@ export const SpendingRecentTransactions: React.FC<Props> = ({
           Recent
         </Text>
         {onSeeAllPress && (
-          <Pressable onPress={onSeeAllPress} hitSlop={6}>
+          <Pressable
+            onPress={onSeeAllPress} hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel="View all transactions"
+          >
             <Text style={[styles.sectionLink, { color: colors.primary[500] }]}>
               View all
             </Text>

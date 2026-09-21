@@ -61,6 +61,8 @@ export const BankSelector: React.FC<BankSelectorProps> = ({
       >
         {banks.map((bank) => (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={bank.name}
             key={bank.id}
             style={[
               styles.bankCard,

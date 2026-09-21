@@ -28,6 +28,8 @@ export const GoalCard: React.FC<GoalCardProps> = ({
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={goal.title}
       style={styles.container}
       onPress={() => onPress(goal)}
       activeOpacity={0.8}
@@ -59,6 +61,8 @@ export const GoalCard: React.FC<GoalCardProps> = ({
 
         {/* Quick Actions */}
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Add money"
           style={styles.moreButton}
           onPress={() => onQuickAction?.(goal.goalId, 'contribute')}
         >

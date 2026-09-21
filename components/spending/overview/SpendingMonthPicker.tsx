@@ -55,6 +55,9 @@ export const SpendingMonthPicker: React.FC<SpendingMonthPickerProps> = ({
                 const active = selectedMonth === m.value;
                 return (
                   <Pressable
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: selectedMonth === m.value }}
+                    accessibilityLabel={m.name}
                     key={m.id}
                     onPress={() => setSelectedMonth(m.value)}
                     style={[

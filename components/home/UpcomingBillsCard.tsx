@@ -136,6 +136,8 @@ export const UpcomingBillsCard: React.FC = () => {
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel="Upcoming bills"
       style={[styles.container, { backgroundColor: colors.background.secondary }]}
       onPress={() => router.push('/bills')}
       activeOpacity={0.7}

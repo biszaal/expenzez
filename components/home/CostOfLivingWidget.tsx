@@ -210,6 +210,8 @@ export const CostOfLivingWidget: React.FC<CostOfLivingWidgetProps> = ({
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel="Cost of living"
       style={[styles.container, { backgroundColor: colors.background.primary }]}
       onPress={handlePress}
       activeOpacity={0.95}
@@ -225,6 +227,9 @@ export const CostOfLivingWidget: React.FC<CostOfLivingWidgetProps> = ({
           </Text>
         </View>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityState={{ expanded: !isMinimized }}
+          accessibilityLabel={isMinimized ? "Expand" : "Collapse"}
           onPress={(e) => {
             e.stopPropagation();
             setIsMinimized(!isMinimized);

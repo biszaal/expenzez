@@ -86,6 +86,8 @@ export const CompactBudgetStatus: React.FC<CompactBudgetStatusProps> = ({
           </Text>
           {onViewAll && (
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="View all budgets"
               style={styles.viewAllButton}
               onPress={onViewAll}
               activeOpacity={0.7}
@@ -109,6 +111,8 @@ export const CompactBudgetStatus: React.FC<CompactBudgetStatusProps> = ({
             No budgets set up
           </Text>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Edit budgets"
             style={[
               styles.createButton,
               { backgroundColor: colors.primary.main },
@@ -139,6 +143,9 @@ export const CompactBudgetStatus: React.FC<CompactBudgetStatusProps> = ({
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ expanded: !isMinimized }}
+            accessibilityLabel={isMinimized ? "Expand budget status" : "Collapse budget status"}
             onPress={() => setIsMinimized(!isMinimized)}
             activeOpacity={0.7}
           >
@@ -150,6 +157,8 @@ export const CompactBudgetStatus: React.FC<CompactBudgetStatusProps> = ({
           </TouchableOpacity>
           {onViewAll && (
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="View all budgets"
               style={styles.viewAllButton}
               onPress={onViewAll}
               activeOpacity={0.7}

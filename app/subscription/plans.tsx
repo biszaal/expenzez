@@ -288,6 +288,8 @@ export default function SubscriptionPlansScreen() {
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Back"
               style={[
                 styles.backButton,
                 {
@@ -579,6 +581,9 @@ export default function SubscriptionPlansScreen() {
           <View style={styles.actionButtonsContainer}>
             {/* Sync Subscription */}
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={syncing ? "Syncing subscription" : "Sync subscription"}
+              accessibilityState={{ busy: syncing }}
               style={[styles.syncButton, { borderColor: colors.primary.main }]}
               onPress={handleSyncSubscription}
               disabled={syncing}
@@ -596,6 +601,9 @@ export default function SubscriptionPlansScreen() {
 
             {/* Manage Subscription */}
             <TouchableOpacity
+              accessibilityRole="link"
+              accessibilityLabel="Manage subscription"
+              accessibilityHint="Opens the App Store"
               style={[styles.manageButton, { backgroundColor: colors.primary.main }]}
               onPress={() => Linking.openURL('https://apps.apple.com/account/subscriptions')}
               activeOpacity={0.8}
@@ -608,6 +616,9 @@ export default function SubscriptionPlansScreen() {
 
             {/* Restore Purchases */}
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={purchasing ? "Restoring purchases" : "Restore purchases"}
+              accessibilityState={{ busy: purchasing }}
               style={styles.restoreButton}
               onPress={handleRestorePurchases}
               disabled={purchasing}
@@ -665,6 +676,8 @@ export default function SubscriptionPlansScreen() {
         {/* Minimal header — just a back button */}
         <View style={styles.headerMinimal}>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Back"
             style={[
               styles.backButtonRound,
               {
@@ -725,6 +738,8 @@ export default function SubscriptionPlansScreen() {
         <View style={styles.plansContainerV2}>
           {/* Yearly */}
           <TouchableOpacity
+            accessibilityRole="radio"
+            accessibilityLabel="Annual plan"
             style={[
               styles.planCardV2,
               {
@@ -836,6 +851,8 @@ export default function SubscriptionPlansScreen() {
 
           {/* Monthly */}
           <TouchableOpacity
+            accessibilityRole="radio"
+            accessibilityLabel="Monthly plan"
             style={[
               styles.planCardV2,
               {
@@ -988,6 +1005,8 @@ export default function SubscriptionPlansScreen() {
 
         {/* CTA */}
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Subscribe"
           style={[
             styles.ctaButton,
             { backgroundColor: colors.primary.main },
@@ -1116,6 +1135,8 @@ export default function SubscriptionPlansScreen() {
 
         {/* Restore Purchases (centered text link) */}
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Restore purchases"
           style={styles.restoreInline}
           onPress={handleRestorePurchases}
           activeOpacity={0.7}
@@ -1136,6 +1157,7 @@ export default function SubscriptionPlansScreen() {
         {/* Legal links (inline) */}
         <View style={styles.legalInline}>
           <TouchableOpacity
+            accessibilityRole="button"
             onPress={() => Linking.openURL("https://expenzez.com/terms")}
           >
             <Text
@@ -1159,6 +1181,7 @@ export default function SubscriptionPlansScreen() {
             ·
           </Text>
           <TouchableOpacity
+            accessibilityRole="button"
             onPress={() => Linking.openURL("https://expenzez.com/privacy")}
           >
             <Text

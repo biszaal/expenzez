@@ -58,6 +58,8 @@ export const EnhancedBillsHeader: React.FC<EnhancedBillsHeaderProps> = ({
         </View>
 
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Refresh"
           style={styles.refreshButton}
           onPress={onRefresh}
           disabled={isRefreshing}

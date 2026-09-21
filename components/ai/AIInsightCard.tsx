@@ -134,6 +134,8 @@ export const AIInsightCard: React.FC<AIInsightCardProps> = ({
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Toggle insight"
         style={[
           styles.container,
           {
@@ -320,6 +322,8 @@ export const AIInsightCard: React.FC<AIInsightCardProps> = ({
             {/* Deep dive button */}
             {showDeepDiveButton && (
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Ask for more detail"
                 style={[
                   styles.deepDiveButton,
                   {

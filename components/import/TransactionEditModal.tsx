@@ -122,7 +122,11 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
             },
           ]}
         >
-          <TouchableOpacity onPress={onClose}>
+          <TouchableOpacity
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
             <Ionicons
               name="close"
               size={24}
@@ -133,6 +137,8 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
             Edit Transaction
           </Text>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Save"
             onPress={handleSave}
             disabled={
               !editedTransaction.merchant.trim() ||
@@ -264,6 +270,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
             <View style={styles.typeContainer}>
               {(["debit", "credit"] as const).map((type) => (
                 <TouchableOpacity
+                  accessibilityRole="button"
                   key={type}
                   style={[
                     styles.typeButton,
@@ -304,6 +311,7 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
               Category
             </Text>
             <TouchableOpacity
+              accessibilityRole="button"
               style={[
                 styles.categoryButton,
                 {
@@ -337,6 +345,9 @@ export const TransactionEditModal: React.FC<TransactionEditModalProps> = ({
               >
                 {TRANSACTION_CATEGORIES.map((cat) => (
                   <TouchableOpacity
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: editedTransaction.category === cat.id }}
+                    accessibilityLabel={cat.name}
                     key={cat.id}
                     style={[
                       styles.categoryOption,

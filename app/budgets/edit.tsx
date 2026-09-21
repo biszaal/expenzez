@@ -447,12 +447,12 @@ export default function EditBudgetPage() {
         ]}
       >
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           onPress={() =>
             router.canGoBack() ? router.back() : router.replace("/budgets")
           }
           style={styles.backButton}
-          accessibilityRole="button"
-          accessibilityLabel="Go back to budgets"
         >
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
@@ -589,6 +589,8 @@ export default function EditBudgetPage() {
               {mainBudgetNum > 0 && (
                 <TouchableOpacity
                   onPress={() => autoFillBudgets(mainBudgetNum)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Auto-fill budgets"
                   activeOpacity={0.7}
                   style={[
                     styles.autoFillButton,
@@ -672,6 +674,7 @@ export default function EditBudgetPage() {
 
         {/* Save Button */}
         <TouchableOpacity
+          accessibilityRole="button"
           onPress={handleSave}
           disabled={saving}
           style={[

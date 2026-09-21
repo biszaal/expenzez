@@ -264,6 +264,8 @@ export default function SavingsGoals({
           </Text>
         </View>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Create a goal"
           style={[styles.addButton, { backgroundColor: colors.primary.main }]}
           onPress={() => setShowCreateModal(true)}
         >
@@ -290,6 +292,8 @@ export default function SavingsGoals({
             
             return (
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`${goal.title}, add money`}
                 key={goal.id}
                 style={[styles.goalCard, { backgroundColor: colors.background.primary, ...shadows.md }]}
                 onPress={() => setShowAddAmountModal(goal)}
@@ -316,12 +320,16 @@ export default function SavingsGoals({
                     </View>
                     <View style={styles.goalActions}>
                       <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel="Edit goal"
                         style={[styles.actionButton, { backgroundColor: colors.background.secondary }]}
                         onPress={() => editGoal(goal)}
                       >
                         <Ionicons name="pencil" size={16} color={colors.text.secondary} />
                       </TouchableOpacity>
                       <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel="Delete goal"
                         style={[styles.actionButton, { backgroundColor: colors.background.secondary }]}
                         onPress={() => handleDeleteGoal(goal)}
                       >
@@ -398,6 +406,7 @@ export default function SavingsGoals({
         <View style={[styles.modalContainer, { backgroundColor: colors.background.secondary }]}>
           <View style={styles.modalHeader}>
             <TouchableOpacity
+              accessibilityRole="button"
               onPress={() => {
                 setShowCreateModal(false);
                 setEditingGoal(null);
@@ -410,6 +419,7 @@ export default function SavingsGoals({
               {editingGoal ? 'Edit Goal' : 'New Savings Goal'}
             </Text>
             <TouchableOpacity
+              accessibilityRole="button"
               onPress={editingGoal ? handleUpdateGoal : handleCreateGoal}
               disabled={submitting}
             >
@@ -456,6 +466,9 @@ export default function SavingsGoals({
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
                 {goalCategories.map((category) => (
                   <TouchableOpacity
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: formData.category === category.id }}
+                    accessibilityLabel={category.title}
                     key={category.id}
                     style={[
                       styles.categoryOption,
@@ -536,6 +549,7 @@ export default function SavingsGoals({
         <View style={[styles.modalContainer, { backgroundColor: colors.background.secondary }]}>
           <View style={styles.modalHeader}>
             <TouchableOpacity
+              accessibilityRole="button"
               onPress={() => {
                 setShowAddAmountModal(null);
                 setAddAmount('');
@@ -546,7 +560,12 @@ export default function SavingsGoals({
             <Text style={[styles.modalTitle, { color: colors.text.primary }]}>
               Add to Goal
             </Text>
-            <TouchableOpacity onPress={handleAddAmount} disabled={submitting}>
+            <TouchableOpacity
+              onPress={handleAddAmount} disabled={submitting}
+              accessibilityRole="button"
+              accessibilityLabel="Add amount"
+              accessibilityState={{ busy: submitting }}
+            >
               {submitting ? (
                 <ActivityIndicator size="small" color={colors.primary.main} />
               ) : (

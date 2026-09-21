@@ -21,6 +21,9 @@ export default function MonthFilter({ selectedMonth, onMonthSelect, availableMon
       >
         {availableMonths.map((month) => (
           <TouchableOpacity
+            accessibilityRole="radio"
+            accessibilityState={{ selected: selectedMonth === month.key }}
+            accessibilityLabel={month.label}
             key={month.key}
             style={[
               styles.monthChip,

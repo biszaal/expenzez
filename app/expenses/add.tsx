@@ -78,6 +78,8 @@ export default function AddExpensePage() {
     >
       <View style={{ flexDirection: "row", alignItems: "center", padding: 16 }}>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           onPress={() => router.back()}
           style={{ marginRight: 12 }}
         >
@@ -123,6 +125,7 @@ export default function AddExpensePage() {
         >
           {categories.map((cat) => (
             <TouchableOpacity
+              accessibilityRole="button"
               key={cat}
               style={[
                 styles.categoryOption,
@@ -146,6 +149,7 @@ export default function AddExpensePage() {
 
         <Text style={styles.label}>Date</Text>
         <TouchableOpacity
+          accessibilityRole="button"
           onPress={() => setShowDatePicker(true)}
           style={[
             styles.input,
@@ -199,6 +203,7 @@ export default function AddExpensePage() {
         />
 
         <TouchableOpacity
+          accessibilityRole="button"
           style={{
             backgroundColor: loading ? colors.gray[400] : colors.primary.main,
             paddingVertical: 16,

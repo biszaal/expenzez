@@ -92,13 +92,19 @@ export const SimilarTransactionsModal: React.FC<Props> = ({
                 .
               </Text>
             </View>
-            <TouchableOpacity onPress={onClose} hitSlop={10}>
+            <TouchableOpacity
+              onPress={onClose} hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
               <Ionicons name="close" size={24} color={colors.text.secondary} />
             </TouchableOpacity>
           </View>
 
           {/* Select all */}
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Select all"
             style={[styles.selectAll, { borderColor: colors.border.light }]}
             onPress={toggleAll}
             activeOpacity={0.7}
@@ -122,6 +128,9 @@ export const SimilarTransactionsModal: React.FC<Props> = ({
               const isOn = selected.has(t.id);
               return (
                 <TouchableOpacity
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: selected.has(t.id) }}
+                  accessibilityLabel={t.description || t.merchant}
                   key={t.id}
                   style={[styles.row, { borderColor: colors.border.light }]}
                   onPress={() => toggle(t.id)}
@@ -159,6 +168,8 @@ export const SimilarTransactionsModal: React.FC<Props> = ({
           {/* Actions */}
           <View style={styles.actions}>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Close"
               style={[styles.btn, { borderColor: colors.border.medium }]}
               onPress={onClose}
               disabled={applying}
@@ -168,6 +179,8 @@ export const SimilarTransactionsModal: React.FC<Props> = ({
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Apply"
               style={[
                 styles.btn,
                 styles.btnPrimary,

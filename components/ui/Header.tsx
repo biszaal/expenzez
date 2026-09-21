@@ -115,6 +115,8 @@ export default function Header({
         <View style={styles.leftSection}>
           {showBackButton ? (
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Back"
               style={getBackButtonStyle()}
               onPress={handleBackPress}
               activeOpacity={0.7}
@@ -140,6 +142,8 @@ export default function Header({
         <View style={styles.rightSection}>
           {rightButton ? (
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="More"
               style={getActionButtonStyle()}
               onPress={rightButton.onPress}
               activeOpacity={0.7}

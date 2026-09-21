@@ -50,6 +50,8 @@ export const AIButton: React.FC<AIButtonProps> = ({
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel="Expenzez AI"
       style={[
         styles.container,
         {

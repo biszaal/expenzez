@@ -137,7 +137,11 @@ export default function ManageBalanceScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => router.back()} style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
             <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Manage Balance</Text>
@@ -158,7 +162,11 @@ export default function ManageBalanceScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => router.back()} style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
             <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Manage Balance</Text>
@@ -201,24 +209,28 @@ export default function ManageBalanceScreen() {
             <Text style={styles.sectionTitle}>Quick Options</Text>
             <View style={styles.quickOptionsGrid}>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={styles.quickOptionButton}
                 onPress={() => setNewBalance('100')}
               >
                 <Text style={styles.quickOptionText}>{symbol}100</Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={styles.quickOptionButton}
                 onPress={() => setNewBalance('500')}
               >
                 <Text style={styles.quickOptionText}>{symbol}500</Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={styles.quickOptionButton}
                 onPress={() => setNewBalance('1000')}
               >
                 <Text style={styles.quickOptionText}>{symbol}1,000</Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={styles.quickOptionButton}
                 onPress={() => setNewBalance('2000')}
               >
@@ -229,7 +241,11 @@ export default function ManageBalanceScreen() {
 
           {/* Reset Option */}
           <View style={styles.section}>
-            <TouchableOpacity style={styles.resetButton} onPress={handleResetBalance}>
+            <TouchableOpacity
+              style={styles.resetButton} onPress={handleResetBalance}
+              accessibilityRole="button"
+              accessibilityLabel="Reset"
+            >
               <Ionicons name="refresh" size={20} color="#EF4444" />
               <Text style={styles.resetButtonText}>Reset Balance & Clear History</Text>
             </TouchableOpacity>
@@ -239,6 +255,7 @@ export default function ManageBalanceScreen() {
         {/* Update Button */}
         <View style={styles.footer}>
           <TouchableOpacity
+            accessibilityRole="button"
             style={[
               styles.updateButton,
               { backgroundColor: colors.primary.main },

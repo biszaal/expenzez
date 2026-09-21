@@ -131,6 +131,8 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
           </View>
 
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={actionLabel}
             onPress={handleUpgradePress}
             activeOpacity={0.85}
             style={{
@@ -184,7 +186,11 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
             </View>
           </View>
           {onDismiss && (
-            <TouchableOpacity onPress={onDismiss} hitSlop={8}>
+            <TouchableOpacity
+              onPress={onDismiss} hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss"
+            >
               <Ionicons name="close" size={22} color={colors.text.tertiary} />
             </TouchableOpacity>
           )}
@@ -203,6 +209,8 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
         </Text>
 
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={actionLabel}
           onPress={handleUpgradePress}
           activeOpacity={0.85}
           style={{

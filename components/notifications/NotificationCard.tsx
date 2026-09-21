@@ -77,6 +77,8 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={notification.title}
       activeOpacity={0.7}
       onPress={onPress}
       style={[

@@ -306,6 +306,9 @@ export default function RegisterStep5({
               {/* Country Code Picker */}
               <TouchableOpacity
                 onPress={() => setShowCountryPicker(!showCountryPicker)}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: showCountryPicker }}
+                accessibilityLabel="Select country dialling code"
                 style={[styles.countryCodeButton, {
                   backgroundColor: colors.background.primary,
                   borderColor: colors.border.light
@@ -347,6 +350,8 @@ export default function RegisterStep5({
                 {phoneNumber.length > 0 && (
                   <TouchableOpacity
                     onPress={clearPhoneNumber}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear phone number"
                     style={styles.clearButton}
                   >
                     <Ionicons
@@ -385,6 +390,8 @@ export default function RegisterStep5({
                   {countryCodes.map((country, index) => (
                     <TouchableOpacity
                       key={index}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${country.label} ${country.code}`}
                       style={[styles.countryOption, { borderBottomColor: colors.border.light }]}
                       onPress={() => {
                         setSelectedCountryCode(country);
@@ -457,6 +464,9 @@ export default function RegisterStep5({
           <TouchableOpacity
             style={styles.consentRow}
             activeOpacity={0.7}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: consentChecked }}
+            accessibilityLabel="I confirm I am 18 or over and agree to Expenzez's Terms of Service and Privacy Policy"
             onPress={() => {
               setConsentChecked((prev) => !prev);
               setConsentError("");
@@ -482,6 +492,9 @@ export default function RegisterStep5({
               <Text
                 style={{ color: colors.primary.main }}
                 onPress={() => Linking.openURL("https://expenzez.com/terms")}
+                accessibilityRole="link"
+                accessibilityLabel="Terms of Service"
+                accessibilityHint="Opens in your browser"
               >
                 Terms of Service
               </Text>{" "}
@@ -489,6 +502,9 @@ export default function RegisterStep5({
               <Text
                 style={{ color: colors.primary.main }}
                 onPress={() => Linking.openURL("https://expenzez.com/privacy")}
+                accessibilityRole="link"
+                accessibilityLabel="Privacy Policy"
+                accessibilityHint="Opens in your browser"
               >
                 Privacy Policy
               </Text>
@@ -508,6 +524,9 @@ export default function RegisterStep5({
           <TouchableOpacity
             style={[styles.consentRow, { marginTop: spacing.md }]}
             activeOpacity={0.7}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: marketingConsent }}
+            accessibilityLabel="Email me Expenzez product updates, tips and offers. Optional"
             onPress={() => setMarketingConsent((prev) => !prev)}
           >
             <Ionicons
@@ -542,6 +561,7 @@ export default function RegisterStep5({
           />
           <Button
             title="Skip →"
+            accessibilityLabel="Skip"
             onPress={handleSkip}
             style={StyleSheet.flatten([styles.skipButton, { backgroundColor: colors.primary.main + '20', borderColor: colors.primary.main + '40' }])}
             textStyle={{ color: colors.primary.main, fontWeight: '600' }}

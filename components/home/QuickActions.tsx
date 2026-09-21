@@ -31,6 +31,8 @@ export const QuickActions: React.FC = () => {
     <View style={styles.professionalQuickActionsWrapper}>
       <View style={styles.professionalQuickActionsGrid}>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Expenzez AI"
           style={styles.professionalQuickActionCard}
           onPress={() => router.push("/ai-assistant")}
           activeOpacity={0.85}
@@ -59,6 +61,8 @@ export const QuickActions: React.FC = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Add a transaction"
           style={styles.professionalQuickActionCard}
           onPress={() => router.push("/add-transaction")}
           activeOpacity={0.85}
@@ -85,6 +89,8 @@ export const QuickActions: React.FC = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="View spending"
           style={styles.professionalQuickActionCard}
           onPress={() => router.push("/spending")}
           activeOpacity={0.85}
@@ -111,6 +117,8 @@ export const QuickActions: React.FC = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Import transactions"
           style={styles.professionalQuickActionCard}
           onPress={handleImportPress}
           activeOpacity={0.85}

@@ -43,6 +43,8 @@ export const HomeHeader: React.FC = () => {
         </View>
         <View style={styles.professionalHeaderRight}>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
             style={[
               styles.professionalNotificationButton,
               { backgroundColor: colors.background.primary },

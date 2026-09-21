@@ -115,6 +115,8 @@ export const AchievementProgressCard: React.FC = () => {
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel="Achievements"
       style={[styles.container, { backgroundColor: colors.background.primary }]}
       onPress={() => router.push('/(tabs)/progress')}
       activeOpacity={0.8}

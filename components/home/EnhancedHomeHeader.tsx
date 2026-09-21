@@ -28,6 +28,8 @@ export const EnhancedHomeHeader: React.FC = () => {
       
       <View style={styles.headerRight}>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
           style={[styles.notificationButton, { backgroundColor: colors.background.secondary }]}
           onPress={() => router.push("/notifications")}
           activeOpacity={0.7}
@@ -43,6 +45,8 @@ export const EnhancedHomeHeader: React.FC = () => {
         </TouchableOpacity>
         
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Profile"
           style={[styles.profileButton, { backgroundColor: colors.background.secondary }]}
           onPress={() => router.push("/profile")}
           activeOpacity={0.7}

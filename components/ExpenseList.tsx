@@ -183,12 +183,16 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
           </Text>
           <View style={styles.actionButtons}>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${expense.description}`}
               onPress={() => onExpenseEdit?.(expense)}
               style={[styles.actionButton, { backgroundColor: colors.primary[100] }]}
             >
               <Ionicons name="pencil" size={16} color={colors.primary[600]} />
             </TouchableOpacity>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={`Delete ${expense.description}`}
               onPress={() => handleDeleteExpense(expense)}
               style={[styles.actionButton, { backgroundColor: colors.red[100] }]}
             >

@@ -72,6 +72,8 @@ export const AIAssistantCard: React.FC = () => {
             </View>
           </View>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Expenzez AI"
             style={styles.premiumAIButton}
             onPress={() => router.push("/ai-assistant")}
             activeOpacity={0.8}

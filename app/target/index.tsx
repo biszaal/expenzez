@@ -26,6 +26,8 @@ export default function TargetPage() {
         ]}
       >
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           style={[
             styles.backButton,
             { backgroundColor: colors.background.primary },
@@ -88,6 +90,7 @@ export default function TargetPage() {
         </View>
 
         <TouchableOpacity
+          accessibilityRole="button"
           style={[
             styles.addButton,
             { backgroundColor: colors.primary.main },

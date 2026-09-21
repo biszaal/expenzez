@@ -159,6 +159,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         {onAction && actionLabel && (
           <View style={styles.actionsContainer}>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={actionLabel}
               style={[
                 styles.primaryButton,
                 {
@@ -174,6 +176,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
             {onSecondaryAction && secondaryActionLabel && (
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={secondaryActionLabel}
                 style={[
                   styles.secondaryButton,
                   {

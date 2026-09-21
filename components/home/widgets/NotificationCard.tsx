@@ -101,6 +101,8 @@ export const NotificationCard: React.FC = () => {
   return (
     <View style={styles.container}>
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Notifications"
         style={[styles.card, { backgroundColor: colors.background.primary }]}
         onPress={() => router.push("/notifications")}
         activeOpacity={0.8}
@@ -135,6 +137,8 @@ export const NotificationCard: React.FC = () => {
         <View style={styles.notificationsList}>
           {recentNotifications.map((notification, index) => (
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={notification.title}
               key={notification.id || `notification-${index}`}
               style={[
                 styles.notificationItem,

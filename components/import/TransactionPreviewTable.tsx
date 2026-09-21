@@ -164,6 +164,8 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
       >
         <View style={styles.selectControls}>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={selectedIds.size === transactions.length ? "Deselect all" : "Select all"}
             style={styles.selectAllButton}
             onPress={toggleSelectAll}
           >
@@ -179,6 +181,8 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
 
           {selectedIds.size > 0 && (
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Delete selected"
               style={[
                 styles.deleteButton,
                 { backgroundColor: "#FEE2E2" },
@@ -197,6 +201,7 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
         <View style={styles.sortControls}>
           {(["date", "amount", "category"] as const).map((col) => (
             <TouchableOpacity
+              accessibilityRole="button"
               key={col}
               style={[
                 styles.sortButton,
@@ -280,6 +285,9 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
             ]}
           >
             <TouchableOpacity
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: selectedIds.has(item.id) }}
+              accessibilityLabel={item.description}
               style={styles.checkboxColumn}
               onPress={() => toggleSelect(item.id)}
             >
@@ -335,6 +343,8 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
 
             <View style={styles.actionColumn}>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Edit"
                 style={styles.actionButton}
                 onPress={() => onEdit(item)}
               >
@@ -345,6 +355,8 @@ export const TransactionPreviewTable: React.FC<TransactionPreviewTableProps> = (
                 />
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Delete"
                 style={styles.actionButton}
                 onPress={() => {
                   Alert.alert(

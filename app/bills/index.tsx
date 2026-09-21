@@ -636,6 +636,8 @@ export default function BillsScreen() {
       {/* Back Button Header */}
       <View style={[styles.backButtonHeader, { backgroundColor: colors.background.secondary }]}>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           onPress={() => router.back()}
           style={styles.backButton}
         >
@@ -697,6 +699,8 @@ export default function BillsScreen() {
           },
         ]}
         onPress={showAddBillOptions}
+        accessibilityRole="button"
+        accessibilityLabel="Add a bill"
       >
         <Ionicons name="add" size={24} color={colors.text.primary} />
       </TouchableOpacity>
@@ -760,6 +764,7 @@ export default function BillsScreen() {
 
             <View style={excludeModalStyles.options}>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[
                   excludeModalStyles.option,
                   { backgroundColor: colors.background.secondary },
@@ -793,6 +798,8 @@ export default function BillsScreen() {
                   { backgroundColor: colors.background.secondary },
                 ]}
                 onPress={() => handleExcludeBill("no_longer_active")}
+                accessibilityRole="button"
+                accessibilityLabel="No longer active"
               >
                 <Ionicons name="pause-circle" size={24} color="#EF4444" />
                 <View style={excludeModalStyles.optionText}>
@@ -816,6 +823,7 @@ export default function BillsScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[
                   excludeModalStyles.option,
                   { backgroundColor: colors.background.secondary },
@@ -845,6 +853,7 @@ export default function BillsScreen() {
             </View>
 
             <TouchableOpacity
+              accessibilityRole="button"
               style={[
                 excludeModalStyles.cancelButton,
                 { borderColor: colors.primary.main },

@@ -76,6 +76,8 @@ export const AchievementToast: React.FC<AchievementToastProps> = ({
       <TouchableOpacity
         style={styles.toastContent}
         onPress={onDismiss}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss achievement"
         activeOpacity={0.9}
       >
         {/* Achievement Badge */}
@@ -91,7 +93,11 @@ export const AchievementToast: React.FC<AchievementToastProps> = ({
         <View style={styles.textContainer}>
           <View style={styles.headerRow}>
             <Text style={styles.headerText}>🎉 Achievement Unlocked!</Text>
-            <TouchableOpacity onPress={onDismiss} style={styles.closeButton}>
+            <TouchableOpacity
+              onPress={onDismiss} style={styles.closeButton}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss"
+            >
               <Ionicons name="close" size={16} color={colors.text.secondary} />
             </TouchableOpacity>
           </View>

@@ -29,6 +29,9 @@ export const RememberMeCheckbox: React.FC<RememberMeCheckboxProps> = ({
 
   return (
     <TouchableOpacity
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: value }}
+      accessibilityLabel="Remember me"
       onPress={() => onValueChange(!value)}
       activeOpacity={0.7}
       style={{

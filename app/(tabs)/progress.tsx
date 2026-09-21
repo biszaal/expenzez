@@ -370,6 +370,13 @@ export default function ProgressScreen() {
                   selectedCategory === category && styles.categoryButtonActive
                 ]}
                 onPress={() => setSelectedCategory(category)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedCategory === category }}
+                accessibilityLabel={
+                  category === 'all'
+                    ? 'All achievements'
+                    : `${category.charAt(0).toUpperCase() + category.slice(1)} achievements${categoryStats[category] > 0 ? `, ${categoryStats[category]}` : ''}`
+                }
               >
                 <Text style={[
                   styles.categoryButtonText,

@@ -103,6 +103,7 @@ export const ImportQuotaCard: React.FC<Props> = ({ usage, loading }) => {
       {/* upgrade CTA for free users — always offered, more prominent when low/exhausted */}
       {isFree && (
         <TouchableOpacity
+          accessibilityRole="button"
           onPress={() => router.push("/subscription/plans")}
           style={[
             styles.cta,

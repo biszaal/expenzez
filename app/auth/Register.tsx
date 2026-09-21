@@ -521,7 +521,12 @@ export default function Register() {
               >
                 Already have an account?{" "}
               </Text>
-              <TouchableOpacity onPress={() => router.replace("/auth/login")}>
+              <TouchableOpacity
+                onPress={() => router.replace("/auth/login")}
+                accessibilityRole="button"
+                accessibilityLabel="Sign in"
+                hitSlop={12}
+              >
                 <Text
                   style={[
                     styles.loginLinkBold,

@@ -165,7 +165,11 @@ export default function CreditCardsScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
         <View style={[styles.header, { backgroundColor: colors.background.primary }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            onPress={() => router.back()} style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
@@ -188,7 +192,11 @@ export default function CreditCardsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.background.primary }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          onPress={() => router.back()} style={styles.backButton}
+        >
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -196,6 +204,8 @@ export default function CreditCardsScreen() {
         </View>
         <TouchableOpacity
           onPress={() => handleOpenModal()}
+          accessibilityRole="button"
+          accessibilityLabel="Add a card"
           style={[styles.addButton, { backgroundColor: `${colors.primary.main}15` }]}
         >
           <Ionicons name="add" size={24} color={colors.primary.main} />
@@ -302,8 +312,10 @@ export default function CreditCardsScreen() {
                 Add your credit cards to track utilization and improve your credit score
               </Text>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[styles.emptyStateButton, { backgroundColor: colors.primary.main }]}
                 onPress={() => handleOpenModal()}
+                accessibilityLabel="Add a card"
               >
                 <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
                 <Text style={styles.emptyStateButtonText}>Add Credit Card</Text>
@@ -319,6 +331,8 @@ export default function CreditCardsScreen() {
                   key={card.cardId}
                   style={[styles.cardItem, { backgroundColor: colors.background.secondary }]}
                   onPress={() => handleOpenModal(card)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${card.cardName}, edit`}
                   activeOpacity={0.7}
                 >
                   <View style={styles.cardItemHeader}>
@@ -431,11 +445,13 @@ export default function CreditCardsScreen() {
       >
         <TouchableOpacity
           style={styles.modalOverlay}
+          accessible={false}
           activeOpacity={1}
           onPress={() => setModalVisible(false)}
         >
           <TouchableOpacity
             style={[styles.modalContent, { backgroundColor: colors.background.primary }]}
+            accessible={false}
             activeOpacity={1}
             onPress={(e) => e.stopPropagation()}
           >
@@ -453,7 +469,11 @@ export default function CreditCardsScreen() {
                   Track your credit card balances and utilization
                 </Text>
               </View>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalClose}>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)} style={styles.modalClose}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
                 <Ionicons name="close-circle" size={28} color={colors.text.tertiary} />
               </TouchableOpacity>
             </View>
@@ -619,6 +639,7 @@ export default function CreditCardsScreen() {
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[
                   styles.modalButton,
                   styles.cancelButton,
@@ -632,6 +653,7 @@ export default function CreditCardsScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[
                   styles.modalButton,
                   styles.saveButton,

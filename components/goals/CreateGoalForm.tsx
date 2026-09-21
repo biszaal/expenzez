@@ -138,7 +138,11 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{isEditing ? 'Edit Goal' : 'Create New Goal'}</Text>
-        <TouchableOpacity onPress={onCancel} style={styles.cancelButton}>
+        <TouchableOpacity
+          onPress={onCancel} style={styles.cancelButton}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel"
+        >
           <Ionicons name="close" size={24} color={colors.text.secondary} />
         </TouchableOpacity>
       </View>
@@ -154,6 +158,7 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
 
             return (
               <TouchableOpacity
+                accessibilityRole="button"
                 key={type.type}
                 style={[
                   styles.typeOption,
@@ -234,6 +239,7 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
 
             return (
               <TouchableOpacity
+                accessibilityRole="button"
                 key={p.priority}
                 style={[
                   styles.priorityOption,
@@ -255,6 +261,9 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
         <View style={styles.autoSaveHeader}>
           <Text style={styles.sectionTitle}>Auto-Save (Optional)</Text>
           <TouchableOpacity
+            accessibilityRole="switch"
+            accessibilityState={{ checked: autoSaveEnabled }}
+            accessibilityLabel="Auto-save"
             style={[styles.toggle, autoSaveEnabled && styles.toggleActive]}
             onPress={() => setAutoSaveEnabled(!autoSaveEnabled)}
           >
@@ -281,6 +290,7 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
               <View style={styles.frequencyContainer}>
                 {['weekly', 'monthly'].map((freq) => (
                   <TouchableOpacity
+                    accessibilityRole="button"
                     key={freq}
                     style={[
                       styles.frequencyOption,
@@ -305,6 +315,8 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
       {/* Action Buttons */}
       <View style={styles.actions}>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Cancel"
           style={[styles.button, styles.cancelButtonStyle]}
           onPress={onCancel}
         >
@@ -312,6 +324,7 @@ export const CreateGoalForm: React.FC<CreateGoalFormProps> = ({
         </TouchableOpacity>
 
         <TouchableOpacity
+          accessibilityRole="button"
           style={[styles.button, styles.submitButton]}
           onPress={handleSubmit}
           disabled={isLoading}

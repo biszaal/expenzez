@@ -132,6 +132,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
             Your daily financial brief will be generated at 6:00 AM
           </Text>
           <TouchableOpacity
+            accessibilityRole="button"
             style={[styles.refreshButton, { backgroundColor: colors.primary.main }]}
             onPress={handleRefresh}
           >
@@ -175,7 +176,12 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
             </Text>
           </View>
         </View>
-        <TouchableOpacity onPress={() => setExpanded(!expanded)}>
+        <TouchableOpacity
+          onPress={() => setExpanded(!expanded)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded }}
+          accessibilityLabel="Daily brief"
+        >
           <Ionicons
             name={expanded ? "chevron-up" : "chevron-down"}
             size={24}
@@ -313,6 +319,7 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
               </Text>
               {insight.actionable && insight.actionText && (
                 <TouchableOpacity
+                  accessibilityRole="button"
                   style={[
                     styles.insightButton,
                     { borderColor: colors.primary.main },
@@ -344,7 +351,11 @@ export const AIBriefCard: React.FC<AIBriefCardProps> = ({ onRefresh }) => {
         <Text style={[styles.footerText, { color: colors.secondary.main }]}>
           Generated {formattedGeneratedAt}
         </Text>
-        <TouchableOpacity onPress={handleRefresh}>
+        <TouchableOpacity
+          onPress={handleRefresh}
+          accessibilityRole="button"
+          accessibilityLabel="Refresh"
+        >
           <Ionicons name="refresh" size={18} color={colors.secondary.main} />
         </TouchableOpacity>
       </View>

@@ -66,6 +66,8 @@ export const SavingsActionButton: React.FC<SavingsActionButtonProps> = ({
 
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={getButtonText()}
       style={styles.button}
       onPress={onPress}
       activeOpacity={0.8}

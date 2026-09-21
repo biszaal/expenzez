@@ -156,6 +156,7 @@ export const SmartSuggestionCard: React.FC<Props> = ({
           </Text>
           <View style={styles.actions}>
             <Pressable
+              accessibilityRole="button"
               onPress={() => {
                 onApply?.(suggestion);
                 setDismissed(true);
@@ -179,6 +180,7 @@ export const SmartSuggestionCard: React.FC<Props> = ({
               </Text>
             </Pressable>
             <Pressable
+              accessibilityRole="button"
               onPress={() => setDismissed(true)}
               hitSlop={6}
               style={({ pressed }) => [

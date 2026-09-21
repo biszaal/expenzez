@@ -765,6 +765,7 @@ export default function BiometricSecurityLock({
             {/* Header */}
             <View style={styles.passwordModalHeader}>
               <TouchableOpacity
+                accessibilityRole="button"
                 style={styles.cancelButton}
                 onPress={() => {
                   setShowPasswordModal(false);
@@ -826,6 +827,7 @@ export default function BiometricSecurityLock({
               </View>
 
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[
                   styles.passwordSubmitButton,
                   {

@@ -208,12 +208,16 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
         </View>
         <View style={styles.budgetActions}>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Edit budget"
             onPress={() => onBudgetEdit?.(budget)}
             style={[styles.actionButton, { backgroundColor: colors.primary[100] }]}
           >
             <Ionicons name="pencil" size={16} color={colors.primary[600]} />
           </TouchableOpacity>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Delete budget"
             onPress={() => handleDeleteBudget(budget)}
             style={[styles.actionButton, { backgroundColor: colors.red[100] }]}
           >
@@ -371,6 +375,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
             Your Budgets ({budgets.length})
           </Text>
           <TouchableOpacity
+            accessibilityRole="button"
             onPress={onCreateBudget}
             style={[styles.createButton, { backgroundColor: colors.primary.main }]}
           >

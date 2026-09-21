@@ -146,6 +146,9 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
           </View>
         </View>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss"
+          accessibilityState={{ busy: dismissing }}
           onPress={handleDismiss}
           disabled={dismissing}
           style={styles.closeButton}
@@ -231,6 +234,7 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
       <View style={styles.actions}>
         {alert.actionable && alert.actionText && (
           <TouchableOpacity
+            accessibilityRole="button"
             style={[styles.actionButton, { backgroundColor: alertColor }]}
             onPress={handleAction}
           >
@@ -240,6 +244,7 @@ export const ProactiveAlertCard: React.FC<ProactiveAlertCardProps> = ({
         )}
         {isUnacknowledged && (
           <TouchableOpacity
+            accessibilityRole="button"
             style={[
               styles.acknowledgeButton,
               { borderColor: colors.border.medium },

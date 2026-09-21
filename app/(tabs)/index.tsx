@@ -385,6 +385,13 @@ export default function HomeScreen() {
           <View style={styles.headerActions}>
             <Pressable
               onPress={() => router.push("/notifications" as any)}
+              accessibilityRole="button"
+              accessibilityLabel={
+                unreadCount > 0
+                  ? `Notifications, ${unreadCount} unread`
+                  : "Notifications"
+              }
+              hitSlop={8}
               style={[
                 styles.headerIcon,
                 {
@@ -412,6 +419,9 @@ export default function HomeScreen() {
             </Pressable>
             <Pressable
               onPress={() => router.push("/settings" as any)}
+              accessibilityRole="button"
+              accessibilityLabel="Settings"
+              hitSlop={8}
               style={styles.avatarPressable}
             >
               <LinearGradient
@@ -500,6 +510,9 @@ export default function HomeScreen() {
         {/* Budget ring */}
         <Pressable
           onPress={() => router.push("/budgets" as any)}
+          accessibilityRole="button"
+          accessibilityLabel={`Monthly budget, ${symbol}${formatGBP(monthAggregates.spent).whole} spent of ${symbol}${formatGBP(userBudget).whole}`}
+          accessibilityHint="Opens your budgets"
           style={[
             styles.card,
             {
@@ -626,6 +639,9 @@ export default function HomeScreen() {
         {/* Expenzez AI — chat entry (all users; free tier has a daily limit) */}
         <Pressable
           onPress={() => router.push("/ai-assistant")}
+          accessibilityRole="button"
+          accessibilityLabel="Expenzez AI"
+          accessibilityHint="Opens the assistant to ask about your spending"
           style={[
             styles.aiCard,
             {
@@ -698,7 +714,12 @@ export default function HomeScreen() {
               <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>
                 Your banks
               </Text>
-              <Pressable onPress={() => router.push("/(tabs)/accounts" as any)}>
+              <Pressable
+                onPress={() => router.push("/(tabs)/accounts" as any)}
+                accessibilityRole="button"
+                accessibilityLabel="See all banks"
+                hitSlop={12}
+              >
                 <Text style={[styles.sectionLink, { color: colors.primary[500] }]}>
                   See all
                 </Text>
@@ -774,6 +795,9 @@ export default function HomeScreen() {
           <View style={styles.importGrid}>
             <Pressable
               onPress={() => router.push("/import-csv" as any)}
+              accessibilityRole="button"
+              accessibilityLabel="Import a CSV"
+              accessibilityHint="Upload transactions from a spreadsheet"
               style={({ pressed }) => [
                 styles.importCard,
                 {
@@ -813,6 +837,9 @@ export default function HomeScreen() {
 
             <Pressable
               onPress={() => router.push("/import-statement" as any)}
+              accessibilityRole="button"
+              accessibilityLabel="Import a statement"
+              accessibilityHint="Upload a bank or card statement"
               style={({ pressed }) => [
                 styles.importCard,
                 {
@@ -857,7 +884,12 @@ export default function HomeScreen() {
               >
                 Top categories
               </Text>
-              <Pressable onPress={() => router.push("/(tabs)/spending" as any)}>
+              <Pressable
+                onPress={() => router.push("/(tabs)/spending" as any)}
+                accessibilityRole="button"
+                accessibilityLabel="See all spending categories"
+                hitSlop={12}
+              >
                 <Text
                   style={[styles.sectionLink, { color: colors.primary[500] }]}
                 >
@@ -941,7 +973,12 @@ export default function HomeScreen() {
               >
                 Recent transactions
               </Text>
-              <Pressable onPress={() => router.push("/transactions" as any)}>
+              <Pressable
+                onPress={() => router.push("/transactions" as any)}
+                accessibilityRole="button"
+                accessibilityLabel="See all transactions"
+                hitSlop={12}
+              >
                 <Text
                   style={[styles.sectionLink, { color: colors.primary[500] }]}
                 >
@@ -1023,7 +1060,12 @@ export default function HomeScreen() {
               >
                 Upcoming bills
               </Text>
-              <Pressable onPress={() => router.push("/bills")}>
+              <Pressable
+                onPress={() => router.push("/bills")}
+                accessibilityRole="button"
+                accessibilityLabel="See all bills"
+                hitSlop={12}
+              >
                 <Text
                   style={[styles.sectionLink, { color: colors.primary[500] }]}
                 >
@@ -1049,6 +1091,8 @@ export default function HomeScreen() {
                   <Pressable
                     key={bill.id}
                     onPress={() => router.push("/bills")}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${bill.name || bill.merchant}, ${symbol}${formatted.whole}, ${dueLabel}`}
                     style={[
                       styles.txnRow,
                       {
@@ -1117,6 +1161,9 @@ export default function HomeScreen() {
               </Text>
               <Pressable
                 onPress={() => router.push("/notifications" as any)}
+                accessibilityRole="button"
+                accessibilityLabel="See all notifications"
+                hitSlop={12}
               >
                 <Text
                   style={[styles.sectionLink, { color: colors.primary[500] }]}
@@ -1141,6 +1188,8 @@ export default function HomeScreen() {
                   <Pressable
                     key={n.id}
                     onPress={() => router.push("/notifications" as any)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${n.title}. ${n.message}`}
                     style={[
                       styles.notifRow,
                       {

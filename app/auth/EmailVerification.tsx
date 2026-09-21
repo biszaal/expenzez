@@ -270,6 +270,8 @@ export default function EmailVerification() {
           {/* Header */}
           <View style={styles.header}>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Back"
               onPress={() => {
                 if (router.canGoBack()) {
                   router.back();
@@ -376,6 +378,7 @@ export default function EmailVerification() {
                 placeholderTextColor={colors.text.tertiary}
                 keyboardType="numeric"
                 maxLength={6}
+                accessibilityLabel="Verification code, 6 digits"
                 style={{
                   flex: 1,
                   color: colors.text.primary,
@@ -391,6 +394,12 @@ export default function EmailVerification() {
             <Pressable
               onPress={handleVerification}
               disabled={isVerifying || verificationCode.length !== 6}
+              accessibilityRole="button"
+              accessibilityLabel={isVerifying ? "Verifying" : "Verify"}
+              accessibilityState={{
+                disabled: isVerifying || verificationCode.length !== 6,
+                busy: isVerifying,
+              }}
               style={({ pressed }) => [
                 styles.primaryButton,
                 {
@@ -445,6 +454,9 @@ export default function EmailVerification() {
               </Text>
               <Pressable
                 onPress={handleResendCode}
+                accessibilityRole="button"
+                accessibilityLabel="Resend code"
+                hitSlop={12}
                 disabled={isResending || resendTimer > 0}
               >
                 {isResending ? (

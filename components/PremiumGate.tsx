@@ -98,6 +98,8 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
       {/* Back Button Header */}
       <View style={styles.headerContainer}>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           style={styles.backButton}
           onPress={() => router.back()}
           activeOpacity={0.7}
@@ -134,6 +136,8 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
 
         {/* Upgrade Button */}
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="See plans"
           style={[styles.upgradeButton, { backgroundColor: colors.primary.main }]}
           onPress={() => router.push('/subscription/plans')}
           activeOpacity={0.8}
@@ -145,6 +149,8 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
         {/* Dismiss Button (only for soft gates) */}
         {!hardGate && onDismiss && (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Not now"
             style={styles.dismissButton}
             onPress={onDismiss}
             activeOpacity={0.8}

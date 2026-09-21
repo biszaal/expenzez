@@ -19,6 +19,10 @@ interface ButtonProps {
   fullWidth?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  /** Overrides the spoken name. Defaults to `title`, which is usually right. */
+  accessibilityLabel?: string;
+  /** Extra context, only where the title alone doesn't say what happens. */
+  accessibilityHint?: string;
 }
 
 export default function Button({
@@ -31,6 +35,8 @@ export default function Button({
   fullWidth = false,
   style,
   textStyle,
+  accessibilityLabel,
+  accessibilityHint,
 }: ButtonProps) {
   const { colors, shadows } = useTheme();
 
@@ -144,6 +150,10 @@ export default function Button({
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
     >
       <Text style={buttonTextStyle}>{loading ? "Loading..." : title}</Text>
     </TouchableOpacity>

@@ -322,6 +322,8 @@ export default function ChangePinScreen() {
         style={[styles.header, { backgroundColor: colors.background.primary }]}
       >
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           style={[
             styles.backButton,
             { backgroundColor: colors.background.secondary },

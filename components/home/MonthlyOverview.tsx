@@ -38,6 +38,8 @@ export const MonthlyOverview: React.FC<MonthlyOverviewProps> = ({
             </View>
           </View>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="View all spending"
             style={[styles.professionalViewAllButton, { backgroundColor: colors.primary[100] }]}
             onPress={() => router.push("/spending")}
             activeOpacity={0.7}

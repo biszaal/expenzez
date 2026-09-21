@@ -99,9 +99,10 @@ export default function ForgotUsernameScreen() {
               <View style={styles.header}>
                 {/* Back Button */}
                 <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Back"
                   onPress={() => router.back()}
                   style={StyleSheet.flatten([styles.backButton, { backgroundColor: colors.background.secondary }])}
-                  accessibilityLabel="Go back"
                 >
                   <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
                 </TouchableOpacity>
@@ -156,6 +157,9 @@ export default function ForgotUsernameScreen() {
                     }])}
                     onPress={handleSubmit}
                     disabled={isLoading}
+                    accessibilityRole="button"
+                    accessibilityLabel={isLoading ? "Sending" : "Send username"}
+                    accessibilityState={{ disabled: isLoading, busy: isLoading }}
                   >
                     <Typography
                       variant="body"
@@ -171,6 +175,8 @@ export default function ForgotUsernameScreen() {
                     <TouchableOpacity
                       style={styles.forgotPasswordLink}
                       onPress={() => router.push("/auth/ForgotPassword")}
+                      accessibilityRole="button"
+                      accessibilityLabel="Forgot your password instead"
                     >
                       <Typography variant="body" color="primary" weight="medium">
                         Forgot your password instead?
@@ -180,6 +186,8 @@ export default function ForgotUsernameScreen() {
                     <TouchableOpacity
                       style={styles.backToLoginLink}
                       onPress={() => router.push("/auth/login")}
+                      accessibilityRole="button"
+                      accessibilityLabel="Sign in"
                     >
                       <Typography variant="body" color="secondary" align="center">
                         Remember your credentials?{" "}

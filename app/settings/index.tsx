@@ -461,6 +461,8 @@ export default function SettingsPage() {
               height: 40,
             },
           ]}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           onPress={() => {
             if (router.canGoBack()) {
               router.back();
@@ -510,6 +512,8 @@ export default function SettingsPage() {
                 shadows.sm,
               ]}
               onPress={() => router.push("/profile/personal")}
+              accessibilityRole="button"
+              accessibilityLabel="Personal information"
             >
               <Ionicons
                 name="person-outline"
@@ -537,6 +541,8 @@ export default function SettingsPage() {
                 shadows.sm,
               ]}
               onPress={() => router.push("/accounts" as any)}
+              accessibilityRole="button"
+              accessibilityLabel="Accounts"
             >
               <Ionicons
                 name="card-outline"
@@ -564,6 +570,8 @@ export default function SettingsPage() {
                 shadows.sm,
               ]}
               onPress={() => router.push("/statements" as any)}
+              accessibilityRole="button"
+              accessibilityLabel="Statements"
             >
               <Ionicons
                 name="document-text-outline"
@@ -623,6 +631,10 @@ export default function SettingsPage() {
                   ]}
                   onPress={() => setColorScheme(option.key)}
                   activeOpacity={0.7}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: colorScheme === option.key }}
+                  accessibilityLabel={option.label}
+                  accessibilityHint={option.description}
                 >
                   <View style={styles.themeOptionLeft}>
                     <View
@@ -701,6 +713,8 @@ export default function SettingsPage() {
               ]}
               onPress={() => setCurrencyModalVisible(true)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={`Display currency, ${activeCurrency.name} (${activeCurrency.code})`}
             >
               <View
                 style={[
@@ -748,6 +762,8 @@ export default function SettingsPage() {
                 shadows.sm,
               ]}
               onPress={() => router.push("/budgets/edit")}
+              accessibilityRole="button"
+              accessibilityLabel="Budgets"
             >
               <Ionicons
                 name="wallet-outline"
@@ -782,6 +798,8 @@ export default function SettingsPage() {
                 shadows.sm,
               ]}
               onPress={() => router.push("/notifications/preferences")}
+              accessibilityRole="button"
+              accessibilityLabel="Notification preferences"
             >
               <Ionicons
                 name="notifications-outline"
@@ -811,6 +829,8 @@ export default function SettingsPage() {
                 shadows.sm,
               ]}
               onPress={() => router.push("/security")}
+              accessibilityRole="button"
+              accessibilityLabel="Security"
             >
               <Ionicons
                 name="shield-checkmark-outline"
@@ -844,6 +864,8 @@ export default function SettingsPage() {
               ]}
               disabled={recalculating}
               onPress={handleRecalculateSpending}
+              accessibilityRole="button"
+              accessibilityLabel="Recalculate spending"
             >
               <Ionicons
                 name="refresh-outline"
@@ -967,6 +989,8 @@ export default function SettingsPage() {
                       styles.upgradeButton,
                       { backgroundColor: colors.primary.main },
                     ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Upgrade to Premium"
                     onPress={() => router.push("/subscription/plans")}
                     activeOpacity={0.8}
                   >
@@ -982,6 +1006,8 @@ export default function SettingsPage() {
                         borderColor: colors.border.light,
                       },
                     ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Manage subscription"
                     onPress={() => router.push("/subscription/plans")}
                     activeOpacity={0.8}
                   >
@@ -1004,6 +1030,8 @@ export default function SettingsPage() {
                 <TouchableOpacity
                   style={styles.restoreLink}
                   onPress={handleRestorePurchases}
+                  accessibilityRole="button"
+                  accessibilityLabel="Restore purchases"
                   disabled={restoringPurchases}
                   activeOpacity={0.7}
                 >
@@ -1047,6 +1075,8 @@ export default function SettingsPage() {
                 shadows.sm,
               ]}
               onPress={handleExportData}
+              accessibilityRole="button"
+              accessibilityLabel="Export my data"
             >
               <Ionicons
                 name="download-outline"
@@ -1077,6 +1107,8 @@ export default function SettingsPage() {
                 },
               ]}
               onPress={handleDeleteData}
+              accessibilityRole="button"
+              accessibilityLabel="Delete all data"
             >
               <Ionicons
                 name="trash-outline"
@@ -1110,6 +1142,8 @@ export default function SettingsPage() {
                 shadows.sm,
               ]}
               onPress={handleDeleteAccount}
+              accessibilityRole="button"
+              accessibilityLabel="Delete account"
             >
               <Ionicons
                 name="close-circle-outline"
@@ -1149,6 +1183,8 @@ export default function SettingsPage() {
                 shadows.sm,
               ]}
               onPress={handleContactSupport}
+              accessibilityRole="button"
+              accessibilityLabel="Contact support"
             >
               <Ionicons
                 name="help-circle-outline"
@@ -1210,6 +1246,8 @@ export default function SettingsPage() {
               <Switch
                 value={widgetShowAmounts}
                 onValueChange={handleWidgetAmountsToggle}
+                accessibilityLabel="Show amounts on widgets"
+                accessibilityHint="Turn off to mask balances on your home screen"
                 trackColor={{ false: colors.border.light, true: colors.primary.main }}
               />
             </View>
@@ -1225,6 +1263,8 @@ export default function SettingsPage() {
                 shadows.sm,
               ]}
               onPress={handleRefreshWidgets}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh widgets"
               disabled={refreshingWidgets}
             >
               <Ionicons
@@ -1304,6 +1344,8 @@ export default function SettingsPage() {
               <Switch
                 value={analyticsConsent}
                 onValueChange={handleAnalyticsToggle}
+                accessibilityLabel="Share usage analytics"
+                accessibilityHint="Off by default. Turn on only if you're happy to share usage data"
                 trackColor={{ false: colors.border.light, true: colors.primary.main }}
               />
             </View>
@@ -1321,6 +1363,8 @@ export default function SettingsPage() {
                   shadows.sm,
                 ]}
                 onPress={() => adsService.showPrivacyOptionsForm()}
+                accessibilityRole="button"
+                accessibilityLabel="Ad privacy options"
               >
                 <Ionicons
                   name="megaphone-outline"
@@ -1366,6 +1410,8 @@ export default function SettingsPage() {
                 shadows.sm,
               ]}
               onPress={() => router.push("/terms")}
+              accessibilityRole="button"
+              accessibilityLabel="Privacy Policy"
             >
               <Ionicons
                 name="shield-checkmark-outline"
@@ -1395,6 +1441,8 @@ export default function SettingsPage() {
                 shadows.sm,
               ]}
               onPress={() => router.push("/terms")}
+              accessibilityRole="button"
+              accessibilityLabel="Terms of Use, EULA"
             >
               <Ionicons
                 name="document-text-outline"
@@ -1475,6 +1523,9 @@ export default function SettingsPage() {
                 shadows.sm,
               ]}
               onPress={() => setAdvancedExpanded(!advancedExpanded)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: advancedExpanded }}
+              accessibilityLabel="Advanced"
             >
               <Ionicons
                 name="settings-outline"
@@ -1534,6 +1585,8 @@ export default function SettingsPage() {
                       { backgroundColor: colors.primary.main },
                     ]}
                     onPress={handleCopyAccountId}
+                    accessibilityRole="button"
+                    accessibilityLabel="Copy account ID"
                     activeOpacity={0.7}
                   >
                     <Ionicons
@@ -1582,6 +1635,8 @@ export default function SettingsPage() {
                     : "rgba(214,58,102,0.18)",
                 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
               onPress={() => {
                 Alert.alert("Sign Out", "Are you sure you want to sign out?", [
                   { text: "Cancel", style: "cancel" },
@@ -1647,6 +1702,8 @@ export default function SettingsPage() {
               </Text>
               <TouchableOpacity
                 onPress={() => setCurrencyModalVisible(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Ionicons name="close" size={24} color={colors.text.secondary} />
@@ -1693,6 +1750,9 @@ export default function SettingsPage() {
                       },
                     ]}
                     onPress={() => handleSelectCurrency(item.code)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: item.code === activeCurrency.code }}
+                    accessibilityLabel={`${item.name} (${item.code})`}
                     activeOpacity={0.7}
                   >
                     <Text

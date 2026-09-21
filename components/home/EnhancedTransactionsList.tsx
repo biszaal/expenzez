@@ -41,6 +41,8 @@ export const EnhancedTransactionsList: React.FC<
           Recent Transactions
         </Text>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="View all transactions"
           style={[
             styles.viewAllButton,
             { backgroundColor: colors.primary.main },
@@ -155,6 +157,7 @@ export const EnhancedTransactionsList: React.FC<
               Add your first expense to get started
             </Text>
             <TouchableOpacity
+              accessibilityRole="button"
               style={[
                 styles.addButton,
                 { backgroundColor: colors.primary.main },

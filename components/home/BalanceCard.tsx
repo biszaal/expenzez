@@ -89,6 +89,8 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={isBalanceHidden ? "Show balance" : "Hide balance"}
               onPress={toggleBalanceVisibility}
               style={styles.professionalBalanceIcon}
               activeOpacity={0.7}

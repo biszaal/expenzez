@@ -181,6 +181,12 @@ export default function RegisterStep2({
           </Typography>
           <TouchableOpacity
             onPress={openDatePicker}
+            accessibilityRole="button"
+            accessibilityLabel={
+              values.dob
+                ? `Date of birth, ${selectedDate.toLocaleDateString()}`
+                : "Select your date of birth"
+            }
             style={[styles.dateInput, {
               backgroundColor: colors.background.primary,
               borderColor: dobError ? colors.error.main : colors.border.light
@@ -215,6 +221,9 @@ export default function RegisterStep2({
               <TouchableOpacity
                 key={option.value}
                 onPress={() => onChange("gender", option.value)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: values.gender === option.value }}
+                accessibilityLabel={option.label}
                 style={[
                   styles.genderOption,
                   {
@@ -286,7 +295,12 @@ export default function RegisterStep2({
                   { borderBottomColor: colors.border.light },
                 ]}
               >
-                <TouchableOpacity onPress={handleDateCancel}>
+                <TouchableOpacity
+                  onPress={handleDateCancel}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel"
+                  hitSlop={12}
+                >
                   <Typography
                     variant="body"
                     style={{ color: colors.primary.main }}
@@ -301,7 +315,12 @@ export default function RegisterStep2({
                 >
                   Select Date
                 </Typography>
-                <TouchableOpacity onPress={handleDateConfirm}>
+                <TouchableOpacity
+                  onPress={handleDateConfirm}
+                  accessibilityRole="button"
+                  accessibilityLabel="Confirm date"
+                  hitSlop={12}
+                >
                   <Typography
                     variant="body"
                     style={{ color: colors.primary.main }}

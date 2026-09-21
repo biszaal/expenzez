@@ -189,6 +189,9 @@ export default function AppleProfileFlow() {
                 <TouchableOpacity
                   style={styles.backButton}
                   onPress={step > 1 ? handleBack : undefined}
+                  accessibilityRole="button"
+                  accessibilityLabel="Back"
+                  accessibilityState={{ disabled: step <= 1 }}
                   disabled={step === 1}
                 >
                   {step > 1 && (

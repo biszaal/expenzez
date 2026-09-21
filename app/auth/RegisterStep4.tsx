@@ -137,6 +137,8 @@ export default function RegisterStep4({
               />
               <TouchableOpacity
                 onPress={() => setUseManualEntry(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Enter address manually instead"
                 style={styles.manualEntryButton}
               >
                 <Typography variant="caption" style={{ color: colors.primary.main }}>
@@ -151,6 +153,8 @@ export default function RegisterStep4({
             <View style={styles.inputContainer}>
               <TouchableOpacity
                 onPress={() => setUseManualEntry(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Use address search instead"
                 style={styles.autoSearchButton}
               >
                 <Ionicons name="search" size={16} color={colors.primary.main} />
@@ -249,6 +253,13 @@ export default function RegisterStep4({
             </Typography>
             <TouchableOpacity
               onPress={() => setShowCountryPicker(!showCountryPicker)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: showCountryPicker }}
+              accessibilityLabel={
+                selectedCountry
+                  ? `Country, ${selectedCountry.label}`
+                  : "Select your country"
+              }
               style={[styles.countryInput, {
                 backgroundColor: colors.background.primary,
                 borderColor: colors.border.light
@@ -271,6 +282,8 @@ export default function RegisterStep4({
                 {countries.map((country) => (
                   <TouchableOpacity
                     key={country.value}
+                    accessibilityRole="button"
+                    accessibilityLabel={country.label}
                     style={[styles.countryOption, { borderBottomColor: colors.border.light }]}
                     onPress={() => {
                       onChange("country", country.value);

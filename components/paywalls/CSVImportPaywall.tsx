@@ -68,7 +68,11 @@ export const CSVImportPaywall: React.FC = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack}>
+          <TouchableOpacity
+            onPress={handleBack}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
             <Ionicons
               name="chevron-back"
               size={24}
@@ -162,6 +166,7 @@ export const CSVImportPaywall: React.FC = () => {
 
           {/* Monthly Plan */}
           <TouchableOpacity
+            accessibilityRole="button"
             style={[
               styles.planCard,
               {
@@ -199,6 +204,7 @@ export const CSVImportPaywall: React.FC = () => {
               </Text>
             </View>
             <TouchableOpacity
+              accessibilityRole="button"
               style={[
                 styles.planCard,
                 styles.annualPlan,
@@ -252,6 +258,7 @@ export const CSVImportPaywall: React.FC = () => {
         ]}
       >
         <TouchableOpacity
+          accessibilityRole="button"
           style={[
             styles.upgradeButton,
             { backgroundColor: colors.primary.main },

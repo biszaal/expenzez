@@ -101,6 +101,8 @@ export default function PaymentMethodsScreen() {
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Back"
               style={styles.backButton}
               onPress={() => router.back()}
             >
@@ -112,6 +114,8 @@ export default function PaymentMethodsScreen() {
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Payment Methods</Text>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Add a payment method"
               style={styles.addButton}
               onPress={() => showSuccess("Add new payment method")}
             >
@@ -186,7 +190,11 @@ export default function PaymentMethodsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionsCard}>
-            <TouchableOpacity style={styles.actionItem}>
+            <TouchableOpacity
+              style={styles.actionItem}
+              accessibilityRole="button"
+              accessibilityLabel="Add new card"
+            >
               <View style={styles.actionIcon}>
                 <Ionicons
                   name="add-circle-outline"
@@ -207,7 +215,11 @@ export default function PaymentMethodsScreen() {
               />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionItem}>
+            <TouchableOpacity
+              style={styles.actionItem}
+              accessibilityRole="button"
+              accessibilityLabel="Digital wallets"
+            >
               <View style={styles.actionIcon}>
                 <Ionicons
                   name="wallet-outline"

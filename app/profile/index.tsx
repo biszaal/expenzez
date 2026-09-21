@@ -46,6 +46,7 @@ const Row: React.FC<RowProps> = ({
   colors,
 }) => (
   <Pressable
+    accessibilityRole="button"
     onPress={onPress}
     disabled={!onPress}
     style={({ pressed }) => [
@@ -172,6 +173,8 @@ export default function ProfileScreen() {
               borderColor: colors.border.medium,
             },
           ]}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
           onPress={() => {
             if (router.canGoBack()) {
               router.back();

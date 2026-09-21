@@ -63,7 +63,11 @@ export const ExportGuide: React.FC<ExportGuideProps> = ({
       <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border.light }]}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <TouchableOpacity
+            onPress={onClose} style={styles.closeButton}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
             <Ionicons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
@@ -155,6 +159,8 @@ export const ExportGuide: React.FC<ExportGuideProps> = ({
         {/* Continue Button */}
         <View style={[styles.footer, { borderTopColor: colors.border.light }]}>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="I have my CSV file ready"
             style={[styles.continueButton, { backgroundColor: colors.primary.main }]}
             onPress={onContinue}
             activeOpacity={0.8}

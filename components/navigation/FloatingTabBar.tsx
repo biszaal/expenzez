@@ -112,6 +112,8 @@ export const FloatingTabBar: React.FC<BottomTabBarProps> = ({
           ))}
 
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Add"
             onPress={handleFabPress}
             hitSlop={8}
             style={({ pressed }) => [
@@ -163,6 +165,7 @@ const TabButton: React.FC<{
 
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={onPress}
       hitSlop={6}
       style={({ pressed }) => [

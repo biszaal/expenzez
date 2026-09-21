@@ -234,7 +234,11 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
           ]}
         >
           <View style={styles.headerTop}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity
+              onPress={onClose} style={styles.closeButton}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
               <Ionicons name="close" size={20} color={colors.text.primary} />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
@@ -545,6 +549,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
           ]}
         >
           <TouchableOpacity
+            accessibilityRole="button"
             style={[
               styles.actionButton,
               { backgroundColor: colors.primary.main },
@@ -556,6 +561,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({
           </TouchableOpacity>
 
           <TouchableOpacity
+            accessibilityRole="button"
             style={[
               styles.actionButton,
               {

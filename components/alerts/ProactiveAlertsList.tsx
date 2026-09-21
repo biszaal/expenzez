@@ -98,6 +98,9 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
               </Text>
             </View>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ expanded: !isMinimized }}
+              accessibilityLabel={isMinimized ? "Expand alerts" : "Collapse alerts"}
               onPress={() => setIsMinimized(!isMinimized)}
               activeOpacity={0.7}
             >
@@ -133,6 +136,9 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
               </Text>
             </View>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ expanded: !isMinimized }}
+              accessibilityLabel={isMinimized ? "Expand alerts" : "Collapse alerts"}
               onPress={() => setIsMinimized(!isMinimized)}
               activeOpacity={0.7}
             >
@@ -179,6 +185,9 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
             </Text>
           </View>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ expanded: !isMinimized }}
+            accessibilityLabel={isMinimized ? "Expand alerts" : "Collapse alerts"}
             onPress={() => setIsMinimized(!isMinimized)}
             activeOpacity={0.7}
           >
@@ -215,6 +224,7 @@ export const ProactiveAlertsList: React.FC<ProactiveAlertsListProps> = ({
           ListFooterComponent={
             hasMore ? (
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[styles.viewMoreButton, { backgroundColor: colors.card.background }]}
                 onPress={onViewAll}
               >

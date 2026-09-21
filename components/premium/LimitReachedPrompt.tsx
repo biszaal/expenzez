@@ -61,6 +61,8 @@ export const LimitReachedPrompt: React.FC<LimitReachedPromptProps> = ({
         >
           {/* Close button */}
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss"
             onPress={onDismiss}
             style={{ alignSelf: "flex-end", marginBottom: 16 }}
           >
@@ -138,6 +140,7 @@ export const LimitReachedPrompt: React.FC<LimitReachedPromptProps> = ({
           {/* Buttons */}
           <View style={{ gap: 12 }}>
             <TouchableOpacity
+              accessibilityRole="button"
               onPress={() => {
                 router.push("/subscription/plans");
                 onDismiss();
@@ -161,6 +164,8 @@ export const LimitReachedPrompt: React.FC<LimitReachedPromptProps> = ({
             </TouchableOpacity>
 
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss"
               onPress={onDismiss}
               style={{
                 paddingVertical: 14,

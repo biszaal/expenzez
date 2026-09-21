@@ -1281,6 +1281,8 @@ export default function SpendingPage() {
               { backgroundColor: colors.primary.main },
             ]}
             onPress={() => fetchData(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Try again"
           >
             <Ionicons
               name="refresh"
@@ -1428,6 +1430,8 @@ export default function SpendingPage() {
                   { backgroundColor: colors.primary.main },
                 ]}
                 onPress={() => router.push("/add-transaction")}
+                accessibilityRole="button"
+                accessibilityLabel="Add an expense"
                 activeOpacity={0.8}
               >
                 <Ionicons
@@ -1478,6 +1482,8 @@ export default function SpendingPage() {
                   { backgroundColor: colors.primary.main },
                 ]}
                 onPress={() => fetchData(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Refresh data"
                 activeOpacity={0.8}
               >
                 <Ionicons
@@ -1527,6 +1533,8 @@ export default function SpendingPage() {
                 { backgroundColor: colors.primary.main },
               ]}
               onPress={() => router.push("/budgets")}
+              accessibilityRole="button"
+              accessibilityLabel="View all budgets"
               activeOpacity={0.85}
             >
               <View style={styles.viewAllBudgetsContent}>
@@ -1545,6 +1553,8 @@ export default function SpendingPage() {
                 { backgroundColor: colors.background.secondary },
               ]}
               onPress={() => router.push("/insights/trends")}
+              accessibilityRole="button"
+              accessibilityLabel="View spending trends"
               activeOpacity={0.8}
             >
               <View style={styles.viewAllBudgetsContent}>

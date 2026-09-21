@@ -37,6 +37,9 @@ export const SpendingTabSwitch: React.FC<SpendingTabSwitchProps> = ({
           const active = selectedTab === tab.key;
           return (
             <Pressable
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={tab.label}
               key={tab.key}
               onPress={() => setSelectedTab(tab.key)}
               style={styles.pillPressable}

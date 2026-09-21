@@ -369,13 +369,20 @@ export default function CreditScoreScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
       {/* Header with Back Button and AI Button */}
       <View style={[styles.header, { backgroundColor: colors.background.primary }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => router.back()} style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+        >
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={[styles.headerTitle, { color: colors.text.primary }]}>Credit Score</Text>
         </View>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={loadingAiInsight ? "Loading insight" : "Get AI credit insight"}
+          accessibilityState={{ busy: loadingAiInsight }}
           onPress={fetchAIInsight}
           style={[styles.aiButton, { backgroundColor: `${colors.primary.main}15` }]}
           disabled={loadingAiInsight}
@@ -406,6 +413,9 @@ export default function CreditScoreScreen() {
         {aiInsight && (
           <View style={[styles.aiInsightCard, { backgroundColor: colors.background.secondary }]}>
             <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityState={{ expanded: aiInsightExpanded }}
+              accessibilityLabel="AI credit insight"
               style={styles.aiInsightHeader}
               onPress={() => setAiInsightExpanded(!aiInsightExpanded)}
               activeOpacity={0.7}
@@ -590,6 +600,9 @@ export default function CreditScoreScreen() {
 
             return (
               <TouchableOpacity
+                accessibilityRole="radio"
+                accessibilityState={{ selected: selectedBureau === bureau }}
+                accessibilityLabel={bureau}
                 key={bureau}
                 style={[
                   styles.bureauCard,
@@ -905,6 +918,9 @@ export default function CreditScoreScreen() {
         {/* Credit Score Ranges Education - Bureau Specific */}
         <View style={[styles.section, { backgroundColor: colors.background.secondary }]}>
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showScoreRanges }}
+            accessibilityLabel="Score ranges"
             style={styles.sectionHeaderWithIcon}
             onPress={() => setShowScoreRanges(!showScoreRanges)}
             activeOpacity={0.7}
@@ -1062,11 +1078,13 @@ export default function CreditScoreScreen() {
         >
           <TouchableOpacity
             style={styles.modalOverlay}
+            accessible={false}
             activeOpacity={1}
             onPress={() => setModalVisible(false)}
           >
             <TouchableOpacity
               style={[styles.modalContent, { backgroundColor: colors.background.primary }]}
+              accessible={false}
               activeOpacity={1}
               onPress={(e) => e.stopPropagation()}
             >
@@ -1085,6 +1103,8 @@ export default function CreditScoreScreen() {
                 </Text>
               </View>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Close"
                 onPress={() => setModalVisible(false)}
                 style={styles.modalCloseButton}
               >
@@ -1112,6 +1132,8 @@ export default function CreditScoreScreen() {
 
                   return (
                     <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={month.label}
                       key={month.value}
                       style={[
                         styles.monthChip,
@@ -1184,6 +1206,8 @@ export default function CreditScoreScreen() {
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Close"
                 style={[styles.modalButton, styles.cancelButton, { borderColor: colors.border.medium }]}
                 onPress={() => setModalVisible(false)}
               >
@@ -1193,6 +1217,7 @@ export default function CreditScoreScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
+                accessibilityRole="button"
                 style={[styles.modalButton, styles.saveButton, { backgroundColor: colors.primary.main }]}
                 onPress={handleAddScore}
               >
