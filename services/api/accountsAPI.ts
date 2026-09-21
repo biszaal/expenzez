@@ -62,9 +62,23 @@ async function deriveAccountsFromTransactions(
   const { transactionAPI } = await import("./transactionAPI");
   const { spendBreakdown } = await import("../../utils/spend");
 
-  const targetMonth = month || new Date().toISOString().slice(0, 7);
   const response = await transactionAPI.getTransactions({ limit: 1000 } as any);
   const transactions: any[] = response?.transactions || [];
+
+  // Same rule as the server (resolveReportingMonth): the newest month with
+  // data, not the calendar month, so this fallback doesn't reintroduce the
+  // all-accounts-show-zero bug the real endpoint was fixed for.
+  const targetMonth =
+    month ||
+    transactions.reduce(
+      (latest: string | null, t: any) =>
+        typeof t.date === "string" && t.date.length >= 7 &&
+        (!latest || t.date.slice(0, 7) > latest)
+          ? t.date.slice(0, 7)
+          : latest,
+      null as string | null
+    ) ||
+    new Date().toISOString().slice(0, 7);
 
   const groups = new Map<string, any[]>();
   for (const txn of transactions) {

@@ -41,36 +41,44 @@ export default function AccountsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const month = dayjs().format("YYYY-MM");
+  // Which month the figures cover. The server decides — statements arrive in
+  // arrears, so the newest month with data is usually the previous one, and
+  // pinning this to dayjs() showed every account at zero for weeks at a time.
+  const [month, setMonth] = useState(dayjs().format("YYYY-MM"));
 
-  const load = useCallback(
-    async (isRefresh = false) => {
-      try {
-        if (isRefresh) setRefreshing(true);
-        else setLoading(true);
-        setError(null);
+  const load = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+      setError(null);
 
-        const response = await accountsAPI.getAccounts(month, {
-          force: isRefresh,
-        });
-        setAccounts(response.accounts || []);
-        setUnassigned(response.unassigned || null);
-      } catch (e) {
-        console.error("[Accounts] Failed to load accounts", e);
-        setError("We couldn't load your accounts. Pull down to try again.");
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [month]
-  );
+      const response = await accountsAPI.getAccounts(undefined, {
+        force: isRefresh,
+      });
+      setAccounts(response.accounts || []);
+      setUnassigned(response.unassigned || null);
+      if (response.month) setMonth(response.month);
+    } catch (e) {
+      console.error("[Accounts] Failed to load accounts", e);
+      setError("We couldn't load your accounts. Pull down to try again.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
     load();
   }, [load]);
 
   const monthTotal = accounts.reduce((sum, a) => sum + (a.monthSpend || 0), 0);
+
+  // "this month" is a lie whenever the newest data is older than today, and
+  // the transaction count beside it is all-time — so name the month instead.
+  const periodLabel =
+    month === dayjs().format("YYYY-MM")
+      ? "this month"
+      : `in ${dayjs(month).format("MMM")}`;
 
   if (loading) {
     return <TabLoadingScreen message="Loading your accounts..." />;
@@ -135,7 +143,7 @@ export default function AccountsScreen() {
                   router.push(`/accounts/${encodeURIComponent(account.accountId)}` as any)
                 }
                 accessibilityRole="button"
-                accessibilityLabel={`${account.displayName}, ${formatAmount(account.monthSpend)} spent this month`}
+                accessibilityLabel={`${account.displayName}, ${formatAmount(account.monthSpend)} spent ${periodLabel}`}
                 style={({ pressed }) => [
                   styles.card,
                   {
@@ -201,7 +209,7 @@ export default function AccountsScreen() {
                       },
                     ]}
                   >
-                    this month
+                    {periodLabel}
                   </Text>
                 </View>
                 <Ionicons
@@ -218,6 +226,8 @@ export default function AccountsScreen() {
             {unassigned && unassigned.transactionCount > 0 && (
               <Pressable
                 onPress={() => router.push("/transactions" as any)}
+                accessibilityRole="button"
+                accessibilityLabel={`Not linked to an account, ${unassigned.transactionCount} transaction${unassigned.transactionCount === 1 ? "" : "s"}, ${formatAmount(unassigned.monthSpend)} ${periodLabel}`}
                 style={({ pressed }) => [
                   styles.card,
                   {
@@ -277,6 +287,7 @@ export default function AccountsScreen() {
         {accounts.length > 0 && (
           <Pressable
             onPress={() => router.push("/import-statement" as any)}
+            accessibilityLabel="Add an account via statement"
             style={({ pressed }) => [
               styles.addButton,
               {
