@@ -3,6 +3,8 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
   ScrollView,
+  SectionList,
+  type SectionListData,
   Text,
   TouchableOpacity,
   View,
@@ -58,6 +60,92 @@ interface Transaction {
   spendTypeSource?: string;
   spendTypeConfidence?: number;
 }
+
+// The feed is a SectionList: one section per month, whose rows are date
+// headers, transactions and the occasional native ad. `endsGroup` marks the
+// last row of a date group, which carries the gap before the next date.
+type FeedRow =
+  | { kind: "date"; key: string; date: string; total: number }
+  | { kind: "txn"; key: string; transaction: Transaction; endsGroup: boolean }
+  | { kind: "ad"; key: string; endsGroup: boolean };
+
+interface FeedSection {
+  key: string;
+  monthLabel: string;
+  total: number;
+  data: FeedRow[];
+}
+
+const MAX_FEED_ADS = 3;
+
+const formatDateHeader = (date: string) => dayjs(date).format("ddd DD MMM");
+
+// Memoised so typing in search or loading older months doesn't re-render rows
+// whose transaction didn't change.
+const TransactionRow = React.memo(function TransactionRow({
+  transaction,
+  onPress,
+}: {
+  transaction: Transaction;
+  onPress: (transaction: Transaction) => void;
+}) {
+  const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
+
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      style={[
+        styles.transactionCard,
+        { backgroundColor: colors.background.secondary },
+      ]}
+      onPress={() => onPress(transaction)}
+    >
+      <MerchantLogo
+        merchant={transaction.merchant}
+        description={transaction.description}
+        category={transaction.category}
+        size={52}
+        style={{ marginRight: spacing.md }}
+      />
+
+      <View style={styles.transactionDetails}>
+        <Text style={[styles.merchantName, { color: colors.text.primary }]}>
+          {transaction.merchant}
+        </Text>
+        <Text style={[styles.categoryLabel, { color: colors.text.tertiary }]}>
+          {(transaction.category || "General") +
+            (excludedLabel(transaction as any)
+              ? `  ·  ${excludedLabel(transaction as any)} · not counted`
+              : "")}
+        </Text>
+      </View>
+
+      <View style={styles.amountContainer}>
+        <Text
+          style={[
+            styles.amount,
+            {
+              color:
+                transaction.type === "credit"
+                  ? colors.success.main
+                  : colors.error.main,
+            },
+          ]}
+        >
+          {transaction.type === "credit" ? "+" : "-"}
+          {formatAmount(Math.abs(transaction.originalAmount))}
+        </Text>
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color={colors.text.tertiary}
+          style={styles.chevronIcon}
+        />
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 export default function TransactionsScreen() {
   const router = useRouter();
@@ -266,11 +354,11 @@ export default function TransactionsScreen() {
     [handleLoadMore]
   );
 
-  // Handle edit transaction
-  const handleEditTransaction = (transaction: Transaction) => {
+  // Handle edit transaction (stable so memoised rows don't re-render)
+  const handleEditTransaction = useCallback((transaction: Transaction) => {
     setSelectedTransaction(transaction);
     setEditModalVisible(true);
-  };
+  }, []);
 
   // Handle save transaction
   const handleSaveTransaction = async (
@@ -537,9 +625,121 @@ export default function TransactionsScreen() {
     return sections;
   }, [filteredTransactions]);
 
-  const formatDateHeader = (date: string) => {
-    return dayjs(date).format("ddd DD MMM");
-  };
+  // Flatten Month -> Date -> Transactions into SectionList rows. A running
+  // counter across the whole feed lands ads at even intervals regardless of
+  // how transactions split across days/months; capped so a long feed makes
+  // only a few ad requests.
+  const feedSections = useMemo<FeedSection[]>(() => {
+    let txnCount = 0;
+    let adsShown = 0;
+    return monthSections.map((section) => {
+      const data: FeedRow[] = [];
+      section.dateGroups.forEach((group) => {
+        data.push({
+          kind: "date",
+          key: `date-${group.date}`,
+          date: group.date,
+          total: group.total,
+        });
+        group.transactions.forEach((transaction) => {
+          txnCount += 1;
+          data.push({
+            kind: "txn",
+            key: transaction.id,
+            transaction,
+            endsGroup: false,
+          });
+          if (
+            txnCount % NATIVE_AD_FEED_INTERVAL === 0 &&
+            adsShown < MAX_FEED_ADS
+          ) {
+            adsShown += 1;
+            data.push({
+              kind: "ad",
+              key: `ad-${transaction.id}`,
+              endsGroup: false,
+            });
+          }
+        });
+        const last = data[data.length - 1];
+        if (last.kind !== "date") last.endsGroup = true;
+      });
+      return {
+        key: section.monthKey,
+        monthLabel: section.monthLabel,
+        total: section.total,
+        data,
+      };
+    });
+  }, [monthSections]);
+
+  const renderFeedRow = useCallback(
+    ({ item }: { item: FeedRow }) => {
+      if (item.kind === "date") {
+        return (
+          <View style={styles.transactionsContainer}>
+            <View style={styles.dateHeaderContainer}>
+              <Text
+                style={[styles.dateHeader, { color: colors.text.secondary }]}
+              >
+                {formatDateHeader(item.date)}
+              </Text>
+              <Text
+                style={[styles.dateAmount, { color: colors.text.secondary }]}
+              >
+                {formatAmount(item.total)}
+              </Text>
+            </View>
+          </View>
+        );
+      }
+      return (
+        <View
+          style={[
+            styles.transactionsContainer,
+            item.endsGroup && styles.dateGroup,
+          ]}
+        >
+          {item.kind === "txn" ? (
+            <TransactionRow
+              transaction={item.transaction}
+              onPress={handleEditTransaction}
+            />
+          ) : (
+            <NativeAdCard />
+          )}
+        </View>
+      );
+    },
+    [colors, formatAmount, handleEditTransaction]
+  );
+
+  const renderMonthHeader = useCallback(
+    ({ section }: { section: SectionListData<FeedRow, FeedSection> }) => (
+      <View style={styles.transactionsContainer}>
+        <View
+          style={[
+            styles.monthHeader,
+            { backgroundColor: colors.background.primary },
+          ]}
+        >
+          <Text style={[styles.monthTitle, { color: colors.text.primary }]}>
+            {section.monthLabel}
+          </Text>
+          <Text style={[styles.monthTotal, { color: colors.text.secondary }]}>
+            {formatAmount(section.total)}
+          </Text>
+        </View>
+      </View>
+    ),
+    [colors, formatAmount]
+  );
+
+  // Gap between months (monthSection is just a bottom margin).
+  const renderMonthFooter = useCallback(
+    () => <View style={styles.monthSection} />,
+    []
+  );
 
   if (!authLoggedIn || checkingBank) {
     return null;
@@ -591,11 +791,175 @@ export default function TransactionsScreen() {
   //   return empty state
   // }
 
+  const listHeader = (
+    <>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          style={[
+            styles.backButton,
+            { backgroundColor: colors.background.secondary },
+          ]}
+          onPress={() => router.back()}
+        >
+          <Ionicons
+            name="chevron-back"
+            size={24}
+            color={colors.primary.main}
+          />
+        </TouchableOpacity>
+
+        <View style={styles.headerContent}>
+          <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
+            ALL TRANSACTIONS
+          </Text>
+          <Text
+            style={[styles.headerSubtitle, { color: colors.text.secondary }]}
+          >
+            Updated today, {lastUpdated}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={() => setSummaryModalVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Spending summary"
+        >
+          <Ionicons
+            name="ellipsis-horizontal"
+            size={24}
+            color={colors.text.secondary}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Search */}
+      <View style={styles.searchSection}>
+        <View
+          style={[
+            styles.searchContainer,
+            { backgroundColor: colors.background.secondary },
+          ]}
+        >
+          <Ionicons
+            name="search-outline"
+            size={20}
+            color={colors.text.tertiary}
+          />
+          <TextInput
+            style={[styles.searchInput, { color: colors.text.primary }]}
+            placeholder="Search"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+      </View>
+
+      {!loading && pendingTransactions.length > 0 && (
+        <View style={styles.transactionsContainer}>
+          {/* Pending Transactions */}
+          <View style={styles.pendingSection}>
+            <View style={styles.pendingHeader}>
+              <Text
+                style={[
+                  styles.pendingTitle,
+                  { color: colors.text.primary },
+                ]}
+              >
+                Pending
+              </Text>
+              <Text
+                style={[
+                  styles.pendingAmount,
+                  { color: colors.text.primary },
+                ]}
+              >
+                {formatAmount(
+                  pendingTransactions.reduce(
+                    (sum, tx) => sum + Math.abs(tx.originalAmount),
+                    0
+                  )
+                )}
+              </Text>
+            </View>
+
+            {pendingTransactions.map((transaction) => (
+              <TransactionRow
+                key={transaction.id}
+                transaction={transaction}
+                onPress={handleEditTransaction}
+              />
+            ))}
+          </View>
+        </View>
+      )}
+    </>
+  );
+
+  const listFooter = loading ? (
+    <View style={styles.loadingContainer}>
+      <Text style={[styles.loadingText, { color: colors.text.secondary }]}>
+        Loading transactions...
+      </Text>
+    </View>
+  ) : (
+    <View style={styles.transactionsContainer}>
+      {/* Load-more footer */}
+      {loadingMore && (
+        <View style={styles.loadMoreFooter}>
+          <ActivityIndicator size="small" color={colors.primary.main} />
+          <Text
+            style={[styles.loadMoreText, { color: colors.text.secondary }]}
+          >
+            Loading older transactions…
+          </Text>
+        </View>
+      )}
+      {!loadingMore && !hasMore && monthSections.length > 0 && (
+        <Text style={[styles.endOfList, { color: colors.text.tertiary }]}>
+          You've reached the end
+        </Text>
+      )}
+
+      {/* Empty State */}
+      {monthSections.length === 0 && pendingTransactions.length === 0 && (
+        <EmptyState
+          type="transactions"
+          title={searchQuery ? "No matches found" : "No transactions yet"}
+          description={
+            searchQuery
+              ? "Try adjusting your search or filter criteria"
+              : "Pull down to refresh, or add a transaction"
+          }
+        />
+      )}
+
+      {/* Anchored banner at the bottom of the feed */}
+      <AdBanner />
+    </View>
+  );
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
-      <ScrollView
+      {/* Virtualised: only rows near the viewport are mounted, so a feed of
+          hundreds of transactions (each with a merchant logo) stays smooth. */}
+      <SectionList
+        sections={loading ? [] : feedSections}
+        keyExtractor={(row) => row.key}
+        renderItem={renderFeedRow}
+        renderSectionHeader={renderMonthHeader}
+        renderSectionFooter={renderMonthFooter}
+        stickySectionHeadersEnabled={false}
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={listFooter}
+        initialNumToRender={15}
+        maxToRenderPerBatch={10}
+        windowSize={11}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -609,351 +973,7 @@ export default function TransactionsScreen() {
             tintColor={colors.primary.main}
           />
         }
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-            style={[
-              styles.backButton,
-              { backgroundColor: colors.background.secondary },
-            ]}
-            onPress={() => router.back()}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color={colors.primary.main}
-            />
-          </TouchableOpacity>
-
-          <View style={styles.headerContent}>
-            <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-              ALL TRANSACTIONS
-            </Text>
-            <Text
-              style={[styles.headerSubtitle, { color: colors.text.secondary }]}
-            >
-              Updated today, {lastUpdated}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.menuButton}
-            onPress={() => setSummaryModalVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Spending summary"
-          >
-            <Ionicons
-              name="ellipsis-horizontal"
-              size={24}
-              color={colors.text.secondary}
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Search */}
-        <View style={styles.searchSection}>
-          <View
-            style={[
-              styles.searchContainer,
-              { backgroundColor: colors.background.secondary },
-            ]}
-          >
-            <Ionicons
-              name="search-outline"
-              size={20}
-              color={colors.text.tertiary}
-            />
-            <TextInput
-              style={[styles.searchInput, { color: colors.text.primary }]}
-              placeholder="Search"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-        </View>
-
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <Text
-              style={[styles.loadingText, { color: colors.text.secondary }]}
-            >
-              Loading transactions...
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.transactionsContainer}>
-            {/* Pending Transactions */}
-            {pendingTransactions.length > 0 && (
-              <View style={styles.pendingSection}>
-                <View style={styles.pendingHeader}>
-                  <Text
-                    style={[
-                      styles.pendingTitle,
-                      { color: colors.text.primary },
-                    ]}
-                  >
-                    Pending
-                  </Text>
-                  <Text
-                    style={[
-                      styles.pendingAmount,
-                      { color: colors.text.primary },
-                    ]}
-                  >
-                    {formatAmount(
-                      pendingTransactions.reduce(
-                        (sum, tx) => sum + Math.abs(tx.originalAmount),
-                        0
-                      )
-                    )}
-                  </Text>
-                </View>
-
-                {pendingTransactions.map((transaction) => (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    key={transaction.id}
-                    style={[
-                      styles.transactionCard,
-                      { backgroundColor: colors.background.secondary },
-                    ]}
-                    onPress={() => handleEditTransaction(transaction)}
-                  >
-                    <MerchantLogo
-                      merchant={transaction.merchant}
-                      description={transaction.description}
-                      category={transaction.category}
-                      size={52}
-                      style={{ marginRight: spacing.md }}
-                    />
-
-                    <View style={styles.transactionDetails}>
-                      <Text
-                        style={[
-                          styles.merchantName,
-                          { color: colors.text.primary },
-                        ]}
-                      >
-                        {transaction.merchant}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.categoryLabel,
-                          { color: colors.text.tertiary },
-                        ]}
-                      >
-                        {(transaction.category || 'General') +
-                          (excludedLabel(transaction as any)
-                            ? `  ·  ${excludedLabel(transaction as any)} · not counted`
-                            : '')}
-                      </Text>
-                    </View>
-
-                    <View style={styles.amountContainer}>
-                      <Text
-                        style={[
-                          styles.amount,
-                          {
-                            color:
-                              transaction.type === "credit"
-                                ? colors.success.main
-                                : colors.error.main,
-                          },
-                        ]}
-                      >
-                        {transaction.type === "credit" ? "+" : "-"}
-                        {formatAmount(Math.abs(transaction.originalAmount))}
-                      </Text>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={18}
-                        color={colors.text.tertiary}
-                        style={styles.chevronIcon}
-                      />
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-
-            {/* Grouped by Month -> Date (native ads spliced into the feed) */}
-            {(() => {
-              // Running counter across the whole feed so ads land at even
-              // intervals regardless of how transactions split across days/
-              // months. Capped so a long feed makes only a few ad requests.
-              let txnCount = 0;
-              let adsShown = 0;
-              const MAX_FEED_ADS = 3;
-              return monthSections.map((section) => (
-              <View key={section.monthKey} style={styles.monthSection}>
-                <View
-                  style={[
-                    styles.monthHeader,
-                    { backgroundColor: colors.background.primary },
-                  ]}
-                >
-                  <Text
-                    style={[styles.monthTitle, { color: colors.text.primary }]}
-                  >
-                    {section.monthLabel}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.monthTotal,
-                      { color: colors.text.secondary },
-                    ]}
-                  >
-                    {formatAmount(section.total)}
-                  </Text>
-                </View>
-
-                {section.dateGroups.map((group) => (
-                  <View key={group.date} style={styles.dateGroup}>
-                    <View style={styles.dateHeaderContainer}>
-                      <Text
-                        style={[
-                          styles.dateHeader,
-                          { color: colors.text.secondary },
-                        ]}
-                      >
-                        {formatDateHeader(group.date)}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.dateAmount,
-                          { color: colors.text.secondary },
-                        ]}
-                      >
-                        {formatAmount(group.total)}
-                      </Text>
-                    </View>
-
-                    {group.transactions.map((transaction) => {
-                      txnCount += 1;
-                      const showAd =
-                        txnCount % NATIVE_AD_FEED_INTERVAL === 0 &&
-                        adsShown < MAX_FEED_ADS;
-                      if (showAd) adsShown += 1;
-                      return (
-                      <React.Fragment key={transaction.id}>
-                      <TouchableOpacity
-                        accessibilityRole="button"
-                        style={[
-                          styles.transactionCard,
-                          { backgroundColor: colors.background.secondary },
-                        ]}
-                        onPress={() => handleEditTransaction(transaction)}
-                      >
-                        <MerchantLogo
-                          merchant={transaction.merchant}
-                          description={transaction.description}
-                          category={transaction.category}
-                          size={52}
-                          style={{ marginRight: spacing.md }}
-                        />
-
-                        <View style={styles.transactionDetails}>
-                          <Text
-                            style={[
-                              styles.merchantName,
-                              { color: colors.text.primary },
-                            ]}
-                          >
-                            {transaction.merchant}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.categoryLabel,
-                              { color: colors.text.tertiary },
-                            ]}
-                          >
-                            {(transaction.category || "General") +
-                              (excludedLabel(transaction as any)
-                                ? `  ·  ${excludedLabel(transaction as any)} · not counted`
-                                : "")}
-                          </Text>
-                        </View>
-
-                        <View style={styles.amountContainer}>
-                          <Text
-                            style={[
-                              styles.amount,
-                              {
-                                color:
-                                  transaction.type === "credit"
-                                    ? colors.success.main
-                                    : colors.error.main,
-                              },
-                            ]}
-                          >
-                            {transaction.type === "credit" ? "+" : "-"}
-                            {formatAmount(Math.abs(transaction.originalAmount))}
-                          </Text>
-                          <Ionicons
-                            name="chevron-forward"
-                            size={18}
-                            color={colors.text.tertiary}
-                            style={styles.chevronIcon}
-                          />
-                        </View>
-                      </TouchableOpacity>
-                      {showAd && <NativeAdCard />}
-                      </React.Fragment>
-                      );
-                    })}
-                  </View>
-                ))}
-              </View>
-              ));
-            })()}
-
-            {/* Load-more footer */}
-            {loadingMore && (
-              <View style={styles.loadMoreFooter}>
-                <ActivityIndicator
-                  size="small"
-                  color={colors.primary.main}
-                />
-                <Text
-                  style={[
-                    styles.loadMoreText,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  Loading older transactions…
-                </Text>
-              </View>
-            )}
-            {!loadingMore && !hasMore && monthSections.length > 0 && (
-              <Text
-                style={[styles.endOfList, { color: colors.text.tertiary }]}
-              >
-                You've reached the end
-              </Text>
-            )}
-
-            {/* Empty State */}
-            {monthSections.length === 0 &&
-              pendingTransactions.length === 0 && (
-                <EmptyState
-                  type="transactions"
-                  title={searchQuery ? "No matches found" : "No transactions yet"}
-                  description={
-                    searchQuery
-                      ? "Try adjusting your search or filter criteria"
-                      : "Pull down to refresh, or add a transaction"
-                  }
-                />
-              )}
-
-            {/* Anchored banner at the bottom of the feed */}
-            <AdBanner />
-          </View>
-        )}
-      </ScrollView>
+      />
 
       {/* Edit Transaction Modal */}
       <EditTransactionModal
