@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ScrollView, RefreshControl, StyleSheet, View, Text, Alert, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ScrollView, RefreshControl, StyleSheet, View, Text, Alert, TouchableOpacity, DeviceEventEmitter } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -10,7 +9,7 @@ import { achievementAPI, AchievementResponse } from '../../services/api/achievem
 import { AchievementCalculator } from '../../services/achievementCalculator';
 import { XPService, UserXPData } from '../../services/xpService';
 import { StreakService } from '../../services/streakService';
-import { useXP } from '../../hooks/useXP';
+import { useXP, XP_UPDATED_EVENT } from '../../hooks/useXP';
 import {
   AchievementCard,
   LevelProgressBar,
@@ -161,30 +160,16 @@ export default function ProgressScreen() {
     loadAchievementData();
   }, [loadAchievementData]); // Re-run when loadAchievementData changes (which includes user.id and isLoggedIn)
 
-  // Check for XP updates periodically
+  // Reload XP when it's awarded anywhere in the app. Event-driven, because this
+  // tab stays mounted behind the others and a poll would keep running there.
   useEffect(() => {
-    const checkForXPUpdates = async () => {
-      try {
-        const lastUpdateFlag = await AsyncStorage.getItem('@xp_update_flag');
-        if (lastUpdateFlag) {
-          // Clear the flag and refresh data
-          await AsyncStorage.removeItem('@xp_update_flag');
-          console.log('🏆 [Progress] XP update detected, refreshing...');
-
-          // Reload XP data
-          if (user?.id) {
-            const userXP = await XPService.getUserXP();
-            setXpData(userXP);
-          }
-        }
-      } catch (error) {
-        console.warn('🏆 [Progress] Error checking XP updates:', error);
-      }
-    };
-
-    // Check every 2 seconds
-    const interval = setInterval(checkForXPUpdates, 2000);
-    return () => clearInterval(interval);
+    if (!user?.id) return undefined;
+    const subscription = DeviceEventEmitter.addListener(XP_UPDATED_EVENT, () => {
+      XPService.getUserXP()
+        .then(setXpData)
+        .catch((error) => console.warn('🏆 [Progress] Error reloading XP:', error));
+    });
+    return () => subscription.remove();
   }, [user?.id]);
 
   // Filter achievements by category
