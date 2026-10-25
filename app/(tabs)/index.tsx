@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ScrollView,
   RefreshControl,
@@ -198,7 +198,7 @@ export default function HomeScreen() {
     loading,
     refreshing,
     refreshData,
-    forceRefresh,
+    refreshOnFocus,
   } = useDashboardData();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -277,12 +277,6 @@ export default function HomeScreen() {
     }
   };
 
-  useEffect(() => {
-    if (!isLocked && isLoggedIn) {
-      loadUserBudget();
-    }
-  }, [isLocked, isLoggedIn]);
-
   const loadAccounts = async () => {
     try {
       const response = await accountsAPI.getAccounts();
@@ -294,35 +288,41 @@ export default function HomeScreen() {
     }
   };
 
+  // Budget, bills and accounts feed the side cards. They reload whenever Home
+  // goes back to the server for transactions, not on every tab switch.
+  const loadSupportingData = () => {
+    loadUserBudget();
+    loadBills();
+    loadAccounts();
+  };
+
   useEffect(() => {
     if (!isLocked && isLoggedIn) {
-      loadBills();
-      loadAccounts();
+      loadSupportingData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLocked, isLoggedIn, transactions.length]);
+  }, [isLocked, isLoggedIn]);
 
-  const checkForNewTransaction = useCallback(async () => {
-    try {
-      await forceRefresh();
-    } catch (err) {
-      console.error("[Home] Error refreshing data:", err);
-    }
-  }, [forceRefresh]);
-
-  const hasRefreshedOnFocusRef = useRef(false);
+  // Returning to Home only hits the network when the data is stale or a
+  // transaction changed — see refreshOnFocus in useDashboardData.
   useFocusEffect(
     React.useCallback(() => {
-      if (isLoggedIn && !isLocked && !hasRefreshedOnFocusRef.current) {
-        hasRefreshedOnFocusRef.current = true;
-        refreshCustomerInfo().catch(() => undefined);
-        checkForNewTransaction();
-        setTimeout(() => {
-          hasRefreshedOnFocusRef.current = false;
-        }, 2000);
-      }
-    }, [isLoggedIn, isLocked, refreshCustomerInfo, checkForNewTransaction])
+      if (!isLoggedIn || isLocked) return;
+      refreshOnFocus()
+        .then((wentToServer) => {
+          if (!wentToServer) return;
+          refreshCustomerInfo().catch(() => undefined);
+          loadSupportingData();
+        })
+        .catch((err) => console.error("[Home] Error refreshing data:", err));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLoggedIn, isLocked, refreshOnFocus, refreshCustomerInfo])
   );
+
+  const handlePullToRefresh = () => {
+    loadSupportingData();
+    refreshData();
+  };
 
   const greeting = useMemo(() => {
     const hour = dayjs().hour();
@@ -365,7 +365,7 @@ export default function HomeScreen() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={refreshData}
+            onRefresh={handlePullToRefresh}
             colors={[colors.primary[500]]}
             tintColor={colors.primary[500]}
           />

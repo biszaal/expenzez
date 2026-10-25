@@ -1,3 +1,4 @@
+import { DeviceEventEmitter } from "react-native";
 import { api } from "../config/apiClient";
 import {
   cachedApiCall,
@@ -191,12 +192,17 @@ export interface ImportUsageResponse {
   premiumLimit: number;
 }
 
+// Emitted on DeviceEventEmitter after any transaction write, so mounted screens
+// (Home stays mounted behind other tabs) know to refetch on their next focus.
+export const TRANSACTIONS_CHANGED_EVENT = "transactionsChanged";
+
 export const transactionAPI = {
   // Drop every cached transaction list for the current user. Called after any
   // write so edited data shows immediately instead of after the 5-min TTL.
   invalidateTransactionsCache: async (): Promise<void> => {
     const userId = await getCacheUserId();
     await clearCachedDataByPrefix(`transactions_${userId}`);
+    DeviceEventEmitter.emit(TRANSACTIONS_CHANGED_EVENT);
   },
 
   createTransaction: async (
