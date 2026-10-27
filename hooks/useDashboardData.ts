@@ -1,13 +1,22 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { DeviceEventEmitter } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import dayjs from "dayjs";
 import { balanceAPI } from "../services/api/balanceAPI";
-import { transactionAPI, Transaction } from "../services/api/transactionAPI";
+import {
+  transactionAPI,
+  Transaction,
+  TRANSACTIONS_CHANGED_EVENT,
+} from "../services/api/transactionAPI";
 import { TransactionService } from "../services/transactionService";
 import { useAuth } from "../app/auth/AuthContext";
 import { APP_STRINGS } from "../constants/strings";
 import { updateWidgets } from "../services/widget";
+
+// On focus, Home goes back to the server at most this often. In between it only
+// refetches after a transaction mutation (TRANSACTIONS_CHANGED_EVENT).
+const FOCUS_REFRESH_INTERVAL_MS = 60_000;
 
 interface Account {
   id: string;
@@ -37,12 +46,32 @@ export const useDashboardData = () => {
 
   // Prevent infinite loop - track if refresh is in progress
   const isRefreshingRef = useRef(false);
+  const isFirstLoadRef = useRef(true);
 
-  // Load data function
-  const loadData = useCallback(async (isRefresh = false) => {
+  // When the last server fetch happened, and whether a transaction was created,
+  // edited or deleted since — together they decide if a focus refresh is needed.
+  const lastServerFetchAtRef = useRef(0);
+  const transactionsChangedRef = useRef(false);
+
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener(
+      TRANSACTIONS_CHANGED_EVENT,
+      () => {
+        transactionsChangedRef.current = true;
+      }
+    );
+    return () => subscription.remove();
+  }, []);
+
+  // Load data function. A refresh bypasses the cache; a silent refresh does so
+  // in the background — no spinner, and a failure keeps what's on screen.
+  const loadData = useCallback(async (
+    isRefresh = false,
+    { silent = false }: { silent?: boolean } = {}
+  ) => {
     try {
       if (isRefresh) {
-        setRefreshing(true);
+        if (!silent) setRefreshing(true);
         setError(null);
         setWarning(null);
       } else {
@@ -50,15 +79,8 @@ export const useDashboardData = () => {
         setFetchingData(true);
       }
 
-      // Always invalidate caches to ensure fresh data
-      try {
-        await balanceAPI.invalidateCache();
-        // Drop manual balance adjustments so the dashboard reflects server data.
-        await AsyncStorage.removeItem("manual_transactions");
-        console.log("🔄 [Home] Balance cache invalidated");
-      } catch (error) {
-        console.warn("⚠️ [Home] Failed to invalidate caches:", error);
-      }
+      // Drop manual balance adjustments so the dashboard reflects server data.
+      await AsyncStorage.removeItem("manual_transactions").catch(() => {});
 
       // Check authentication first
       const accessToken = await SecureStore.getItemAsync("accessToken", {
@@ -77,43 +99,32 @@ export const useDashboardData = () => {
         "📱 MANUAL INPUT MODE: Loading balance summary and recent transactions..."
       );
 
-      // Try to fetch balance summary first
-      let balanceSummary;
-      let useFallbackBalance = false;
-
-      try {
-        balanceSummary = await balanceAPI.getSummary({
+      // Balance summary and transactions are independent — fetch them in parallel.
+      const balancePromise = balanceAPI
+        .getSummary({
           useCache: !isRefresh,
           forceRefresh: isRefresh,
+        })
+        .catch(() => {
+          console.warn(
+            "⚠️ Balance summary endpoint not available (will deploy soon), using fallback calculation"
+          );
+          return null;
         });
-        console.log("✅ Balance summary loaded from API:", balanceSummary);
-      } catch (error: any) {
-        console.warn(
-          "⚠️ Balance summary endpoint not available (will deploy soon), using fallback calculation"
-        );
-        useFallbackBalance = true;
-        balanceSummary = {
-          balance: 0,
-          totalCredit: 0,
-          totalDebit: 0,
-          transactionCount: 0,
-          firstTransactionDate: null,
-          lastTransactionDate: null,
-          monthsWithData: [],
-        };
-      }
 
       // Fetch transactions (always needed for display and fallback calculation)
       // Use same fetch params as All Transactions page to ensure consistency
       // Backend sorts by transactionId (UUID), not date, so we need high limit
       console.log("🔄 [Home] Fetching transactions...");
-      const transactionResponse = await transactionAPI
+      const transactionsPromise = transactionAPI
         .getTransactions({
           limit: 1800, // Same as All Transactions page (6 months × 300)
           // Cached for instant paint on navigation; pull-to-refresh bypasses it.
           useCache: !isRefresh,
         })
         .catch((error) => {
+          // A failed background refresh must not blank the dashboard.
+          if (silent) throw error;
           console.error("❌ Error loading transactions:", error);
           return {
             transactions: [],
@@ -125,6 +136,23 @@ export const useDashboardData = () => {
             },
           };
         });
+
+      const [summary, transactionResponse] = await Promise.all([
+        balancePromise,
+        transactionsPromise,
+      ]);
+      if (isRefresh) lastServerFetchAtRef.current = Date.now();
+
+      const useFallbackBalance = summary === null;
+      const balanceSummary = summary ?? {
+        balance: 0,
+        totalCredit: 0,
+        totalDebit: 0,
+        transactionCount: 0,
+        firstTransactionDate: null,
+        lastTransactionDate: null,
+        monthsWithData: [],
+      };
 
       console.log(
         "✅ Transactions loaded:",
@@ -238,7 +266,7 @@ export const useDashboardData = () => {
       });
     } catch (error) {
       console.error("❌ Error loading data:", error);
-      setError("Failed to load transaction data. Please try again.");
+      if (!silent) setError("Failed to load transaction data. Please try again.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -253,34 +281,30 @@ export const useDashboardData = () => {
     await loadData(true);
   };
 
-  // Force refresh function for when transactions are updated
-  const forceRefresh = useCallback(async () => {
-    // Prevent concurrent refreshes
-    if (isRefreshingRef.current) {
-      console.log("🔄 [Home] Refresh already in progress, skipping...");
-      return;
-    }
+  // Called when Home gains focus. The first call paints from the cache; later
+  // calls refresh silently from the server, and only when the data is stale or
+  // a transaction changed. Resolves true when it went to the server.
+  const refreshOnFocus = useCallback(async (): Promise<boolean> => {
+    if (isRefreshingRef.current) return false;
 
     try {
       isRefreshingRef.current = true;
-      console.log("🔄 [Home] Force refresh triggered - clearing all caches");
 
-      // Clear all possible caches
-      try {
-        await balanceAPI.invalidateCache();
-        await AsyncStorage.removeItem("user_preferences");
-        console.log("🔄 [Home] All caches cleared");
-      } catch (error) {
-        console.warn("⚠️ [Home] Error clearing caches:", error);
+      if (isFirstLoadRef.current) {
+        isFirstLoadRef.current = false;
+        await loadData(false);
+        return false;
       }
 
-      // Force reload with no cache to get latest data from database
-      await loadData(true);
+      const stale =
+        Date.now() - lastServerFetchAtRef.current > FOCUS_REFRESH_INTERVAL_MS;
+      if (!stale && !transactionsChangedRef.current) return false;
+
+      transactionsChangedRef.current = false;
+      await loadData(true, { silent: true });
+      return true;
     } finally {
-      // Reset the flag after a delay to prevent rapid re-triggers
-      setTimeout(() => {
-        isRefreshingRef.current = false;
-      }, 1000);
+      isRefreshingRef.current = false;
     }
   }, [loadData]);
 
@@ -326,7 +350,7 @@ export const useDashboardData = () => {
     isFirstLoad,
     loadData,
     refreshData,
-    forceRefresh,
+    refreshOnFocus,
     handleRefreshBalance,
     setTransactions, // Exposed for optimistic updates if needed
     setTotalBalance,

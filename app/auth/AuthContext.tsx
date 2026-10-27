@@ -521,10 +521,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    // Check auth state periodically (reduced from 1s to 5s to save battery)
-    const interval = setInterval(checkAuthState, 5000); // Check every 5 seconds
-
-    // Also check when app becomes active
+    // Check when the app becomes active. There's no periodic poll: every login
+    // path in this file sets context state alongside storage, so a timer only
+    // burned battery re-reading storage every few seconds.
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       if (nextAppState === "active") {
         checkAuthState();
@@ -532,7 +531,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => {
-      clearInterval(interval);
       subscription?.remove();
     };
   }, [isLoggedIn, hasLoadedAuthState]);

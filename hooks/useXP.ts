@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react';
-import { Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert, DeviceEventEmitter } from 'react-native';
 import { XPService } from '../services/xpService';
 import { useAuth } from '../app/auth/AuthContext';
+
+// Emitted on DeviceEventEmitter whenever XP is awarded.
+export const XP_UPDATED_EVENT = 'xpUpdated';
 
 export interface XPReward {
   xpAwarded: number;
@@ -49,12 +51,8 @@ export const useXP = () => {
       if (result.xpAwarded > 0) {
         console.log(`[useXP] Awarded ${result.xpAwarded} XP for ${actionId}`);
 
-        // Trigger progress tab refresh by setting a flag
-        try {
-          await AsyncStorage.setItem('@xp_update_flag', Date.now().toString());
-        } catch (error) {
-          console.warn('[useXP] Failed to set update flag:', error);
-        }
+        // Tell a mounted Progress tab to reload XP
+        DeviceEventEmitter.emit(XP_UPDATED_EVENT);
 
         if (showAlert) {
           if (result.levelUp) {

@@ -16,7 +16,10 @@ export const SkeletonPlaceholder: React.FC<SkeletonProps> = ({
   style
 }) => {
   const { colors } = useTheme();
-  const animatedValue = new Animated.Value(0);
+  // Kept in a ref: a fresh Animated.Value per render detached the running loop,
+  // freezing the pulse after any re-render. The pulse runs on the native
+  // driver so it stays smooth while the JS thread is busy loading data.
+  const animatedValue = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
     const animation = Animated.loop(
@@ -25,19 +28,19 @@ export const SkeletonPlaceholder: React.FC<SkeletonProps> = ({
           toValue: 1,
           duration: 1000,
           easing: Easing.ease,
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
         Animated.timing(animatedValue, {
           toValue: 0,
           duration: 1000,
           easing: Easing.ease,
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
       ])
     );
     animation.start();
     return () => animation.stop();
-  }, []);
+  }, [animatedValue]);
 
   const opacity = animatedValue.interpolate({
     inputRange: [0, 1],
